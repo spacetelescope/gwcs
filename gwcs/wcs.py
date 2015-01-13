@@ -5,7 +5,7 @@ from astropy.io import fits
 from astropy.modeling import models
 from astropy.utils import isiterable
 
-from . import coordinate_systems
+#from . import coordinate_systems
 from .util import ModelDimensionalityError, CoordinateFrameError
 from .selector import *
 
