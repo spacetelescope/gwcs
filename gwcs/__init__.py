@@ -14,7 +14,7 @@ from ._astropy_init import *
 # ----------------------------------------------------------------------------
 
 from .wcs import *
-#from .coordinate_systems import *
+from .coordinate_frames import *
 from . import selector
 
 # For egg_info test builds to pass, put package imports here.
