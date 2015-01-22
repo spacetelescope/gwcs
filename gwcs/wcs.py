@@ -99,8 +99,8 @@ class WCS(object):
         except (NotImplementedError, KeyError):
             return self._invert(*args, **kwargs)
 
-    def _invert(self, x, y, x0, y0, **kwargs):
-        raise NotImlementeError
+    def _invert(self, *args, **kwargs):
+        raise NotImplementedError
 
     def transform(self, fromsys, tosys, *args):
         """
