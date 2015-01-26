@@ -39,8 +39,8 @@ class CoordinateFrame(object):
     reference_frame : astropy.coordinates.builtin_frames or spectral_builtin_frames
         Reference frame (see subclasses).
     reference_position : str or tuple
-        Reference position - one of ``STANDARD_REFERENCE_POSITION`` or a tuple of floats
-    unit : list
+        Reference position - one of `STANDARD_REFERENCE_POSITION` or a tuple of floats
+    unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
         Names of the axes in this frame, in the order of axes_order.
@@ -366,7 +366,7 @@ class CompositeFrame(CoordinateFrame):
         n = 0
         for frame in self.frames:
             result += (frame.world_coordinates(*args[n : frame.naxes + n]), )
-            n = frame.naxes
+            n += frame.naxes
         return result
 
 

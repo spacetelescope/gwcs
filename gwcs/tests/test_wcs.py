@@ -1,3 +1,4 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 import numpy as np
 from numpy.testing import assert_almost_equal
@@ -6,13 +7,14 @@ from astropy import coordinates as coord
 from astropy.io import fits
 from astropy import units as u
 from astropy.tests.helper import pytest
+from astropy.utils.data import get_pkg_data_filename
 
 from ..wcs import WCS
 from .. import coordinate_frames as cs
 
 class TestImaging(object):
     def setup_class(self):
-        hdr = fits.Header.fromtextfile('acs_wfc.hdr', endcard=False)
+        hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs_wfc.hdr"), endcard=False)
         a_coeff = hdr['A_*']
         a_order = a_coeff.pop('A_ORDER')
         b_coeff = hdr['B_*']

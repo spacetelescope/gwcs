@@ -1,5 +1,4 @@
-#parametrize cs to test for attributes
-# how to link model's labels with cs - name?
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 from astropy import units as u
 from astropy import coordinates as coo
 from .. import coordinate_frames as cs
