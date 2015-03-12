@@ -4,6 +4,7 @@ from __future__ import division, print_function
 from astropy import units as u
 from astropy.utils import OrderedDict
 from astropy.coordinates import BaseRepresentation
+from astropy.utils.compat.numpy import broadcast_arrays
 
 
 __all__ = ['Cartesian1DRepresentation', 'Cartesian2DRepresentation']
