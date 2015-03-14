@@ -1,9 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import division
+from __future__ import division, print_function
+
 import numpy as np
-from astropy.io import fits
 from astropy.modeling import models
-from astropy.utils import isiterable
 
 #from . import coordinate_systems
 from .util import ModelDimensionalityError, CoordinateFrameError
@@ -44,6 +43,7 @@ class WCS(object):
 
     @property
     def unit(self):
+        """The unit of the coordinates in the output coordinate system."""
         return self._output_coordinate_system._unit
 
     @property
@@ -64,6 +64,7 @@ class WCS(object):
 
     @property
     def name(self):
+        """ Name for this WCS (optional)."""
         return self._name
 
     @name.setter
@@ -71,6 +72,14 @@ class WCS(object):
         self._name = value
 
     def __call__(self, *args):
+        """
+        Executes the forward transform.
+
+        args : float or array-like
+            Coordinates in the input coordinate system, separate inputs for each dimension.
+
+
+        """
         if self._forward_transform is not None:
             result = self._forward_transform(*args)
         if self.output_coordinate_system is not None:
@@ -110,7 +119,7 @@ class WCS(object):
 
     def get_transform(self, fromsys, tosys):
         """
-        Return a transform between two coordinate frames
+        Return a transform between two coordinate frames inclusive.
 
         Parameters
         ----------
@@ -133,10 +142,15 @@ class WCS(object):
 
     @property
     def available_frames(self):
+        """
+        Print the names of the available coordinate frames.
+        """
         return self.forward_transform.submodel_names
 
     def footprint(self, axes, center=True):
         """
+        Return the footprint of the observation in world coordinates.
+
         Parameters
         ----------
         axes : tuple of floats
