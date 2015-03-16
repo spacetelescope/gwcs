@@ -1,4 +1,4 @@
-numpy>=1.6
+numpy
 Cython
 astropy_helpers
-astropy>=1.0
+astropy
