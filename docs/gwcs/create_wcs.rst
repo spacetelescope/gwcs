@@ -100,7 +100,7 @@ A slightly more detailed approach gives some more control over the transformatio
   >>> image_wcs.add_transform(focal_plane, w.output_coordinate_system, focal2sky)
 
 
-An spectral example
+A spectral example
 -------------------
 
 
