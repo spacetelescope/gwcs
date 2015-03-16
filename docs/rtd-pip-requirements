@@ -1,0 +1,4 @@
+numpy>=1.6
+Cython
+astropy_helpers
+astropy>=1.0
