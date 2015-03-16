@@ -4,7 +4,9 @@ from __future__ import division, print_function
 import numpy as np
 from astropy.modeling import models
 
-#from . import coordinate_systems
+
+#from . import coordinate_frames
+
 from .util import ModelDimensionalityError, CoordinateFrameError
 from .selector import *
 
@@ -18,9 +20,9 @@ class WCS(object):
 
     Parameters
     ----------
-    output_coordinate_system : str, gwcs.coordinate_systems.Frame
+    output_coordinate_system : str, gwcs.coordinate_frames.CoordinateFrame
         A coordinates object or a string label
-    input_coordinate_system : str, gwcs.coordinate_systems.Frame
+    input_coordinate_system : str, gwcs.coordinate_frames.CoordinateFrame
         A coordinates object or a string label
     forward_transform : astropy.modeling.Model
         a model to do the forward transform
@@ -97,8 +99,8 @@ class WCS(object):
         except (NotImplementedError, KeyError):
             return self._invert(*args, **kwargs)
 
-    def _invert(self, x, y, x0, y0, **kwargs):
-        raise NotImlementeError
+    def _invert(self, *args, **kwargs):
+        raise NotImplementedError
 
     def transform(self, fromsys, tosys, *args):
         """
