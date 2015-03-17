@@ -61,9 +61,9 @@ by CRPIX, a rotation by the PC matrix, a tangent deprojection and a sky rotation
 `astropy.modeling <http://docs.astropy.org/en/stable/modeling>`__ this can be written as
 
   >>> shift = models.Shift(CRPIX1, name="x_shift") & models.Shift(CRPIX2, name="y_shift")
-  >>> plane_rotation = models.AffineTransformation2D(matrix=np.array([[PC1_1, PC1_2], [PC2_1], PC2_2]])
+  >>> plane_rotation = models.AffineTransformation2D(matrix=np.array([[PC1_1, PC1_2], [PC2_1, PC2_2]]))
   >>> tangent = models.Pix2Sky_TAN()
-  >>> sky_roations = models.RotateNative2Celestial(CRVAL1, CRVAL2, LONPOLE)
+  >>> sky_rotation = models.RotateNative2Celestial(CRVAL1, CRVAL2, LONPOLE)
 
 Chaining these models into one compound models creates the total transformation from focal plane to sky
 
@@ -73,7 +73,7 @@ Chaining these models into one compound models creates the total transformation 
 Create the coordinate systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  >>> icrs = coordinates.ICRS()
+  >>> icrs = coord.ICRS()
   >>> final_system = gwcs.CelestialFrame(reference_frame=icrs)
   >>> final_system.unit
   <CelestialFrame(reference_frame=<ICRS Frame>, axes_order=(0, 1), reference_position=Barycenter,
@@ -99,6 +99,11 @@ A slightly more detailed approach gives some more control over the transformatio
   >>> image_wcs.add_transform(w.input_coordinate_system, focal_plane, distortion)
   >>> image_wcs.add_transform(focal_plane, w.output_coordinate_system, focal2sky)
 
+Transform Coordinates from detector to world coordinate system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  >>> image_wcs(1, 2)
+  (5.736718396223817, -72.057214400243)
 
 A spectral example
 -------------------

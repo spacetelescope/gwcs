@@ -163,7 +163,7 @@ class CoordinateFrame(object):
 
 class CelestialFrame(CoordinateFrame):
     """
-    Celestial Frame Representation.
+    Celestial Frame Representation
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ class CelestialFrame(CoordinateFrame):
     """
 
     def __init__(self, reference_frame, axes_order=(0, 1), reference_position=None,
-                 unit=[u.degree, u.degree], name=""):
+                 unit=[u.degree, u.degree], name=None):
         reference_position = 'Barycenter' #??
         if reference_frame.name.upper() in coo.builtin_frames.__all__:
             axes_names = reference_frame.representation_component_names.keys()[:2]
@@ -241,7 +241,7 @@ class SpectralFrame(CoordinateFrame):
 
     """
 
-    def __init__(self, reference_frame, axes_order=(0,), unit=None, axes_names=None, name=""):
+    def __init__(self, reference_frame, axes_order=(0,), unit=None, axes_names=None, name=None):
         super(SpectralFrame, self).__init__(naxes=1, reference_frame=reference_frame,
                                             axes_order=axes_order,
                                             axes_names=axes_names,
@@ -340,7 +340,10 @@ class Detector(BaseCoordinateFrame):
 
 
 class DetectorFrame(CoordinateFrame):
-    def __init__(self, axes_order=(0, 1), name='Detector', reference_position='Local'):
+    """
+    Represents a Cartesian coordinate system on a detector.
+    """
+    def __init__(self, axes_order=(0, 1), name='detector', reference_position='Local'):
         axes_names = ['x', 'y']
         super(DetectorFrame, self).__init__(2, name=name, axes_names=axes_names,
                                             reference_frame=Detector(),
@@ -352,9 +355,9 @@ class DetectorFrame(CoordinateFrame):
         return fmt
 
 class FocalPlaneFrame(CoordinateFrame):
-    def __init__(self, reference_pixel=[0., 0.], units=[u.pixel, u.pixel], name='FocalPlane',
+    def __init__(self, reference_pixel=[0., 0.], unit=[u.pixel, u.pixel], name='focal_plane',
                  reference_position="Local", axes_names=None):
-        super(FocalPlaneFrame, self).__init__(2, reference_position=reference_position, units=units, name=name, axes_names=axes_names)
+        super(FocalPlaneFrame, self).__init__(2, reference_frame=Detector(), reference_position=reference_position, unit=unit, name=name, axes_names=axes_names)
         self._reference_pixel = reference_pixel
 
 

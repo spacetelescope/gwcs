@@ -27,8 +27,8 @@ Next we need to create the output coordinate system - a `~gwcs.coordinate_frames
 
   >>> celestial = gwcs.CelestialFrame(coord.ICRS())
   >>> spec = gwcs.SpectralFrame(gwcs.spectral_builtin_frames.Wavelength(), unit=[u.micron], axes_names=['lambda'])
-  >>> output_system = gwcs.CompositeCoordinateFrame([celestial, spec])
-  >>> print output_system.units
+  >>> output_system = gwcs.CompositeFrame([celestial, spec])
+  >>> print output_system.unit
   [Unit("deg"), Unit("deg"), Unit("micron")]
 
 

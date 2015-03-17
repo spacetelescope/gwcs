@@ -5,7 +5,7 @@ Utility function for WCS
 from __future__ import division, print_function
 
 import numpy as np
-from astropy.modeling.projections import projcodes
+from jwst_lib.modeling.projections import projcodes
 try:
     from astropy import time
     HAS_TIME = True
@@ -37,7 +37,7 @@ class ModelDimensionalityError(Exception):
         super(ModelDimensionalityError, self).__init__()
 
 
-class UnknownRegionError(Exception):
+class RegionError(Exception):
     def __init__(self, message):
         self.message = message
         super(UnknownRegionError, self).__init__()
