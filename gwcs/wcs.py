@@ -90,16 +90,28 @@ class WCS(object):
             return result
 
     def invert(self, *args, **kwargs):
-        '''
-        args : x, y
-        **kwargs: x0, y0, maxiter ,...
-        '''
+        """
+        Invert coordnates.
+
+        The analytical inverse of the forward transform is used, if available.
+        If not an iterative method is used.
+
+        Parameters
+        ----------
+        args : float or array like
+            coordinates to be inverted
+        kwargs : dict
+            keyword arguments to be passed to the iterative invert method.
+        """
         try:
             return self.forward_transform.inverse(*args)
         except (NotImplementedError, KeyError):
             return self._invert(*args, **kwargs)
 
     def _invert(self, *args, **kwargs):
+        """
+        Implement iterative inverse here.
+        """
         raise NotImplementedError
 
     def transform(self, fromsys, tosys, *args):

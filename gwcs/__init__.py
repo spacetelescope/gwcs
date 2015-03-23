@@ -13,12 +13,9 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 from ._astropy_init import *
 # ----------------------------------------------------------------------------
 
-from .wcs import *
-from .coordinate_frames import *
-from . import selector
 
 # For egg_info test builds to pass, put package imports here.
 if not _ASTROPY_SETUP_:
-    #from example_mod import *
-    pass
-
+    from .wcs import *
+    from .coordinate_frames import *
+    from . import selector
