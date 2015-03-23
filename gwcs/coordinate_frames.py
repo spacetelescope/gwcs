@@ -17,7 +17,7 @@ from .spectral_builtin_frames import *
 from .representation import *
 
 
-__all__ = ['DetectorFrame', 'CelestialFrame', 'SpectralFrame', 'TimeFrame',
+__all__ = ['DetectorFrame', 'CelestialFrame', 'SpectralFrame',
            'CompositeFrame', 'FocalPlaneFrame']
 
 
@@ -158,47 +158,7 @@ class CoordinateFrame(object):
         raise NotImplementedError("Subclasses may implement this")
 
 
-class TimeFrame(CoordinateFrame):
-    """
-    Time Frame
 
-    Parameters
-    ----------
-    scale : str
-        time scale, one of ``standard_time_scale``
-    format : str
-        time representation
-    obslat : float or ``astropy.coordinates.Latitude``
-        observer's latitude
-    obslon : float or ``astropy.coordinates.Longitude``
-        observer's longitude
-     units : str or ``astropy.units.Unit``
-        unit for each axis
-    axes_names : list of str
-        names of the axes in this frame
-    """
-
-    standard_time_scale = time.Time.SCALES
-
-    time_format = time.Time.FORMATS
-
-    def __init__(self, scale, format, obslat=0., obslon=0., units="s", axes_names="Time", name="Time"):
-        assert scale in self.standard_time_scale, "Unrecognized time scale"
-        assert format in self.time_format, "Unrecognized time representation"
-        super(TimeFrame, self).__init__(1, units=[units], axes_names=[axes_names], name=name)
-        self._scale = scale
-        self._format = format
-        self._obslat = obslat
-        self._obslon = obslon
-
-    def transform_to(self, val, tosys, val2=None, precision=None, in_subfmt=None,
-                     out_subfmt=None, copy=False):
-        """Transforms to a different scale/representation"""
-
-        t = time.Time(val, val2, format=self._format, scale=self._scale,
-                      precision=precision, in_subfmt=in_subfmt, out_subfmt=out_subfmt,
-                      lat=self._obslat, lon=self._obslon)
-        return getattr(t, tosys)
 
 
 class CelestialFrame(CoordinateFrame):
