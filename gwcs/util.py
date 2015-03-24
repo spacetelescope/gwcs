@@ -5,7 +5,7 @@ Utility function for WCS
 from __future__ import division, print_function
 
 import numpy as np
-from jwst_lib.modeling.projections import projcodes
+from astropy.modeling.projections import projcodes
 try:
     from astropy import time
     HAS_TIME = True
