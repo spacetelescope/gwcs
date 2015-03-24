@@ -99,7 +99,7 @@ class CoordinateFrame(object):
         else:
             return ""
         '''
-        fmt = "<{0}({1}, axes_order={2}, reference_frame={3}, reference_position{4},"
+        fmt = "<{0}({1}, axes_order={2}, reference_frame={3}, reference_position{4}," \
         "unit={5}, axes_names={6}, name={7})>".format(
             self.__class__.__name__, self.naxes, self.axes_order,
             self.reference_frame, self.reference_position, self.unit,
@@ -332,7 +332,6 @@ class CompositeFrame(CoordinateFrame):
 
 class Detector(BaseCoordinateFrame):
     default_representation = Cartesian2DRepresentation
-    reference_position = FrameAttribute(default='Local')
     frame_specific_representation_info = {
         'cartesian2d': [RepresentationMapping('x', 'x', u.pixel),
                         RepresentationMapping('y', 'y', u.pixel)]
@@ -354,10 +353,20 @@ class DetectorFrame(CoordinateFrame):
         axes_names={3}".format(self.axes_order, self.name, self.reference_position, self.axes_names)
         return fmt
 
+
+class Focal(BaseCoordinateFrame):
+    default_representation = Cartesian2DRepresentation
+    frame_specific_representation_info = {
+        'cartesian2d': [RepresentationMapping('x', 'x', u.pixel),
+                        RepresentationMapping('y', 'y', u.pixel)]
+        }
+
+
 class FocalPlaneFrame(CoordinateFrame):
     def __init__(self, reference_pixel=[0., 0.], unit=[u.pixel, u.pixel], name='focal_plane',
                  reference_position="Local", axes_names=None):
-        super(FocalPlaneFrame, self).__init__(2, reference_frame=Detector(), reference_position=reference_position, unit=unit, name=name, axes_names=axes_names)
+        super(FocalPlaneFrame, self).__init__(2, reference_frame=Focal(), reference_position=reference_position,
+                                              unit=unit, name=name, axes_names=axes_names)
         self._reference_pixel = reference_pixel
 
 

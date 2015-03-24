@@ -44,21 +44,25 @@ Given positions on the detector, the WCS computes positions
 on the sky. To convert a pixel (x, y) = (1,2) to sky coordinates:
 
 
-  >>> sky_coord = nddata_image.wcs(1, 2)
-  >>> print sky_coord
-  <SkyCoord (ICRS): (ra, dec) in deg
-    (5.52509373, -72.05190053)>
+  >>> sky = nddata_image.wcs(1, 2)
+  >>> print sky
+  (5.52509373, -72.05190053)
+
 
 If available, the backward transform can be evaluated using the :meth:`~gwcs.wcs.WCS.invert` method.
 
 
-  >>> nddata_image.wcs.invert(sky_coord.ra.value, sky_coord.dec.value)
+  >>> nddata_image.wcs.invert(*sky)
   (1.0000000938994162, 2.000000047071694)
 
-The forward transform returns a SkyCoord object which can be used to transform to other
-standard coordinate systems transparently using the `astropy.coordinates` framework.
+The result of the forward transform can be turned into a SkyCoord object which then can be used to
+transform to other standard coordinate systems using the `astropy.coordinates` framework.
 
 
+  >>> sky_coord = nddata_image.wcs.output_frame.world_coordinates(*sky)
+  >>> print sky_coord
+  <SkyCoord (ICRS): (ra, dec) in deg
+  (5.52509373, -72.05190053)>
   >>> sky_coord.transform_to('galactic')
   <SkyCoord (Galactic): (l, b) in deg
       (306.11529787, -44.89457423)>
@@ -70,11 +74,15 @@ transformations.
 
 Let part of the transform in the above example include distortion correction which
 converts positions on the detector to positions in a system associated with the focal
-plane of the telescope (called ``FocalPlaneFrame``). There are several ways to perform
-the transformation from detector to focal plane coordinates.
-
+plane of the telescope (called ``FocalPlaneFrame``). There are a couple of ways to perform
+the transformation from detector to focal plane coordinates - The :meth:`~gwcs.wcs.transform`
+method
 
   >>> nddata_image.wcs.transform('detector', 'focal_plane', 1, 2)
+
+or in two steps, getting the transform first using :meth:`~gwcs.wcs.get_transform`
+and then evaluating it:
+
   >>> distoriton = nddata_image.wcs.get_transform('detector', 'focal_plane')
   >>> distortion(1, 2)
 

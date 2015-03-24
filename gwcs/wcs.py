@@ -188,11 +188,6 @@ class WCS(object):
             frame_obj = frame
         return name, frame_obj
 
-    @property
-    def name(self):
-        """Return the name for this WCS."""
-        return self._name
-
 
     def __call__(self, *args):
         """
@@ -204,10 +199,6 @@ class WCS(object):
         """
         if self.forward_transform is not None:
             return self.forward_transform(*args)
-        #if self.output_coordinate_system is not None:
-            #return self.output_coordinate_system.world_coordinates(*result)
-        #else:
-            #return result
 
     def invert(self, *args, **kwargs):
         """
@@ -312,6 +303,11 @@ class WCS(object):
         else:
             return self._input_frame
 
+    @property
+    def name(self):
+        """Return the name for this WCS."""
+        return self._name
+
     @name.setter
     def name(self, value):
         """Set the name for the WCS."""
@@ -344,7 +340,8 @@ class WCS(object):
                                 [0.5, naxis2 + 0.5],
                                 [naxis1 + 0.5, naxis2 + 0.5],
                                 [naxis1 + 0.5, 0.5]], dtype = np.float64)
-        return self.__call__(corners[:,0], corners[:,1])
+        result =  self.__call__(corners[:,0], corners[:,1])
+        return np.asarray(result).T
         #result = np.vstack(self.__call__(corners[:,0], corners[:,1])).T
         #try:
             #return self.output_coordinate_system.world_coordinates(result[:,0], result[:,1])

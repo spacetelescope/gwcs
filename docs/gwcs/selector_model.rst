@@ -34,12 +34,11 @@ Next we need to create the output coordinate system - a `~gwcs.coordinate_frames
 
 The WCS for the IFU observation is created by passing the input and output coordinate systems and the transform between them. To transform from pixel to world coordinates we simply call the WCS object. ``x`` and ``y`` below are coordinates in the detector pixel space.
 
-  >>> wifu = gwcs.WCS(input_coordinate_system='detector', output_coordinate_system=output_system, forward_transform=forward)
+  >>> wifu = gwcs.WCS(input_frame='detector', output_frame=output_system, forward_transform=forward)
   >>> x, y = 1, 2
   >>> result = wifu(x, y)
   >>> print result
-  (<SkyCoord (ICRS): (ra, dec) in deg (5.63043056, -72.05454345)>,
-  <Wavelength Coordinate (reference_position=BARYCENTER): (lam) in m (0.00000344)>)
+  (5.63043056, -72.05454345, 0.00000344)
 
 
 Because the transform is an instance of `~gwcs.selector.RegionsSelectorModel`, we can
@@ -47,10 +46,9 @@ pass a ``region_id`` to the WCS function and perform the transform for a particu
 For example, to transform coordinates in slice 4:
 
   >>> transform(x, y, 4)
-  (<SkyCoord (ICRS): (ra, dec) in deg (5.63024693, -72.05452058)>,
-  <Wavelength Coordinate (reference_position=BARYCENTER): (lam) in m (0.00000344)>)
+  (5.63024693, -72.05452058, 0.00000344)
 
-Note that ``x``, ``y`` now are pixels in the coordinate system associated with the 4th slice,
+Note that ``x``and ``y`` are now pixels in the coordinate system associated with the 4th slice,
 not the entire detector.
 
 
