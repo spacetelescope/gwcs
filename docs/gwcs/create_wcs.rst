@@ -61,9 +61,9 @@ by CRPIX, a rotation by the PC matrix, a tangent deprojection and a sky rotation
 `astropy.modeling <http://docs.astropy.org/en/stable/modeling>`__ this can be written as
 
   >>> shift = models.Shift(CRPIX1, name="x_shift") & models.Shift(CRPIX2, name="y_shift")
-  >>> plane_rotation = models.AffineTransformation2D(matrix=np.array([[PC1_1, PC1_2], [PC2_1], PC2_2]])
+  >>> plane_rotation = models.AffineTransformation2D(matrix=np.array([[PC1_1, PC1_2], [PC2_1, PC2_2]]))
   >>> tangent = models.Pix2Sky_TAN()
-  >>> sky_roations = models.RotateNative2Celestial(CRVAL1, CRVAL2, LONPOLE)
+  >>> sky_rotation = models.RotateNative2Celestial(CRVAL1, CRVAL2, LONPOLE)
 
 Chaining these models into one compound models creates the total transformation from focal plane to sky
 
@@ -73,11 +73,10 @@ Chaining these models into one compound models creates the total transformation 
 Create the coordinate systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  >>> icrs = coordinates.ICRS()
+  >>> icrs = coord.ICRS()
   >>> final_system = gwcs.CelestialFrame(reference_frame=icrs)
   >>> final_system.unit
-  <CelestialFrame(reference_frame=<ICRS Frame>, axes_order=(0, 1), reference_position=Barycenter,
-  unit=[Unit("deg"), Unit("deg")], name="ICRS")>
+  [Unit("deg"), Unit("deg")]
   >>> start_system = gwcs.DetectorFrame()
   >>> print start_system.unit
   [Unit("pix"), Unit("pix")]
@@ -91,18 +90,30 @@ The easiest way to create the WCS object is to pass the total transform and the 
 The default value for th input coordinate system is `~gwcs.cooridnate_frames.DetectorFrame`.
 
   >>> total_transform = distortion | focal2sky
-  >>> image_wcs = gwcs.WCS(forward_transform=total_transform, output_coordinate_system=final_system)
+  >>> image_wcs = gwcs.WCS(forward_transform=total_transform, output_frame=final_system)
 
-A slightly more detailed approach gives some more control over the transformations:
+It is possible to have more control over the transformations by passing a list or (frame, transform)
+tuple to `forward_transform`.
 
-  >>> image_wcs = gwcs.WCS(output_coordinate_system=final_system)
-  >>> image_wcs.add_transform(w.input_coordinate_system, focal_plane, distortion)
-  >>> image_wcs.add_transform(focal_plane, w.output_coordinate_system, focal2sky)
+  >>> pipeline = [(start_system, distortion),
+                  (focal_plane, focal2sky),
+                  (final_system, None)
+                  ]
+  >>> image_wcs = gwcs.WCS(output_frame=final_system, forward_transform=pipeline)
+  >>> print image_wcs.available_frames
+  {'icrs': <CelestialFrame(reference_frame=<ICRS Frame>, axes_order=(0, 1), unit=[Unit("deg"), Unit("deg")], name=icrs)>,
+  'detector': <DetectorFrame(axes_order=(0, 1), name=detector, reference_position=Local, axes_names=['x', 'y'],
+  'focal_plane': <FocalPlaneFrame(2, axes_order=(0, 1), reference_frame=<Focal Frame>, unit=[Unit("pix"), Unit("pix")]>
+  }
 
 
-A spectral example
--------------------
+Transform Coordinates from detector to world coordinate system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  >>> image_wcs(1, 2)
+  (5.736718396223817, -72.057214400243)
+  >>> image_wcs.transform(image_wcs.input_frame, image_wcs.output_frame, 1, 2)
+  (5.526473706453078, -72.05173013244713)
 
 
 

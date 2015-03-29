@@ -2,12 +2,14 @@ from __future__ import division, print_function
 
 import copy
 import numpy as np
+import warnings
 
 from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
 
-#from .transforms_asdf import transform_from_json, CompositeSpectralWCS
-from .util import UnknownRegionError
+
+from .util import RegionError
+
 
 class SelectorModel(Model):
     """
@@ -21,7 +23,6 @@ class SelectorModel(Model):
 
     linear = False
     fittable = False
-    #standard_broadcasting = False
 
     def __init__(self, labels, transforms):
         # labels should be unique
@@ -148,8 +149,9 @@ class RegionsSelector(SelectorModel):
 
         unique_regions = self.get_unique_regions(result)
         if unique_regions == []:
-            warnings.warning('There are no regions with valid transforms.')
-            return
+            #warnings.warning('There are no regions with valid transforms.')
+            #return
+            raise RegionError("The input positions are not inside any region.")
         nout = self._selector[unique_regions[0]].n_outputs
         output_arrays = [np.zeros(self.regions_mask.shape, dtype=np.float) for i in range(nout)]
         for ar in output_arrays:
@@ -177,7 +179,7 @@ class RegionsSelector(SelectorModel):
             try:
                 tr = self._selector[label]
             except KeyError:
-                raise UnknownRegionError("Region {0} does not exist".format(label))
+                raise RegionError("Region {0} does not exist".format(label))
             evaluate = tr.evaluate
             parameters = tr._param_sets(raw=True)
             inputs = inputs[:2]

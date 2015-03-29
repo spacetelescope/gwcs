@@ -37,7 +37,7 @@ class ModelDimensionalityError(Exception):
         super(ModelDimensionalityError, self).__init__()
 
 
-class UnknownRegionError(Exception):
+class RegionError(Exception):
     def __init__(self, message):
         self.message = message
         super(UnknownRegionError, self).__init__()
