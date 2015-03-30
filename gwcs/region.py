@@ -2,9 +2,11 @@
 from __future__ import division, print_function
 
 import abc
-from collections import OrderedDict
 import os
 import numpy as np
+
+from astropy.utils import OrderedDict
+
 
 class Region(object):
     """
