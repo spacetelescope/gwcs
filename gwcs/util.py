@@ -40,7 +40,7 @@ class ModelDimensionalityError(Exception):
 class RegionError(Exception):
     def __init__(self, message):
         self.message = message
-        super(UnknownRegionError, self).__init__()
+        super(RegionError, self).__init__()
 
 
 class CoordinateFrameError(Exception):
