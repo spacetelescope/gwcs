@@ -9,6 +9,7 @@ from astropy.utils import OrderedDict
 
 
 class Region(object):
+
     """
     Base class for regions.
 
@@ -60,6 +61,7 @@ class Region(object):
         """
 
 class Polygon(Region):
+
     """
     Represents a 2D polygon region with multiple vertices.
 
@@ -76,6 +78,7 @@ class Polygon(Region):
         Coordinate frame in which the polygon is defined.
 
     """
+
     def __init__(self, rid, vertices, coord_frame="detector"):
         assert len(vertices) >= 4, ("Expected vertices to be "
                                     "a list of minimum 4 tuples (x,y)")
@@ -83,18 +86,18 @@ class Polygon(Region):
 
         self._vertices = np.asarray(vertices)
         self._bbox = self._get_bounding_box()
-        self._scan_line_range=range(self._bbox[1], self._bbox[3]+self._bbox[1]+1)
-        #constructs a Global Edge Table (GET) in bbox coordinates
+        self._scan_line_range = range(self._bbox[1], self._bbox[3]+self._bbox[1]+1)
+        # constructs a Global Edge Table (GET) in bbox coordinates
         self._GET = self._construct_ordered_GET()
 
     def _get_bounding_box(self):
-        x = self._vertices[:,0].min()
-        y = self._vertices[:,1].min()
-        w = self._vertices[:,0].max() - x
-        h = self._vertices[:,1].max() - y
+        x = self._vertices[:, 0].min()
+        y = self._vertices[:, 1].min()
+        w = self._vertices[:, 0].max() - x
+        h = self._vertices[:, 1].max() - y
         return (x, y, w, h)
 
-    def  _construct_ordered_GET(self):
+    def _construct_ordered_GET(self):
         """
         Construct a Global Edge Table (GET)
 
@@ -112,7 +115,7 @@ class Polygon(Region):
         # with these vertices
         edges = self.get_edges()
         GET = OrderedDict.fromkeys(self._scan_line_range)
-        ymin=np.asarray([e._ymin for e in edges])
+        ymin = np.asarray([e._ymin for e in edges])
         for i in self._scan_line_range:
             ymin_ind = (ymin == i).nonzero()[0]
             if ymin_ind.any():
@@ -154,21 +157,21 @@ class Polygon(Region):
           5. Set elements between pairs of X in the AET to the Edge's ID
 
         """
-        ##TODO: 1.This algorithm does not mark pixels in the top row and left most column.
-        ## Pad the initial pixel description on top and left with 1 px to prevent this.
-        ## 2. Currently it uses intersection of the scan line with edges. If this is
-        ## too slow it should use the 1/m increment (replace 3 above) (or the increment
-        ## should be removed from the GET entry).
+        # TODO: 1.This algorithm does not mark pixels in the top row and left most column.
+        # Pad the initial pixel description on top and left with 1 px to prevent this.
+        # 2. Currently it uses intersection of the scan line with edges. If this is
+        # too slow it should use the 1/m increment (replace 3 above) (or the increment
+        # should be removed from the GET entry).
         y = np.min(self._GET.keys())
         AET = []
         scline = self._scan_line_range[-1]
-        while y <=scline:
+        while y <= scline:
             AET = self.update_AET(y, AET)
             scan_line = Edge('scan_line', start=[self._bbox[0], y],
-                                            stop=[self._bbox[0]+self._bbox[2], y])
+                             stop=[self._bbox[0]+self._bbox[2], y])
             x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
-            xnew=np.sort(x)
-            for i,j in zip(xnew[::2], xnew[1::2]):
+            xnew = np.asarray(np.sort(x), dtype=np.int)
+            for i, j in zip(xnew[::2], xnew[1::2]):
                 data[y][i:j+1] = self._rid
             y = y+1
         return data
@@ -196,14 +199,15 @@ class Polygon(Region):
 
     def __contains__(self, px):
         """even-odd algorithm or smth else better sould be used"""
-        minx = self._vertices[:,0].min()
-        maxx = self._vertices[:,0].max()
-        miny = self._vertices[:,1].min()
-        maxy = self._vertices[:,1].max()
+        minx = self._vertices[:, 0].min()
+        maxx = self._vertices[:, 0].max()
+        miny = self._vertices[:, 1].min()
+        maxy = self._vertices[:, 1].max()
         return px[0] >= self._bbox[0] and px[0] <= self._bbox[0]+self._bbox[2] and \
-               px[1] >=self._bbox[1] and px[1] <=self._bbox[1]+self._bbox[3]
+            px[1] >= self._bbox[1] and px[1] <= self._bbox[1]+self._bbox[3]
 
 class Edge(object):
+
     """
     Edge representation.
 
@@ -213,15 +217,16 @@ class Edge(object):
     [ymax, x_at_ymin, delta_x/delta_y]
 
     """
+
     def __init__(self, name=None, start=None, stop=None, next=None):
         self._start = None
         if start is not None:
             self._start = np.asarray(start)
-        self._name= name
+        self._name = name
         self._stop = stop
         if stop is not None:
             self._stop = np.asarray(stop)
-        self._next=next
+        self._next = next
 
         if self._stop is not None and self._start is not None:
             if self._start[1] < self._stop[1]:
@@ -268,10 +273,11 @@ class Edge(object):
             entry = None
         else:
             earr = np.asarray([self._start, self._stop])
-            if np.diff(earr[:,1]).item() == 0:
+            if np.diff(earr[:, 1]).item() == 0:
                 return None
             else:
-                entry=[self._ymax, self._yminx, (np.diff(earr[:,0]) / np.diff(earr[:,1])).item(), None]
+                entry = [self._ymax, self._yminx,
+                         (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(), None]
         return entry
 
     def compute_AET_entry(self, edge):
@@ -288,7 +294,7 @@ class Edge(object):
         fmt = ""
         if self._name is not None:
             fmt += self._name
-            next=self.next
+            next = self.next
             while next is not None:
                 fmt += "-->"
                 fmt += next._name
@@ -323,4 +329,3 @@ class Edge(object):
             return False
         else:
             return True
-

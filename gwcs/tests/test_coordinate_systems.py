@@ -4,13 +4,13 @@ from astropy import coordinates as coo
 from .. import coordinate_frames as cf
 from .. import spectral_builtin_frames
 
-icrs=coo.ICRS()
+icrs = coo.ICRS()
 fk5 = coo.FK5()
 cel1 = cf.CelestialFrame(icrs)
 cel2 = cf.CelestialFrame(fk5)
 
-freq=spectral_builtin_frames.Frequency()
-wave=spectral_builtin_frames.Wavelength()
+freq = spectral_builtin_frames.Frequency()
+wave = spectral_builtin_frames.Wavelength()
 spec1 = cf.SpectralFrame(freq)
 spec2 = cf.SpectralFrame(wave)
 

@@ -27,6 +27,7 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
 
 
 class CoordinateFrame(object):
+
     """
     Base class for CoordinateFrames
 
@@ -47,6 +48,7 @@ class CoordinateFrame(object):
     name : str
         Name of this frame.
     """
+
     def __init__(self, naxes, axes_order=(0, 1), reference_frame=None, reference_position=None,
                  unit=None, axes_names=None, name=None):
         """ Initialize a frame"""
@@ -100,10 +102,10 @@ class CoordinateFrame(object):
             return ""
         '''
         fmt = "<{0}({1}, axes_order={2}, reference_frame={3}, reference_position{4}," \
-        "unit={5}, axes_names={6}, name={7})>".format(
-            self.__class__.__name__, self.naxes, self.axes_order,
-            self.reference_frame, self.reference_position, self.unit,
-            self.axes_names, self.name)
+            "unit={5}, axes_names={6}, name={7})>".format(
+                self.__class__.__name__, self.naxes, self.axes_order,
+                self.reference_frame, self.reference_position, self.unit,
+                self.axes_names, self.name)
         return fmt
 
     def __str__(self):
@@ -158,10 +160,8 @@ class CoordinateFrame(object):
         raise NotImplementedError("Subclasses may implement this")
 
 
-
-
-
 class CelestialFrame(CoordinateFrame):
+
     """
     Celestial Frame Representation
 
@@ -184,7 +184,7 @@ class CelestialFrame(CoordinateFrame):
         if reference_frame.name.upper() in coord.builtin_frames.__all__:
             axes_names = reference_frame.representation_component_names.keys()[:2]
         super(CelestialFrame, self).__init__(naxes=2, reference_frame=reference_frame,
-                                             unit=unit, axes_order= axes_order,
+                                             unit=unit, axes_order=axes_order,
                                              reference_position=reference_position,
                                              axes_names=axes_names, name=name)
 
@@ -203,10 +203,9 @@ class CelestialFrame(CoordinateFrame):
 
         fmt = "<CelestialFrame(reference_frame={0}, axes_order={1}, reference_position={2}, \
         unit={3}, name={4})>".format(
-                                 self.reference_frame, self.axes_order,
-                                 self.reference_position, self.unit, self.name)
+            self.reference_frame, self.axes_order,
+            self.reference_position, self.unit, self.name)
         return fmt
-
 
     def transform_to(self, lat, lon, other):
         """
@@ -223,6 +222,7 @@ class CelestialFrame(CoordinateFrame):
 
 
 class SpectralFrame(CoordinateFrame):
+
     """
     Represents Spectral Frame
 
@@ -278,6 +278,7 @@ class SpectralFrame(CoordinateFrame):
 
 
 class CompositeFrame(CoordinateFrame):
+
     """
     Represents one or more frames.
 
@@ -289,6 +290,7 @@ class CompositeFrame(CoordinateFrame):
         Name for this frame.
 
     """
+
     def __init__(self, frames, name=""):
         """
         naxes, axes_order=(0, 1), reference_frame=None, reference_position=None,
@@ -325,7 +327,7 @@ class CompositeFrame(CoordinateFrame):
         result = ()
         n = 0
         for frame in self.frames:
-            result += (frame.world_coordinates(*args[n : frame.naxes + n]), )
+            result += (frame.world_coordinates(*args[n: frame.naxes + n]), )
             n += frame.naxes
         return result
 
@@ -335,13 +337,15 @@ class Detector(BaseCoordinateFrame):
     frame_specific_representation_info = {
         'cartesian2d': [RepresentationMapping('x', 'x', u.pixel),
                         RepresentationMapping('y', 'y', u.pixel)]
-        }
+    }
 
 
 class DetectorFrame(CoordinateFrame):
+
     """
     Represents a Cartesian coordinate system on a detector.
     """
+
     def __init__(self, axes_order=(0, 1), name='detector', reference_position='Local'):
         axes_names = ['x', 'y']
         super(DetectorFrame, self).__init__(2, name=name, axes_names=axes_names,
@@ -359,10 +363,11 @@ class Focal(BaseCoordinateFrame):
     frame_specific_representation_info = {
         'cartesian2d': [RepresentationMapping('x', 'x', u.pixel),
                         RepresentationMapping('y', 'y', u.pixel)]
-        }
+    }
 
 
 class FocalPlaneFrame(CoordinateFrame):
+
     def __init__(self, reference_pixel=[0., 0.], unit=[u.pixel, u.pixel], name='focal_plane',
                  reference_position="Local", axes_names=None):
         super(FocalPlaneFrame, self).__init__(2, reference_frame=Focal(), reference_position=reference_position,

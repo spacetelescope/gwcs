@@ -36,6 +36,7 @@ def _toindex(value):
 
 
 class SelectorMask(Model):
+
     """
     A mask model to be used with the `~gwcs.selector.RegionsSelector` transform.
 
@@ -55,7 +56,6 @@ class SelectorMask(Model):
 
     linear = False
     fittable = False
-
 
     def __init__(self, mask):
         if mask.dtype.type is not np.string_:
@@ -113,20 +113,17 @@ class SelectorMask(Model):
         mask = region.create_regions_mask_from_json((300,300), 'regions.json',
         'region_schema.json')
         """
-        if isinstance(regions.keys()[0], six.string_types):
-            np_dtype = np.string_
-        else:
-            np_dtype = np.int32
-        mask = np.zeros(mask_shape, dtype=np_dtype)
+        labels = np.array(regions.keys())
+        mask = np.zeros(mask_shape, dtype=labels.dtype)
 
         for rid, vert in regions.iteritems():
-            pol = region.Polygon(rid, vert)#, 'Cartesian')
+            pol = region.Polygon(rid, vert)
             mask = pol.scan(mask)
         return cls(mask)
 
 
-
 class RegionsSelector(Model):
+
     """
     A model which maps regions to their corresponding transforms.
     It evaluates the model matching inputs to the correct region/transform.
@@ -209,7 +206,7 @@ class RegionsSelector(Model):
         Sets one of the inputs and returns a transform associated with it.
         """
         def _eval_input(x, y):
-            return self._selector[rid]( x, y)
+            return self._selector[rid](x, y)
         return _eval_input
 
     def evaluate(self, x, y):
@@ -229,7 +226,8 @@ class RegionsSelector(Model):
         if (rids == self.mask.no_transform_value).all():
             raise RegionError("The input positions are not inside any region.")
 
-        # Create output arrays and set any pixels not withing regions to  "undefined_transform_value"
+        # Create output arrays and set any pixels not withing regions to
+        # "undefined_transform_value"
         no_trans_ind = (rids == self.mask.no_transform_value).nonzero()
         outputs = [np.empty(rids.shape) for n in range(self.n_outputs)]
         for out in outputs:
