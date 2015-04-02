@@ -58,7 +58,7 @@ class SelectorMask(Model):
     fittable = False
 
     def __init__(self, mask):
-        if mask.dtype.type is not np.string_:
+        if mask.dtype.type is not np.str_:
             self._mask = np.asanyarray(mask, dtype=np.int)
         else:
             self._mask = mask
@@ -119,6 +119,7 @@ class SelectorMask(Model):
         for rid, vert in regions.iteritems():
             pol = region.Polygon(rid, vert)
             mask = pol.scan(mask)
+
         return cls(mask)
 
 
