@@ -42,12 +42,13 @@ def polygon1(shape=(9, 9)):
     ar[1, 2] = 1
     ar[2][2:4] = 1
     ar[3][1:4] = 1
-    ar[4][:4] = 1
-    ar[5][1:4] = 1
-    ar[6][2:7] = 1
-    ar[7][3:6] = 1
-    # ar[8][3:4] =1 ##need to include this in the future if padding top and left
+    ar[4][:4] =1
+    ar[5][1:4] =1
+    ar[6][2:7] =1
+    ar[7][3:6] =1
+    #ar[8][3:4] =1 ##need to include this in the future if padding top and left
     return ar
+
 
 def two_polygons():
     ar = np.zeros((301, 301))
@@ -76,13 +77,4 @@ def test_create_mask_two_polygons():
                 2: [[10, 0], [30, 0], [30, 30], [10, 30], [10, 0]]}
     mask = selector.SelectorMask.from_vertices((301, 301), vertices)
     pol2 = two_polygons()
-    #pol2 = np.zeros((301, 301))
-    #pol2[1, 2] = 1
-    #pol2[2][2:4] = 1
-    #pol2[3][1:4] = 1
-    #pol2[4][:4] = 1
-    #pol2[5][1:4] = 1
-    #pol2[6][2:7] = 1
-    #pol2[7][3:6] = 1
-    #pol2[:30, 10:31] = 2
     utils.assert_equal(mask.mask, pol2)

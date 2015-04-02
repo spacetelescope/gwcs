@@ -59,7 +59,7 @@ class SelectorMask(Model):
 
     def __init__(self, mask):
         if mask.dtype.type is not np.string_:
-            self._mask = np.asarray(mask, dtype=np.int)
+            self._mask = np.asanyarray(mask, dtype=np.int)
         else:
             self._mask = mask
         if mask.dtype.type is np.string_:
