@@ -316,6 +316,27 @@ class WCS(object):
         """Set the name for the WCS."""
         self._name = value
 
+    def __str__(self):
+        from astropy.table import Table
+        col1 = [item[0] for item in self._pipeline]
+        col2 = []
+        for item in self._pipeline:
+            model = item[1]
+            if model is not None:
+                if model.name != "":
+                    col2.append(model.name)
+                else:
+                    col2.append(model.__class__.__name__)
+            else:
+                col2.append(None)
+        t = Table([col1, col2], names=['From',  'Transform'])
+        return str(t)
+
+    def __repr__(self):
+        fmt = "<WCS(output_frame={0}, input_frame={1}, forward_transform={2})>".format(
+            self.output_frame, self.input_frame, self.forward_transform)
+        return fmt
+
     def footprint(self, axes, center=True):
         """
         Return the footprint of the observation in world coordinates.
