@@ -19,6 +19,7 @@ __all__ = ['WCS']
 
 
 class WCS(object):
+
     """
     Basic WCS class.
 
@@ -35,7 +36,8 @@ class WCS(object):
     name : str
         a name for this WCS
     """
-    def __init__(self, output_frame,  input_frame='detector',
+
+    def __init__(self, output_frame, input_frame='detector',
                  forward_transform=None, name=""):
         self._coord_frames = {}
         self._pipeline = []
@@ -82,10 +84,10 @@ class WCS(object):
         from_name, from_obj = self._get_frame_name(from_frame)
         to_name, to_obj = self._get_frame_name(to_frame)
 
-        #if from_name not in self.available_frames:
-            #raise ValueError("Frame {0} is not in the available frames".format(from_frame))
-        #if to_name not in self.available_frames:
-            #raise ValueError("Frame {0} is not in the available frames".format(to_frame))
+        # if from_name not in self.available_frames:
+        #raise ValueError("Frame {0} is not in the available frames".format(from_frame))
+        # if to_name not in self.available_frames:
+        #raise ValueError("Frame {0} is not in the available frames".format(to_frame))
         try:
             from_ind = self._get_frame_index(from_name)
         except ValueError:
@@ -94,8 +96,8 @@ class WCS(object):
             to_ind = self._get_frame_index(to_name)
         except ValueError:
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_name))
-        transforms = np.array(self._pipeline[from_ind : to_ind])[:,1].tolist()
-        return functools.reduce(lambda x, y: x | y , transforms)
+        transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
+        return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
         """
@@ -114,9 +116,11 @@ class WCS(object):
         to_name, to_obj = self._get_frame_name(to_frame)
         if not self._pipeline:
             if from_name != self._input_frame:
-                raise CoordinateFrameError("Expected 'from_frame' to be {0}".format(self._input_frame))
+                raise CoordinateFrameError(
+                    "Expected 'from_frame' to be {0}".format(self._input_frame))
             if to_frame != self._output_frame:
-                raise CoordinateFrameError("Expected 'to_frame' to be {0}".format(self._output_frame))
+                raise CoordinateFrameError(
+                    "Expected 'to_frame' to be {0}".format(self._output_frame))
         try:
             from_ind = self._get_frame_index(from_name)
         except ValueError:
@@ -162,7 +166,7 @@ class WCS(object):
         """
         Return the index in the pipeline where this frame is locate.
         """
-        return np.asarray(self._pipeline)[:,0].tolist().index(frame)
+        return np.asarray(self._pipeline)[:, 0].tolist().index(frame)
 
     def _get_frame_name(self, frame):
         """
@@ -187,7 +191,6 @@ class WCS(object):
             name = frame.name
             frame_obj = frame
         return name, frame_obj
-
 
     def __call__(self, *args):
         """
@@ -329,22 +332,21 @@ class WCS(object):
         coord : (4, 2) array of (*x*, *y*) coordinates.
             The order is counter-clockwise starting with the bottom left corner.
         """
-        naxis1, naxis2 = axes # extend this to more than 2 axes
+        naxis1, naxis2 = axes  # extend this to more than 2 axes
         if center == True:
             corners = np.array([[1, 1],
                                 [1, naxis2],
                                 [naxis1, naxis2],
-                                [naxis1, 1]], dtype = np.float64)
+                                [naxis1, 1]], dtype=np.float64)
         else:
             corners = np.array([[0.5, 0.5],
                                 [0.5, naxis2 + 0.5],
                                 [naxis1 + 0.5, naxis2 + 0.5],
-                                [naxis1 + 0.5, 0.5]], dtype = np.float64)
-        result =  self.__call__(corners[:,0], corners[:,1])
+                                [naxis1 + 0.5, 0.5]], dtype=np.float64)
+        result = self.__call__(corners[:, 0], corners[:, 1])
         return np.asarray(result).T
         #result = np.vstack(self.__call__(corners[:,0], corners[:,1])).T
-        #try:
-            #return self.output_coordinate_system.world_coordinates(result[:,0], result[:,1])
-        #except:
-            #return result
-
+        # try:
+        # return self.output_coordinate_system.world_coordinates(result[:,0], result[:,1])
+        # except:
+        # return result

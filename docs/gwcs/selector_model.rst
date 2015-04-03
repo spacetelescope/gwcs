@@ -17,9 +17,9 @@ The image above shows the projection of the 6 slits on the detector and represen
 
 Assuming the transforms from pixel to world coordinates for each slit are named "p2w_#", where "#" is the slit label, the pixel to world transform for the entire IFU can be created:
 
-  >>> slit_labels = [1, 2, 3, 4, 5, 6]
-  >>> slit_transforms = [p2w_1, p2w_2, p2w_3, p2w_4, p2w_5, p2w_6]
-  >>> forward = gwcs.RegionsSelector(mask, labels=slit_labels, transforms=slit_transforms, undefined_transform_value=np.nan)
+  >>> mapping = {1: p2w_1, 2: p2w_2, 3: p2w_3, 4: p2w_4, 5: p2w_5, 6: p2w_6]
+  >>> mask = selector.SelectorMask(masked_array)
+  >>> forward = gwcs.RegionsSelector(inputs=['x','y'], outputs=['ra', 'dec', 'lam'], selector=mapping, mask=mask, undefined_transform_value=np.nan)
 
 We have chosen in this example to set the world coordinate value for pixels which do not belong to any slit to NaN but any number is an acceptable value.
 

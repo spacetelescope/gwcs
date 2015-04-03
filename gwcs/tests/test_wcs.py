@@ -23,19 +23,20 @@ def test_create_wcs():
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m)
     assert(gw1._input_frame == gw2._input_frame == gw3._input_frame == 'detector')
     assert(gw1._output_frame == gw2._output_frame == gw3._output_frame == 'icrs')
-    assert(gw1.forward_transform.__class__ == gw2.forward_transform.__class__ == gw3.forward_transform.__class__ == m.__class__)
+    assert(gw1.forward_transform.__class__ == gw2.forward_transform.__class__ ==
+           gw3.forward_transform.__class__ == m.__class__)
     assert(gw1._coord_frames == gw2._coord_frames == {'detector': None, 'icrs': None})
 
 
 def test_pipeline_init():
     gw = wcs.WCS(output_frame='icrs')
     assert gw._pipeline == [('detector', None), ('icrs', None)]
-    assert(gw.available_frames == {'detector' : None, 'icrs': None})
+    assert(gw.available_frames == {'detector': None, 'icrs': None})
     icrs = cf.CelestialFrame(coord.ICRS())
     det = cf.DetectorFrame()
     gw = wcs.WCS(output_frame=icrs, input_frame=det)
     assert gw._pipeline == [('detector', None), ('icrs', None)]
-    assert(gw.available_frames == {'detector' : det, 'icrs': icrs})
+    assert(gw.available_frames == {'detector': det, 'icrs': icrs})
 
 
 def test_insert_transform():
@@ -47,9 +48,8 @@ def test_insert_transform():
     assert(gw.forward_transform(1.2) == (m1 | m2)(1.2))
 
 
-
-
 class TestImaging(object):
+
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
         self.fitsw = astwcs.WCS(hdr)
@@ -59,7 +59,8 @@ class TestImaging(object):
         b_order = b_coeff.pop('B_ORDER')
 
         crpix = [hdr['CRPIX1'], hdr['CRPIX2']]
-        distortion = models.SIP(crpix, a_order, b_order, a_coeff, b_coeff, name='sip_distorion') + models.Identity(2)
+        distortion = models.SIP(
+            crpix, a_order, b_order, a_coeff, b_coeff, name='sip_distorion') + models.Identity(2)
 
         cdmat = np.array([[hdr['CD1_1'], hdr['CD1_2']], [hdr['CD2_1'], hdr['CD2_2']]])
         aff = models.AffineTransformation2D(matrix=cdmat, name='rotation')
@@ -71,7 +72,7 @@ class TestImaging(object):
 
         phi = hdr['CRVAL1']
         lon = hdr['CRVAL2']
-        theta= 180
+        theta = 180
         n2c = models.RotateNative2Celestial(phi, lon, theta, name='sky_rotation')
 
         tan = models.Pix2Sky_TAN(name='tangent_projection')
@@ -82,14 +83,13 @@ class TestImaging(object):
                     (sky_cs, None)
                     ]
 
-        self.wcs = wcs.WCS(input_frame = 'detector',
-                     output_frame = sky_cs,
-                     forward_transform = pipeline)
+        self.wcs = wcs.WCS(input_frame='detector',
+                           output_frame=sky_cs,
+                           forward_transform=pipeline)
         nx, ny = (5, 2)
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
-
 
     def test_forward(self):
         sky_coord = self.wcs(self.xv, self.yv)
@@ -117,9 +117,7 @@ class TestImaging(object):
     def test_units(self):
         assert(self.wcs.unit == [u.degree, u.degree])
 
-
     def test_get_transform(self):
         with pytest.raises(wcs.CoordinateFrameError):
             assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names ==
                    self.wcs.forward_transform[1:].submodel_names)
-

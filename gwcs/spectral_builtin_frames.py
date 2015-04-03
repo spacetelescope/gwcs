@@ -18,7 +18,7 @@ class Wavelength(BaseCoordinateFrame):
     reference_position = FrameAttribute(default='BARYCENTER')
     frame_specific_representation_info = {
         'cartesian1d': [RepresentationMapping('x', 'lam', 'm')]
-        }
+    }
 
 
 class Frequency(BaseCoordinateFrame):
@@ -26,7 +26,7 @@ class Frequency(BaseCoordinateFrame):
     reference_position = FrameAttribute(default='BARYCENTER')
     frame_specific_representation_info = {
         'cartesian1d': [RepresentationMapping('x', 'freq', 'Hz')]
-        }
+    }
 
 
 class OpticalVelocity(BaseCoordinateFrame):
@@ -35,7 +35,7 @@ class OpticalVelocity(BaseCoordinateFrame):
     rest = FrameAttribute()
     frame_specific_representation_info = {
         'cartesian1d': [RepresentationMapping('x', 'v', 'm/s')]
-        }
+    }
 
 
 @frame_transform_graph.transform(coo.FunctionTransform, Wavelength, Frequency)
@@ -56,5 +56,3 @@ def wave_to_velo(wavecoord, veloframe):
 @frame_transform_graph.transform(coo.FunctionTransform, Frequency, OpticalVelocity)
 def freq_to_velo(freqcoord, veloframe):
     return OpticalVelocity(freqcoord.f.to(veloframe.representation_component_units.values()[0], equivalencies=eq.doppler_optical(veloframe.rest)))
-
-

@@ -11,6 +11,7 @@ __all__ = ['Cartesian1DRepresentation', 'Cartesian2DRepresentation']
 
 
 class Cartesian1DRepresentation(BaseRepresentation):
+
     """
     Representation of a one dimensional cartesian coordinate.
 
@@ -42,14 +43,15 @@ class Cartesian1DRepresentation(BaseRepresentation):
         return self._x
 
     #@classmethod
-    #def from_cartesian(cls, other):
-        #return other
+    # def from_cartesian(cls, other):
+        # return other
 
-    #def to_cartesian(self):
-        #return self
+    # def to_cartesian(self):
+        # return self
 
 
 class Cartesian2DRepresentation(BaseRepresentation):
+
     """
     Representation of a two dimensional cartesian coordinate system
 
@@ -100,5 +102,3 @@ class Cartesian2DRepresentation(BaseRepresentation):
         The y component of the point(s).
         """
         return self._y
-
-
