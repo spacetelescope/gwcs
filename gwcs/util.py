@@ -1,8 +1,10 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
 Utility function for WCS
 
 """
-from __future__ import division, print_function
+from __future__ import absolute_import, division, unicode_literals, print_function
+
 
 import numpy as np
 from astropy.modeling.projections import projcodes

@@ -2,7 +2,7 @@
 """
 Test regions
 """
-from __future__ import division, print_function
+from __future__ import absolute_import, division, unicode_literals, print_function
 
 import numpy as np
 from numpy.testing import utils

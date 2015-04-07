@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import division, print_function
+from __future__ import absolute_import, division, unicode_literals, print_function
 
 import copy
 import numpy as np
@@ -58,7 +58,7 @@ class SelectorMask(Model):
     fittable = False
 
     def __init__(self, mask):
-        if mask.dtype.type is not np.str_:
+        if mask.dtype.type is not np.unicode_:
             self._mask = np.asanyarray(mask, dtype=np.int)
         else:
             self._mask = mask
@@ -295,3 +295,7 @@ class RegionsSelector(Model):
     def outputs(self):
         """The name(s) of the output(s) of the model."""
         return self._outputs
+
+    @property
+    def selector(self):
+        return self._selector

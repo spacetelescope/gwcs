@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import division, print_function
+from __future__ import absolute_import, division, unicode_literals, print_function
 
 import copy
 import functools
@@ -273,8 +273,8 @@ class WCS(object):
             If True, the new transform is inserted in the pipeline
             immediately after `frame`.
         """
-        name, from_fram_obj = self._get_frame_name(frame)
-        frame_ind = self._get_frame_index(frame)
+        name, _ = self._get_frame_name(frame)
+        frame_ind = self._get_frame_index(name)
         if not after:
             fr, current_transform = self._pipeline[frame_ind - 1]
             self._pipeline[frame_ind - 1] = (fr, current_transform | transform)

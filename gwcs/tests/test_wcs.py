@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import absolute_import, division, unicode_literals, print_function
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_allclose
