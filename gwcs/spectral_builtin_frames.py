@@ -50,9 +50,11 @@ def freq_to_wave(freqcoord, waveframe):
 
 @frame_transform_graph.transform(coo.FunctionTransform, Wavelength, OpticalVelocity)
 def wave_to_velo(wavecoord, veloframe):
-    return OpticalVelocity(wavecoord.lam.to(veloframe.representation_component_units.values()[0], equivalencies=eq.doppler_optical(veloframe.rest)))
+    wavelength = list(wavecoord.lam.to(list(veloframe.representation_component_units.values())))[0]
+    return OpticalVelocity(wavelength, equivalencies=eq.doppler_optical(veloframe.rest))
 
 
 @frame_transform_graph.transform(coo.FunctionTransform, Frequency, OpticalVelocity)
 def freq_to_velo(freqcoord, veloframe):
-    return OpticalVelocity(freqcoord.f.to(veloframe.representation_component_units.values()[0], equivalencies=eq.doppler_optical(veloframe.rest)))
+    wavelength = list(freqcoord.f.to(list(veloframe.representation_component_units.values())))[0]
+    return OpticalVelocity(wavelength, equivalencies=eq.doppler_optical(veloframe.rest))
