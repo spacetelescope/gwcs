@@ -17,7 +17,7 @@ def test_SelectorMask_from_vertices_int():
                4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
                }
     mask = selector.SelectorMask.from_vertices((2400, 2400), regions)
-    labels = regions.keys()
+    labels = list(regions.keys())
     labels.append(0)
     mask_labels = np.unique(mask.mask).tolist()
     assert(np.sort(labels) == np.sort(mask_labels)).all()
@@ -30,7 +30,7 @@ def test_SelectorMask_from_vertices_string():
                'S400A1': [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
                }
     mask = selector.SelectorMask.from_vertices((1400, 1400), regions)
-    labels = regions.keys()
+    labels = list(regions.keys())
     labels.append('')
     mask_labels = np.unique(mask.mask).tolist()
     assert(np.sort(labels) == np.sort(mask_labels)).all()

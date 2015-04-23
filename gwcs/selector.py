@@ -113,10 +113,10 @@ class SelectorMask(Model):
         mask = region.create_regions_mask_from_json((300,300), 'regions.json',
         'region_schema.json')
         """
-        labels = np.array(regions.keys())
+        labels = np.array(list(regions.keys()))
         mask = np.zeros(mask_shape, dtype=labels.dtype)
 
-        for rid, vert in regions.iteritems():
+        for rid, vert in regions.items():
             pol = region.Polygon(rid, vert)
             mask = pol.scan(mask)
 
@@ -161,8 +161,8 @@ class RegionsSelector(Model):
         super(RegionsSelector, self).__init__(n_models=1)
         # make sure that keys in mapping match labels in mask
         labels_mask = self.labels_from_mask(mask.mask)
-        if not np.in1d(labels_mask, self._selector.keys(), assume_unique=True).all() or \
-           not np.in1d(self._selector.keys(), labels_mask, assume_unique=True).all():
+        if not np.in1d(labels_mask, list(self._selector.keys()), assume_unique=True).all() or \
+           not np.in1d(list(self._selector.keys()), labels_mask, assume_unique=True).all():
             raise ValueError("Labels don't match regions_mask.")
 
     @staticmethod

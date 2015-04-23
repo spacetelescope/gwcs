@@ -65,13 +65,13 @@ class CoordinateFrame(object):
             else:
                 self._unit = [u.Unit(unit)]
         else:
-            self._unit = reference_frame.representation_component_units.values()
+            self._unit = list(reference_frame.representation_component_units.values())
 
         if axes_names is not None and astutil.isiterable(axes_names):
             if len(axes_names) != naxes:
                 raise ValueError("Number of axes names does not match number of axes.")
         else:
-            axes_names = reference_frame.representation_component_names.values()
+            axes_names = list(reference_frame.representation_component_names.values())
         self._axes_names = axes_names
 
         self._reference_frame = reference_frame
@@ -182,7 +182,7 @@ class CelestialFrame(CoordinateFrame):
                  unit=[u.degree, u.degree], name=None):
         reference_position = 'Barycenter'
         if reference_frame.name.upper() in coord.builtin_frames.__all__:
-            axes_names = reference_frame.representation_component_names.keys()[:2]
+            axes_names = list(reference_frame.representation_component_names.keys())[:2]
         super(CelestialFrame, self).__init__(naxes=2, reference_frame=reference_frame,
                                              unit=unit, axes_order=axes_order,
                                              reference_position=reference_position,

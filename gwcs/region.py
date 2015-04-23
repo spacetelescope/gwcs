@@ -1,12 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
 import abc
-import os
 import numpy as np
-
 from astropy.utils import OrderedDict
+from astropy.extern import six
 
 
+@six.add_metaclass(abc.ABCMeta)
 class Region(object):
 
     """
@@ -19,7 +19,6 @@ class Region(object):
     coordinate_frame : `~gwcs.coordinate_frames.CoordinateFrame`
         Coordinate frame in which the region is defined.
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, rid, coordinate_frame):
         self._coordinate_system = coordinate_frame
@@ -85,7 +84,7 @@ class Polygon(Region):
 
         self._vertices = np.asarray(vertices)
         self._bbox = self._get_bounding_box()
-        self._scan_line_range = range(self._bbox[1], self._bbox[3]+self._bbox[1]+1)
+        self._scan_line_range = list(range(self._bbox[1], self._bbox[3]+self._bbox[1]+1))
         # constructs a Global Edge Table (GET) in bbox coordinates
         self._GET = self._construct_ordered_GET()
 
@@ -161,7 +160,7 @@ class Polygon(Region):
         # 2. Currently it uses intersection of the scan line with edges. If this is
         # too slow it should use the 1/m increment (replace 3 above) (or the increment
         # should be removed from the GET entry).
-        y = np.min(self._GET.keys())
+        y = np.min(list(self._GET.keys()))
         AET = []
         scline = self._scan_line_range[-1]
         while y <= scline:
