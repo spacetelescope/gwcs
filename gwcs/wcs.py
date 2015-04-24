@@ -188,7 +188,7 @@ class WCS(object):
             name = frame
             frame_obj = None
         else:
-            name = frame.name
+            name = frame.wcs_name
             frame_obj = frame
         return name, frame_obj
 

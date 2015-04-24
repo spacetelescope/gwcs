@@ -78,7 +78,7 @@ class CoordinateFrame(object):
 
         if name is None:
             try:
-                self._name = reference_frame.name
+                self._name = reference_frame.wcs_name
             except AttributeError:
                 self._name = repr(reference_frame)
         else:
@@ -181,7 +181,7 @@ class CelestialFrame(CoordinateFrame):
     def __init__(self, reference_frame, axes_order=(0, 1), reference_position=None,
                  unit=[u.degree, u.degree], name=None):
         reference_position = 'Barycenter'
-        if reference_frame.name.upper() in coord.builtin_frames.__all__:
+        if reference_frame.wcs_name.upper() in coord.builtin_frames.__all__:
             axes_names = reference_frame.representation_component_names.keys()[:2]
         super(CelestialFrame, self).__init__(naxes=2, reference_frame=reference_frame,
                                              unit=unit, axes_order=axes_order,

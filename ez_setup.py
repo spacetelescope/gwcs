@@ -317,7 +317,7 @@ def _extractall(self, path=".", members=None):
     # Reverse sort directories.
     if sys.version_info < (2, 4):
         def sorter(dir1, dir2):
-            return cmp(dir1.name, dir2.name)
+            return cmp(dir1.wcs_name, dir2.wcs_name)
         directories.sort(sorter)
         directories.reverse()
     else:
@@ -325,7 +325,7 @@ def _extractall(self, path=".", members=None):
 
     # Set correct owner, mtime and filemode on directories.
     for tarinfo in directories:
-        dirpath = os.path.join(path, tarinfo.name)
+        dirpath = os.path.join(path, tarinfo.wcs_name)
         try:
             self.chown(tarinfo, dirpath)
             self.utime(tarinfo, dirpath)
