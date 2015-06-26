@@ -68,7 +68,7 @@ def get_projcode(ctype):
     # CTYPE here is only the imaging CTYPE keywords
     projcode = ctype[0][5:8].upper()
     if projcode not in projections.projcodes:
-        raise ValueError('Projection code %s, not recognized' % projcode)
+        raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
     return projcode
 
 

@@ -10,7 +10,7 @@ from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
 
 from . import region
-from .util import RegionError
+from .utils import RegionError
 
 
 def _toindex(value):
