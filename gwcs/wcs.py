@@ -11,7 +11,7 @@ from astropy.modeling.core import Model
 from astropy.utils import isiterable
 
 from . import coordinate_frames
-from .util import ModelDimensionalityError, CoordinateFrameError
+from .utils import ModelDimensionalityError, CoordinateFrameError
 from .selector import *
 
 
