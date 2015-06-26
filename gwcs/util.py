@@ -7,13 +7,20 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 
 
 import numpy as np
-from astropy.modeling.projections import projcodes
+from astropy.modeling import projections
+from astropy.modeling import models as astmodels
+from astropy.modeling import core
+from astropy.io import fits
+import functools
+
 try:
     from astropy import time
     HAS_TIME = True
 except ImportError:
     HAS_TIME = False
-#from astropy import coordinates
+from astropy import coordinates
+from astropy import coordinates as coord
+
 
 # these ctype values do not include yzLN and yzLT pairs
 sky_pairs = {"equatorial": ["RA--", "DEC-"],
@@ -30,74 +37,84 @@ radesys = ['ICRS', 'FK5', 'FK4', 'FK4-NO-E', 'GAPPT', 'GALACTIC']
 class UnsupportedTransformError(Exception):
 
     def __init__(self, message):
-        self.message = message
-        super(UnsupportedTransformError, self).__init__()
+        super(UnsupportedTransformError, self).__init__(message)
+
+
+class UnsupportedProjectionError(Exception):
+    def __init__(self, code):
+        message = "Unsupported projection: {0}".format(code)
+        super(UnsupportedProjectionError, self).__init__(message)
 
 
 class ModelDimensionalityError(Exception):
 
     def __init__(self, message):
-        self.message = message
-        super(ModelDimensionalityError, self).__init__()
+        super(ModelDimensionalityError, self).__init__(message)
 
 
 class RegionError(Exception):
 
     def __init__(self, message):
-        self.message = message
-        super(RegionError, self).__init__()
+        super(RegionError, self).__init__(message)
 
 
 class CoordinateFrameError(Exception):
 
     def __init__(self, message):
-        self.message = message
-        super(CoordinateFrameError, self).__init__()
+        super(CoordinateFrameError, self).__init__(message)
 
 
 def get_projcode(ctype):
     # CTYPE here is only the imaging CTYPE keywords
     projcode = ctype[0][5:8].upper()
-    if projcode not in projcodes:
+    if projcode not in projections.projcodes:
         raise ValueError('Projection code %s, not recognized' % projcode)
     return projcode
 
 
-def read_wcs_from_header(header, mode=None):
+def read_wcs_from_header(header):
     """
-    Read basic WCS info from the Primary header of the data file.
+    Extract basic FITS WCS keywords from a FITS Header.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.Header
+        FITS Header with WCS information.
+
+    Returns
+    -------
+    wcs_info : dict
+        A dictionary with WCS keywords.
     """
     wcs_info = {}
+
     try:
-        wcsaxes = header['WCSAXES']
+        wcs_info['WCSAXES'] = header['WCSAXES']
     except KeyError:
-        if mode == 'imaging':
-            wcsaxes = 2
-        elif mode == 'spectroscopic':
-            wcsaxes = 3
-            #wcs_info['SPECSYS'] = header['SPECSYS']
-        elif mode == 'ifu':
-            wcsaxes = 3
-        elif mode == 'multislit':
-            wcsaxes = 3
-        else:
-            raise ValueError('Unrecognized mode')
-        # or perhaps do as wcslib
-        # wcsaxes = max(len(dict(**header["ctype*"])), header['NAXES'])
-    wcs_info['WCSAXES'] = wcsaxes
+        p = re.compile('ctype[\d]*', re.IGNORECASE)
+        ctypes = header['CTYPE*']
+        keys = ctype.keys()
+        for key in keys[::-1]:
+            if p.split(k)[-1] != "":
+                keys.remove(k)
+        wcs_info['WCSAXES'] = len(keys)
+    wcsaxes = wcs_info['WCSAXES']
     # if not present call get_csystem
     wcs_info['RADESYS'] = header.get('RADESYS', 'ICRS')
     wcs_info['VAFACTOR'] = header.get('VAFACTOR', 1)
     wcs_info['NAXIS'] = header.get('NAXIS', 0)
     # date keyword?
-    wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
+    #wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
+    wcs_info['EQUINOX'] = header.get("EQUINOX", None)
+    wcs_info['EPOCH'] = header.get("EPOCH", None)
+    wcs_info['DATEOBS'] = header.get("MJD-OBS", header.get("DATE-OBS", None))
 
     ctype = []
     cunit = []
     crpix = []
     crval = []
     cdelt = []
-    for i in range(1, wcsaxes+1):
+    for i in range(1, wcsaxes + 1):
         ctype.append(header['CTYPE{0}'.format(i)])
         cunit.append(header.get('CUNIT{0}'.format(i), None))
         crpix.append(header.get('CRPIX{0}'.format(i), 0.0))
@@ -131,17 +148,28 @@ def read_wcs_from_header(header, mode=None):
     return wcs_info
 
 
-def get_axes(wcs_info):
+def get_axes(header):
     """
-    Determines the axes in the input with spectral and sky coordinates.
+    Matches input with spectral and sky coordinate axes.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.Header or dict
+        FITS Header (or dict) with basic WCS information.
 
     Returns
     -------
     sky_inmap, spectral_inmap : tuples
-        indices in the input with sky and spectral cordinates
-        These can be used directly in composite transforms
+        indices in the input representing sky and spectral cordinates.
 
     """
+    if isinstance(header, fits.Header):
+        wcs_info = util.read_wcs_from_header(header)
+    elif isinstance(header, dict):
+        wcs_info = header
+    else:
+        raise TypeError("Expected a FITS Header or a dict.")
+
     ctype = [ax[:4] for ax in wcs_info['CTYPE']]
     sky_inmap = []
     spec_inmap = []
@@ -165,110 +193,134 @@ def get_axes(wcs_info):
     return sky_inmap, spec_inmap
 
 
-def get_sky_wcs_info(wcsinfo):
-    sky_wcsinfo = {}
-    sky_axes, _, = get_axes(wcsinfo)
-    sky_wcsinfo_keys = ['CDELT', 'CRPIX', 'CRVAL', 'CTYPE', 'CUNIT']
-    other_keys = ['RADESYS', 'VAFACTOR', 'has_cd']
-    for kw in sky_wcsinfo_keys:
-        sky_wcsinfo[kw] = np.asarray(wcsinfo[kw])[sky_axes].tolist()
-    for kw in other_keys:
-        sky_wcsinfo[kw] = wcsinfo[kw]
-    pc = np.zeros((2, 2))
-    wpc = wcsinfo['PC']
-    pc[0, 0] = wpc[sky_axes[0], sky_axes[0]]
-    pc[0, 1] = wpc[sky_axes[0], sky_axes[1]]
-    pc[1, 0] = wpc[sky_axes[1], sky_axes[0]]
-    pc[1, 1] = wpc[sky_axes[1], sky_axes[1]]
-    sky_wcsinfo['PC'] = pc
-    sky_wcsinfo['WCSAXES'] = 2
-    return sky_wcsinfo
-
-def get_csystem(header=None, radesys=None, equinox=None, dateobs=None):
-    ctypesys = "UNKNOWN"
-    if header is not None:
-        ctype = header["CTYPE*"]
-        radesys = header.get("RADESYS", None)
-        equinox = header.get("EQUINOX", None)
-        epoch = header.get("EPOCH", None)
-        dateobs = header.get("MJD-OBS", header.get("DATE-OBS", None))
-    cs = [ctype[0][:4], ctype[1][:4]]
-
-    for item in sky_pairs.items():
-        if cs[0] in item[1]:
-            assert cs[1] in item[1], "Inconsistent coordinate system type in CTYPE"
-            ctypesys = item[0]
-    if ctypesys == 'spec':
-        # try to get the rest of the kw that define a spectral system from the header
-        return csystems.SpectralCoordSystem(cs, **kwargs)
-    if ctypesys not in ['equatorial', 'ecliptic']:
-        return coordinates.__getattribute__(sky_systems_map[ctypesys])(0., 0., equinox=equinox,
-                                                                       obstime=dateobs, unit=units)
-        # return ctypesys, radesys, equinox
-    else:
-        if radesys is None:
-            if equinox is None:
-                radesys = "ICRS"
-            else:
-                if equinox < 1984.0:
-                    radesys = 'FK4'
-                else:
-                    radesys = 'FK5'
-        if radesys in ['FK4', 'FK4-NO-E']:
-            if radesys == 'FK4-NO-E':
-                assert ctypesys != "ecliptic", (
-                    " Inconsistent coordinate systems: 'ecliptic' and 'FK4-NO-E' ")
-            if equinox is None:
-                if epoch is None:
-                    equinox = "1950.0"
-                else:
-                    equinox = epoch
-        elif radesys == 'FK5':
-            if equinox is None:
-                if epoch is None:
-                    equinox = "2000.0"
-                else:
-                    equinox = epoch
-        elif radesys == 'GAPPT':
-            assert dateobs is not None, "Either 'DATE-OBS' or 'MJD-OBS' is required"
-            equinox = dateobs
-    if HAS_TIME:
-        if equinox is not None:
-            equinox = time.Time(equinox, scale='utc')
-        if dateobs is not None:
-            dateobs = time.Time(dateobs, scale='utc')
-    return ctypesys, radesys, equinox, dateobs
-    #units = header.get('CUNIT*', ['deg', 'deg'])
-    # return coordinates.__getattribute__(sky_systems_map[radesys])(0., 0., equinox=equinox,
-    #                obstime=dateobs, unit=units)
-
-
-def populate_meta(header, regions, regionsschema):
-    fits_keywords = []
-    if regions is None:
-        fits_keywords.append('WREGIONS')
-    if regionsschema is None:
-        fits_keywords.append('REGSCHEM')
-
-    meta = {}
-    meta['NAXIS'] = header.get('NAXIS', 0)
-    for i in range(1, meta['NAXIS']+1):
-        name = 'NAXIS'+str(i)
-        meta[name] = header.get(name)
-        name = 'CUNIT'+str(i)
-        meta[name] = header.get(name, "deg")
-
-    for key in fits_keywords:
-        meta[key] = header.get(key, None)
-    return meta
-
 specsystems = ["WAVE", "FREQ", "ENER", "WAVEN", "AWAV",
                "VRAD", "VOPT", "ZOPT", "BETA", "VELO"]
 
-sky_systems_map = {'ICRS': 'ICRSCoordinates',
-                   'FK5': 'FK5Coordinates',
-                   'FK4': 'FK4Coordinates',
-                   'FK4NOE': 'FK4NoETermCoordinates',
-                   'GAL': 'GalacticCorrdinates',
-                   'HOR': 'HorizontalCoordinates'
+sky_systems_map = {'ICRS': coord.ICRS,
+                   'FK5': coord.FK5,
+                   'FK4': coord.FK4,
+                   'FK4NOE': coord.FK4NoETerms,
+                   'GAL': coord.Galactic,
+                   'HOR': coord.AltAz
                    }
+
+
+def make_fitswcs_transform(header):
+    """
+    Create a basic FITS WCS transform.
+    It does not include distortions.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.Header or dict
+        FITS Header (or dict) with basic WCS information
+
+    """
+    if isinstance(header, fits.Header):
+        wcs_info = read_wcs_from_header(header)
+    elif isinstance(header, dict):
+        wcs_info = header
+    else:
+        raise TypeError("Expected a FITS Header or a dict.")
+    wcs_linear = fitswcs_linear(wcs_info)
+    projcode = get_projcode(wcs_info['CTYPE'])
+    projection = create_projection_transform(projcode)
+
+    # Create the sky rotation transform
+    phip, lonp = wcs_info['CRVAL']
+    # TODO: write "def compute_lonpole(projcode, l)"
+    # Set a defaul tvalue for now
+    thetap = 180
+    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap)
+
+    return functools.reduce(core._model_oper('|'), [wcs_linear, projection, n2c])
+
+
+def fitswcs_linear(header):
+    """
+    Create a WCS linear transform from a FITS header.
+
+    Parameters
+    ----------
+    header : astropy.io.fits.Header or dict
+        FITS Header or dict with basic FITS WCS keywords.
+
+    """
+    if isinstance(header, fits.Header):
+        wcs_info = util.read_wcs_from_header(wcs_info)
+    elif isinstance(header, dict):
+        wcs_info = header
+    else:
+        raise TypeError("Expected a FITS Header or a dict.")
+
+    wcsaxes = wcs_info['WCSAXES']
+
+    pc = wcs_info['PC']
+    # get the part of the PC matrix corresponding to the imaging axes
+    sky_axes = None
+    if pc.shape != (2, 2):
+        sky_axes, _ = util.get_axes(wcs_info)
+        i, j = sky_axes
+        sky_pc = np.zeros((2,2))
+        sky_pc[0, 0] = pc[i, i]
+        sky_pc[0, 1] = pc[i, j]
+        sky_pc[1, 0] = pc[j, i]
+        sky_pc[1, 1] = pc[j, j]
+        pc = sky_pc.copy()
+
+
+    if sky_axes is not None:
+        crpix = []
+        cdelt = []
+        for i in sky_axes:
+            crpix.append(wcs_info['CRPIX'][i])
+            cdelt.append(wcs_info['CDELT'][i])
+    else:
+        cdelt = wcs_info['CDELT']
+        crpix = wcs_info['CRPIX']
+
+    if wcsaxes == 2:
+        rotation = astmodels.AffineTransformation2D(matrix=pc)
+    #elif wcsaxes == 3 :
+        #rotation = AffineTransformation3D(matrix=matrix)
+    #else:
+        #raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
+                          #"{0} given".format(wcsaxes))
+
+    translation_models = [astmodels.Shift(-shift) for shift in crpix]
+    translation = functools.reduce(core._model_oper('&'), translation_models)
+
+    if not wcs_info['has_cd']:
+        # Do not compute scaling since CDELT* = 1 if CD is present.
+        scaling_models = [astmodels.Scale(scale) for scale in cdelt]
+        scaling = functools.reduce(core._model_oper('&'), scaling_models)
+        wcs_linear = translation | rotation | scaling
+    else:
+        wcs_linear = translation | rotation
+
+    return wcs_linear
+
+
+def create_projection_transform(projcode):
+    """
+    Create the non-linear projection transform.
+
+    Parameters
+    ----------
+    projcode : str
+        FITS WCS projection code.
+
+    Returns
+    -------
+    transform : astropy.modeling.Model
+        Projection transform.
+    """
+
+    projklassname = 'Pix2Sky_' + projcode
+    try:
+        projklass = getattr(projections, projklassname)
+    except AttributeError:
+        raise UnsupportedProjectionError(projcode)
+
+    projparams={}
+    return projklass(**projparams)
