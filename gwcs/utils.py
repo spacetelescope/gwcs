@@ -348,11 +348,11 @@ def _compute_n_outputs(left, right):
     if isinstance(left, core.Model):
         lnout = left.n_outputs
     else:
-        lnout = left.shape[1]
+        lnout = left.shape[0]
     if isinstance(right, core.Model):
         rnout = right.n_outputs
     else:
-        rnout = right.shape[1]
+        rnout = right.shape[0]
     noutp = lnout + rnout
     return noutp
 
@@ -373,8 +373,12 @@ def _arith_oper(left, right):
     result : ndarray
         Result from this operation.
     """
-    noutp = _compute_n_outputs(left, right)
-    if isinstance(left, Model):
+    # models have the same number of outputs
+    if isinstance(left, core.Model):
+        noutp = left.n_outputs
+    else:
+        noutp = left.shape[0]
+    if isinstance(left, core.Model):
         ninp = left.n_inputs
     else:
         ninp = left.shape[1]
@@ -464,12 +468,12 @@ def _cstack(left, right):
     if isinstance(left, core.Model):
         cleft = _coord_matrix(left, 'left', noutp)
     else:
-        cleft = np.zeros((noutp, left.shape[0]))
+        cleft = np.zeros((noutp, left.shape[1]))
         cleft[: left.shape[0], :left.shape[1]] = left
     if isinstance(right, core.Model):
         cright = _coord_matrix(right, 'right', noutp)
     else:
-        cright = np.zeros((noutp, right.shape[0]))
+        cright = np.zeros((noutp, right.shape[1]))
         cright[-right.shape[0]:, -right.shape[1] :] =1
 
     return np.hstack([cleft, cright])
@@ -502,7 +506,7 @@ def _cdot(left, right):
     return result
 
 
-def separable(transform):
+def _separable(transform):
     """
     Calculate the separability of outputs.
 
@@ -529,17 +533,25 @@ def separable(transform):
         array([ True,  True,  True,  True], dtype=bool)
 
     """
-    if transform.n_inputs == 1 and transform.n_outputs > 1:
-        return np.array([False] * transform.n_outputs)
+
+
     if isinstance(transform, core._CompoundModel):
-        is_separable = transform._tree.evaluate(oper)
+        is_separable = transform._tree.evaluate(_operators)
     elif isinstance(transform, core.Model):
-        is_separable = coord_matrix(transform, 'left', transform.n_outputs)
-    is_separable = is_separable.sum(1)
-    is_separable = np.where(is_separable != 1, False, True)
+        is_separable = _coord_matrix(transform, 'left', transform.n_outputs)
     return is_separable
 
 
-oper = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
+def is_separable(transform):
+    if transform.n_inputs == 1 and transform.n_outputs > 1:
+        is_separable = np.array([False] * transform.n_outputs)
+        return is_separable
+    separable_matrix = _separable(transform)
+    is_separable = separable_matrix.sum(1)
+    is_separable = np.where(is_separable != 1, False, True)
+    return is_separable
+
+_operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
         '*': _arith_oper, '/': _arith_oper, '**': _arith_oper}
+
 

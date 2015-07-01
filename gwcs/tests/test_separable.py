@@ -10,7 +10,7 @@ from astropy.tests.helper import pytest
 import numpy as np
 from numpy.testing import utils
 
-from .. utils import _coord_matrix, _cstack, _cdot, separable
+from .. utils import _coord_matrix, _cstack, _cdot, is_separable
 
 
 sh1 = models.Shift(1, name='shift1')
@@ -23,6 +23,19 @@ map3 = Mapping([0, 0], name='map3')
 rot = models.Rotation2D(2, name='rotation')
 p2 = models.Polynomial2D(1, name='p2')
 p22 = models.Polynomial2D(2, name='p22')
+p1 = models.Polynomial1D(1, name='p1')
+
+
+#Note: remove these later when Model.separable is implemented
+sh1.separable = True
+sh2.separable = True
+scl1.separable = True
+scl2.separable = True
+rot.separable = False
+p2.separable = False
+p22.separable = False
+p1.separable = True
+
 
 compound_models = {'cm1': (map3 & sh1 | rot & sh1 | sh1 & sh2 & sh1,
                            np.array([False, False,  True])),
@@ -39,13 +52,11 @@ compound_models = {'cm1': (map3 & sh1 | rot & sh1 | sh1 & sh2 & sh1,
                    }
 
 
-def test__coord_matrix():
-    p2 = models.Polynomial2D(1, name='p2')
+def test_coord_matrix():
     c = _coord_matrix(p2, 'left', 2)
     utils.assert_allclose(np.array([[1,1], [0,0]]), c)
     c = _coord_matrix(p2, 'right', 2)
     utils.assert_allclose(np.array([[0,0], [1,1]]), c)
-    p1 = models.Polynomial1D(1, name='p1')
     c = _coord_matrix(p1, 'left', 2)
     utils.assert_allclose(np.array([[1], [0]]), c)
     c = _coord_matrix(p1, 'left', 1)
@@ -64,5 +75,5 @@ def test__coord_matrix():
 
 @pytest.mark.parametrize(('compound_model', 'result'), compound_models.values())
 def test_separable(compound_model, result):
-    utils.assert_allclose(separable(compound_model), result)
+    utils.assert_allclose(is_separable(compound_model), result)
 
