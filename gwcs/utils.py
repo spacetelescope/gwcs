@@ -466,6 +466,19 @@ def _cstack(left, right):
     result : ndarray
         Result from this operation.
 
+    Examples
+    --------
+    >>> cstack(Shift(1), Shift(2))
+        array([[ 1.,  0.],
+               [ 0.,  1.]])
+    >>> cstack(Rotation2D(1), Shift(1))
+        array([[ 1.,  1.,  0.],
+               [ 1.,  1.,  0.],
+               [ 0.,  0.,  1.]])
+    >>> cstack(Shift(1), Rotation2D(1))
+        array([[ 1.,  0.,  0.],
+               [ 0.,  1.,  1.],
+               [ 0.,  1.,  1.]])
     """
     noutp = _compute_n_outputs(left, right)
 
