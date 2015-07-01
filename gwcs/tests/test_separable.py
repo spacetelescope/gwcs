@@ -52,6 +52,7 @@ compound_models = {'cm1': (map3 & sh1 | rot & sh1 | sh1 & sh2 & sh1,
                    }
 
 
+
 def test_coord_matrix():
     c = _coord_matrix(p2, 'left', 2)
     utils.assert_allclose(np.array([[1,1], [0,0]]), c)
