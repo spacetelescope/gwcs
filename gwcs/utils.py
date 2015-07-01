@@ -367,6 +367,7 @@ def _arith_oper(left, right):
 
     This always returns a nonseparable outputs.
 
+
     Parameters
     ----------
     left, right : `astropy.modeling.Model` or ndarray
@@ -421,7 +422,6 @@ def _coord_matrix(model, pos, noutp):
             [ 1.,  1.],
             [ 1.,  1.]])
     """
-
     if isinstance(model, Mapping):
         axes = []
         for i in model.mapping:
@@ -557,5 +557,4 @@ def is_separable(transform):
 
 _operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
         '*': _arith_oper, '/': _arith_oper, '**': _arith_oper}
-
 
