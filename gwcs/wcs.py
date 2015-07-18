@@ -96,6 +96,8 @@ class WCS(object):
         for frame in self.available_frames:
             if self.available_frames[frame] is not None:
                 self.available_frames[frame]._set_wcsobj(self)
+                super(WCS, self).__setattr__(frame, self.available_frames[frame])
+
 
     def get_transform(self, from_frame, to_frame):
         """
