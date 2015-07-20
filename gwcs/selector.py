@@ -13,6 +13,9 @@ from . import region
 from .utils import RegionError
 
 
+__all__ = ['SelectorMask', 'RegionsSelector']
+
+
 def _toindex(value):
     """
     Convert value to an int or an int array.

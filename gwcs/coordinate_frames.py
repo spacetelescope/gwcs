@@ -14,7 +14,8 @@ from astropy.extern import six
 from . import utils as gwutils
 
 
-__all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame']
+__all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
+           'CoordinateFrame']
 
 
 ##STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
@@ -154,7 +155,7 @@ class CoordinateFrame(object):
 
     def input_axes(self, start_frame=None):
         """
-        Returns the input axes in `start_frame` contributing to the output of each output axes.
+        Computes which axes in `start_frame` contribute to each axis in the current frame.
 
         Parameters
         ----------
@@ -216,7 +217,7 @@ class CoordinateFrame(object):
 
         See Also
         --------
-        input_axes : For each output axis shows the input axes contributing to it.
+        input_axes : For each output axis return the input axes contributing to it.
 
         """
         if self._wcsobj is not None:

@@ -111,17 +111,14 @@ class WCS(object):
         """
         if not self._pipeline:
             return None
-        from_name, from_obj = self._get_frame_name(from_frame)
-        to_name, to_obj = self._get_frame_name(to_frame)
-
         try:
-            from_ind = self._get_frame_index(from_name)
+            from_ind = self._get_frame_index(from_frame)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_name))
+            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_frame))
         try:
-            to_ind = self._get_frame_index(to_name)
+            to_ind = self._get_frame_index(to_frame)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_name))
+            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
         return functools.reduce(lambda x, y: x | y, transforms)
 
@@ -280,7 +277,7 @@ class WCS(object):
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            return np.array(self._pipeline)[:,0]
+            return [frame[0] for frame in self._pipeline]
         else:
             return None
 

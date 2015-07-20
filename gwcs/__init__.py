@@ -18,4 +18,4 @@ from ._astropy_init import *
 if not _ASTROPY_SETUP_:
     from .wcs import *
     from .coordinate_frames import *
-    from . import selector
+    from .selector import *

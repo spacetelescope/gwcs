@@ -1,12 +1,17 @@
 An IFU Example
 ==============
 
-``GWCS`` has a special `~gwcs.selector.SelectorModel` class which provides a mapping of transforms to
-regions on the detector or to other quantities and the means to switch between or select a transform for a certain label. We show here how this can be used to describe the WCS of an IFU observation.
+The `~gwcs.selector.RegionsSelector` class maps transforms to
+regions on the detector and provides the means to select a transform for a specific region.
+The example below uses this class to describe the WCS of an IFU observation.
 
 For this example we look at an IFU with 6 slits.
-In general each slit has a WCS asosciated with it. The output coordinate frame for each slit is a composite frame with two frames, `~gwcs.coordinate_frames.CelestialFrame` and `~gwcs.coordinate_frames.SpectralFrame`. For each slit the WCS object transforms pixel coordinates to world coordinates (RA, DEC, lambda).
-For the sake of brevity we assime the transform for each slit has been created. A detailed example of how to create a transform is in the ref: imaging_example.
+In general each slit has a WCS asosciated with it. The output coordinate frame
+for each slit is a composite frame with two frames, `~gwcs.coordinate_frames.CelestialFrame`
+and `~gwcs.coordinate_frames.SpectralFrame`. For each slit the WCS object transforms pixel
+coordinates to world coordinates (RA, DEC, lambda).
+For the sake of brevity we assime the transform for each slit has been created.
+A detailed example of how to create a transform is in the ref: imaging_example.
 
 In order to use the `~gwcs.selector.SelectorModel` we need a list of labels
 and a mask. Labels are integers or strings (less efficient) which map to the location of slits in pixel space. Each label has a transform associated with it. The mask is an array with the size of the detector where each item in the array corresponds to a pixel on the detector and its value is the slice number (label) this pixel belongs to.
