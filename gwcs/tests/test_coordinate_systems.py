@@ -41,13 +41,13 @@ def test_units():
 def test_transform_to_spectral():
     spec = cf.SpectralFrame(name='wave', unit=u.micron, axes_order=(2,))
     w = wcs.WCS(output_frame=spec, forward_transform=models.Polynomial1D(1, c1=1))
-    q = w.output_frame.transform_to(5, 'Hz')
+    q = getattr(w, w.output_frame).transform_to(5, 'Hz')
     assert(q.unit == u.Hz)
 
 
 def test_coordinates_spatial():
     w = wcs.WCS(forward_transform=pipe)
-    sky_coo = w.output_frame.coordinates(1, 3)
+    sky_coo = getattr(w, w.output_frame).coordinates(1, 3)
     sky = w(1, 3)
     assert_allclose((sky_coo.ra.value, sky_coo.dec.value), sky)
 
@@ -57,9 +57,9 @@ def test_coordinates_spectral():
                             axes_order=(0,), axes_names=('lambda',))
     w = wcs.WCS(forward_transform=models.Polynomial1D(1, c0=.2, c1=.3), output_frame=spec)
     x = np.arange(10)
-    wave = w.output_frame.coordinates(x)
+    wave =getattr(w, w.output_frame).coordinates(x)
     assert_allclose(wave.value, w(x))
-    wave = w.output_frame.coordinates(1.2)
+    wave = getattr(w, w.output_frame).coordinates(1.2)
     assert_allclose(wave.value, w(1.2))
 
 
@@ -71,7 +71,7 @@ def test_coordinates_composite():
     transform = models.Mapping([0, 0, 1]) | models.Identity(2) & models.Polynomial1D(1, c0=.2, c1=.3)
     w = wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=det)
     x = np.arange(3)
-    result = w.output_frame.coordinates(x, x)
+    result = getattr(w, w.output_frame).coordinates(x, x)
     assert_allclose(result[0].ra.value, w(x, x)[0])
     assert_allclose(result[0].ra.value, w(x, x)[1])
     assert_allclose(result[1].value, w(x, x)[2])

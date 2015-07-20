@@ -36,11 +36,11 @@ def test_create_wcs():
     gw1 = wcs.WCS(output_frame='icrs', input_frame='detector', forward_transform=m1)
     gw2 = wcs.WCS(output_frame='icrs', forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
-    assert(gw1._input_frame == gw2._input_frame == gw3._input_frame == 'detector')
-    assert(gw1._output_frame == gw2._output_frame == gw3._output_frame == 'icrs')
+    assert(gw1.input_frame == gw2.input_frame == gw3.input_frame == 'detector')
+    assert(gw1.output_frame == gw2.output_frame == gw3.output_frame == 'icrs')
     assert(gw1.forward_transform.__class__ == gw2.forward_transform.__class__ ==
            gw3.forward_transform.__class__ == m1.__class__)
-    assert(gw1._available_frames == gw2._available_frames == {'detector': None, 'icrs': None})
+    assert np.in1d(gw1._available_frames, gw2._available_frames).all()
 
 
 def test_init_no_transform():
@@ -49,19 +49,19 @@ def test_init_no_transform():
     """
     gw = wcs.WCS(output_frame='icrs')
     assert gw._pipeline == [('detector', None), ('icrs', None)]
-    assert(gw.available_frames == {'detector': None, 'icrs': None})
+    assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
     icrs = cf.CelestialFrame(coord.ICRS())
     det = cf.Frame2D(name='detector', axes_order=(0, 1))
     gw = wcs.WCS(output_frame=icrs, input_frame=det)
     assert gw._pipeline == [('detector', None), ('CelestialFrame', None)]
-    assert(gw.available_frames == {'detector': det, 'CelestialFrame': icrs})
+    assert np.in1d(gw.available_frames, ['detector', 'CelestialFrame']).all()
 
 
 def test_pipeline_init():
     """ Tests initializing a WCS object with a pipeline list."""
 
     gw = wcs.WCS(input_frame=det, output_frame=icrs, forward_transform=pipe)
-    assert np.in1d(gw.available_frames.keys(), ['detector', 'focal', 'CelestialFrame']).all()
+    assert np.in1d(gw.available_frames, ['detector', 'focal', 'CelestialFrame']).all()
     assert_allclose(gw(1, 2), [26.8, 0] )
 
 

@@ -32,7 +32,7 @@ class CoordinateFrame(object):
     naxes : int
         Number of axes.
     axes_type : str
-        One of ["SPACIAL", "SPECTRAL", "TIME"]
+        One of ["SPATIAL", "SPECTRAL", "TIME"]
     axes_order : tuple of int
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
@@ -172,7 +172,7 @@ class CoordinateFrame(object):
 
     @property
     def axes_type(self):
-        """ Type of this frame : 'SPACIAL', 'SPECTRAL', 'TIME'. """
+        """ Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'. """
         return self._axes_type
 
     def _set_wcsobj(self, obj):
@@ -274,7 +274,8 @@ class CelestialFrame(CoordinateFrame):
         if reference_frame is not None:
             if reference_frame.name.upper() in coord.builtin_frames.__all__:
                 axes_names = list(reference_frame.representation_component_names.keys())[:2]
-        super(CelestialFrame, self).__init__(naxes=2, axes_type=["SPACIAL", "SPACIAL"], axes_order=axes_order,
+        super(CelestialFrame, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+                                             axes_order=axes_order,
                                              reference_frame=reference_frame,
                                              unit=unit,
                                              reference_position=reference_position,
@@ -345,10 +346,9 @@ class SpectralFrame(CoordinateFrame):
         args = self._wcsobj(*args)
 
         if np.isscalar(args):
-            #args = args[0]
             return args * self.unit[0]
         else:
-            if len(self._wcsobj.output_frame.axes_order) > 1:
+            if len(getattr(self._wcsobj, self._wcsobj.output_frame).axes_order) > 1:
                 args = [args[i] for i in self.axes_order]
                 return args[0] * self.unit[0]
             else:
@@ -373,7 +373,7 @@ class CompositeFrame(CoordinateFrame):
 
     """
 
-    def __init__(self, frames, name=""):
+    def __init__(self, frames, name=None):
         """
         naxes, reference_frame=None, reference_position=None,
                  unit=None, axes_names=None, name=None):
@@ -418,7 +418,7 @@ class CompositeFrame(CoordinateFrame):
         args : float
             inputs to the WCS in the input_coordinate_frame.
         """
-        naxes = self._wcsobj.input_frame.naxes
+        naxes = getattr(self._wcsobj, self._wcsobj.input_frame).naxes
         if len(args) != naxes:
             raise TypeError("Expected {0} arguments ({1} given)".format(naxes, len(args)))
 
@@ -445,8 +445,10 @@ class Frame2D(CoordinateFrame):
         Reference to the WCS object to which this frame belongs.
     """
 
-    def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'), name=None, wcsobj=None):
-        super(Frame2D, self).__init__(2, "SPACIAL", axes_order, name=name,
+    def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
+                 name=None, wcsobj=None):
+
+        super(Frame2D, self).__init__(2, "SPATIAL", axes_order, name=name,
                                       axes_names=axes_names,unit=unit, wcsobj=None)
 
     def coordinates(self, *args):
