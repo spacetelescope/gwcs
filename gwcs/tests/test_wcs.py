@@ -143,11 +143,25 @@ class TestImaging(object):
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
 
+    def test_distortion(self):
+        sipx, sipy = self.fitsw.sip_pix2foc(self.xv, self.yv, 1)
+        sipx = np.array(sipx) + 2048
+        sipy = np.array(sipy) + 1024
+        sip_coord = self.wcs.get_transform('detector', 'focal')(self.xv, self.yv)
+        assert_allclose(sipx, sip_coord[0])
+        assert_allclose(sipy, sip_coord[1])
+
+    def test_wcslinear(self):
+        ra, dec = self.fitsw.wcs_pix2world(self.xv, self.yv, 1)
+        sky = self.wcs.get_transform('focal', 'CelestialFrame')(self.xv, self.yv)
+        assert_allclose(ra, sky[0])
+        assert_allclose(dec, sky[1])
+
     def test_forward(self):
         sky_coord = self.wcs(self.xv, self.yv)
         ra, dec = self.fitsw.all_pix2world(self.xv, self.yv, 1)
-        assert_almost_equal(sky_coord[0], ra)
-        assert_almost_equal(sky_coord[1], dec)
+        assert_allclose(sky_coord[0], ra)
+        assert_allclose(sky_coord[1], dec)
 
     def test_backward(self):
         transform = self.wcs.get_transform(from_frame='focal', to_frame=self.wcs.output_frame)

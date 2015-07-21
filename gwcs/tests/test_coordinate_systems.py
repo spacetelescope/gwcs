@@ -9,6 +9,7 @@ from astropy import coordinates as coord
 from .. import coordinate_frames as cf
 from .. import wcs
 
+
 icrs = coord.ICRS()
 fk5 = coord.FK5()
 cel1 = cf.CelestialFrame(reference_frame=icrs)
@@ -43,7 +44,6 @@ def test_transform_to_spectral():
     w = wcs.WCS(output_frame=spec, forward_transform=models.Polynomial1D(1, c1=1))
     q = getattr(w, w.output_frame).transform_to(5, 'Hz')
     assert(q.unit == u.Hz)
-
 
 def test_coordinates_spatial():
     w = wcs.WCS(forward_transform=pipe)
