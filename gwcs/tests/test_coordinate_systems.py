@@ -20,7 +20,7 @@ spec2 = cf.SpectralFrame(name='wave', unit=[u.m,], axes_order=(2,))
 
 comp1 = cf.CompositeFrame([cel1, spec1])
 comp2 = cf.CompositeFrame([cel2, spec2])
-comp = cf.CompositeFrame([comp1, comp2])
+comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
@@ -36,7 +36,7 @@ pipe = [(det, m1),
 def test_units():
     assert(comp1.unit == [u.deg, u.deg, u.Hz])
     assert(comp2.unit == [u.deg, u.deg, u.m])
-    assert(comp.unit == [u.deg, u.deg, u.Hz, u.deg, u.deg, u.m])
+    assert(comp.unit == [u.deg, u.deg, u.Hz, u.m])
 
 
 def test_transform_to_spectral():
