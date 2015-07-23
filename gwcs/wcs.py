@@ -12,7 +12,6 @@ from astropy.utils import isiterable
 
 from . import coordinate_frames
 from .utils import ModelDimensionalityError, CoordinateFrameError
-from .selector import *
 
 
 __all__ = ['WCS']
@@ -25,43 +24,73 @@ class WCS(object):
 
     Parameters
     ----------
-    output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-        A coordinates object or a string name.
-    input_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-        A coordinates object or a string name.
     forward_transform : `~astropy.modeling.Model` or a list
-    A model to do the transform between ``input_frame`` and ``output_frame``.
+        The transform between ``input_frame`` and ``output_frame``.
         A list of (frame, transform) tuples where ``frame`` is the starting frame and
         ``transform`` is the transform from this frame to the next one or ``output_frame``.
+        The last tuple is (transform, None), where None indicates the end of the pipeline.
+    input_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
+        A coordinates object or a string name.
+    output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
+        A coordinates object or a string name.
     name : str
         a name for this WCS
     """
 
-    def __init__(self, output_frame, input_frame='detector',
-                 forward_transform=None, name=""):
-        self._coord_frames = {}
+    def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
+                 name=""):
+        self._available_frames = []
         self._pipeline = []
-        self._input_frame, frame_obj = self._get_frame_name(input_frame)
-        self._coord_frames[self._input_frame] = frame_obj
-        self._output_frame, frame_obj = self._get_frame_name(output_frame)
-        self._coord_frames[self._output_frame] = frame_obj
         self._name = name
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
-                self._pipeline = [(self._input_frame, forward_transform.copy()),
-                                  (self._output_frame, None)]
+                if output_frame is None:
+                    raise CoordinateFrameError("An output_frame must be specified"
+                                               "if forward_transform is a model.")
+
+                _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
+                _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
+                super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
+                super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
+
+                self._pipeline = [(_input_frame, forward_transform.copy()),
+                                  (_output_frame, None)]
             elif isinstance(forward_transform, list):
                 for item in forward_transform:
                     name, frame_obj = self._get_frame_name(item[0])
-                    self._coord_frames[name] = copy.deepcopy(frame_obj)
+                    super(WCS, self).__setattr__(name, frame_obj)
                     self._pipeline.append((name, item[1]))
+
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(
                                     type(forward_transform)))
+            _inp_frame = getattr(self, self.input_frame)
+            if  _inp_frame is not None and _inp_frame.naxes != self.forward_transform.n_inputs:
+                message = "The number of inputs {0} of the forward transform \
+                does not match the number of axes {1} of the input axes. \
+                ".format(self.forward_transform.n_inputs, _inp_frame.naxes)
+                raise ModelDimensionalityError(message)
+            _outp_frame = getattr(self, self.output_frame)
+            if _outp_frame is not None and _outp_frame.naxes != self.forward_transform.n_outputs:
+                message = "The number of outputs {0} of the forward transform \
+                does not match the number of axes {1} of the output axes. \
+                ".format(self.forward_transform.n_outputs, _outp_frame.naxes)
+                raise ModelDimensionalityError(message)
         else:
-            self._pipeline = [(self._input_frame, None),
-                              (self._output_frame, None)]
+            if output_frame is None:
+                raise CoordinateFrameError("An output_frame must be specified"
+                                           "if forward_transform is None.")
+            _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
+            _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
+            super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
+            super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
+            self._pipeline = [(_input_frame, None),
+                              (_output_frame, None)]
+        for frame in self.available_frames:
+            if getattr(self, frame) is not None:
+                getattr(self, frame)._set_wcsobj(self)
+
 
     def get_transform(self, from_frame, to_frame):
         """
@@ -81,21 +110,14 @@ class WCS(object):
         """
         if not self._pipeline:
             return None
-        from_name, from_obj = self._get_frame_name(from_frame)
-        to_name, to_obj = self._get_frame_name(to_frame)
-
-        # if from_name not in self.available_frames:
-        #raise ValueError("Frame {0} is not in the available frames".format(from_frame))
-        # if to_name not in self.available_frames:
-        #raise ValueError("Frame {0} is not in the available frames".format(to_frame))
         try:
-            from_ind = self._get_frame_index(from_name)
+            from_ind = self._get_frame_index(from_frame)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_name))
+            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_frame))
         try:
-            to_ind = self._get_frame_index(to_name)
+            to_ind = self._get_frame_index(to_frame)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_name))
+            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
         return functools.reduce(lambda x, y: x | y, transforms)
 
@@ -132,7 +154,7 @@ class WCS(object):
 
         if from_ind + 1 != to_ind:
             raise ValueError("Frames {0} and {1} are not  in sequence".format(from_name, to_name))
-        self._pipeline[from_ind] = (self._pipeline[from_ind], transform)
+        self._pipeline[from_ind] = (self._pipeline[from_ind][0], transform)
 
     @property
     def forward_transform(self):
@@ -142,8 +164,6 @@ class WCS(object):
         """
 
         if self._pipeline:
-            if self._pipeline[-1] != (self._output_frame, None):
-                self._pipeline.append((self._output_frame, None))
             return functools.reduce(lambda x, y: x | y, [step[1] for step in self._pipeline[: -1]])
         else:
             return None
@@ -166,6 +186,8 @@ class WCS(object):
         """
         Return the index in the pipeline where this frame is locate.
         """
+        if isinstance(frame, coordinate_frames.CoordinateFrame):
+            frame = frame.name
         return np.asarray(self._pipeline)[:, 0].tolist().index(frame)
 
     def _get_frame_name(self, frame):
@@ -255,7 +277,10 @@ class WCS(object):
         available_frames : dict
             {frame_name: frame_object or None}
         """
-        return self._coord_frames
+        if self._pipeline:
+            return [frame[0] for frame in self._pipeline]
+        else:
+            return None
 
     def insert_transform(self, frame, transform, after=False):
         """
@@ -285,26 +310,29 @@ class WCS(object):
     @property
     def unit(self):
         """The unit of the coordinates in the output coordinate system."""
-        try:
-            return self._coord_frames[self._output_frame].unit
-        except AttributeError:
+        if self._pipeline:
+            try:
+                return getattr(self, self._pipeline[-1][0]).unit
+            except AttributeError:
+                return None
+        else:
             return None
 
     @property
     def output_frame(self):
         """Return the output coordinate frame."""
-        if self._coord_frames[self._output_frame] is not None:
-            return self._coord_frames[self._output_frame]
+        if self._pipeline:
+            return self._pipeline[-1][0]
         else:
-            return self._output_frame
+            return None
 
     @property
     def input_frame(self):
         """Return the input coordinate frame."""
-        if self._coord_frames[self._input_frame] is not None:
-            return self._coord_frames[self._input_frame]
+        if self._pipeline:
+            return self._pipeline[0][0]
         else:
-            return self._input_frame
+            return None
 
     @property
     def name(self):

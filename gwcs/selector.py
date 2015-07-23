@@ -13,6 +13,9 @@ from . import region
 from .utils import RegionError
 
 
+__all__ = ['SelectorMask', 'RegionsSelector']
+
+
 def _toindex(value):
     """
     Convert value to an int or an int array.
@@ -105,7 +108,7 @@ class SelectorMask(Model):
 
         Returns
         -------
-        mask : `~gwcs.selectorSelectorMask`
+        mask : `~gwcs.selector.SelectorMask`
             Mask to be used with `~gwcs.selector.SelectorModel`.
 
         Examples

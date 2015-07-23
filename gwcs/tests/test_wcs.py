@@ -13,40 +13,91 @@ from astropy import wcs as astwcs
 
 from .. import wcs
 from .. import coordinate_frames as cf
+from ..utils import ModelDimensionalityError, CoordinateFrameError
+
+
+m1 = models.Shift(12.4) & models.Shift(-2)
+m2 = models.Scale(2) & models.Scale(-2)
+icrs = cf.CelestialFrame(coord.ICRS())
+det = cf.Frame2D(name='detector', axes_order=(0, 1))
+focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
+pipe = [(det, m1),
+        (focal, m2),
+        (icrs, None)
+        ]
 
 
 def test_create_wcs():
-    m = models.Shift(12.4)
-    icrs = cf.CelestialFrame(coord.ICRS())
-    det = cf.DetectorFrame()
-    gw1 = wcs.WCS(output_frame='icrs', input_frame='detector', forward_transform=m)
-    gw2 = wcs.WCS(output_frame='icrs', forward_transform=m)
-    gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m)
-    assert(gw1._input_frame == gw2._input_frame == gw3._input_frame == 'detector')
-    assert(gw1._output_frame == gw2._output_frame == gw3._output_frame == 'icrs')
+    """
+    Tests initializing a WCS object with frames of type str or CoorindtaeFrame.
+    """
+    icrs = cf.CelestialFrame(name='icrs', reference_frame=coord.ICRS())
+    det = cf.Frame2D(name='detector', axes_order=(0,1))
+    gw1 = wcs.WCS(output_frame='icrs', input_frame='detector', forward_transform=m1)
+    gw2 = wcs.WCS(output_frame='icrs', forward_transform=m1)
+    gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
+    assert(gw1.input_frame == gw2.input_frame == gw3.input_frame == 'detector')
+    assert(gw1.output_frame == gw2.output_frame == gw3.output_frame == 'icrs')
     assert(gw1.forward_transform.__class__ == gw2.forward_transform.__class__ ==
-           gw3.forward_transform.__class__ == m.__class__)
-    assert(gw1._coord_frames == gw2._coord_frames == {'detector': None, 'icrs': None})
+           gw3.forward_transform.__class__ == m1.__class__)
+    assert np.in1d(gw1._available_frames, gw2._available_frames).all()
+
+
+def test_init_no_transform():
+    """
+    Tests initializing a WCS object without a forward_transform.
+    """
+    gw = wcs.WCS(output_frame='icrs')
+    assert gw._pipeline == [('detector', None), ('icrs', None)]
+    assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
+    icrs = cf.CelestialFrame(coord.ICRS())
+    det = cf.Frame2D(name='detector', axes_order=(0, 1))
+    gw = wcs.WCS(output_frame=icrs, input_frame=det)
+    assert gw._pipeline == [('detector', None), ('CelestialFrame', None)]
+    assert np.in1d(gw.available_frames, ['detector', 'CelestialFrame']).all()
 
 
 def test_pipeline_init():
-    gw = wcs.WCS(output_frame='icrs')
-    assert gw._pipeline == [('detector', None), ('icrs', None)]
-    assert(gw.available_frames == {'detector': None, 'icrs': None})
-    icrs = cf.CelestialFrame(coord.ICRS())
-    det = cf.DetectorFrame()
-    gw = wcs.WCS(output_frame=icrs, input_frame=det)
-    assert gw._pipeline == [('detector', None), ('icrs', None)]
-    assert(gw.available_frames == {'detector': det, 'icrs': icrs})
+    """ Tests initializing a WCS object with a pipeline list."""
+
+    gw = wcs.WCS(input_frame=det, output_frame=icrs, forward_transform=pipe)
+    assert np.in1d(gw.available_frames, ['detector', 'focal', 'CelestialFrame']).all()
+    assert_allclose(gw(1, 2), [26.8, 0] )
 
 
 def test_insert_transform():
+    """ Tests inserting a transform."""
     m1 = models.Shift(12.4)
     m2 = models.Scale(3.1)
     gw = wcs.WCS(output_frame='icrs', forward_transform=m1)
     assert(gw.forward_transform(1.2) == m1(1.2))
     gw.insert_transform(frame='icrs', transform=m2)
     assert(gw.forward_transform(1.2) == (m1 | m2)(1.2))
+
+
+def test_wrong_ndim():
+    """
+    Tests that exception is raised if n_inputs/n_outputs does not
+    match number of input/output axes.
+    """
+    det = cf.Frame2D(name='detector')
+    icrs = cf.CelestialFrame(coord.ICRS(), name='icrs')
+    m = models.Shift(1)
+    with pytest.raises(ModelDimensionalityError):
+        w = wcs.WCS(output_frame='icrs', forward_transform=m, input_frame=det)
+    with pytest.raises(ModelDimensionalityError):
+        w = wcs.WCS(output_frame=icrs, forward_transform=m)
+
+
+def test_set_transform():
+    """ Tests setting a transform between two frames in the pipeline."""
+    w = wcs.WCS(input_frame=det, output_frame=icrs, forward_transform=pipe)
+    w.set_transform('detector', 'focal', models.Identity(2))
+    assert_allclose(w(1, 1), (2, -2))
+    with pytest.raises(CoordinateFrameError):
+        w.set_transform('detector1', 'focal', models.Identity(2))
+    with pytest.raises(CoordinateFrameError):
+        w.set_transform('detector', 'focal1', models.Identity(2))
 
 
 class TestImaging(object):
@@ -92,11 +143,25 @@ class TestImaging(object):
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
 
+    def test_distortion(self):
+        sipx, sipy = self.fitsw.sip_pix2foc(self.xv, self.yv, 1)
+        sipx = np.array(sipx) + 2048
+        sipy = np.array(sipy) + 1024
+        sip_coord = self.wcs.get_transform('detector', 'focal')(self.xv, self.yv)
+        assert_allclose(sipx, sip_coord[0])
+        assert_allclose(sipy, sip_coord[1])
+
+    def test_wcslinear(self):
+        ra, dec = self.fitsw.wcs_pix2world(self.xv, self.yv, 1)
+        sky = self.wcs.get_transform('focal', 'CelestialFrame')(self.xv, self.yv)
+        assert_allclose(ra, sky[0])
+        assert_allclose(dec, sky[1])
+
     def test_forward(self):
         sky_coord = self.wcs(self.xv, self.yv)
         ra, dec = self.fitsw.all_pix2world(self.xv, self.yv, 1)
-        assert_almost_equal(sky_coord[0], ra)
-        assert_almost_equal(sky_coord[1], dec)
+        assert_allclose(sky_coord[0], ra)
+        assert_allclose(sky_coord[1], dec)
 
     def test_backward(self):
         transform = self.wcs.get_transform(from_frame='focal', to_frame=self.wcs.output_frame)
