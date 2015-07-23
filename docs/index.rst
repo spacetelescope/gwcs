@@ -1,22 +1,26 @@
 GWCS Documentation
 ====================
 
-`gwcs <https://github.com/spacetelescope/gwcs>`__ is a package for computing the World Coordinate System (WCS) of astronomical data.
+`GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for constructing and managing
+the World Coordinate System (WCS) of astronomical data.
 
 Introduction
 ------------
 
-This package provides tools to construct and work with WCS objects in a general way.
-It uses the standard cordinate systems defined in
-`astropy.coordinates <http://docs.astropy.org/en/stable/coordinates>`__, typically as an output
-coordinate system which then can be transformed to another standard system supported
-by `astropy.coordinates <http://docs.astropy.org/en/stable/coordinates>`__. The WCS provides
-the transformation between input coordinates (default is detector) and the output coordinate system.
-These can be compound transformations combining simple models in various ways - they can be chained,
-joined or used in arithmetic operations. Although not limited to, this package was designed to use
-the flexible framework of compound models in
-`astropy.modeling <http://docs.astropy.org/en/stable/modeling>`__ .
-Being written in `Python <http://www.python.org>`__ , it is easily extendable.
+
+`GWCS <https://github.com/spacetelescope/gwcs>`__ takes a general approach to WCS.
+It supports a data model which includes the entire transformation pipeline from
+input coordinates (detector by default)  to world cooridnates.
+Transformations can be chained, joined or combined with arithmetic operators
+using the flexible framework of compound models in `~astropy.modeling`.
+Transformations can be chained, joined or combined with arithmetic operators.
+In the case of a celestial output frame `~astropy.coordinates` provides automatically
+further transformations between standard coordinate frames.
+Spectral output coordinates are instances of `~astropy.units.Quantity`  and are
+transformed to other units with the tools in that package.
+The goal is to provide a flexible toolkit which is easily extendable by adding new
+transforms and frames.
+
 
 Installation
 ------------
@@ -27,13 +31,14 @@ Installation
 
 - `astropy <http://www.astropy.org/>`__ 1.0 or later
 
+- `pyasdf <http://pyasdf.readthedocs.org/en/latest/>`__
 
 
 Getting Started
 ---------------
 
 The simplest way to initialize a WCS object is to pass a `forward_transform` and an `output_frame`
-to `~gwcs.wcs.WCS`. As an example, consider a typical basic FITS WCS of a image.
+to `~gwcs.wcs.WCS`. As an example, consider a typical basic FITS WCS of an image.
 The following imports are generally useful:
 
   >>> from astropy.modeling.models import (Shift, Scale, Rotation2D,
@@ -63,43 +68,22 @@ if available, otherwise applies an iterative method to calculate the reverse coo
   >>> w.invert(*sky)
       (1.000000000009388, 2.0000000000112728)
 
-It is possible to have intermediate frames in the WCS pipeline. In this case it is convenient
-to initialize the WCS object with a list of tuples, where each tuple (step_frame, step_transform)
-represents a transform "step_transform" from frame "step_frame" to the next frame in the WCS pipeline.
-The transform in the last step is always None to indicate end of the pipeline.
-If a "focal" frame and polynomial distortion are added to the above example:
+Some methods allow managing the transforms in a more detailed manner.
 
-  >>> focal = coordinate_frames.Frame2D(name='focal', unit=('arcsec', 'arcsec'))
-  >>> distortion = Mapping([0, 1, 0, 1]) | Polynomial2D(1, c0_0=0.1, c1_0=.02, c0_1=.02) & Polynomial2D(1, c0_0=.4, c1_0=.2, c0_1=.1)
-  >>> pipeline = [('detector', distortion), (focal, transform), (sky_frame, None)]
-  >>> w = wcs.WCS(pipeline)
-  >>> w(1, 2)
-      (5.249343926993615, -72.57769537481136)
-
-Frame objects allow to extend the functionality by using `astropy.coordinates` and `astropy.units`.
-Frames are available as attributes of the WCS object.
-
-  >>> w.available_frames
-      ['detector', 'focal', 'icrs']
-  >>> w.icrs
-      <CelestialFrame(reference_frame=<ICRS Frame>, unit=[Unit("deg"), Unit("deg")], name=icrs)>
-  >>> w.icrs.coordinates(1,2)
-      <SkyCoord (ICRS): (ra, dec) in deg
-          (5.24934393, -72.57769537)>
-  >>> w.icrs.transform_to('galactic', 1, 2)
-      <SkyCoord (Galactic): (l, b) in deg
-          (306.11129272, -44.36215723)>
-
-Some methods allow managing the transforms in a more detaield manner.
+Transforms between frames can be retrieved and evaluated separately.
 
   >>> dist = w.get_transform('detector', 'focal')
   >>> dist(1, 2)
       (0.16, 0.8)
 
+Transforms in the pipeline can be replaced by new transforms.
+
   >>> new_transform = Shift(1) & Shift(1.5) | distortion
   >>> w.set_transform('detector', 'focal', new_transform)
   >>> w(1, 2)
       (5.257230028926096, -72.53171157138964)
+
+A transform can be inserted before or after a frame in the pipeline.
 
   >>> scale = Scale(2) & Scale(1)
   >>> w.insert_transform('icrs', scale, after=False)
@@ -139,3 +123,4 @@ Reference/API
 
 .. automodapi:: gwcs.wcs
 .. automodapi:: gwcs.coordinate_frames
+.. automodapi:: gwcs.selector

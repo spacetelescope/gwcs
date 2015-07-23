@@ -12,7 +12,6 @@ from astropy.utils import isiterable
 
 from . import coordinate_frames
 from .utils import ModelDimensionalityError, CoordinateFrameError
-from .selector import *
 
 
 __all__ = ['WCS']
@@ -187,6 +186,8 @@ class WCS(object):
         """
         Return the index in the pipeline where this frame is locate.
         """
+        if isinstance(frame, coordinate_frames.CoordinateFrame):
+            frame = frame.name
         return np.asarray(self._pipeline)[:, 0].tolist().index(frame)
 
     def _get_frame_name(self, frame):

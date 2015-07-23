@@ -375,25 +375,20 @@ class CompositeFrame(CoordinateFrame):
     """
 
     def __init__(self, frames, name=None):
-        """
-        naxes, reference_frame=None, reference_position=None,
-                 unit=None, axes_names=None, name=None):
-
-
-        """
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
         axes_type = list(range(naxes))
-        unit = []
-        axes_names = []
+        unit = list(range(naxes))
+        axes_names = list(range(naxes))
         axes_order = []
         for frame in frames:
-            unit.extend(frame.unit)
-            axes_names.extend(frame.axes_names)
             axes_order.extend(frame.axes_order)
-            for ind, axis_type in zip(frame.axes_order, frame.axes_type):
-                axes_type[ind] = axis_type
-
+        for frame in frames:
+            for ind, type, u, n in zip(frame.axes_order, frame.axes_type,
+                                          frame.unit, frame.axes_names):
+                axes_type[ind] = type
+                axes_names[ind] = n
+                unit[ind] = u
         super(CompositeFrame, self).__init__(naxes, axes_type=axes_type, axes_order=axes_order,
                                              unit=unit, axes_names=axes_names,
                                              name=name)

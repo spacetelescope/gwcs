@@ -108,7 +108,7 @@ class SelectorMask(Model):
 
         Returns
         -------
-        mask : `~gwcs.selectorSelectorMask`
+        mask : `~gwcs.selector.SelectorMask`
             Mask to be used with `~gwcs.selector.SelectorModel`.
 
         Examples

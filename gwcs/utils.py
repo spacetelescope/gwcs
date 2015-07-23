@@ -165,7 +165,7 @@ def get_axes(header):
 
     """
     if isinstance(header, fits.Header):
-        wcs_info = util.read_wcs_from_header(header)
+        wcs_info = read_wcs_from_header(header)
     elif isinstance(header, dict):
         wcs_info = header
     else:
@@ -248,7 +248,7 @@ def fitswcs_linear(header):
 
     """
     if isinstance(header, fits.Header):
-        wcs_info = util.read_wcs_from_header(wcs_info)
+        wcs_info = read_wcs_from_header(header)
     elif isinstance(header, dict):
         wcs_info = header
     else:
@@ -260,7 +260,7 @@ def fitswcs_linear(header):
     # get the part of the PC matrix corresponding to the imaging axes
     sky_axes = None
     if pc.shape != (2, 2):
-        sky_axes, _ = util.get_axes(wcs_info)
+        sky_axes, _ = get_axes(wcs_info)
         i, j = sky_axes
         sky_pc = np.zeros((2,2))
         sky_pc[0, 0] = pc[i, i]
