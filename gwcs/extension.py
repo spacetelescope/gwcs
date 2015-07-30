@@ -17,6 +17,4 @@ class GWCSExtension(AsdfExtension):
     @property
     def url_mapping(self):
         return resolver.DEFAULT_URL_MAPPING
-        #return [('http://stsci.edu/schemas/asdf/1.0.0/',
-                 #util.filepath_to_url(TEST_DATA_PATH) +
-                 #'/{url_suffix}.yaml')]
+
