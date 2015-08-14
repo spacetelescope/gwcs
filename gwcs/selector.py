@@ -6,11 +6,11 @@ Regions are well defined spaces in the same frame as the inputs to
 RegionsSelector. They are assigned unique labels (int or str).
 
 The module also defines classes which map inputs to regions.
-An in stance of one of the LabelMapper classes is passed as a parameter to RegionsSelector.
+An instance of one of the LabelMapper classes is passed as a parameter to RegionsSelector.
 Its purpose is to return the labels of the  regions within which
-all inputs are located. This labels are used by RegionsSelector to
-pick the corresponding transform. Finally, RegionsSelector
-evaluates the transforms with their corresponding inputs.
+each input is located. The labels are used by RegionsSelector to
+pick the corresponding transforms. Finally, RegionsSelector
+evaluates the transforms using the matchin inputs.
 
 The base class _LabelMapper can be subclassed to create other
 label mappers. The inputs to RegionsSelector are passed to the
