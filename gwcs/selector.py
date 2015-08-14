@@ -117,6 +117,9 @@ class _LabelMapper(Model):
     def no_label(self):
         return self._no_label
 
+    def evaluate(self, *args):
+        raise NotImplementedError("Subclasses should implement this method.")
+
 
 class LabelMapperArray(_LabelMapper):
 
