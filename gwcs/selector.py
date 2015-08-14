@@ -117,12 +117,6 @@ class _LabelMapper(Model):
     def no_label(self):
         return self._no_label
 
-    def get_labels(self):
-        """
-        Return the labels in the mapper.
-        """
-        raise NotImplementedError("Subclasses should impement this.")
-
 
 class LabelMapperArray(_LabelMapper):
 
@@ -159,17 +153,6 @@ class LabelMapperArray(_LabelMapper):
             _no_label = ""
 
         super(LabelMapperArray, self).__init__(mapper, _no_label)
-
-    def get_labels(self):
-        labels = list(np.unique(self._mapper))
-
-        if isinstance(labels[0], numbers.Number):
-            if 0 in labels:
-                labels.remove(0)
-        else:
-            if "" in labels:
-                labels.remove("")
-        return labels
 
     def evaluate(self, *args):
         args = [_toindex(a) for a in args]
@@ -258,10 +241,6 @@ class LabelMapperDict(_LabelMapper):
             _no_label = ""
         super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping)
 
-    def get_labels(self):
-        labels = [self._mapper[key](key) for key in self._mapper.keys()]
-        return labels
-
     def evaluate(self, *args):
         shape = args[0].shape
         args = [a.flatten() for a in args]
@@ -330,10 +309,6 @@ class LabelMapperRange(_LabelMapper):
         #else:
         #    _no_label = ""
         super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping)
-
-    def get_labels(self):
-        labels = [self._mapper[key](key) for key in self._mapper.keys()]
-        return labels
 
     # move this to utils?
     def _find_range(self, value_range, value):
