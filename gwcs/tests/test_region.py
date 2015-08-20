@@ -134,7 +134,7 @@ def test_outside_range():
     Overlapping ranges should raise an error.
     """
     sel = create_range_mapper()
-    key = sel.mapper.keys()[0]
+    key = list(sel.mapper.keys())[0]
     newkey = (key[0], key[1]+5)
     sel.mapper[newkey] = sel.mapper[key]
     with pytest.raises(ValueError):

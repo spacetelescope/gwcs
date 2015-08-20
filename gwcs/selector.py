@@ -187,16 +187,14 @@ class LabelMapperArray(_LabelMapper):
             A model which takes the same inputs as `~gwcs.selector.RegionsSelector`
             and returns a label.
 
-
-
         Examples
         --------
-        regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
-                   2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
-                   3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
-                   4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
-                  }
-        mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
+        >>> regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
+                       2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
+                       3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
+                       4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
+                      }
+        >>> mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
 
         """
         labels = np.array(list(regions.keys()))
@@ -341,7 +339,7 @@ class LabelMapperRange(_LabelMapper):
             keys = args
         res = np.empty(shape)
         unique = np.unique(keys)
-        value_range = np.array(self.mapper.keys())
+        value_range = np.array(list(self.mapper.keys()))
         for key in unique:
             ind = (keys == key)
             inputs = [a[ind] for a in args]
