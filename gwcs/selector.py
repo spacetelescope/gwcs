@@ -3,7 +3,7 @@
 The classes in this module create discontinuous transforms.
 The main class is `RegionsSelector`. It maps regions to transforms.
 Regions are well defined spaces in the same frame as the inputs to
-RegionsSelector. They are assigned unique labels (int or str).
+`RegionsSelector`. They are assigned unique labels (int or str).
 
 The module also defines classes which map inputs to regions.
 An instance of one of the LabelMapper classes is passed as a parameter to RegionsSelector.
@@ -187,14 +187,16 @@ class LabelMapperArray(_LabelMapper):
             A model which takes the same inputs as `~gwcs.selector.RegionsSelector`
             and returns a label.
 
+
+
         Examples
         --------
-        >>> regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
-                       2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
-                       3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
-                       4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
-                      }
-        >>> mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
+        regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
+                   2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
+                   3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
+                   4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
+                  }
+        mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
 
         """
         labels = np.array(list(regions.keys()))
@@ -236,6 +238,8 @@ class LabelMapperDict(_LabelMapper):
     def __init__(self, inputs, mapper, inputs_mapping=None):
         self.inputs = inputs
         _no_label = 0
+        if not all([m.n_outputs == 1 for m in mapper.values()]):
+            raise TypeError("All transforms in mapper must have one output.")
         super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping)
 
     def evaluate(self, *args):
@@ -272,8 +276,10 @@ class LabelMapperRange(_LabelMapper):
     This class is to be used as an argument to `~gwcs.selector.RegionsSelector`.
     All inputs passed to `~gwcs.selector.RegionsSelector` are passed to
     this class. ``inputs_mapping`` is used to filter which input is to be used
-    to determine the range. Transforms may use an instance of `~astropy.modeling.models.Mapping`
+    to determine the range. All inputs are passed to each transform.
+    Transforms may use an instance of `~astropy.modeling.models.Mapping`
     and/or `~astropy.modeling.models.Identity` to filter or change the order of their inputs.
+    Transforms should have the same number of inputs and outputs.
 
     Example: Pick a transform based on wavelength range.
     For an IFU observation, the keys are (lambda_min, lambda_max) pairs
@@ -301,6 +307,8 @@ class LabelMapperRange(_LabelMapper):
     def __init__(self, inputs, mapper, inputs_mapping=None):
         self.inputs = inputs
         _no_label = 0
+        if not all([m.n_outputs == 1 for m in mapper.values()]):
+            raise TypeError("All transforms in mapper must have one output.")
         super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping)
 
     # move this to utils?
@@ -316,7 +324,7 @@ class LabelMapperRange(_LabelMapper):
             The value to
         """
         a, b = value_range[:,0], value_range[:,1]
-        ind = np.logical_and(value > a, value < b).nonzero()[0]
+        ind = np.logical_and(value >= a, value <= b).nonzero()[0]
         if ind.size > 1:
             raise ValueError("There are overlapping ranges.")
         elif ind.size == 0:
@@ -344,6 +352,7 @@ class LabelMapperRange(_LabelMapper):
                 res[ind] = transform(*inputs)
             else:
                 res[ind] = self._no_label
+
             res.shape = shape
         return res
 
@@ -369,7 +378,6 @@ class RegionsSelector(Model):
         Value to be returned if there's no transform defined for the inputs.
     """
     standard_broadcasting = False
-    _param_names = ()
 
     linear = False
     fittable = False
