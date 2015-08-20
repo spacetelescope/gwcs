@@ -2,18 +2,18 @@ Discontinuous WCS - An IFU Example
 ==================================
 
 There are a couple of models in GWCS which help with managing discontinuous WCSs.
-Given (x, y) pixel indices, `~gwcs.selector.SelectorMask` returns a label (int or str)
+Given (x, y) pixel indices, `~gwcs.selector.LabelMapperArray` returns a label (int or str)
 which uniquely identifies a location in a frame. `~gwcs.selector.RegionsSelector`
-maps different transforms to different locations in the frame of `~gwcs.selector.SelectorMask`.
+maps different transforms to different locations in the frame of `~gwcs.selector.RegionsSelector.label_mapper`.
 
 An example use case is an IFU observation. The locations on the detector where slices are
-projected are labeled with integer numbers. Given an (x, y) pixel, the `~gwcs.selector.SelectorMask`
+projected are labeled with integer numbers. Given an (x, y) pixel, the `~gwcs.selector.LabelMapperArray`
 returns the label of the IFU slice which this pixel belongs to. Assuming each slice has its own WCS
-transformation, `~gwcs.selector.RegionsSelector` takes as input an instance of `~gwcs.selector.SelectorMask`
+transformation, `~gwcs.selector.RegionsSelector` takes as input an instance of `~gwcs.selector.LabelMapperArray`
 and maps labels to transforms. A step by step example of constructing the WCS for an IFU with 6 slits follows.
 
   >>> import numpy as np
-  >>> from astropy.modeling.models improt Shift, Scale, Mapping
+  >>> from astropy.modeling.models import Shift, Scale, Mapping
   >>> from astropy import coordinates as coord
   >>> from astropy import units as u
   >>> from gwcs import wcs, selector
@@ -40,8 +40,8 @@ are here (imaging) and here  the ref: spectral_example.
   >>> for i in range(1, 7):
           transforms[i] = Mapping([0, 0, 1]) | Shift(i * 0.1) & Shift(i * 0.2) & Scale(i * 0.1)
 
-One way to initialize `~gwcs.selector.SelectorMask` is to pass it the shape of the array and the vertices
-of each slit on the detector {label: vertices} see :meth: `~gwcs.selector.SelectorMask.from_vertices`.
+One way to initialize `~gwcs.selector.LabelMapperArray` is to pass it the shape of the array and the vertices
+of each slit on the detector {label: vertices} see :meth: `~gwcs.selector.LabelMapperArray.from_vertices`.
 In this example the mask is an array with the size of the detector where each item in the array
 corresponds to a pixel on the detector and its value is the slice number (label) this pixel
 belongs to.
@@ -55,15 +55,17 @@ not belong to any slit. Assuming the array is stored in
   >>> from pyasdf import AsdfFile
   >>> f = AsdfFile.open('mask.asdf')
   >>> data = f.tree['mask']
-  >>> mask = selector.SelectorMask(data)
+  >>> mask = selector.LabelMapperArray(data)
 
 For more information on using the `ASDF <http://asdf-standard.readthedocs.org/en/latest/>`__ format
 see `PyASDF <http://pyasdf.readthedocs.org/en/latest/>`__
 
 Create the pixel to world transform for the entire IFU:
 
-  >>> regions_transform = selector.RegionsSelector(inputs=['x','y'], outputs=['ra', 'dec', 'lam'],
-                                                   selector=transforms, mask=mask,
+  >>> regions_transform = selector.RegionsSelector(inputs=['x','y'],
+                                                   outputs=['ra', 'dec', 'lam'],
+                                                   selector=transforms,
+                                                   label_mapper=mask,
                                                    undefined_transform_value=np.nan)
 
 The WCS object now can evaluate simultaneously the transforms of all slices

@@ -187,16 +187,14 @@ class LabelMapperArray(_LabelMapper):
             A model which takes the same inputs as `~gwcs.selector.RegionsSelector`
             and returns a label.
 
-
-
         Examples
         --------
-        regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
-                   2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
-                   3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
-                   4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
-                  }
-        mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
+        >>> regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
+                       2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
+                       3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
+                       4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
+                      }
+        >>> mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
 
         """
         labels = np.array(list(regions.keys()))
@@ -237,11 +235,7 @@ class LabelMapperDict(_LabelMapper):
 
     def __init__(self, inputs, mapper, inputs_mapping=None):
         self.inputs = inputs
-        # try to determine if slices are numbers of strings
-        if isinstance(mapper[list(mapper.keys())[0]](*np.arange(len(inputs))), numbers.Number):
-            _no_label = 0
-        else:
-            _no_label = ""
+        _no_label = 0
         super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping)
 
     def evaluate(self, *args):
@@ -251,7 +245,7 @@ class LabelMapperDict(_LabelMapper):
             keys = self._inputs_mapping.evaluate(*args)
         else:
             keys = args
-        res = np.empty(shape, dtype=type(self._no_label))
+        res = np.empty(shape)
         unique = np.unique(keys)
         for key in unique:
             ind = (keys == key)
@@ -306,11 +300,7 @@ class LabelMapperRange(_LabelMapper):
 
     def __init__(self, inputs, mapper, inputs_mapping=None):
         self.inputs = inputs
-        # try to determine if slices are numbers of strings
-        #if isinstance(mapper[list(mapper.keys())[0]](*np.arange(len(inputs))), numbers.Number):
         _no_label = 0
-        #else:
-        #    _no_label = ""
         super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping)
 
     # move this to utils?
@@ -341,14 +331,11 @@ class LabelMapperRange(_LabelMapper):
             keys = self._inputs_mapping.evaluate(*args)
         else:
             keys = args
-        res = np.empty(shape, dtype=type(self._no_label)) # this creates a S1 type array
+        res = np.empty(shape)
         unique = np.unique(keys)
         value_range = np.array(self.mapper.keys())
         for key in unique:
-            ind = (keys == key)#[0]
-            print('ind', ind)
-            print('a', a)
-            print('args', args)
+            ind = (keys == key)
             inputs = [a[ind] for a in args]
             range_ind = self._find_range(value_range, key)
             #filter out values which are not within any region
@@ -387,8 +374,7 @@ class RegionsSelector(Model):
     linear = False
     fittable = False
 
-    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan, mapping=None):
-        self._mapping = mapping
+    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan):
         self._inputs = inputs
         self._outputs = outputs
         self.label_mapper = label_mapper
@@ -409,9 +395,25 @@ class RegionsSelector(Model):
         """
         Sets one of the inputs and returns a transform associated with it.
         """
-        def _eval_input(x, y):
-            return self._selector[rid](x, y)
-        return _eval_input
+        if rid in self._selector:
+            return self._selector[rid]
+        else:
+            raise RegionError("Region {0} not found".format(rid))
+
+    def inverse(self):
+        if self.label_mapper.inverse is not None:
+            try:
+                transforms_inv = {}
+                for rid in self._selector:
+                    transforms_inv[rid] = self._selector[rid].inverse
+            except AttributeError:
+                raise NotImplementedError("The inverse of all regions must be defined"
+                                          "for RegionsSelector to have an inverse.")
+            return self.__class__(self.outputs, self.inputs, transforms_inv,
+                                  self.label_mapper.inverse)
+        else:
+            raise NotImplementedError("The label mapper must have an inverse "
+                                      "for RegionsSelector to have an inverse.")
 
     def evaluate(self, *args):
         """
