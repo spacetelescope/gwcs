@@ -83,6 +83,7 @@ install:
     # CORE DEPENDENCIES
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com:spacetelescope/pyasdf.git#egg=pyasdf; fi
 
     # ASTROPY
     - if [[ $SETUP_CMD != egg_info ]] && [[ $ASTROPY_VERSION == development ]]; then $PIP_INSTALL git+http://github.com/astropy/astropy.git#egg=astropy; fi
@@ -94,7 +95,7 @@ install:
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda`
     # install since this ensures Numpy does not get automatically upgraded.
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION ; fi
-    # - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL ...; fi
+    #- if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL ...; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that

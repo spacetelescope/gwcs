@@ -93,10 +93,19 @@ class RegionsSelectorType(TransformType):
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
-        node = {'inputs': model.inputs, 'outputs': model.outputs,
-                'selector': model.selector,
-                'mask': model.mask,
-                'undefined_transform_value': model.undefined_transform_value}
+        selector = OrderedDict()
+        node = OrderedDict()
+        labels = list(model.selector.keys())
+        values = []
+        for l in labels:
+            values.append(model.selector[l])
+        selector['labels'] = labels
+        selector['transforms'] = values
+        node['inputs']= list(model.inputs)
+        node['outputs'] = list(model.outputs)
+        node['selector'] = selector
+        node['label_mapper'] =  model.label_mapper
+        node['undefined_transform_value'] = model.undefined_transform_value
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
 
     @classmethod
