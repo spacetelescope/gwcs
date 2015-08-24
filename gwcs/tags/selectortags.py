@@ -7,6 +7,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from astropy.modeling import models
 from astropy.utils import OrderedDict
+from astropy.utils.misc import isiterable
+
 from pyasdf import yamlutil
 from pyasdf.tags.transform.basic import TransformType
 from pyasdf.tags.core.ndarray import NDArrayType
@@ -36,8 +38,10 @@ class LabelMapperType(TransformType):
             return LabelMapperArray(mapper, inputs_mapping)
         else:
             inputs = node.get('inputs', None)
+            if inputs is not None:
+                inputs = tuple(inputs)
             labels = mapper.get('labels')
-            if not np.isscalar(labels[0]):
+            if isiterable(labels[0]):
                 labels = [tuple(l) for l in labels]
             transforms = mapper.get('models')
             dict_mapper = dict(zip(labels, transforms))
@@ -55,7 +59,7 @@ class LabelMapperType(TransformType):
             transforms = []
             for k in labels:
                 transforms.append(model.mapper[k])
-            if not np.isscalar(labels[0]):
+            if isiterable(labels[0]):
                 labels = [list(l) for l in labels]
             mapper['labels'] = labels
             mapper['models'] = transforms
@@ -71,7 +75,11 @@ class LabelMapperType(TransformType):
         # TODO: If models become comparable themselves, remove this.
         assert (a.__class__ == b.__class__)
         if isinstance(a.mapper, dict):
-            assert_array_equal(list(a.mapper.keys()), list(b.mapper.keys()))
+            assert(a.mapper.__class__ == b.mapper.__class__)
+            assert(all(np.in1d(list(a.mapper), list(b.mapper))))
+            for k in a.mapper:
+                assert (a.mapper[k].__class__  == b.mapper[k].__class__)
+                assert(all(a.mapper[k].parameters == b.mapper[k].parameters))
             assert (a.inputs == b.inputs)
             assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping)
         else:
@@ -114,10 +122,10 @@ class RegionsSelectorType(TransformType):
     def assert_equal(cls, a, b):
         # TODO: If models become comparable themselves, remove this.
         assert (a.__class__ == b.__class__)
-        assert_array_equal(a.mask.mask, b.mask.mask)
+        LabelMapperType.assert_equal(a.label_mapper, b.label_mapper)
         assert_array_equal(a.inputs, b.inputs)
         assert_array_equal(a.outputs, b.outputs)
         assert_array_equal(a.selector.keys(), b.selector.keys())
-        for i in a.selector.keys():
-            assert_array_equal(a.selector[i].parameters, b.selector[i].parameters)
+        for key in a.selector:
+            assert_array_equal(a.selector[key].parameters, b.selector[key].parameters)
         assert_array_equal(a.undefined_transform_value, b.undefined_transform_value)
