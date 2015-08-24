@@ -37,6 +37,8 @@ class LabelMapperType(TransformType):
         else:
             inputs = node.get('inputs', None)
             labels = mapper.get('labels')
+            if not np.isscalar(labels[0]):
+                labels = [tuple(l) for l in labels]
             transforms = mapper.get('models')
             dict_mapper = dict(zip(labels, transforms))
             return LabelMapperDict(inputs, dict_mapper, inputs_mapping)
@@ -48,7 +50,7 @@ class LabelMapperType(TransformType):
             node['mapper'] = model.mapper
         if isinstance(model, (LabelMapperDict, LabelMapperRange)):
             mapper = OrderedDict()
-            labels = list(model.mapper.keys())[:]
+            labels = list(model.mapper)
 
             transforms = []
             for k in labels:
@@ -84,18 +86,18 @@ class RegionsSelectorType(TransformType):
     def from_tree_transform(cls, node, ctx):
         inputs = node['inputs']
         outputs = node['outputs']
-        mask = node['mask']
+        label_mapper = node['label_mapper']
         undefined_transform_value = node['undefined_transform_value']
         sel = node['selector']
-
+        sel = dict(zip(sel['labels'], sel['transforms']))
         return RegionsSelector(inputs, outputs,
-                                        sel, mask, undefined_transform_value)
+                               sel, label_mapper, undefined_transform_value)
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
         selector = OrderedDict()
         node = OrderedDict()
-        labels = list(model.selector.keys())
+        labels = list(model.selector)
         values = []
         for l in labels:
             values.append(model.selector[l])
