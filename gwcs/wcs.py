@@ -35,6 +35,7 @@ class WCS(object):
         A coordinates object or a string name.
     name : str
         a name for this WCS
+
     """
 
     def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
@@ -118,7 +119,13 @@ class WCS(object):
             to_ind = self._get_frame_index(to_frame)
         except ValueError:
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
-        transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
+        if to_ind < from_ind:
+            transforms = np.array(self._pipeline[to_ind: from_ind])[:, 1].tolist()
+            transforms = [tr.inverse for tr in transforms]
+        elif to_ind == from_ind:
+            return None
+        else:
+            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
@@ -343,6 +350,11 @@ class WCS(object):
     def name(self, value):
         """Set the name for the WCS."""
         self._name = value
+
+    @property
+    def pipeline(self):
+        """Return the pipeline structure."""
+        return self._pipeline
 
     def __str__(self):
         from astropy.table import Table
