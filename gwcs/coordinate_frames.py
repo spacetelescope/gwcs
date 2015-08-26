@@ -18,9 +18,9 @@ __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame']
 
 
-##STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
-##"TOPOCENTER", "LSR", "LSRK", "LSRD",
-##"GALACTIC_CENTER", "MOON", "LOCAL_GROUP_CENTER"]
+STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
+                               "TOPOCENTER", "LSR", "LSRK", "LSRD",
+                               "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
 
 
 class CoordinateFrame(object):
@@ -91,19 +91,19 @@ class CoordinateFrame(object):
         if reference_position is not None:
             self._reference_position = reference_position
         else:
-            try:
-                self._reference_position = reference_frame.reference_position
-            except AttributeError:
-                self._reference_position = None
+            self._reference_position = None
 
         super(CoordinateFrame, self).__init__()
 
     def __repr__(self):
-        fmt = "<{0}({1}, reference_frame={2}, reference_position{3}," \
-            "unit={4}, axes_names={5}, name={6})>".format(
-                self.__class__.__name__, self.naxes,
-                self.reference_frame, self.reference_position, self.unit,
-                self.axes_names, self.name)
+        fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
+                self.__class__.__name__, self.name,
+                self.unit, self.axes_names, self.axes_order)
+        if self.reference_position is not None:
+            fmt += ', reference_position="{0}"'.format(self.reference_position)
+        if self.reference_frame is not None:
+            fmt += ", reference_frame={0}".format(self.reference_frame)
+        fmt += ")>"
         return fmt
 
     def __str__(self):
@@ -269,9 +269,9 @@ class CelestialFrame(CoordinateFrame):
 
     """
 
-    def __init__(self, axes_order=(0, 1), reference_frame=None, reference_position=None,
-                 unit=(u.degree, u.degree), axes_names=None,  name=None, wcsobj=None):
-        reference_position = 'Barycenter'
+    def __init__(self, axes_order=(0, 1), reference_frame=None,
+                 unit=(u.degree, u.degree), axes_names=None,
+                 name=None, wcsobj=None):
         if reference_frame is not None:
             if reference_frame.name.upper() in coord.builtin_frames.__all__:
                 axes_names = list(reference_frame.representation_component_names.keys())[:2]
@@ -279,8 +279,8 @@ class CelestialFrame(CoordinateFrame):
                                              axes_order=axes_order,
                                              reference_frame=reference_frame,
                                              unit=unit,
-                                             reference_position=reference_position,
-                                             axes_names=axes_names, name=name, wcsobj=wcsobj)
+                                             axes_names=axes_names,
+                                             name=name, wcsobj=wcsobj)
 
     def coordinates(self, *args):
         """
@@ -297,12 +297,6 @@ class CelestialFrame(CoordinateFrame):
             return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
         except:
             raise
-
-    def __repr__(self):
-
-        fmt = "<CelestialFrame(reference_frame={0}, \
-        unit={1}, name={2})>".format(self.reference_frame, self.unit, self.name)
-        return fmt
 
     def transform_to(self, other, *args):
         """
@@ -338,10 +332,13 @@ class SpectralFrame(CoordinateFrame):
         Reference to the WCS object to which this frame belongs.
     """
 
-    def __init__(self, axes_order=(0,), reference_frame=None, unit=None, axes_names=None, name=None, wcsobj=None):
+    def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
+                 axes_names=None, name=None, wcsobj=None, reference_position=None):
         super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                                             axes_names=axes_names, reference_frame=reference_frame,
-                                            unit=unit, name=name, wcsobj=wcsobj)
+                                            unit=unit, name=name,
+                                            reference_position=reference_position,
+                                            wcsobj=wcsobj)
 
     def coordinates(self, *args):
         args = self._wcsobj(*args)
@@ -389,7 +386,8 @@ class CompositeFrame(CoordinateFrame):
                 axes_type[ind] = type
                 axes_names[ind] = n
                 unit[ind] = u
-        super(CompositeFrame, self).__init__(naxes, axes_type=axes_type, axes_order=axes_order,
+        super(CompositeFrame, self).__init__(naxes, axes_type=axes_type,
+                                             axes_order=axes_order,
                                              unit=unit, axes_names=axes_names,
                                              name=name)
 
