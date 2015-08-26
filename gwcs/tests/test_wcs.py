@@ -100,6 +100,16 @@ def test_set_transform():
         w.set_transform('detector', 'focal1', models.Identity(2))
 
 
+def test_get_transform():
+    w = wcs.WCS(pipe)
+    tr_forward = w.get_transform('detector', 'focal')
+    tr_back = w.get_transform('focal', 'detector')
+    x, y = 1, 2
+    fx, fy = tr_forward(1, 2)
+    assert_allclose((x, y), tr_back(fx, fy))
+    assert( w.get_transform('detector', 'detector') is None)
+
+
 class TestImaging(object):
 
     def setup_class(self):
@@ -187,3 +197,4 @@ class TestImaging(object):
         with pytest.raises(wcs.CoordinateFrameError):
             assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names ==
                    self.wcs.forward_transform[1:].submodel_names)
+
