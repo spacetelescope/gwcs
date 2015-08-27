@@ -18,6 +18,8 @@ __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame']
 
 
+STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
+
 STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
                                "TOPOCENTER", "LSR", "LSRK", "LSRD",
                                "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
@@ -272,10 +274,15 @@ class CelestialFrame(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), reference_frame=None,
                  unit=(u.degree, u.degree), axes_names=None,
                  name=None, wcsobj=None):
+        naxes = 2
         if reference_frame is not None:
-            if reference_frame.name.upper() in coord.builtin_frames.__all__:
-                axes_names = list(reference_frame.representation_component_names.keys())[:2]
-        super(CelestialFrame, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+            if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
+                axes_names = list(reference_frame.representation_component_names.values())
+                if 'distance' in axes_names:
+                    axes_names.remove('distance')
+
+                naxes = len(axes_names)
+        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=["SPATIAL", "SPATIAL"],
                                              axes_order=axes_order,
                                              reference_frame=reference_frame,
                                              unit=unit,
@@ -291,6 +298,8 @@ class CelestialFrame(CoordinateFrame):
         args : float
             inputs to wcs.input_frame
         """
+        if not hasattr(self, '_wcsobj') or self._wcsobj is None:
+            raise TypeError("This method requires a WCS object")
         args = self._wcsobj(*args)
         args = [args[i] for i in self.axes_order]
         try:
