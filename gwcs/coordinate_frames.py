@@ -56,35 +56,31 @@ class CoordinateFrame(object):
                  reference_position=None, unit=None, axes_names=None,
                  name=None, wcsobj=None):
         self._naxes = naxes
-        self._axes_order = axes_order
+        self._axes_order = tuple(axes_order)
         if isinstance(axes_type, six.string_types):
             self._axes_type = (axes_type,)
         else:
-            self._axes_type = axes_type
+            self._axes_type = tuple(axes_type)
         self._reference_frame = reference_frame
         if unit is not None:
             if astutil.isiterable(unit):
-                if len(unit) != naxes:
-                    raise ValueError("Number of units does not match number of axes.")
-                else:
-                    self._unit = [u.Unit(au) for au in unit]
+                unit = tuple(unit)
             else:
-                self._unit = [u.Unit(unit)]
-        else:
-            if self.reference_frame is not None:
-                self._unit = list(reference_frame.representation_component_units.values())
-
+                unit = (unit,)
+            if len(unit) != naxes:
+                raise ValueError("Number of units does not match number of axes.")
+            else:
+                self._unit = tuple([u.Unit(au) for au in unit])
         if axes_names is not None:
-            if astutil.isiterable(axes_names):
-                if len(axes_names) != naxes:
-                    raise ValueError("Number of axes names does not match number of axes.")
-        else:
-            if self.reference_frame is not None:
-                axes_names = list(reference_frame.representation_component_names.values())
+            if isinstance(axes_names, six.string_types):
+                axes_names = (axes_names,)
             else:
-                axes_names = [None] * self._naxes
+                axes_names = tuple(axes_names)
+            if len(axes_names) != naxes:
+                raise ValueError("Number of axes names does not match number of axes.")
+        else:
+            axes_names = tuple([""] * naxes)
         self._axes_names = axes_names
-
         if name is None:
             self._name = self.__class__.__name__
         else:
@@ -271,18 +267,28 @@ class CelestialFrame(CoordinateFrame):
 
     """
 
-    def __init__(self, axes_order=(0, 1), reference_frame=None,
-                 unit=(u.degree, u.degree), axes_names=None,
+    def __init__(self, axes_order=None, reference_frame=None,
+                 unit=None, axes_names=None,
                  name=None, wcsobj=None):
         naxes = 2
         if reference_frame is not None:
             if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
-                axes_names = list(reference_frame.representation_component_names.values())
-                if 'distance' in axes_names:
-                    axes_names.remove('distance')
+                _axes_names = list(reference_frame.representation_component_names.values())
+                if 'distance' in _axes_names:
+                    _axes_names.remove('distance')
+                if axes_names is None:
+                    axes_names = _axes_names
+                naxes = len(_axes_names)
+                _unit = list(reference_frame.representation_component_units.values())
+                if unit is None and _unit:
+                    unit = _unit
 
-                naxes = len(axes_names)
-        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=["SPATIAL", "SPATIAL"],
+        if axes_order is None:
+            axes_order = tuple(range(naxes))
+        if unit is None:
+            unit = tuple([u.degree]  * naxes)
+        axes_type = ['SPATIAL'] * naxes
+        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
                                              axes_order=axes_order,
                                              reference_frame=reference_frame,
                                              unit=unit,

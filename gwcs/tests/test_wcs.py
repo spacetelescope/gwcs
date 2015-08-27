@@ -18,7 +18,7 @@ from ..utils import ModelDimensionalityError, CoordinateFrameError
 
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
-icrs = cf.CelestialFrame(coord.ICRS())
+icrs = cf.CelestialFrame(reference_frame=coord.ICRS())
 det = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 pipe = [(det, m1),
@@ -50,7 +50,7 @@ def test_init_no_transform():
     gw = wcs.WCS(output_frame='icrs')
     assert gw._pipeline == [('detector', None), ('icrs', None)]
     assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
-    icrs = cf.CelestialFrame(coord.ICRS())
+    icrs = cf.CelestialFrame(reference_frame=coord.ICRS())
     det = cf.Frame2D(name='detector', axes_order=(0, 1))
     gw = wcs.WCS(output_frame=icrs, input_frame=det)
     assert gw._pipeline == [('detector', None), ('CelestialFrame', None)]
@@ -81,7 +81,7 @@ def test_wrong_ndim():
     match number of input/output axes.
     """
     det = cf.Frame2D(name='detector')
-    icrs = cf.CelestialFrame(coord.ICRS(), name='icrs')
+    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
     m = models.Shift(1)
     with pytest.raises(ModelDimensionalityError):
         w = wcs.WCS(output_frame='icrs', forward_transform=m, input_frame=det)
@@ -191,7 +191,7 @@ class TestImaging(object):
             detector_coord = self.wcs.invert(sky_coord[0], sky_coord[1])
 
     def test_units(self):
-        assert(self.wcs.unit == [u.degree, u.degree])
+        assert(self.wcs.unit == (u.degree, u.degree))
 
     def test_get_transform(self):
         with pytest.raises(wcs.CoordinateFrameError):
