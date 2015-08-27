@@ -6,8 +6,13 @@ from numpy.testing import assert_almost_equal, assert_allclose
 from astropy.modeling import models
 from astropy import units as u
 from astropy import coordinates as coord
+from astropy.tests.helper import pytest
+
 from .. import coordinate_frames as cf
 from .. import wcs
+
+
+coord_frames = coord.builtin_frames.__all__[:]
 
 
 icrs = coord.ICRS()
@@ -34,9 +39,9 @@ pipe = [(det, m1),
 
 
 def test_units():
-    assert(comp1.unit == [u.deg, u.deg, u.Hz])
-    assert(comp2.unit == [u.deg, u.deg, u.m])
-    assert(comp.unit == [u.deg, u.deg, u.Hz, u.m])
+    assert(comp1.unit == (u.deg, u.deg, u.Hz))
+    assert(comp2.unit == (u.deg, u.deg, u.m))
+    assert(comp.unit == (u.deg, u.deg, u.Hz, u.m))
 
 
 def test_transform_to_spectral():
@@ -44,6 +49,7 @@ def test_transform_to_spectral():
     w = wcs.WCS(output_frame=spec, forward_transform=models.Polynomial1D(1, c1=1))
     q = getattr(w, w.output_frame).transform_to(5, 'Hz')
     assert(q.unit == u.Hz)
+
 
 def test_coordinates_spatial():
     w = wcs.WCS(forward_transform=pipe)
@@ -75,3 +81,13 @@ def test_coordinates_composite():
     assert_allclose(result[0].ra.value, w(x, x)[0])
     assert_allclose(result[0].ra.value, w(x, x)[1])
     assert_allclose(result[1].value, w(x, x)[2])
+
+
+@pytest.mark.parametrize(('frame'), coord_frames)
+def test_attributes(frame):
+    """
+    Test getting default values for  CoordinateFrame attributes from reference_frame.
+    """
+    cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
+    assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) == \
+           len(cel.axes_order) == cel.naxes)
