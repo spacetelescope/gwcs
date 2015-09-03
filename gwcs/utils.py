@@ -5,7 +5,7 @@ Utility function for WCS
 """
 from __future__ import absolute_import, division, unicode_literals, print_function
 
-
+import re
 import numpy as np
 from astropy.modeling import projections
 from astropy.modeling import models as astmodels
@@ -94,7 +94,7 @@ def read_wcs_from_header(header):
     except KeyError:
         p = re.compile('ctype[\d]*', re.IGNORECASE)
         ctypes = header['CTYPE*']
-        keys = ctype.keys()
+        keys = ctypes.keys()
         for key in keys[::-1]:
             if p.split(k)[-1] != "":
                 keys.remove(k)
