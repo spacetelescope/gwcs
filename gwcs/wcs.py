@@ -121,7 +121,7 @@ class WCS(object):
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         if to_ind < from_ind:
             transforms = np.array(self._pipeline[to_ind: from_ind])[:, 1].tolist()
-            transforms = [tr.inverse for tr in transforms]
+            transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
