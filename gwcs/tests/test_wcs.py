@@ -103,10 +103,11 @@ def test_set_transform():
 def test_get_transform():
     w = wcs.WCS(pipe)
     tr_forward = w.get_transform('detector', 'focal')
-    tr_back = w.get_transform('focal', 'detector')
+    tr_back = w.get_transform('CelestialFrame', 'detector')
     x, y = 1, 2
     fx, fy = tr_forward(1, 2)
-    assert_allclose((x, y), tr_back(fx, fy))
+    assert_allclose(w.pipeline[0][1](x, y), (fx, fy))
+    assert_allclose((x, y), tr_back(*w(x, y)))
     assert( w.get_transform('detector', 'detector') is None)
 
 
