@@ -106,19 +106,23 @@ def create_range_mapper():
     return sel
 
 
-def test_LabelMapperDict():
+def create_scalar_mapper():
     m = []
     for i in np.arange(5) *.1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
         m.append(models.Polynomial2D(2, c0_0=c0_0,
                                      c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
-    keys = [ -1.95805483e+00,  -1.67833272e+00,  -1.39861060e+00,
-             -1.11888848e+00,  -8.39166358e-01]
+    keys = [ -1.95805483,  -1.67833272,  -1.39861060,
+             -1.11888848,  -8.39166358]
 
     dmapper = {}
     for k, v in zip(keys, m):
         dmapper[k] = v
+    return dmapper
 
+
+def test_LabelMapperDict():
+    dmapper = create_scalar_mapper()
     sel = selector.LabelMapperDict(('x', 'y'), dmapper,
                                    inputs_mapping=models.Mapping((0,), n_inputs=2))
     assert(sel(-1.9580, 2) == dmapper[-1.95805483](-1.95805483, 2))
