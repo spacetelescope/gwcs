@@ -226,13 +226,14 @@ def make_fitswcs_transform(header):
     wcs_linear = fitswcs_linear(wcs_info)
     projcode = get_projcode(wcs_info['CTYPE'])
     projection = create_projection_transform(projcode)
+    projection = projection.rename(projcode)
 
     # Create the sky rotation transform
     phip, lonp = wcs_info['CRVAL']
     # TODO: write "def compute_lonpole(projcode, l)"
     # Set a defaul tvalue for now
     thetap = 180
-    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap)
+    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
 
     return functools.reduce(core._model_oper('|'), [wcs_linear, projection, n2c])
 
@@ -281,19 +282,22 @@ def fitswcs_linear(header):
         crpix = wcs_info['CRPIX']
 
     if wcsaxes == 2:
-        rotation = astmodels.AffineTransformation2D(matrix=pc)
+        rotation = astmodels.AffineTransformation2D(matrix=pc, name='pc_matrix')
     #elif wcsaxes == 3 :
         #rotation = AffineTransformation3D(matrix=matrix)
     #else:
         #raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
                           #"{0} given".format(wcsaxes))
 
-    translation_models = [astmodels.Shift(-shift) for shift in crpix]
+    translation_models = [astmodels.Shift(-shift, name='crpix' + str(i + 1)) \
+                          for i, shift in enumerate(crpix)]
     translation = functools.reduce(core._model_oper('&'), translation_models)
 
     if not wcs_info['has_cd']:
         # Do not compute scaling since CDELT* = 1 if CD is present.
-        scaling_models = [astmodels.Scale(scale) for scale in cdelt]
+        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1)) \
+                          for i, scale in enumerate(cdelt)]
+
         scaling = functools.reduce(core._model_oper('&'), scaling_models)
         wcs_linear = translation | rotation | scaling
     else:
