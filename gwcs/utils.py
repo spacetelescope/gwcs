@@ -367,6 +367,7 @@ def _arith_oper(left, right):
 
     This always returns a nonseparable outputs.
 
+
     Parameters
     ----------
     left, right : `astropy.modeling.Model` or ndarray
@@ -434,7 +435,6 @@ def _coord_matrix(model, pos, noutp):
         else:
             mat[-model.n_outputs :, -model.n_inputs:] = m
         return mat
-
     if not model.separable:
         # this does not work for more than 2 coordinates
         mat = np.zeros((noutp, model.n_inputs))
