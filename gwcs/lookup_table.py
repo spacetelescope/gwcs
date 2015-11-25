@@ -5,6 +5,7 @@ import numpy as np
 
 from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
+from astropy.utils import minversion
 
 try:
     from scipy.interpolate import interpn
@@ -79,6 +80,8 @@ class LookupTable(Model):
                  bounds_error=True, fill_value=np.nan):
         if not has_scipy:
             raise ImportError("LookupTable model needs scipy.")
+        if not minversion("scipy", "0.14"):
+            raise ImportError("Scipy v 0.14 or later is required for this model.")
         self.lookup_table = np.asarray(lookup_table)
         if points is None:
             self.points = tuple(np.arange(x, dtype=np.float) for x in self.lookup_table.shape)
