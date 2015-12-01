@@ -57,7 +57,7 @@ class LookupTable(Model):
     >>> table=np.array([[ 3.,  0.,  0.],
                         [ 0.,  2.,  0.],
                         [ 0.,  0.,  0.]])
-    >>> points = [1, 2, 3]
+    >>> points = ([1, 2, 3], [1, 2, 3])
     >>> xinterp = [0, 1, 1.5, 2.72, 3.14]
 
     Setting fill_value to None, allows extrapolation.
