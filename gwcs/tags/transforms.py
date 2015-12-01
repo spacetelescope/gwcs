@@ -19,27 +19,23 @@ class LookupTableType(TransformType):
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
-        lookup_table = node['lookup_table']
-        points = node.get('points', None)
-        fill_value = node['fill_value']
-        method = node['method']
-        bounds_error = node['bounds_error']
-        return LookupTable(lookup_table, points, fill_value=fill_value, method=method, bounds_error=bounds_error)
+        lookup_table = node.pop("lookup_table")
+        fill_value = node.pop("fill_value", None)
+        return LookupTable(lookup_table, fill_value=fill_value, **node)
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
         node = {}
-        node['lookup_table'] = model.lookup_table
-        node['points'] = list(model.points)
-        node['fill_value'] = model.fill_value
-        node['method'] = model.method
-        node['bounds_error'] = model.bounds_error
+        node["fill_value"] = model.fill_value
+        node["lookup_table"] = model.lookup_table
+        node["points"] = list(model.points)
+        node["method"] = model.method
+        node["bounds_error"] = model.bounds_error
 
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
 
     @classmethod
     def assert_equal(cls, a, b):
-        # TODO: If models become comparable themselves, remove this.
         assert (a.__class__ == b.__class__)
         assert_array_equal(a.lookup_table, b.lookup_table)
         assert_array_equal(a.points, b.points)
