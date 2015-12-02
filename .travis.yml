@@ -28,7 +28,6 @@ env:
     matrix:
         - SETUP_CMD='egg_info'
         - SETUP_CMD='test'
-        - ASTROPY_VERSION=stable SETUP_CMD='test'
 
 matrix:
     include:
