@@ -14,7 +14,7 @@ try:
     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
     PYTEST_HEADER_MODULES['pyasdf'] = 'pyasdf'
     del PYTEST_HEADER_MODULES['h5py']
-except NameError:  # needed to support Astropy < 1.0
+except (NameError, KeyError):
     pass
 
 # This is to figure out the affiliated package version, rather than
