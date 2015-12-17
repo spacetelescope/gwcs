@@ -29,7 +29,7 @@ Installation
 
 - `numpy <http://www.numpy.org/>`__ 1.6 or later
 
-- `astropy <http://www.astropy.org/>`__ 1.0 or later
+- `astropy <http://www.astropy.org/>`__ 1.1 or later
 
 - `pyasdf <http://pyasdf.readthedocs.org/en/latest/>`__
 
