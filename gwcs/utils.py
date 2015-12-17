@@ -65,6 +65,40 @@ class CoordinateFrameError(Exception):
         super(CoordinateFrameError, self).__init__(message)
 
 
+def _compute_lon_pole(skycoord, projection):
+    """
+    Compute the longitude of the celestial pole of a standard frame in the
+    native frame.
+
+    This angle then canbe used as one of the Euler angles (the other two being skyccord)
+    to rotate the native frame into the standard frame ``skycoord.frame``.
+
+    Parameters
+    ----------
+    skycoord : `astropy.coordinates.SkyCoord`
+        The fiducial point of the native coordinate system.
+    projection : `astropy.modeling.projections.Projection`
+        A Projection instance.
+
+    Returns
+    -------
+    lon_pole : float
+        Longitude in the units of skycoord.spherical
+
+    TODO: Implement all projections
+        Currently this only supports Zenithal projection.
+    """
+    lat = skycoord.spherical.lat
+    if isinstance(projection, projections.Zenithal):
+        if lat < 0:
+            lon_pole = 180
+        else:
+            lon_pole = 0
+    else:
+        raise UnsupportedProjectionError("Projection {0} is not supported yet.".format(projection))
+    return lon_pole
+
+
 def get_projcode(ctype):
     # CTYPE here is only the imaging CTYPE keywords
     projcode = ctype[0][5:8].upper()

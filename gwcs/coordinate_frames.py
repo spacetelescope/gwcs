@@ -118,7 +118,7 @@ class CoordinateFrame(object):
     @name.setter
     def name(self, val):
         """ A custom name of this frame."""
-        self._name = name
+        self._name = val
 
     @property
     def naxes(self):

@@ -6,12 +6,15 @@ import functools
 import numpy as np
 from astropy.extern import six
 from astropy.io import fits
-from astropy.modeling import models
+from astropy.modeling import models as astmodels
 from astropy.modeling.core import Model
+from astropy.modeling import projections
 from astropy.utils import isiterable
 
 from . import coordinate_frames
-from .utils import ModelDimensionalityError, CoordinateFrameError
+from .utils import (ModelDimensionalityError, CoordinateFrameError, UnsupportedProjectionError,
+                    UnsupportedTransformError)
+from .utils import _compute_lon_pole
 
 
 __all__ = ['WCS']
@@ -411,3 +414,44 @@ class WCS(object):
         # return self.output_coordinate_system.world_coordinates(result[:,0], result[:,1])
         # except:
         # return result
+
+    @classmethod
+    def from_sky_coord(cls, skycoord, projection, transform=None, name=''):
+        """
+        Construct a WCS object from a position on the sky and a projection.
+
+        The forward_transform of the WCS object is from pixels to sky,
+        i.e. projection followed by sky rotation.
+        If an additional transform is supplied it is prepended to the projection.
+
+        Parameters
+        ----------
+        skycoord : `~astropy.coordinates.SkyCoord`
+            A location on the sky in some standard coordinate system.
+        projection : `~astropy.modeling.projections.Projection`
+            Projection instance
+        transform : `~astropy.modeling.Model` (optional)
+            An optional (compound) tranform to be prepended to the projection transform.
+            The number of outputs of this transform must be 2.
+
+        """
+
+        if not isinstance(projection, projections.Projection):
+            raise UnsupportedProjectionError(projection)
+        if transform is not None and not isinstance(transform, core.Model):
+            raise UnsupportedTransformError("Expected transform to be an instance",
+                                            "of astropy.modeling.Model")
+        if not isinstance(skycoord, coord.SkyCoord):
+            raise ValueError("Expected skycoord to be an instance of astropy.coordinates.SkyCoord.")
+        coord_frame = coordinate_frames.CelestialFrame(reference_frame=skycoord.frame,
+                    unit=(skycoord.spherical.lon.unit, skycoord.spherical.lat.unit),
+                    name=name, axes_order=axes_order)
+        lon_pole = _compute_lon_pole(skycoord, projection)
+        skyrot = astmodels.RotateNative2Celestial(skycoord.spherical.lon,
+                                                  skycoord.spherical.lat, lon_pole)
+        if transform is not None:
+            forward_transform = transform | projection | skyrot
+        else:
+            forward_transform = projection | skyrot
+        return cls(output_frame=coord_frame, forward_transform=forward_transform,
+                   name=name)
