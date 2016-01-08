@@ -159,7 +159,7 @@ class LabelMapperArray(_LabelMapper):
 
     def evaluate(self, *args):
         args = [_toindex(a) for a in args]
-        return self._mapper[args]
+        return self._mapper[args[::-1]]
 
     @classmethod
     def from_vertices(cls, shape, regions):
@@ -226,6 +226,8 @@ class LabelMapperDict(_LabelMapper):
     inputs_mapping : `~astropy.modeling.mappings.Mapping`
         An optional Mapping model to be prepended to the LabelMapper
         with the purpose to filter the inputs or change their order.
+    atol : float
+        Absolute tolerance (passed to np.allclose)
     """
     standard_broadcasting = False
     outputs = ('labels',)
@@ -233,7 +235,8 @@ class LabelMapperDict(_LabelMapper):
     linear = False
     fittable = False
 
-    def __init__(self, inputs, mapper, inputs_mapping=None):
+    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10*-8):
+        self._atol = atol
         self.inputs = inputs
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
@@ -253,13 +256,13 @@ class LabelMapperDict(_LabelMapper):
             ind = (keys == key)
             inputs = [a[ind] for a in args]
             mapper_keys = list(self.mapper.keys())
-            key_ind = np.nonzero([np.allclose(key, mk) for mk in mapper_keys])[0]
+            key_ind = np.nonzero([np.allclose(key, mk, atol=self._atol) for mk in mapper_keys])[0]
             if key_ind.size > 1:
                 raise ValueError("More than one key found.")
             elif key_ind.size == 0:
                 res[ind] = self._no_label
             else:
-                res[ind] = self.mapper[key](*inputs)
+                res[ind] = self.mapper[mapper_keys[key_ind[0]]](*inputs)
         res.shape = shape
         return res
 
