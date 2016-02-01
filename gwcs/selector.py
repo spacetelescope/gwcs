@@ -1,20 +1,67 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
 The classes in this module create discontinuous transforms.
-The main class is `RegionsSelector`. It maps regions to transforms.
-Regions are well defined spaces in the same frame as the inputs to
-`RegionsSelector`. They are assigned unique labels (int or str).
 
-The module also defines classes which map inputs to regions.
-An instance of one of the LabelMapper classes is passed as a parameter to RegionsSelector.
-Its purpose is to return the labels of the  regions within which
-each input is located. The labels are used by RegionsSelector to
-pick the corresponding transforms. Finally, RegionsSelector
-evaluates the transforms using the matchin inputs.
+The main class is `RegionsSelector`. It maps inputs to transforms
+and evaluates the transforms on the corresponding inputs.
+Regions are well defined spaces in the same frame as the inputs.
+Regions are assigned unique labels (int or str). The region
+labels are used as a proxy between inputs and transforms.
+An example is the location of IFU slices in the detector frame.
+
+`RegionsSelector` uses two structures:
+  - A mapping of inputs to labels - "label_mapper"
+  - A mapping of labels to transforms - "transform_selector"
+
+A "label_mapper" is also a transform, a subclass of `astropy.modeling.core.Model`,
+which returns the labels corresponding to the inputs.
+
+An instance of a ``LabelMapper`` class is passed to `RegionsSelector`.
+The labels are used by `RegionsSelector` to match inputs to transforms.
+Finally, `RegionsSelector` evaluates the transforms on the corresponding inputs.
+Label mappers and transforms take the same inputs as
+`RegionsSelector`. The inputs should be filtered appropriately using the ``inputs_mapping``
+argument which is ian instance of `~astropy.modeling.mappings.Mapping`.
+The transforms in "transform_selector" should have the same number of inputs and outputs.
+
+This is illustrated below using two regions, labeled 1 and 2 ::
+
+    +-----------+
+    | +-+       |
+    | | |  +-+  |
+    | |1|  |2|  |
+    | | |  +-+  |
+    | +-+       |
+    +-----------+
+
+::
+
+                              +--------------+
+                              | label mapper |
+                              +--------------+
+                                ^       |
+                                |       V
+                      ----------|   +-------+
+                      |             | label |
+                    +--------+      +-------+
+           --->     | inputs |          |
+                    +--------+          V
+                         |          +--------------------+
+                         |          | transform_selector |
+                         |          +--------------------+
+                         V                  |
+                    +-----------+           |
+                    | transform |<-----------
+                    +------------+
+                         |
+                         V
+                    +---------+
+                    | outputs |
+                    +---------+
+
 
 The base class _LabelMapper can be subclassed to create other
-label mappers. The inputs to RegionsSelector are passed to the
-LabelMapper instance which must return a label.
+label mappers.
 
 
 """
@@ -62,9 +109,11 @@ def _toindex(value):
     """
     Convert value to an int or an int array.
 
-    Input coordinates should be turned into integers
+    Input coordinates converted to integers
     corresponding to the center of the pixel.
-    They are used to index the mask.
+    The convention is that the center of the pixel is
+    (0, 0), while the lower left corner is (-0.5, -0.5).
+    The outputs are used to index the mask.
 
     Examples
     --------
@@ -82,7 +131,7 @@ def _toindex(value):
 
 class _LabelMapper(Model):
     """
-    Maps location to a label.
+    Maps inputs to regions. Returns the region labels corresponding to the inputs.
 
     Labels are strings or numbers which uniquely identify a location.
     For example, labels may represent slices of an IFU or names of spherical polygons.
@@ -98,12 +147,14 @@ class _LabelMapper(Model):
     inputs_mapping : `~astropy.modeling.mappings.Mapping`
         An optional Mapping model to be prepended to the LabelMapper
         with the purpose to filter the inputs or change their order.
+    name : str
+        The name of this transform.
     """
-    def __init__(self, mapper, no_label, inputs_mapping=None):
+    def __init__(self, mapper, no_label, inputs_mapping=None, name=None, **kwargs):
         self._no_label = no_label
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
-        super(_LabelMapper, self).__init__()
+        super(_LabelMapper, self).__init__(name=name, **kwargs)
 
     @property
     def mapper(self):
@@ -131,14 +182,18 @@ class LabelMapperArray(_LabelMapper):
     mapper : ndarray
         An array of integers or strings where the values
         correspond to a label in `~gwcs.selector.RegionsSelector` model.
-        If a transform is not defined the value should be set to 0 or " ".
+        For pixels for which the transform is not defined the value should
+        be set to 0 or " ".
     inputs_mapping : `~astropy.modeling.mappings.Mapping`
         An optional Mapping model to be prepended to the LabelMapper
-        with the purpose to filter the inputs or change their order.
+        with the purpose to filter the inputs or change their order
+        so that the output of it is (x, y) values to index the array.
+    name : str
+        The name of this transform.
 
     Use case:
     For an IFU observation, the array represents the detector and its
-    values correspond to the IFU slice  label.
+    values correspond to the IFU slice label.
 
     """
 
@@ -148,14 +203,14 @@ class LabelMapperArray(_LabelMapper):
     linear = False
     fittable = False
 
-    def __init__(self, mapper, inputs_mapping=None):
+    def __init__(self, mapper, inputs_mapping=None, name=None, **kwargs):
         if mapper.dtype.type is not np.unicode_:
             mapper = np.asanyarray(mapper, dtype=np.int)
             _no_label = 0
         else:
             _no_label = ""
 
-        super(LabelMapperArray, self).__init__(mapper, _no_label)
+        super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
 
     def evaluate(self, *args):
         args = [_toindex(a) for a in args]
@@ -210,12 +265,11 @@ class LabelMapperArray(_LabelMapper):
 class LabelMapperDict(_LabelMapper):
 
     """
-    Maps a number to a transform. The transforms take as input the key
-    and return a label.
+    Maps a number to a transform, which when evaluated returns a label.
 
     Use case: inverse transforms of an IFU.
     For an IFU observation, the keys are constant angles (corresponding to a slice)
-    and values are transforms which return a slice label.
+    and values are transforms which return a slice number.
 
     Parameters
     ----------
@@ -226,8 +280,12 @@ class LabelMapperDict(_LabelMapper):
     inputs_mapping : `~astropy.modeling.mappings.Mapping`
         An optional Mapping model to be prepended to the LabelMapper
         with the purpose to filter the inputs or change their order.
+        It returns a number which is one of the keys of ``mapper``.
     atol : float
-        Absolute tolerance (passed to np.allclose)
+        Absolute tolerance when comparing inputs to ``mapper.keys``.
+        It is passed to np.isclose.
+    name : str
+        The name of this transform.
     """
     standard_broadcasting = False
     outputs = ('labels',)
@@ -235,34 +293,49 @@ class LabelMapperDict(_LabelMapper):
     linear = False
     fittable = False
 
-    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10*-8):
+    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
         self._atol = atol
-        self.inputs = inputs
+        self._inputs = inputs
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
-        super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping)
+        super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
+
+    @property
+    def atol(self):
+       return self._atol
+
+    @atol.setter
+    def atol(self, val):
+       self._atol = val
+
+    @property
+    def inputs(self):
+        return self._inputs
 
     def evaluate(self, *args):
         shape = args[0].shape
         args = [a.flatten() for a in args]
+        # if n_inputs > 1, determine which one is to be used as keys
         if self.inputs_mapping is not None:
             keys = self._inputs_mapping.evaluate(*args)
         else:
             keys = args
-        res = np.empty(shape)
-        unique = np.unique(keys)
-        for key in unique:
-            ind = (keys == key)
+        keys = keys.flatten()
+        # create an empty array for the results
+        res = np.empty(keys.shape)
+        # If this is part of a combined transform, some of the inputs
+        # may be NaNs.
+        # Set NaNs to the ``_no_label`` value
+        res[np.isnan(keys)] = self._no_label
+        mapper_keys = list(self.mapper.keys())
+        # Loop over the keys in mapper and compare to inputs.
+        # Find the indices where they are within ``atol``
+        # and evaluate the transform to get the corresponding label.
+        for key in mapper_keys:
+            ind = np.isclose(key, keys, atol=self._atol)
             inputs = [a[ind] for a in args]
-            mapper_keys = list(self.mapper.keys())
-            key_ind = np.nonzero([np.allclose(key, mk, atol=self._atol) for mk in mapper_keys])[0]
-            if key_ind.size > 1:
-                raise ValueError("More than one key found.")
-            elif key_ind.size == 0:
-                res[ind] = self._no_label
-            else:
-                res[ind] = self.mapper[mapper_keys[key_ind[0]]](*inputs)
+            res[ind] = self.mapper[key](*inputs)
         res.shape = shape
         return res
 
@@ -271,33 +344,27 @@ class LabelMapperRange(_LabelMapper):
 
     """
     The structure this class uses maps a range of values to a transform.
-    Given an in put value it checks which range the value falls in and returns
+    Given an input value it finds the range the value falls in and returns
     the corresponding transform. When evaluated the transform returns a label.
 
-    This class is to be used as an argument to `~gwcs.selector.RegionsSelector`.
-    All inputs passed to `~gwcs.selector.RegionsSelector` are passed to
-    this class. ``inputs_mapping`` is used to filter which input is to be used
-    to determine the range. All inputs are passed to each transform.
-    Transforms may use an instance of `~astropy.modeling.models.Mapping`
-    and/or `~astropy.modeling.models.Identity` to filter or change the order of their inputs.
-    Transforms should have the same number of inputs and outputs.
-
     Example: Pick a transform based on wavelength range.
-    For an IFU observation, the keys are (lambda_min, lambda_max) pairs
+    For an IFU observation, the keys are (lambda_min, lambda_max) tuples
     and values are transforms which return a label corresponding to a slice.
-    This label is used by `~gwcs.selector.RegionsSelector` to evaluate the transform
-    corresponding to this slice.
-
 
     Parameters
     ----------
     inputs : tuple of str
         Names for the inputs, e.g. ('alpha', 'beta', 'lambda')
     mapper : dict
-        Maps key values to transforms.
+        Maps tuples of length 2 to transforms.
     inputs_mapping : `~astropy.modeling.mappings.Mapping`
         An optional Mapping model to be prepended to the LabelMapper
         with the purpose to filter the inputs or change their order.
+    atol : float
+        Absolute tolerance when comparing inputs to ``mapper.keys``.
+        It is passed to np.isclose.
+    name : str
+        The name of this transform.
     """
     standard_broadcasting = False
     outputs = ('labels',)
@@ -305,24 +372,53 @@ class LabelMapperRange(_LabelMapper):
     linear = False
     fittable = False
 
-    def __init__(self, inputs, mapper, inputs_mapping=None):
-        self.inputs = inputs
+    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
+        if self._has_overlapping(np.array(mapper.keys())):
+            raise ValueError("Overlapping ranges of values are not supported.")
+        self._inputs = inputs
+        self._atol = atol
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
-        super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping)
+        super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
+
+    @staticmethod
+    def _has_overlapping(ranges):
+        """
+        Test a list of tuple representing ranges of values has no overlapping ranges.
+        """
+        d = dict(ranges)
+        start = ranges[:,0]
+        end = ranges[:,1]
+        start.sort()
+        l = []
+        for v in start:
+            l.append([v, d[v]])
+        l = np.array(l)
+        start = np.roll(l[: ,0], -1)
+        end = l[: ,1]
+        if any((end - start)[:-1]  > 0) or any(start[-1] > end):
+            return True
+        else:
+            return False
 
     # move this to utils?
     def _find_range(self, value_range, value):
         """
-        Returns the index of the range which holds value.
+        Returns the index of the tuple which holds value.
 
         Parameters
         ----------
         value_range : np.ndarray
             an (2, 2) array of non-overlapping (min, max) values
-        value : number
-            The value to
+        value : float
+            The value
+
+        Returns
+        -------
+        ind : int
+           Index of the tuple which defines a range holding the input value.
+           None, if the input value is not within any available range.
         """
         a, b = value_range[:,0], value_range[:,1]
         ind = np.logical_and(value >= a, value <= b).nonzero()[0]
@@ -333,6 +429,18 @@ class LabelMapperRange(_LabelMapper):
         else:
             return ind.item()
 
+    @property
+    def atol(self):
+       return self._atol
+
+    @atol.setter
+    def atol(self, val):
+       self._atol = val
+
+    @property
+    def inputs(self):
+        return self._inputs
+
     def evaluate(self, *args):
         shape = args[0].shape
         args = [a.flatten() for a in args]
@@ -340,29 +448,37 @@ class LabelMapperRange(_LabelMapper):
             keys = self._inputs_mapping.evaluate(*args)
         else:
             keys = args
-        res = np.empty(shape)
-        unique = np.unique(keys)
-        value_range = np.array(list(self.mapper.keys()))
-        for key in unique:
-            ind = (keys == key)
-            inputs = [a[ind] for a in args]
-            range_ind = self._find_range(value_range, key)
-            #filter out values which are not within any region
-            if range_ind is not None:
-                transform = self.mapper[list(self.mapper.keys())[range_ind]]
-                res[ind] = transform(*inputs)
+        keys = keys.flatten()
+        # Define an array for the results.
+        res = np.empty(keys.shape)
+        nan_ind = np.isnan(keys)
+        res[nan_ind] = self._no_label
+        value_ranges = list(self.mapper.keys())
+        # For each tuple in mapper, find the indices of the inputs
+        # which fall within the range it defines.
+        for val_range in value_ranges:
+            temp = keys.copy()
+            temp[nan_ind] = self._no_label
+            temp = np.where(np.logical_or(temp <= val_range[0],
+                                          temp >= val_range[1]),
+                                          0, temp)
+            ind = temp.nonzero()
+            if ind:
+                inputs = [a[ind] for a in args]
+                res[ind] = self.mapper[tuple(val_range)](*inputs)
             else:
-                res[ind] = self._no_label
-
-            res.shape = shape
+                continue
+        res.shape = shape
         return res
 
 
 class RegionsSelector(Model):
 
     """
-    A model which maps locations to their corresponding transforms.
-    It uses an instance of `_LabelMapper` to map inputs to the correct region.
+    This model defines discontinuous transforms.
+    It maps inputs to their corresponding transforms.
+    It uses an instance of `_LabelMapper` as a proxy to map inputs to
+    the correct region.
 
     Parameters
     ----------
@@ -372,18 +488,22 @@ class RegionsSelector(Model):
         Names of the outputs.
     selector : dict
         Mapping of region labels to transforms.
-        Labels can be of type int or str, transforms are of type `~astropy.modeling.core.Model`.
+        Labels can be of type int or str, transforms are of type
+        `~astropy.modeling.core.Model`.
     label_mapper : a subclass of `~gwcs.selector._LabelMapper`
         A model which maps locations to region labels.
     undefined_transform_value : float, np.nan (default)
         Value to be returned if there's no transform defined for the inputs.
+    name : str
+        The name of this transform.
     """
     standard_broadcasting = False
 
     linear = False
     fittable = False
 
-    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan):
+    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan,
+                 name=None, **kwargs):
         self._inputs = inputs
         self._outputs = outputs
         self.label_mapper = label_mapper
@@ -393,12 +513,7 @@ class RegionsSelector(Model):
         if " " in selector.keys() or 0 in selector.keys():
             raise ValueError('"0" and " " are not allowed as keys.')
 
-        super(RegionsSelector, self).__init__(n_models=1)
-        # make sure that keys in mapping match labels in mask
-        #labels = label_mapper.get_labels()
-        #if not np.in1d(labels, list(self._selector.keys()), assume_unique=True).all() or \
-           #not np.in1d(list(self._selector.keys()), labels, assume_unique=True).all():
-            #raise ValueError("Selector labels don't match labels in mapper.")
+        super(RegionsSelector, self).__init__(n_models=1, name=name, **kwargs)
 
     def set_input(self, rid):
         """

@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 
 import numpy as np
 
-from astropy.modeling.models import Mapping, Shift, Scale
+from astropy.modeling.models import Mapping, Shift, Scale, Polynomial2D
 from astropy.tests.helper import pytest
 from ... import selector, extension
 from pyasdf.tests import helpers
@@ -55,8 +55,24 @@ def test_LabelMapperDict(tmpdir):
 
 
 def test_LabelMapperRange(tmpdir):
-    rmapper = create_scalar_mapper()
-    sel = selector.LabelMapperDict(('x', 'y'), rmapper,
+    m = []
+    for i in np.arange(9) *.1:
+        c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
+        m.append(Polynomial2D(2, c0_0=c0_0,
+                                     c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
+    keys = np.array([[  4.88,   5.64],
+                     [  5.75,   6.5],
+                     [  6.67,   7.47 ],
+                     [  7.7,   8.63],
+                     [  8.83,  9.96],
+                     [  10.19  ,  11.49],
+                     [ 11.77,  13.28],
+                     [ 13.33,  15.34],
+                     [ 15.56,  18.09]])
+    rmapper = {}
+    for k, v in zip(keys, m):
+        rmapper[tuple(k)] = v
+    sel = selector.LabelMapperRange(('x', 'y'), rmapper,
                                    inputs_mapping=Mapping((0,), n_inputs=2))
     tree = {'model': sel}
     helpers.assert_roundtrip_tree(tree, tmpdir, extensions=GWCSExtension())

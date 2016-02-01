@@ -87,15 +87,15 @@ def create_range_mapper():
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
         m.append(models.Polynomial2D(2, c0_0=c0_0,
                                      c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
-    keys = np.array([[  4.88,   5.77],
-                     [  5.64,   6.67],
-                     [  6.5 ,   7.7 ],
-                     [  7.47,   8.83],
-                     [  8.63,  10.19],
-                     [  9.96,  11.77],
-                     [ 11.49,  13.55],
-                     [ 13.28,  15.66],
-                     [ 15.34,  18.09]])
+    keys = np.array([[  4.88,   5.64],
+                     [  5.75,   6.5],
+                     [  6.67,   7.47 ],
+                     [  7.7,   8.63],
+                     [  8.83,  9.96],
+                     [  10.19  ,  11.49],
+                     [ 11.77,  13.28],
+                     [ 13.33,  15.34],
+                     [ 15.56,  18.09]])
 
     rmapper = {}
     for k, v in zip(keys, m):
@@ -123,7 +123,7 @@ def create_scalar_mapper():
 
 def test_LabelMapperDict():
     dmapper = create_scalar_mapper()
-    sel = selector.LabelMapperDict(('x', 'y'), dmapper,
+    sel = selector.LabelMapperDict(('x', 'y'), dmapper, atol=10**-3,
                                    inputs_mapping=models.Mapping((0,), n_inputs=2))
     assert(sel(-1.9580, 2) == dmapper[-1.95805483](-1.95805483, 2))
 
@@ -133,13 +133,20 @@ def test_LabelMapperRange():
     assert(sel(6, 2) == 2.1)
 
 
-def test_outside_range():
+def test_overalpping_ranges():
     """
     Overlapping ranges should raise an error.
     """
-    sel = create_range_mapper()
-    key = list(sel.mapper.keys())[0]
-    newkey = (key[0], key[1]+5)
-    sel.mapper[newkey] = sel.mapper[key]
+    #sel = create_range_mapper()
+    #key = list(sel.mapper.keys())[0]
+    #newkey = (key[0], key[1]+5)
+    #sel.mapper[newkey] = sel.mapper[key]
+    keys = np.array([[  4.88,   5.75],
+                     [  5.64,   6.5],
+                     [  6.67,   7.47 ]])
+    rmapper = {}
+    for key in keys:
+        rmapper[tuple(key)] = models.Const1D(4)
     with pytest.raises(ValueError):
-        sel(key[0] + .5, 3)
+        lmr = selector.LabelMapperRange(('x', 'y'), rmapper, inputs_mapping=((0,)))
+

@@ -41,11 +41,14 @@ class LabelMapperType(TransformType):
             if inputs is not None:
                 inputs = tuple(inputs)
             labels = mapper.get('labels')
+            transforms = mapper.get('models')
             if isiterable(labels[0]):
                 labels = [tuple(l) for l in labels]
-            transforms = mapper.get('models')
-            dict_mapper = dict(zip(labels, transforms))
-            return LabelMapperDict(inputs, dict_mapper, inputs_mapping)
+                dict_mapper = dict(zip(labels, transforms))
+                return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
+            else:
+                dict_mapper = dict(zip(labels, transforms))
+                return LabelMapperDict(inputs, dict_mapper, inputs_mapping)
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
