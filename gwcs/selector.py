@@ -373,7 +373,7 @@ class LabelMapperRange(_LabelMapper):
     fittable = False
 
     def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
-        if self._has_overlapping(np.array(mapper.keys())):
+        if self._has_overlapping(np.array(list(mapper.keys()))):
             raise ValueError("Overlapping ranges of values are not supported.")
         self._inputs = inputs
         self._atol = atol

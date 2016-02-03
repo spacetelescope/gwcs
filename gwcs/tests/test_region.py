@@ -137,10 +137,6 @@ def test_overalpping_ranges():
     """
     Overlapping ranges should raise an error.
     """
-    #sel = create_range_mapper()
-    #key = list(sel.mapper.keys())[0]
-    #newkey = (key[0], key[1]+5)
-    #sel.mapper[newkey] = sel.mapper[key]
     keys = np.array([[  4.88,   5.75],
                      [  5.64,   6.5],
                      [  6.67,   7.47 ]])
