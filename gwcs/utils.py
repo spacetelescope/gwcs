@@ -65,12 +65,24 @@ class CoordinateFrameError(Exception):
         super(CoordinateFrameError, self).__init__(message)
 
 
+def wcs_from_footprints(wcslist, refwcs=None, transform=None, domain=None):
+    from astropy.utils.misc import isiterable
+    from gwcs import WCS
+
+    if not isiterable(wcslist):
+        raise ValueError("Expected 'wcslist' to be an iterable of WCS objects.")
+    if not all([isinstance(w, gwcs.WCS) for w in wcslist]):
+        raise TypeError("All items in wcslist are expected to be instances of gwcs.WCS.")
+    if refwcs is None:
+        refwcs = wcslist[0]
+
+
 def _compute_lon_pole(skycoord, projection):
     """
     Compute the longitude of the celestial pole of a standard frame in the
     native frame.
 
-    This angle then canbe used as one of the Euler angles (the other two being skyccord)
+    This angle then can be used as one of the Euler angles (the other two being skyccord)
     to rotate the native frame into the standard frame ``skycoord.frame``.
 
     Parameters
@@ -95,7 +107,7 @@ def _compute_lon_pole(skycoord, projection):
         else:
             lon_pole = 0
     else:
-        raise UnsupportedProjectionError("Projection {0} is not supported yet.".format(projection))
+        raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
     return lon_pole
 
 

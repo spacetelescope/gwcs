@@ -444,8 +444,9 @@ class WCS(object):
         if not isinstance(skycoord, coord.SkyCoord):
             raise ValueError("Expected skycoord to be an instance of astropy.coordinates.SkyCoord.")
         coord_frame = coordinate_frames.CelestialFrame(reference_frame=skycoord.frame,
-                    unit=(skycoord.spherical.lon.unit, skycoord.spherical.lat.unit),
-                    name=name, axes_order=axes_order)
+                                                       unit=(skycoord.spherical.lon.unit,
+                                                             skycoord.spherical.lat.unit),
+                                                       name=name, axes_order=axes_order)
         lon_pole = _compute_lon_pole(skycoord, projection)
         skyrot = astmodels.RotateNative2Celestial(skycoord.spherical.lon,
                                                   skycoord.spherical.lat, lon_pole)

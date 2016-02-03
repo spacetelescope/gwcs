@@ -52,11 +52,12 @@ class CoordinateFrame(object):
         Reference to the WCS object to which this frame belongs.
     """
 
-    def __init__(self, naxes, axes_type, axes_order, reference_frame=None,
+    def __init__(self, naxes, axes_type, axes_order, fiducial=None, reference_frame=None,
                  reference_position=None, unit=None, axes_names=None,
                  name=None, wcsobj=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
+        self._fiducial = fiducial
         if isinstance(axes_type, six.string_types):
             self._axes_type = (axes_type,)
         else:
@@ -150,6 +151,14 @@ class CoordinateFrame(object):
             return self._reference_position
         except AttributeError:
             return None
+
+    @property
+    def fiducial(self):
+        return self._fiducial
+
+    @fiducial.property
+    def fiducial(self, val):
+        self._fiducial = val
 
     def input_axes(self, start_frame=None):
         """
