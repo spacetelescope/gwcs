@@ -13,8 +13,7 @@ It supports a data model which includes the entire transformation pipeline from
 input coordinates (detector by default)  to world cooridnates.
 Transformations can be chained, joined or combined with arithmetic operators
 using the flexible framework of compound models in `~astropy.modeling`.
-Transformations can be chained, joined or combined with arithmetic operators.
-In the case of a celestial output frame `~astropy.coordinates` provides automatically
+In the case of a celestial output frame `~astropy.coordinates` provides
 further transformations between standard coordinate frames.
 Spectral output coordinates are instances of `~astropy.units.Quantity`  and are
 transformed to other units with the tools in that package.
