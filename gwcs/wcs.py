@@ -6,9 +6,11 @@ import functools
 import numpy as np
 from astropy.extern import six
 from astropy.io import fits
-from astropy.modeling import models as astmodels
+from astropy import coordinates as coords
+from astropy.modeling import models
 from astropy.modeling.core import Model
 from astropy.modeling import projections
+from astropy import units as u
 from astropy.utils import isiterable
 
 from . import coordinate_frames
@@ -416,9 +418,10 @@ class WCS(object):
         # return result
 
     @classmethod
-    def from_sky_coord(cls, skycoord, projection, transform=None, name=''):
+    def from_fiducial(cls, fiducial, coordinate_frame=None, projection=None,
+                      transform=None, name='', domain=None):
         """
-        Construct a WCS object from a position on the sky and a projection.
+        Create a WCS object from a fiducial point in a coordinate frame.
 
         The forward_transform of the WCS object is from pixels to sky,
         i.e. projection followed by sky rotation.
@@ -426,33 +429,77 @@ class WCS(object):
 
         Parameters
         ----------
-        skycoord : `~astropy.coordinates.SkyCoord`
-            A location on the sky in some standard coordinate system.
+        fiducial : `~astropy.coordinates.SkyCoord` or `~astropy.units.Quantity`
+            One of:
+                A location on the sky in some standard coordinate system.
+                A Quantity with spectral units.
+                A list of the above.
+        coordinate_frame : ~gwcs.coordinate_frames.CoordinateFrame`
+            The output coordinate frame.
+            If fiducial does not define the coordinate frame unambiguously, it
+            can be specified here.
         projection : `~astropy.modeling.projections.Projection`
-            Projection instance
+            Projection instance - required if there is a spatial component in the fiducial.
         transform : `~astropy.modeling.Model` (optional)
-            An optional (compound) tranform to be prepended to the projection transform.
-            The number of outputs of this transform must be 2.
-
-        """
-
-        if not isinstance(projection, projections.Projection):
-            raise UnsupportedProjectionError(projection)
-        if transform is not None and not isinstance(transform, core.Model):
-            raise UnsupportedTransformError("Expected transform to be an instance",
-                                            "of astropy.modeling.Model")
-        if not isinstance(skycoord, coord.SkyCoord):
-            raise ValueError("Expected skycoord to be an instance of astropy.coordinates.SkyCoord.")
-        coord_frame = coordinate_frames.CelestialFrame(reference_frame=skycoord.frame,
-                                                       unit=(skycoord.spherical.lon.unit,
-                                                             skycoord.spherical.lat.unit),
-                                                       name=name, axes_order=axes_order)
-        lon_pole = _compute_lon_pole(skycoord, projection)
-        skyrot = astmodels.RotateNative2Celestial(skycoord.spherical.lon,
-                                                  skycoord.spherical.lat, lon_pole)
+            An optional tranform to be prepended to the projection transform.
+            The number of outputs of this transform must equal the size of the fiducial point.
+        name : str
+            Name of this WCS.
+        domain : list of dicts
+            Domain of this WCS. The format is a list of dictionaries for each
+            axis in the output frame [{'low': lowx, 'high': highx}]
+       """
         if transform is not None:
-            forward_transform = transform | projection | skyrot
-        else:
-            forward_transform = projection | skyrot
+            if not isinstance(transform, Model):
+                raise UnsupportedTransformError("Expected transform to be an instance",
+                                                "of astropy.modeling.Model")
+            transform_outputs = transform.n_outputs
+
+        def _verify_projection(projection):
+            if projection is None:
+                raise ValueError("Celestial coordinate frame requires a projection to be specified.")
+            if not isinstance(projection, projections.Projection):
+                raise UnsupportedProjectionError(projection)
+
+        def _sky_transform(skycoord, projection):
+            lon_pole = _compute_lon_pole(skycoord, projection)
+            sky_rotation = models.RotateNative2Celestial(skycoord.spherical.lon,
+                                                      skycoord.spherical.lat, lon_pole)
+            return sky_rotation
+
+        def _spectral_transform(fiducial):
+            return models.Shift(fiducial.value)
+
+        if isinstance(fiducial, coords.SkyCoord):
+            coord_frame = coordinate_frames.CelestialFrame(reference_frame=fiducial.frame,
+                                                           unit=(fiducial.spherical.lon.unit,
+                                                                 fiducial.spherical.lat.unit))
+            _verify_projection(projection)
+            sky_rotation = _sky_transform(fiducial, projection)
+            if transform is not None:
+                forward_transform = transform | projection | sky_rotation
+            else:
+                forward_transform = projection | sky_rotation
+        elif isinstance(fiducial, list):
+            coord_frame = coordinate_frame
+            trans_from_fiducial = []
+            for item in coord_frame.frames:
+                ind = coord_frame.frames.index(item)
+                if isinstance(item, coordinate_frames.CelestialFrame):
+                    _verify_projection(projection)
+                    sky_rotation = _sky_transform(fiducial[ind], projection)
+                    trans_from_fiducial.append(projection | sky_rotation)
+                elif isinstance(item, coordinate_frames.SpectralFrame):
+
+                    model = _spectral_transform(fiducial[ind])
+                    trans_from_fiducial.append(model)
+                else:
+                    raise TypeError("Coordinate frame {0} is not supported".format(item))
+            fiducial_transform = functools.reduce(lambda x, y: x & y,
+                                                  [tr for tr in trans_from_fiducial])
+            if transform is not None:
+                forward_transform = transform | fiducial_transform
+            else:
+                forward_transform = fiducial_transform
         return cls(output_frame=coord_frame, forward_transform=forward_transform,
                    name=name)

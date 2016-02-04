@@ -10,7 +10,7 @@ import numpy as np
 from astropy.modeling import projections
 from astropy.modeling import models as astmodels
 from astropy.modeling.models import Mapping
-from astropy.modeling import core
+from astropy.modeling import core, projections
 from astropy.io import fits
 import functools
 
@@ -63,18 +63,6 @@ class CoordinateFrameError(Exception):
 
     def __init__(self, message):
         super(CoordinateFrameError, self).__init__(message)
-
-
-def wcs_from_footprints(wcslist, refwcs=None, transform=None, domain=None):
-    from astropy.utils.misc import isiterable
-    from gwcs import WCS
-
-    if not isiterable(wcslist):
-        raise ValueError("Expected 'wcslist' to be an iterable of WCS objects.")
-    if not all([isinstance(w, gwcs.WCS) for w in wcslist]):
-        raise TypeError("All items in wcslist are expected to be instances of gwcs.WCS.")
-    if refwcs is None:
-        refwcs = wcslist[0]
 
 
 def _compute_lon_pole(skycoord, projection):

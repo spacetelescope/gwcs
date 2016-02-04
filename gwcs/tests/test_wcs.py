@@ -10,6 +10,8 @@ from astropy import units as u
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
+from astropy import coordinates as coords
+from astropy import units as u
 
 from .. import wcs
 from .. import coordinate_frames as cf
@@ -109,6 +111,30 @@ def test_get_transform():
     assert_allclose(w.pipeline[0][1](x, y), (fx, fy))
     assert_allclose((x, y), tr_back(*w(x, y)))
     assert( w.get_transform('detector', 'detector') is None)
+
+
+def test_from_fiducial_sky():
+    sky = coords.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
+    tan = models.Pix2Sky_TAN()
+    w = wcs.WCS.from_fiducial(sky, projection=tan)
+    assert isinstance(w.CelestialFrame.reference_frame, coords.FK5)
+    assert_allclose(w(.1, .1), (93.7210280925364, -72.29972666307474))
+
+
+def test_from_fiducial_composite():
+    sky = coords.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
+    tan = models.Pix2Sky_TAN()
+    spec = cf.SpectralFrame(unit=(u.micron,))
+    celestial = cf.CelestialFrame(reference_frame=sky.frame, unit=(sky.spherical.lon.unit,
+                                  sky.spherical.lat.unit))
+    coord_frame = cf.CompositeFrame([spec, celestial], name='cube_frame')
+    w = wcs.WCS.from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan)
+    assert isinstance(w.cube_frame.frames[1].reference_frame, coords.FK5)
+    assert_allclose(w(1, 1, 1), (1.5, 96.52373368309931, -71.37420187296995))
+    trans = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+    w = wcs.WCS.from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan,
+                              transform=trans)
+    assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
 
 
 class TestImaging(object):
