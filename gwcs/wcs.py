@@ -423,26 +423,26 @@ class WCS(object):
         """
         Create a WCS object from a fiducial point in a coordinate frame.
 
-        The forward_transform of the WCS object is from pixels to sky,
-        i.e. projection followed by sky rotation.
         If an additional transform is supplied it is prepended to the projection.
 
         Parameters
         ----------
-        fiducial : `~astropy.coordinates.SkyCoord` or `~astropy.units.Quantity`
+        fiducial : `~astropy.coordinates.SkyCoord` or tuple of float
             One of:
                 A location on the sky in some standard coordinate system.
                 A Quantity with spectral units.
                 A list of the above.
         coordinate_frame : ~gwcs.coordinate_frames.CoordinateFrame`
             The output coordinate frame.
-            If fiducial does not define the coordinate frame unambiguously, it
-            can be specified here.
+            If fiducial is not an instance of `~astropy.coordinates.SkyCoord` it
+            should be specified here.
         projection : `~astropy.modeling.projections.Projection`
-            Projection instance - required if there is a spatial component in the fiducial.
+            Projection instance - required if there is a celestial component in
+            the fiducial.
         transform : `~astropy.modeling.Model` (optional)
-            An optional tranform to be prepended to the projection transform.
-            The number of outputs of this transform must equal the size of the fiducial point.
+            An optional tranform to be prepended to the transform constructed by
+            the fiducial point. The number of outputs of this transform must equal
+            the number of axes in the coordinate frame.
         name : str
             Name of this WCS.
         domain : list of dicts
@@ -462,44 +462,54 @@ class WCS(object):
                 raise UnsupportedProjectionError(projection)
 
         def _sky_transform(skycoord, projection):
+            """
+            A sky transform is a projection, followed by a rotation on the sky.
+            """
+            _verify_projection(projection)
             lon_pole = _compute_lon_pole(skycoord, projection)
             sky_rotation = models.RotateNative2Celestial(skycoord.spherical.lon,
-                                                      skycoord.spherical.lat, lon_pole)
-            return sky_rotation
+                                                         skycoord.spherical.lat,
+                                                         lon_pole)
+            return projection | sky_rotation
 
         def _spectral_transform(fiducial):
-            return models.Shift(fiducial.value)
+            """
+            A spectral transform is a shift by the fiducial.
+            """
+            return models.Shift(fiducial)
 
         if isinstance(fiducial, coords.SkyCoord):
-            coord_frame = coordinate_frames.CelestialFrame(reference_frame=fiducial.frame,
-                                                           unit=(fiducial.spherical.lon.unit,
-                                                                 fiducial.spherical.lat.unit))
-            _verify_projection(projection)
-            sky_rotation = _sky_transform(fiducial, projection)
-            if transform is not None:
-                forward_transform = transform | projection | sky_rotation
-            else:
-                forward_transform = projection | sky_rotation
-        elif isinstance(fiducial, list):
-            coord_frame = coordinate_frame
+            coordinate_frame = coordinate_frames.CelestialFrame(reference_frame=fiducial.frame,
+                                                                unit=(fiducial.spherical.lon.unit,
+                                                                      fiducial.spherical.lat.unit))
+            fiducial_transform = _sky_transform(fiducial, projection)
+        elif isinstance(coordinate_frame, coordinate_frames.CompositeFrame):
             trans_from_fiducial = []
-            for item in coord_frame.frames:
-                ind = coord_frame.frames.index(item)
+            for item in coordinate_frame.frames:
+                ind = coordinate_frame.frames.index(item)
                 if isinstance(item, coordinate_frames.CelestialFrame):
-                    _verify_projection(projection)
-                    sky_rotation = _sky_transform(fiducial[ind], projection)
-                    trans_from_fiducial.append(projection | sky_rotation)
+                    model = _sky_transform(fiducial[ind], projection)
                 elif isinstance(item, coordinate_frames.SpectralFrame):
-
                     model = _spectral_transform(fiducial[ind])
-                    trans_from_fiducial.append(model)
+                elif isinstance(item, coordinate_frames.Frame2D):
+                    model = _frame2d_transform(fiducial)
                 else:
                     raise TypeError("Coordinate frame {0} is not supported".format(item))
+                trans_from_fiducial.append(model)
             fiducial_transform = functools.reduce(lambda x, y: x & y,
                                                   [tr for tr in trans_from_fiducial])
-            if transform is not None:
-                forward_transform = transform | fiducial_transform
-            else:
-                forward_transform = fiducial_transform
-        return cls(output_frame=coord_frame, forward_transform=forward_transform,
+        elif isiterable(fiducial) and not isiterable(coordinate_frame):
+            # The case of one coordinate frame with more than 1 axes.
+            fiducial_transform = functools.reduce(lambda x, y: x & y,
+                                                  [models.Shift(val) for val in fiducial])
+        if transform is not None:
+            forward_transform = transform | fiducial_transform
+        else:
+            forward_transform = fiducial_transform
+        if domain is not None:
+            if len(domain) != forward_transform.n_outputs:
+                raise ValueError("Expected the number of items in 'domain' to be equal to the "
+                                 "number of outputs of the forawrd transform.")
+            forward_transform.meta['domain'] = domain
+        return cls(output_frame=coordinate_frame, forward_transform=forward_transform,
                    name=name)

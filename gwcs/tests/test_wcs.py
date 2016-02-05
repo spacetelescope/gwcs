@@ -137,6 +137,27 @@ def test_from_fiducial_composite():
     assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
 
 
+def test_from_fiducial_frame2d():
+    fiducial = (34.5, 12.3)
+    w = wcs.WCS.from_fiducial(fiducial, coordinate_frame=cf.Frame2D())
+    assert(w.output_frame == 'Frame2D')
+    assert_allclose(w(1, 1), (35.5, 13.3))
+
+
+def test_from_fiducial_domain():
+    domain = [{u'includes_lower': True,
+               u'includes_upper': False,
+               u'lower': 0,
+               u'upper': 129},
+              {u'includes_lower': True,
+               u'includes_upper': False,
+               u'lower': 0,
+               u'upper': 127}]
+    w = wcs.WCS.from_fiducial((34.5, 12.3), coordinate_frame=cf.Frame2D(), domain=domain)
+    with pytest.raises(ValueError):
+        w = wcs.WCS.from_fiducial((34.5, 12.3), coordinate_frame=cf.Frame2D(), domain=domain[0])
+
+
 class TestImaging(object):
 
     def setup_class(self):
