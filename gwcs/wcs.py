@@ -434,8 +434,8 @@ class WCS(object):
                 A list of the above.
         coordinate_frame : ~gwcs.coordinate_frames.CoordinateFrame`
             The output coordinate frame.
-            If fiducial is not an instance of `~astropy.coordinates.SkyCoord` it
-            should be specified here.
+            If fiducial is not an instance of `~astropy.coordinates.SkyCoord`,
+            ``coordinate_frame`` is required.
         projection : `~astropy.modeling.projections.Projection`
             Projection instance - required if there is a celestial component in
             the fiducial.
@@ -447,7 +447,8 @@ class WCS(object):
             Name of this WCS.
         domain : list of dicts
             Domain of this WCS. The format is a list of dictionaries for each
-            axis in the output frame [{'low': lowx, 'high': highx}]
+            axis in the output frame [{'lower': lowx, 'upper': highx,
+                                      'includes_lower': bool, 'includes_upper': bool}]
        """
         if transform is not None:
             if not isinstance(transform, Model):
