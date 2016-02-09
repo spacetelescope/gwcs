@@ -439,16 +439,16 @@ class WCS(object):
         projection : `~astropy.modeling.projections.Projection`
             Projection instance - required if there is a celestial component in
             the fiducial.
-        transform : `~astropy.modeling.Model` (optional)
+        transform : `~astropy.modeling.Model`, optional
             An optional tranform to be prepended to the transform constructed by
             the fiducial point. The number of outputs of this transform must equal
             the number of axes in the coordinate frame.
-        name : str
+        name : str, optional
             Name of this WCS.
-        domain : list of dicts
+        domain : list of dicts, optional
             Domain of this WCS. The format is a list of dictionaries for each
             axis in the output frame [{'lower': lowx, 'upper': highx,
-                                      'includes_lower': bool, 'includes_upper': bool}]
+                                       'includes_lower': bool, 'includes_upper': bool}]
        """
         if transform is not None:
             if not isinstance(transform, Model):

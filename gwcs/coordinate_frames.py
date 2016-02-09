@@ -458,7 +458,7 @@ class Frame2D(CoordinateFrame):
                  name=None, wcsobj=None):
 
         super(Frame2D, self).__init__(2, ["SPATIAL", "SPATIAL"], axes_order, name=name,
-                                      axes_names=axes_names,unit=unit, wcsobj=None)
+                                      axes_names=axes_names, unit=unit, wcsobj=None)
 
     def coordinates(self, *args):
         args = self._wcsobj.get_transform(self._wcsobj.input_frame, self)(*args)

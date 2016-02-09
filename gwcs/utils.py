@@ -70,7 +70,7 @@ def _compute_lon_pole(skycoord, projection):
     Compute the longitude of the celestial pole of a standard frame in the
     native frame.
 
-    This angle then can be used as one of the Euler angles (the other two being skyccord)
+    This angle then can be used as one of the Euler angles (the other two being skycoord)
     to rotate the native frame into the standard frame ``skycoord.frame``.
 
     Parameters
