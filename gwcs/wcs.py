@@ -447,8 +447,8 @@ class WCS(object):
             Name of this WCS.
         domain : list of dicts, optional
             Domain of this WCS. The format is a list of dictionaries for each
-            axis in the output frame [{'lower': lowx, 'upper': highx,
-                                       'includes_lower': bool, 'includes_upper': bool}]
+            axis in the input frame
+            [{'lower': lowx, 'upper': highx, 'includes_lower': bool, 'includes_upper': bool}]
        """
         if transform is not None:
             if not isinstance(transform, Model):
