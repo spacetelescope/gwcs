@@ -42,19 +42,16 @@ matrix:
           env: SETUP_CMD='build_sphinx -w'
 
         # Check astropy
-        - python: 2.7
         - python: 3.5
-          env: ASTROPY_VERSION=stable
+          env: ASTROPY_VERSION=stable SETUP_CMD="test"
 
         # Numpy
         - python: 2.7
-        - python: 3.5
+          env: NUMPY_VERSION=1.8 SETUP_CMD="test"
         - python: 2.7
-          env: NUMPY_VERSION=1.8
-        - python: 2.7
-          env: NUMPY_VERSION=1.10
+          env: NUMPY_VERSION=1.10 SETUP_CMD="test"
         - python: 3.5
-          env: NUMPY_VERSION=1.10
+          env: NUMPY_VERSION=1.10 SETUP_CMD="test"
 install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
