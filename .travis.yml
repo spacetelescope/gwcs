@@ -41,10 +41,6 @@ matrix:
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
 
-        # Check astropy
-        - python: 3.5
-          env: ASTROPY_VERSION=stable SETUP_CMD="test"
-
         # Numpy
         - python: 2.7
           env: NUMPY_VERSION=1.8 SETUP_CMD="test"
