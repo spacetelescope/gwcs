@@ -99,7 +99,7 @@ Using `gwcs`
 
   gwcs/create_wcs
   gwcs/selector_model.rst
-
+  gwcs/wcstools.rst
 
 
 See also
@@ -123,3 +123,4 @@ Reference/API
 .. automodapi:: gwcs.wcs
 .. automodapi:: gwcs.coordinate_frames
 .. automodapi:: gwcs.selector
+.. automodapi:: gwcs.wcstools

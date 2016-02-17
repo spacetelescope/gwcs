@@ -90,11 +90,13 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     return WCS(output_frame=coordinate_frame, forward_transform=forward_transform,
                name=name)
 
+
 def _verify_projection(projection):
     if projection is None:
         raise ValueError("Celestial coordinate frame requires a projection to be specified.")
     if not isinstance(projection, projections.Projection):
         raise UnsupportedProjectionError(projection)
+
 
 def _sky_transform(skycoord, projection):
     """
@@ -109,16 +111,19 @@ def _sky_transform(skycoord, projection):
     sky_rotation = models.RotateNative2Celestial(lon, lat, lon_pole)
     return projection | sky_rotation
 
+
 def _spectral_transform(fiducial, **kwargs):
     """
     A spectral transform is a shift by the fiducial.
     """
     return models.Shift(fiducial)
 
+
 def _frame2D_transform(fiducial, **kwargs):
     fiducial_transform = functools.reduce(lambda x, y: x & y,
                                           [models.Shift(val) for val in fiducial])
     return fiducial_transform
+
 
 frame2transform = {coordinate_frames.CelestialFrame: _sky_transform,
                    coordinate_frames.SpectralFrame: _spectral_transform,
