@@ -420,7 +420,7 @@ class CompositeFrame(CoordinateFrame):
 
     def coordinates(self, *args):
         """
-        Return the output of the forwrd_transform as quantities.
+        Return the output of ``forward_transform`` as quantities.
 
         Parameters
         ----------
