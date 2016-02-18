@@ -18,8 +18,14 @@ To create a WCS from a pointing on the sky, as a minimum pass a sky coordinate a
 
 Any additional transforms are prepended to the projection and sky rotation.
 
-  >>> trans = models.Shift(-1024) & models.Shift(2048) | models.Scale(.05) & models.Scale(.05)
+  >>> trans = models.Shift(-2048) & models.Shift(-1024) | models.Scale(1.38*10**-5) & models.Scale(1.38*10**-5)
   >>> w = wcs_from_fiducial(fiducial, projection=tan, transform=trans)
-  >>> w(1024, 2048)
+  >>> w(2048, 1024)
       (5.46, -72.2)
 
+`~gwcs.wcstools.grid_from_domain` is a function which returns a grid of input points based on the domain of the WCS.
+
+  >>> from gwcs.wcstools import grid_from_domain
+  >>> domain=[{'lower': 0, 'upper': 4096}, {'lower': 0, 'upper': 2048}]
+  >>> x, y = grid_from_domain(domain)
+  >>> ra, dec = w(x, y)
