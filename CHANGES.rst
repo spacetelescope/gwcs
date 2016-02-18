@@ -5,7 +5,7 @@ New Features
 ^^^^^^^^^^^^
 - Added ``wcs_from_fiducial`` function to wcstools. [#34]
 - Added ``domain`` to the WCS object. [#36]
-- Added ``grid_from_domain``` function. [#36]
+- Added ``grid_from_domain`` function. [#36]
 
 API_Changes
 ^^^^^^^^^^^
