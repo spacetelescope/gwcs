@@ -84,7 +84,7 @@ def _toindex(value):
     >>> _toindex(np.array([1.5, 2.49999]))
     array([2, 2])
     """
-    indx = np.asarray(np.floor(value + 0.5, out=indx), dtype=np.int)
+    indx = np.asarray(np.floor(value + 0.5), dtype=np.int)
     return indx
 
 
