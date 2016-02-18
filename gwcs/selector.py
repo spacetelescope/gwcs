@@ -77,7 +77,7 @@ from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
 
 from . import region
-from .utils import RegionError
+from .utils import RegionError, _toindex
 
 
 __all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSelector']
@@ -105,28 +105,9 @@ def get_unique_regions(regions):
     return unique_regions
 
 
-def _toindex(value):
-    """
-    Convert value to an int or an int array.
-
-    Input coordinates converted to integers
-    corresponding to the center of the pixel.
-    The convention is that the center of the pixel is
-    (0, 0), while the lower left corner is (-0.5, -0.5).
-    The outputs are used to index the mask.
-
-    Examples
-    --------
-    >>> _toindex(np.array([-0.5, 0.49999]))
-    array([0, 0])
-    >>> _toindex(np.array([0.5, 1.49999]))
-    array([1, 1])
-    >>> _toindex(np.array([1.5, 2.49999]))
-    array([2, 2])
-    """
-    indx = np.empty(value.shape, dtype=np.int32)
-    indx = np.floor(value + 0.5, out=indx)
-    return indx
+class LabelMapperArrayIndexingError(Exception):
+    def __init__(self, message):
+        super(LabelMapperArrayIndexingError, self).__init__(message)
 
 
 class _LabelMapper(Model):
@@ -214,7 +195,11 @@ class LabelMapperArray(_LabelMapper):
 
     def evaluate(self, *args):
         args = [_toindex(a) for a in args]
-        return self._mapper[args[::-1]]
+        try:
+            result = self._mapper[args[::-1]]
+        except IndexError as e:
+            raise LabelMapperArrayIndexingError(e)
+        return result
 
     @classmethod
     def from_vertices(cls, shape, regions):

@@ -118,7 +118,7 @@ class CoordinateFrame(object):
     @name.setter
     def name(self, val):
         """ A custom name of this frame."""
-        self._name = name
+        self._name = val
 
     @property
     def naxes(self):
@@ -420,7 +420,7 @@ class CompositeFrame(CoordinateFrame):
 
     def coordinates(self, *args):
         """
-        Return the output of the forwrd_transform as quantities.
+        Return the output of ``forward_transform`` as quantities.
 
         Parameters
         ----------
@@ -457,8 +457,8 @@ class Frame2D(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
                  name=None, wcsobj=None):
 
-        super(Frame2D, self).__init__(2, "SPATIAL", axes_order, name=name,
-                                      axes_names=axes_names,unit=unit, wcsobj=None)
+        super(Frame2D, self).__init__(2, ["SPATIAL", "SPATIAL"], axes_order, name=name,
+                                      axes_names=axes_names, unit=unit, wcsobj=None)
 
     def coordinates(self, *args):
         args = self._wcsobj.get_transform(self._wcsobj.input_frame, self)(*args)

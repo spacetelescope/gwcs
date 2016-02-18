@@ -5,14 +5,12 @@ import copy
 import functools
 import numpy as np
 from astropy.extern import six
-from astropy.io import fits
-from astropy.modeling import models
 from astropy.modeling.core import Model
-from astropy.utils import isiterable
 
 from . import coordinate_frames
-from .utils import ModelDimensionalityError, CoordinateFrameError
-
+from .utils import (ModelDimensionalityError, CoordinateFrameError)
+from .utils import _toindex
+from . import utils
 
 __all__ = ['WCS']
 

@@ -6,21 +6,21 @@ Utility function for WCS
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 import re
+import functools
 import numpy as np
 from astropy.modeling import projections
 from astropy.modeling import models as astmodels
 from astropy.modeling.models import Mapping
-from astropy.modeling import core
+from astropy.modeling import core, projections
 from astropy.io import fits
-import functools
+from astropy import coordinates as coords
+from astropy.utils.misc import isiterable
 
 try:
     from astropy import time
     HAS_TIME = True
 except ImportError:
     HAS_TIME = False
-from astropy import coordinates
-from astropy import coordinates as coord
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -63,6 +63,67 @@ class CoordinateFrameError(Exception):
 
     def __init__(self, message):
         super(CoordinateFrameError, self).__init__(message)
+
+
+def _toindex(value):
+    """
+    Convert value to an int or an int array.
+
+    Input coordinates converted to integers
+    corresponding to the center of the pixel.
+    The convention is that the center of the pixel is
+    (0, 0), while the lower left corner is (-0.5, -0.5).
+    The outputs are used to index the mask.
+
+    Examples
+    --------
+    >>> _toindex(np.array([-0.5, 0.49999]))
+    array([0, 0])
+    >>> _toindex(np.array([0.5, 1.49999]))
+    array([1, 1])
+    >>> _toindex(np.array([1.5, 2.49999]))
+    array([2, 2])
+    """
+    indx = np.empty(value.shape, dtype=np.int32)
+    indx = np.floor(value + 0.5, out=indx)
+    return indx
+
+
+def _compute_lon_pole(skycoord, projection):
+    """
+    Compute the longitude of the celestial pole of a standard frame in the
+    native frame.
+
+    This angle then can be used as one of the Euler angles (the other two being skyccord)
+    to rotate the native frame into the standard frame ``skycoord.frame``.
+
+    Parameters
+    ----------
+    skycoord : `astropy.coordinates.SkyCoord`
+        The fiducial point of the native coordinate system.
+    projection : `astropy.modeling.projections.Projection`
+        A Projection instance.
+
+    Returns
+    -------
+    lon_pole : float
+        Longitude in the units of skycoord.spherical
+
+    TODO: Implement all projections
+        Currently this only supports Zenithal projection.
+    """
+    if isinstance(skycoord, coords.SkyCoord):
+        lat = skycoord.spherical.lat
+    else:
+        lat = skycoord[1]
+    if isinstance(projection, projections.Zenithal):
+        if lat < 0:
+            lon_pole = 180
+        else:
+            lon_pole = 0
+    else:
+        raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
+    return lon_pole
 
 
 def get_projcode(ctype):
@@ -197,12 +258,12 @@ def get_axes(header):
 specsystems = ["WAVE", "FREQ", "ENER", "WAVEN", "AWAV",
                "VRAD", "VOPT", "ZOPT", "BETA", "VELO"]
 
-sky_systems_map = {'ICRS': coord.ICRS,
-                   'FK5': coord.FK5,
-                   'FK4': coord.FK4,
-                   'FK4NOE': coord.FK4NoETerms,
-                   'GAL': coord.Galactic,
-                   'HOR': coord.AltAz
+sky_systems_map = {'ICRS': coords.ICRS,
+                   'FK5': coords.FK5,
+                   'FK4': coords.FK4,
+                   'FK4NOE': coords.FK4NoETerms,
+                   'GAL': coords.Galactic,
+                   'HOR': coords.AltAz
                    }
 
 
