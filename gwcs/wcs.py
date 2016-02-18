@@ -354,6 +354,36 @@ class WCS(object):
         """Return the pipeline structure."""
         return self._pipeline
 
+    @property
+    def domain(self):
+        frames = self.available_frames
+        transform_meta = self.get_transform(frames[0], frames[1]).meta
+        if 'domain' in transform_meta:
+            return transform_meta['domain']
+        else:
+            return None
+
+    @domain.setter
+    def domain(self, value):
+        self._validate_domain(value)
+        frames = self.available_frames
+        transform = self.get_transform(frames[0], frames[1])
+        transform.meta['domain'] = value
+        self.set_transform(frames[0], frames[1], transform)
+
+    def _validate_domain(self, domain):
+        n_inputs = self.forward_transform.n_inputs
+        if len(domain) != n_inputs:
+            raise ValueError("The number of domains should match the number "
+                             "of inputs {0}".format(n_inputs))
+        if not isinstance(domain, (list, tuple)) or \
+           not all([isinstance(d, dict) for d in domain]):
+            raise TypeError('"domain" should be a list of dictionaries for each axis in the input_frame'
+                            "[{'lower': low_x, "
+                            "'upper': high_x, "
+                            "'includes_lower': bool, "
+                            "'includes_upper': bool}]")
+
     def __str__(self):
         from astropy.table import Table
         col1 = [item[0] for item in self._pipeline]
@@ -375,13 +405,13 @@ class WCS(object):
             self.output_frame, self.input_frame, self.forward_transform)
         return fmt
 
-    def footprint(self, axes, center=True):
+    def footprint(self, domain=None, center=True):
         """
         Return the footprint of the observation in world coordinates.
 
         Parameters
         ----------
-        axes : tuple of floats
+        domain : slice or tuple of floats: (start, stop, step) or (start, stop) or (stop,)
             size of image
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
@@ -391,21 +421,17 @@ class WCS(object):
         coord : (4, 2) array of (*x*, *y*) coordinates.
             The order is counter-clockwise starting with the bottom left corner.
         """
-        naxis1, naxis2 = axes  # extend this to more than 2 axes
-        if center == True:
-            corners = np.array([[1, 1],
-                                [1, naxis2],
-                                [naxis1, naxis2],
-                                [naxis1, 1]], dtype=np.float64)
-        else:
-            corners = np.array([[0.5, 0.5],
-                                [0.5, naxis2 + 0.5],
-                                [naxis1 + 0.5, naxis2 + 0.5],
-                                [naxis1 + 0.5, 0.5]], dtype=np.float64)
-        result = self.__call__(corners[:, 0], corners[:, 1])
-        return np.asarray(result).T
-        #result = np.vstack(self.__call__(corners[:,0], corners[:,1])).T
-        # try:
-        # return self.output_coordinate_system.world_coordinates(result[:,0], result[:,1])
-        # except:
-        # return result
+        if domain is None:
+            if self.domain is None:
+                raise TypeError("Need a valid domain to compute the footprint.")
+            domain = self.domain
+        self._validate_domain(domain)
+
+        bounds = utils._domain_to_bounds(domain)
+        vertices = np.asarray([[bounds[0][0], bounds[1][0]], [bounds[0][0], bounds[1][1]],
+                               [bounds[0][1], bounds[1][1]], [bounds[0][1], bounds[1][0]]])
+        vertices = _toindex(vertices).T
+        if not center:
+            vertices += .5
+        result = self.__call__(*vertices)
+        return np.asarray(result)

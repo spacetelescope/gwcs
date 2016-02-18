@@ -1,9 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
-"""
-User oriented WCS tools.
-"""
+
 import functools
+import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import projections
 from astropy.modeling import models
@@ -12,10 +11,10 @@ from astropy import coordinates as coord
 from .wcs import WCS
 from . import coordinate_frames
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
-from .utils import _compute_lon_pole
+from .utils import _compute_lon_pole, _get_slice
 
 
-__all__ = ['wcs_from_fiducial']
+__all__ = ['wcs_from_fiducial', 'grid_from_domain']
 
 
 def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
@@ -48,7 +47,7 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     domain : list of dicts
         Domain of this WCS. The format is a list of dictionaries for each
         axis in the input frame
-        [{'lower': lowx, 'upper': highx, 'includes_lower': bool, 'includes_upper': bool}]
+        [{'lower': float, 'upper': float, 'includes_lower': bool, 'includes_upper': bool, 'step': float}]
     """
     if transform is not None:
         if not isinstance(transform, Model):
@@ -90,13 +89,11 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     return WCS(output_frame=coordinate_frame, forward_transform=forward_transform,
                name=name)
 
-
 def _verify_projection(projection):
     if projection is None:
         raise ValueError("Celestial coordinate frame requires a projection to be specified.")
     if not isinstance(projection, projections.Projection):
         raise UnsupportedProjectionError(projection)
-
 
 def _sky_transform(skycoord, projection):
     """
@@ -111,21 +108,39 @@ def _sky_transform(skycoord, projection):
     sky_rotation = models.RotateNative2Celestial(lon, lat, lon_pole)
     return projection | sky_rotation
 
-
 def _spectral_transform(fiducial, **kwargs):
     """
     A spectral transform is a shift by the fiducial.
     """
     return models.Shift(fiducial)
 
-
 def _frame2D_transform(fiducial, **kwargs):
     fiducial_transform = functools.reduce(lambda x, y: x & y,
                                           [models.Shift(val) for val in fiducial])
     return fiducial_transform
 
-
 frame2transform = {coordinate_frames.CelestialFrame: _sky_transform,
                    coordinate_frames.SpectralFrame: _spectral_transform,
                    coordinate_frames.Frame2D: _frame2D_transform
                    }
+
+
+def grid_from_domain(domain):
+    """
+    Create a grid of input points from the WCS domain.
+
+    Parameters
+    ----------
+    domain : list of dicts
+        Domain of this WCS. The format is a list of dictionaries for each
+        axis in the input frame.
+        [{'lower': float, 'upper': float, 'includes_lower': bool, 'includes_upper': bool, 'step': float}]
+
+    Returns
+    -------
+    x, y : ndarray
+        Input points.
+    """
+    slices = [_get_slice(d) for d in domain]
+    x, y = np.mgrid[slices]
+    return x, y
