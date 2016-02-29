@@ -52,13 +52,13 @@ The image above shows the projection of the 6 slits on the detector. Pixels, wit
 not belong to any slit. Assuming the array is stored in
 `ASDF <http://asdf-standard.readthedocs.org/en/latest>`__ format, create the mask:
 
-  >>> from pyasdf import AsdfFile
+  >>> from asdf import AsdfFile
   >>> f = AsdfFile.open('mask.asdf')
   >>> data = f.tree['mask']
   >>> mask = selector.LabelMapperArray(data)
 
-For more information on using the `ASDF <http://asdf-standard.readthedocs.org/en/latest/>`__ format
-see `PyASDF <http://pyasdf.readthedocs.org/en/latest/>`__
+For more information on using the `ASDF standard <http://asdf-standard.readthedocs.org/en/latest/>`__ format
+see `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
 
 Create the pixel to world transform for the entire IFU:
 

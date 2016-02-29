@@ -30,7 +30,7 @@ Installation
 
 - `astropy <http://www.astropy.org/>`__ 1.1 or later
 
-- `pyasdf <http://pyasdf.readthedocs.org/en/latest/>`__
+- `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
 
 
 Getting Started

@@ -8,7 +8,7 @@ import numpy as np
 from astropy.modeling.models import Mapping, Shift, Scale, Polynomial2D
 from astropy.tests.helper import pytest
 from ... import selector, extension
-from pyasdf.tests import helpers
+from asdf.tests import helpers
 from ...tests.test_region import create_range_mapper, create_scalar_mapper
 from ...extension import GWCSExtension
 
