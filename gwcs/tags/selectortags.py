@@ -9,9 +9,9 @@ from numpy.testing import assert_array_equal
 from astropy.modeling import models
 from astropy.utils.misc import isiterable
 
-from pyasdf import yamlutil
-from pyasdf.tags.transform.basic import TransformType
-from pyasdf.tags.core.ndarray import NDArrayType
+from asdf import yamlutil
+from asdf.tags.transform.basic import TransformType
+from asdf.tags.core.ndarray import NDArrayType
 
 from ..selector import *
 
