@@ -143,6 +143,31 @@ def test_from_fiducial_frame2d():
     assert_allclose(w(1, 1), (35.5, 13.3))
 
 
+def test_domain():
+    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+    pipeline = [('detector', trans3), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    domain = [{'lower': -1, 'upper': 10, 'include_lower': True, 'include_upper': False, 'step': .1},
+              {'lower': 6, 'upper': 15, 'include_lower': False, 'include_upper': True, 'step': .5}]
+    with pytest.raises(ValueError):
+        w.domain = domain
+    trans2 = models.Shift(10) & models.Scale(2)
+    pipeline = [('detector', trans2), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    w.domain = domain
+    assert w.domain == w.forward_transform.meta['domain']
+
+
+def test_grid_from_domain():
+    domain = [{'lower': -1, 'upper': 10, 'includes_lower': True, 'includes_upper': False, 'step': .1},
+              {'lower': 6, 'upper': 15, 'includes_lower': False, 'includes_upper': True, 'step': .5}]
+    x, y = grid_from_domain(domain)
+    assert_allclose(y[:, 0], 6.5)
+    assert_allclose(y[:, -1], 15)
+    assert_allclose(x[0], -1)
+    assert_allclose(x[-1], 9.9)
+
+
 class TestImaging(object):
 
     def setup_class(self):
@@ -214,7 +239,8 @@ class TestImaging(object):
         assert_allclose(px_coord[1], self.yv, atol=10**-6)
 
     def test_footprint(self):
-        footprint = self.wcs.footprint((4096, 2048))
+        domain = [{'lower': 1, 'upper': 4097}, {'lower': 1, 'upper': 2049}]
+        footprint = (self.wcs.footprint(domain)).T
         fits_footprint = self.fitsw.calc_footprint(axes=(4096, 2048))
         assert_allclose(footprint, fits_footprint)
 

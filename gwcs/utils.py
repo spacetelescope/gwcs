@@ -84,9 +84,30 @@ def _toindex(value):
     >>> _toindex(np.array([1.5, 2.49999]))
     array([2, 2])
     """
-    indx = np.empty(value.shape, dtype=np.int32)
-    indx = np.floor(value + 0.5, out=indx)
+    indx = np.asarray(np.floor(value + 0.5), dtype=np.int)
     return indx
+
+
+def _domain_to_bounds(domain):
+    def _get_bounds(axis_domain):
+        step = axis_domain.get('step', 1)
+        x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
+            else axis_domain['lower'] + step
+        y = axis_domain['upper'] - 1 if not axis_domain.get('includes_upper', False) \
+            else axis_domain['upper']
+        return (x, y)
+
+    bounds = [_get_bounds(d) for d in domain]
+    return bounds
+
+
+def _get_slice(axis_domain):
+    step = axis_domain.get('step', 1)
+    x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
+      else axis_domain['lower'] + step
+    y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
+      else axis_domain['upper'] + step
+    return slice(x, y, step)
 
 
 def _compute_lon_pole(skycoord, projection):
