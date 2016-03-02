@@ -2,3 +2,4 @@ numpy
 Cython
 astropy_helpers
 astropy
+asdf
