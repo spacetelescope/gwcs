@@ -13,7 +13,8 @@ from ..utils import UnsupportedProjectionError
 
 def test_wrong_projcode():
     with pytest.raises(UnsupportedProjectionError):
-        gwutils.get_projcode("RA---TAM")
+        ctype = {"CTYPE": ["RA---TAM", "DEC--TAM"]}
+        gwutils.get_projcode(ctype)
 
 
 def test_wrong_projcode2():
