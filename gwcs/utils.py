@@ -147,9 +147,10 @@ def _compute_lon_pole(skycoord, projection):
     return lon_pole
 
 
-def get_projcode(ctype):
+def get_projcode(wcs_info):
     # CTYPE here is only the imaging CTYPE keywords
-    projcode = ctype[0][5:8].upper()
+    sky_axes, _ = get_axes(wcs_info)
+    projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
         raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
     return projcode
@@ -306,12 +307,13 @@ def make_fitswcs_transform(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
     wcs_linear = fitswcs_linear(wcs_info)
-    projcode = get_projcode(wcs_info['CTYPE'])
+    projcode = get_projcode(wcs_info)
     projection = create_projection_transform(projcode)
     projection = projection.rename(projcode)
 
     # Create the sky rotation transform
-    phip, lonp = wcs_info['CRVAL']
+    sky_axes, _ = get_axes(wcs_info)
+    phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
     # TODO: write "def compute_lonpole(projcode, l)"
     # Set a defaul tvalue for now
     thetap = 180
@@ -363,8 +365,8 @@ def fitswcs_linear(header):
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
 
-    if wcsaxes == 2:
-        rotation = astmodels.AffineTransformation2D(matrix=pc, name='pc_matrix')
+    #if wcsaxes == 2:
+    rotation = astmodels.AffineTransformation2D(matrix=pc, name='pc_matrix')
     #elif wcsaxes == 3 :
         #rotation = AffineTransformation3D(matrix=matrix)
     #else:
@@ -373,14 +375,14 @@ def fitswcs_linear(header):
 
     translation_models = [astmodels.Shift(-shift, name='crpix' + str(i + 1)) \
                           for i, shift in enumerate(crpix)]
-    translation = functools.reduce(core._model_oper('&'), translation_models)
+    translation = functools.reduce(lambda x, y: x & y, translation_models)
 
     if not wcs_info['has_cd']:
         # Do not compute scaling since CDELT* = 1 if CD is present.
         scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1)) \
                           for i, scale in enumerate(cdelt)]
 
-        scaling = functools.reduce(core._model_oper('&'), scaling_models)
+        scaling = functools.reduce(lambda x, y: x & y, scaling_models)
         wcs_linear = translation | rotation | scaling
     else:
         wcs_linear = translation | rotation
