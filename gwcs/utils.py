@@ -307,19 +307,8 @@ def make_fitswcs_transform(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
     wcs_linear = fitswcs_linear(wcs_info)
-    projcode = get_projcode(wcs_info)
-    projection = create_projection_transform(projcode)
-    projection = projection.rename(projcode)
-
-    # Create the sky rotation transform
-    sky_axes, _ = get_axes(wcs_info)
-    phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
-    # TODO: write "def compute_lonpole(projcode, l)"
-    # Set a defaul tvalue for now
-    thetap = 180
-    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
-
-    return functools.reduce(core._model_oper('|'), [wcs_linear, projection, n2c])
+    wcs_nonlinear = fitswcs_nonlinear(wcs_info)
+    return functools.reduce(core._model_oper('|'), [wcs_linear, wcs_nonlinear])
 
 
 def fitswcs_linear(header):
@@ -388,6 +377,35 @@ def fitswcs_linear(header):
         wcs_linear = translation | rotation
 
     return wcs_linear
+
+
+def fitswcs_nonlinear(header):
+    """                                
+    Create a WCS linear transform from a FITS header.
+                                                                                   
+    Parameters                                                                       
+    ----------
+    header : astropy.io.fits.Header or dict
+        FITS Header or dict with basic FITS WCS keywords.
+    """
+    if isinstance(header, fits.Header):
+        wcs_info = read_wcs_from_header(header)
+    elif isinstance(header, dict):
+        wcs_info = header
+    else:
+        raise TypeError("Expected a FITS Header or a dict.")
+
+    projcode = get_projcode(wcs_info)
+    projection = create_projection_transform(projcode).rename(projcode)
+
+    # Create the sky rotation transform
+    sky_axes, _ = get_axes(wcs_info)
+    phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
+    # TODO: write "def compute_lonpole(projcode, l)"
+    # Set a defaul tvalue for now 
+    thetap = 180
+    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
+    return projection | n2c
 
 
 def create_projection_transform(projcode):
