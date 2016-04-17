@@ -76,20 +76,6 @@ def test_insert_transform():
     assert(gw.forward_transform(1.2) == (m1 | m2)(1.2))
 
 
-def test_wrong_ndim():
-    """
-    Tests that exception is raised if n_inputs/n_outputs does not
-    match number of input/output axes.
-    """
-    det = cf.Frame2D(name='detector')
-    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
-    m = models.Shift(1)
-    with pytest.raises(ModelDimensionalityError):
-        w = wcs.WCS(output_frame='icrs', forward_transform=m, input_frame=det)
-    with pytest.raises(ModelDimensionalityError):
-        w = wcs.WCS(output_frame=icrs, forward_transform=m)
-
-
 def test_set_transform():
     """ Tests setting a transform between two frames in the pipeline."""
     w = wcs.WCS(input_frame=det, output_frame=icrs, forward_transform=pipe)
