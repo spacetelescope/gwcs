@@ -65,17 +65,7 @@ class WCS(object):
                                 "(frame, transform) list, got {0}".format(
                                     type(forward_transform)))
             _inp_frame = getattr(self, self.input_frame)
-            if  _inp_frame is not None and _inp_frame.naxes != self.forward_transform.n_inputs:
-                message = "The number of inputs {0} of the forward transform \
-                does not match the number of axes {1} of the input axes. \
-                ".format(self.forward_transform.n_inputs, _inp_frame.naxes)
-                raise ModelDimensionalityError(message)
             _outp_frame = getattr(self, self.output_frame)
-            if _outp_frame is not None and _outp_frame.naxes != self.forward_transform.n_outputs:
-                message = "The number of outputs {0} of the forward transform \
-                does not match the number of axes {1} of the output axes. \
-                ".format(self.forward_transform.n_outputs, _outp_frame.naxes)
-                raise ModelDimensionalityError(message)
         else:
             if output_frame is None:
                 raise CoordinateFrameError("An output_frame must be specified"
@@ -435,3 +425,5 @@ class WCS(object):
             vertices += .5
         result = self.__call__(*vertices)
         return np.asarray(result)
+
+
