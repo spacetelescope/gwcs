@@ -381,12 +381,13 @@ class WCS(object):
         for item in self._pipeline:
             model = item[1]
             if model is not None:
-                if model.name != "":
-                    col2.append(model.name)
+                if model.name is not None:
+                    col2.append("comp"+model.name)
                 else:
-                    col2.append(model.__class__.__name__)
+                    lenmodels = len(model.submodel_names)
+                    col2.append("CompoundModel_" + str(lenmodels))
             else:
-                col2.append(None)
+                col2.append("None")
         t = Table([col1, col2], names=['From',  'Transform'])
         return str(t)
 
