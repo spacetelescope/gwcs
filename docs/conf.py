@@ -42,7 +42,6 @@ except ImportError:
 from astropy_helpers.sphinx.conf import *
 
 # Get configuration information from setup.cfg
-from distutils import config
 try:
     from ConfigParser import ConfigParser
 except ImportError:
