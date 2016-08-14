@@ -113,7 +113,7 @@ class WCS(object):
         elif to_ind == from_ind:
             return None
         else:
-            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].tolist()
+            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].copy()#.tolist()
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
@@ -149,6 +149,7 @@ class WCS(object):
 
         if from_ind + 1 != to_ind:
             raise ValueError("Frames {0} and {1} are not  in sequence".format(from_name, to_name))
+        #print('transform in set_transform', transform)
         self._pipeline[from_ind] = (self._pipeline[from_ind][0], transform)
 
     @property
@@ -378,16 +379,13 @@ class WCS(object):
         from astropy.table import Table
         col1 = [item[0] for item in self._pipeline]
         col2 = []
-        for item in self._pipeline:
+        for item in self._pipeline[: -1]:
             model = item[1]
-            if model is not None:
-                if model.name is not None:
-                    col2.append("comp"+model.name)
-                else:
-                    lenmodels = len(model.submodel_names)
-                    col2.append("CompoundModel_" + str(lenmodels))
+            if model.name is not None:
+                col2.append(model.name)
             else:
-                col2.append("None")
+                col2.append(model.__class__.__name__)
+        col2.append(None)
         t = Table([col1, col2], names=['From',  'Transform'])
         return str(t)
 
