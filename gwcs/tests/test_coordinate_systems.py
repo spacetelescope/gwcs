@@ -13,7 +13,9 @@ from .. import wcs
 
 
 coord_frames = coord.builtin_frames.__all__[:]
-
+# Need to write a better test, using a dict {coord_frame: input_parameters}
+# For now remove OffsetFrame, issue #55
+coord_frames.remove("SkyOffsetFrame")
 
 icrs = coord.ICRS()
 fk5 = coord.FK5()
