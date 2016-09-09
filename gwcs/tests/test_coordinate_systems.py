@@ -17,7 +17,7 @@ coord_frames = coord.builtin_frames.__all__[:]
 # For now remove OffsetFrame, issue #55
 try:
     coord_frames.remove("SkyOffsetFrame")
-except:
+except ValueError as ve:
     pass
 
 icrs = coord.ICRS()
