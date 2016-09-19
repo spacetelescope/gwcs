@@ -148,10 +148,10 @@ def test_grid_from_domain():
     domain = [{'lower': -1, 'upper': 10, 'includes_lower': True, 'includes_upper': False, 'step': .1},
               {'lower': 6, 'upper': 15, 'includes_lower': False, 'includes_upper': True, 'step': .5}]
     x, y = grid_from_domain(domain)
-    assert_allclose(y[:, 0], 6.5)
-    assert_allclose(y[:, -1], 15)
-    assert_allclose(x[0], -1)
-    assert_allclose(x[-1], 9.9)
+    assert_allclose(x[:, 0], -1)
+    assert_allclose(x[:, -1], 9.9)
+    assert_allclose(y[0], 6.5)
+    assert_allclose(y[-1], 15)
 
 
 class TestImaging(object):
