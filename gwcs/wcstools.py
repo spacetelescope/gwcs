@@ -142,5 +142,5 @@ def grid_from_domain(domain):
         Input points.
     """
     slices = [_get_slice(d) for d in domain]
-    x, y = np.mgrid[slices]
+    y, x = np.mgrid[slices[::-1]]
     return x, y
