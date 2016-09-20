@@ -223,7 +223,7 @@ class CoordinateFrame(object):
                 start_frame = self._wcsobj.input_frame
             else:
                 if not start_frame in self._wcsobj.available_frames:
-                    raise ValueError("Unrecognized frame {0}".format(start))
+                    raise ValueError("Unrecognized frame {0}".format(start_frame))
             transform = self._wcsobj.get_transform(start_frame, self)
         else:
             raise ValueError("A starting frame is needed to determine separability of axes.")

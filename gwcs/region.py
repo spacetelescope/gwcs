@@ -126,11 +126,9 @@ class Polygon(Region):
         """
         Create a list of Edge objects from vertices
         """
-        edges = []
-        for i in range(1, len(self._vertices)):
-            name = 'E'+str(i-1)
-            edges.append(Edge(name=name, start=self._vertices[i-1], stop=self._vertices[i]))
-        return edges
+        return [Edge(name='E{}'.format(i-1), start=self._vertices[i-1], stop=self._vertices[i])
+                for i in range(1, len(self._vertices))
+                ]
 
     def scan(self, data):
         """
