@@ -136,11 +136,30 @@ def grid_from_domain(domain):
         axis in the input frame.
         [{'lower': float, 'upper': float, 'includes_lower': bool, 'includes_upper': bool, 'step': float}]
 
+    The assumption is the list is in order of X, Y [, Z] and the output will be in the same order.
+
+    For example, if the domain is [{'lower': 0, 'upper': 1623}, {'lower': 785, 'upper': 835}] then the output will be:
+
+    array([[[   0,    1,    2, ..., 1620, 1621, 1622],
+        [   0,    1,    2, ..., 1620, 1621, 1622],
+        [   0,    1,    2, ..., 1620, 1621, 1622],
+        ...,
+        [   0,    1,    2, ..., 1620, 1621, 1622],
+        [   0,    1,    2, ..., 1620, 1621, 1622],
+        [   0,    1,    2, ..., 1620, 1621, 1622]],
+
+       [[ 785,  785,  785, ...,  785,  785,  785],
+        [ 786,  786,  786, ...,  786,  786,  786],
+        [ 787,  787,  787, ...,  787,  787,  787],
+        ...,
+        [ 832,  832,  832, ...,  832,  832,  832],
+        [ 833,  833,  833, ...,  833,  833,  833],
+        [ 834,  834,  834, ...,  834,  834,  834]]])
+
     Returns
     -------
     x, y : ndarray
         Input points.
     """
     slices = [_get_slice(d) for d in domain]
-    y, x = np.mgrid[slices[::-1]]
-    return x, y
+    return np.mgrid[slices[::-1]][::-1]
