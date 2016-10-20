@@ -2,14 +2,12 @@
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_allclose
-from astropy.modeling import models
+from numpy.testing import assert_allclose
 from astropy import units as u
 from astropy import coordinates as coord
 from astropy.tests.helper import pytest
 
 from .. import coordinate_frames as cf
-from .. import wcs
 
 
 coord_frames = coord.builtin_frames.__all__[:]
@@ -20,72 +18,59 @@ try:
 except ValueError as ve:
     pass
 
-icrs = coord.ICRS()
-fk5 = coord.FK5()
-cel1 = cf.CelestialFrame(reference_frame=icrs)
-cel2 = cf.CelestialFrame(reference_frame=fk5)
 
-spec1 = cf.SpectralFrame(name='freq', unit=[u.Hz,], axes_order=(2,))
-spec2 = cf.SpectralFrame(name='wave', unit=[u.m,], axes_order=(2,))
+icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))
+detector = cf.Frame2D(name='detector', axes_order=(0, 1))
+focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 
-comp1 = cf.CompositeFrame([cel1, spec1])
-comp2 = cf.CompositeFrame([cel2, spec2])
+spec1 = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
+spec2 = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
+
+comp1 = cf.CompositeFrame([icrs, spec1])
+comp2 = cf.CompositeFrame([focal, spec2])
 comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
-m1 = models.Shift(12.4) & models.Shift(-2)
-m2 = models.Scale(2) & models.Scale(-2)
-icrs = cf.CelestialFrame(reference_frame=coord.ICRS())
-det = cf.Frame2D(name='detector', axes_order=(0, 1))
-focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
-pipe = [(det, m1),
-        (focal, m2),
-        (icrs, None)
-        ]
+xscalar = 1
+yscalar = 2
+xarr = np.arange(5)
+yarr = np.arange(5)
+
+inputs2 = [(xscalar, yscalar), (xarr, yarr)]
+inputs1 = [xscalar, xarr]
+inputs3 = [(xscalar, yscalar, xscalar), (xarr, yarr, xarr)]
 
 
 def test_units():
     assert(comp1.unit == (u.deg, u.deg, u.Hz))
-    assert(comp2.unit == (u.deg, u.deg, u.m))
+    assert(comp2.unit == (u.m, u.m, u.m))
     assert(comp.unit == (u.deg, u.deg, u.Hz, u.m))
 
 
-def test_transform_to_spectral():
-    spec = cf.SpectralFrame(name='wave', unit=u.micron, axes_order=(2,))
-    w = wcs.WCS(output_frame=spec, forward_transform=models.Polynomial1D(1, c1=1))
-    q = getattr(w, w.output_frame).transform_to(5, 'Hz')
-    assert(q.unit == u.Hz)
+@pytest.mark.parametrize('inputs', inputs2)
+def test_coordinates_spatial(inputs):
+    sky_coo = icrs.coordinates(*inputs)
+    assert isinstance(sky_coo, coord.SkyCoord)
+    assert_allclose((sky_coo.ra.value, sky_coo.dec.value), inputs)
+    focal_coo = focal.coordinates(*inputs)
+    assert_allclose([coo.value for coo in focal_coo], inputs)
+    assert [coo.unit for coo in focal_coo] == [u.m, u.m]
 
 
-def test_coordinates_spatial():
-    w = wcs.WCS(forward_transform=pipe)
-    sky_coo = getattr(w, w.output_frame).coordinates(1, 3)
-    sky = w(1, 3)
-    assert_allclose((sky_coo.ra.value, sky_coo.dec.value), sky)
+@pytest.mark.parametrize('inputs', inputs1)
+def test_coordinates_spectral(inputs):
+    wave = spec2.coordinates(inputs)
+    assert_allclose(wave.value, inputs)
+    assert wave.unit == 'meter'
+    assert isinstance(wave, u.Quantity)
 
 
-def test_coordinates_spectral():
-    spec = cf.SpectralFrame(name='wavelength', unit=(u.micron,),
-                            axes_order=(0,), axes_names=('lambda',))
-    w = wcs.WCS(forward_transform=models.Polynomial1D(1, c0=.2, c1=.3), output_frame=spec)
-    x = np.arange(10)
-    wave =getattr(w, w.output_frame).coordinates(x)
-    assert_allclose(wave.value, w(x))
-    wave = getattr(w, w.output_frame).coordinates(1.2)
-    assert_allclose(wave.value, w(1.2))
-
-
-def test_coordinates_composite():
-    spec = cf.SpectralFrame(name='wavelength', unit=(u.micron,),
-                            axes_order=(2,), axes_names=('lambda',))
-    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0,1))
-    frame = cf.CompositeFrame([icrs, spec])
-    transform = models.Mapping([0, 0, 1]) | models.Identity(2) & models.Polynomial1D(1, c0=.2, c1=.3)
-    w = wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=det)
-    x = np.arange(3)
-    result = getattr(w, w.output_frame).coordinates(x, x)
-    assert_allclose(result[0].ra.value, w(x, x)[0])
-    assert_allclose(result[0].ra.value, w(x, x)[1])
-    assert_allclose(result[1].value, w(x, x)[2])
+@pytest.mark.parametrize('inputs', inputs3)
+def test_coordinates_composite(inputs):
+    frame = cf.CompositeFrame([icrs, spec2])
+    result = frame.coordinates(*inputs)
+    assert isinstance(result[0], coord.SkyCoord)
+    assert_allclose((result[0].ra.value, result[0].dec.value), inputs[:2])
+    assert_allclose(result[1].value, inputs[2])
 
 
 @pytest.mark.parametrize(('frame'), coord_frames)
@@ -94,5 +79,5 @@ def test_attributes(frame):
     Test getting default values for  CoordinateFrame attributes from reference_frame.
     """
     cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
-    assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) == \
+    assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
            len(cel.axes_order) == cel.naxes)

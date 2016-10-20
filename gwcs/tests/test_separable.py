@@ -4,13 +4,13 @@ Test separability of WCS axes.
 
 """
 from __future__ import absolute_import, division, unicode_literals, print_function
-from astropy.modeling import models, core
+from astropy.modeling import models
 from astropy.modeling.models import Mapping
 from astropy.tests.helper import pytest
 import numpy as np
 from numpy.testing import utils
 
-from .. utils import _coord_matrix, _cstack, _cdot, is_separable
+from .. utils import _coord_matrix, is_separable
 
 
 sh1 = models.Shift(1, name='shift1')
@@ -26,7 +26,7 @@ p22 = models.Polynomial2D(2, name='p22')
 p1 = models.Polynomial1D(1, name='p1')
 
 
-#Note: remove these later when Model.separable is implemented
+# Note: remove these later when Model.separable is implemented
 sh1.separable = True
 sh2.separable = True
 scl1.separable = True
@@ -38,33 +38,33 @@ p1.separable = True
 
 
 compound_models = {'cm1': (map3 & sh1 | rot & sh1 | sh1 & sh2 & sh1,
-                           np.array([False, False,  True])),
+                           np.array([False, False, True])),
                    'cm2': (sh1 & sh2 | rot | map1 | p2 & p22,
                            np.array([False, False])),
                    'cm3': (map2 | rot & scl1,
-                           np.array([False, False,  True])),
+                           np.array([False, False, True])),
                    'cm4': (sh1 & sh2 | map2 | rot & scl1,
-                           np.array([False, False,  True])),
+                           np.array([False, False, True])),
                    'cm5': (map3 | sh1 & sh2 | scl1 & scl2,
-                           np.array([ False,  False])),
+                           np.array([False, False])),
                    'cm7': (map2 | p2 & sh1,
-                           np. array([False,  True]))
+                           np. array([False, True]))
                    }
 
 
 def test_coord_matrix():
     c = _coord_matrix(p2, 'left', 2)
-    utils.assert_allclose(np.array([[1,1], [0,0]]), c)
+    utils.assert_allclose(np.array([[1, 1], [0, 0]]), c)
     c = _coord_matrix(p2, 'right', 2)
-    utils.assert_allclose(np.array([[0,0], [1,1]]), c)
+    utils.assert_allclose(np.array([[0, 0], [1, 1]]), c)
     c = _coord_matrix(p1, 'left', 2)
     utils.assert_allclose(np.array([[1], [0]]), c)
     c = _coord_matrix(p1, 'left', 1)
-    utils.assert_allclose(np.array( [[1]]), c)
+    utils.assert_allclose(np.array([[1]]), c)
     c = _coord_matrix(sh1, 'left', 2)
     utils.assert_allclose(np.array([[1], [0]]), c)
     c = _coord_matrix(sh1, 'right', 2)
-    utils.assert_allclose(np.array([[0],[1]]), c)
+    utils.assert_allclose(np.array([[0], [1]]), c)
     c = _coord_matrix(sh1, 'right', 3)
     utils.assert_allclose(np.array([[0], [0], [1]]), c)
     c = _coord_matrix(map3, 'left', 2)
@@ -76,5 +76,4 @@ def test_coord_matrix():
 @pytest.mark.parametrize(('compound_model', 'result'), compound_models.values())
 def test_separable(compound_model, result):
     utils.assert_allclose(is_separable(compound_model), result)
-
 

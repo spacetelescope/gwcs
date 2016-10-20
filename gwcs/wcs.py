@@ -1,14 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
 
-import copy
 import functools
 import numpy as np
 from astropy.extern import six
 from astropy.modeling.core import Model
 
 from . import coordinate_frames
-from .utils import (ModelDimensionalityError, CoordinateFrameError)
+from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
 
@@ -41,6 +40,9 @@ class WCS(object):
         self._available_frames = []
         self._pipeline = []
         self._name = name
+        self._initialize_wcs(forward_transform, input_frame, output_frame)
+
+    def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
                 if output_frame is None:
@@ -64,9 +66,8 @@ class WCS(object):
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(
                                     type(forward_transform)))
-            _inp_frame = getattr(self, self.input_frame)
-            _outp_frame = getattr(self, self.output_frame)
         else:
+            # Initialize a WCS without a forward_transform - allows building a WCS programmatically.
             if output_frame is None:
                 raise CoordinateFrameError("An output_frame must be specified"
                                            "if forward_transform is None.")
@@ -76,10 +77,6 @@ class WCS(object):
             super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
             self._pipeline = [(_input_frame, None),
                               (_output_frame, None)]
-        for frame in self.available_frames:
-            if getattr(self, frame) is not None:
-                getattr(self, frame)._set_wcsobj(self)
-
 
     def get_transform(self, from_frame, to_frame):
         """
@@ -88,9 +85,9 @@ class WCS(object):
         Parameters
         ----------
         from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
-            Initial coordinate frame.
+            Initial coordinate frame name of object.
         to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
-            Coordinate frame into which to transform.
+            End coordinate frame name or object.
 
         Returns
         -------
@@ -113,7 +110,7 @@ class WCS(object):
         elif to_ind == from_ind:
             return None
         else:
-            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].copy()#.tolist()
+            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].copy()
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
@@ -125,9 +122,9 @@ class WCS(object):
         from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
             Initial coordinate frame.
         to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
-            Coordinate frame into which to transform.
+            End coordinate frame.
         transform : `~astropy.modeling.Model`
-            Transform between two frames.
+            Transform between ``from_frame`` and ``to_frame``.
         """
         from_name, from_obj = self._get_frame_name(from_frame)
         to_name, to_obj = self._get_frame_name(to_frame)
@@ -149,7 +146,6 @@ class WCS(object):
 
         if from_ind + 1 != to_ind:
             raise ValueError("Frames {0} and {1} are not  in sequence".format(from_name, to_name))
-        #print('transform in set_transform', transform)
         self._pipeline[from_ind] = (self._pipeline[from_ind][0], transform)
 
     @property
@@ -175,7 +171,10 @@ class WCS(object):
             An analytical inverse does not exist.
 
         """
-        backward = self.forward_transform.inverse
+        try:
+            backward = self.forward_transform.inverse
+        except NotImplementedError as err:
+            raise NotImplementedError("Could not construct backward transform. \n{0}".format(err))
         return backward
 
     def _get_frame_index(self, frame):
@@ -210,16 +209,26 @@ class WCS(object):
             frame_obj = frame
         return name, frame_obj
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         """
         Executes the forward transform.
 
         args : float or array-like
             Inputs in the input coordinate system, separate inputs for each dimension.
-
+        output : str
+            One of ["numericals", "numericals_plus"]
+            If "numericals_plus" - returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Quantity` object.
         """
-        if self.forward_transform is not None:
-            return self.forward_transform(*args)
+        if self.forward_transform is None:
+            raise NotImplementedError("WCS.forward_transform is not implemented.")
+        result = self.forward_transform(*args)
+        output = kwargs.pop('output', None)
+        if output == 'numericals_plus':
+            result = self.output_frame.coordinates(*result)
+        elif output is not None and output != "numericals":
+            raise ValueError("Type of output unrecognized {0}".format(output))
+        return result
 
     def invert(self, *args, **kwargs):
         """
@@ -236,9 +245,14 @@ class WCS(object):
             keyword arguments to be passed to the iterative invert method.
         """
         try:
-            return self.forward_transform.inverse(*args)
+            result = self.backward_transform(*args)
         except (NotImplementedError, KeyError):
-            return self._invert(*args, **kwargs)
+            result = self._invert(*args, **kwargs)
+        output = kwargs.pop('output', None)
+        if output == 'numericals_plus':
+            return self.input_frame.coordinates(*result)
+        else:
+            return result
 
     def _invert(self, *args, **kwargs):
         """
@@ -246,10 +260,9 @@ class WCS(object):
         """
         raise NotImplementedError
 
-    def transform(self, from_frame, to_frame, *args):
+    def transform(self, from_frame, to_frame, *args, **kwargs):
         """
-        Transform potitions between two frames.
-
+        Transform positions between two frames.
 
         Parameters
         ----------
@@ -259,9 +272,26 @@ class WCS(object):
             Coordinate frame into which to transform.
         args : float
             input coordinates to transform
+        args : float or array-like
+            Inputs in ``from_frame``, separate inputs for each dimension.
+        output : str
+            One of ["numericals", "numericals_plus"]
+            If "numericals_plus" - returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Quantity` object.
         """
         transform = self.get_transform(from_frame, to_frame)
-        return transform(*args)
+        result = transform(*args)
+        output = kwargs.pop("output", None)
+        if output == "numericals_plus":
+            to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
+            if to_frame_obj is not None:
+                result = to_frame_obj.coordinates(*result)
+            else:
+                raise TypeError("Coordinate objects could not be created because"
+                                "frame {0} is not defined.".format(to_frame_name))
+        elif output is not None and output != "numericals":
+            raise ValueError("Type of output unrecognized {0}".format(output))
+        return result
 
     @property
     def available_frames(self):
@@ -318,7 +348,7 @@ class WCS(object):
     def output_frame(self):
         """Return the output coordinate frame."""
         if self._pipeline:
-            return self._pipeline[-1][0]
+            return getattr(self, self._pipeline[-1][0])
         else:
             return None
 
@@ -326,7 +356,7 @@ class WCS(object):
     def input_frame(self):
         """Return the input coordinate frame."""
         if self._pipeline:
-            return self._pipeline[0][0]
+            return getattr(self, self._pipeline[0][0])
         else:
             return None
 
@@ -386,7 +416,7 @@ class WCS(object):
             else:
                 col2.append(model.__class__.__name__)
         col2.append(None)
-        t = Table([col1, col2], names=['From',  'Transform'])
+        t = Table([col1, col2], names=['From', 'Transform'])
         return str(t)
 
     def __repr__(self):
@@ -424,5 +454,4 @@ class WCS(object):
             vertices += .5
         result = self.__call__(*vertices)
         return np.asarray(result)
-
 
