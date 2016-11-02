@@ -16,6 +16,7 @@ Bug Fixes
 - Fixed a bug in ``LabelMapperDict`` where a wrong index was used.[#29]
 - Changed the order of the inputs when ``LabelMapperArray`` is evaluated as
   the inputs are supposed to be image coordinates. [#29]
+- Renamed variables in read_wcs_from_header to match loop variable [#63]
 
 0.5.1 (2016-02-01)
 ------------------

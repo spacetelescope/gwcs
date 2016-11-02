@@ -179,8 +179,8 @@ def read_wcs_from_header(header):
         ctypes = header['CTYPE*']
         keys = ctypes.keys()
         for key in keys[::-1]:
-            if p.split(k)[-1] != "":
-                keys.remove(k)
+            if p.split(key)[-1] != "":
+                keys.remove(key)
         wcs_info['WCSAXES'] = len(keys)
     wcsaxes = wcs_info['WCSAXES']
     # if not present call get_csystem
