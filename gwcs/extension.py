@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 from asdf.extension import BuiltinExtension
-from asdf import util, resolver
 from .tags import LabelMapperType, RegionsSelectorType
 
 

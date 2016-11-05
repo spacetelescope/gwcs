@@ -5,12 +5,10 @@ Defines coordinate frames and ties them to data axes.
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 import numpy as np
-from astropy import time
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
 from astropy.extern import six
-
 from . import utils as gwutils
 
 
@@ -48,13 +46,11 @@ class CoordinateFrame(object):
         Names of the axes in this frame.
     name : str
         Name of this frame.
-    wcsobj : ~gwcs.WCS
-        Reference to the WCS object to which this frame belongs.
     """
 
     def __init__(self, naxes, axes_type, axes_order, reference_frame=None,
                  reference_position=None, unit=None, axes_names=None,
-                 name=None, wcsobj=None):
+                 name=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
         if isinstance(axes_type, six.string_types):
@@ -95,8 +91,8 @@ class CoordinateFrame(object):
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
-                self.__class__.__name__, self.name,
-                self.unit, self.axes_names, self.axes_order)
+            self.__class__.__name__, self.name,
+            self.unit, self.axes_names, self.axes_order)
         if self.reference_position is not None:
             fmt += ', reference_position="{0}"'.format(self.reference_position)
         if self.reference_frame is not None:
@@ -174,70 +170,6 @@ class CoordinateFrame(object):
         """ Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'. """
         return self._axes_type
 
-    def _set_wcsobj(self, obj):
-        self._wcsobj = obj
-
-    def _separable(self, start=None):
-        """
-        Computes the relationship of i nput and output axes.
-        Returns an array of shape (transform.n_outputs, transform.n_inputs).
-        Rows represent outputs, columns - inputs.
-        Non-zero elements mean dependence of the output axis on the corresponding input axis.
-
-        """
-        if self._wcsobj is not None:
-            if start is None:
-                start = self._wcsobj.input_frame
-            else:
-                if not start in self._wcsobj.available_frames:
-                    raise ValueError("Unrecognized frame {0}".format(start))
-            transform = self._wcsobj.get_transform(start, self)
-            sep_matrix = gwutils._separable(transform)
-            return sep_matrix
-        else:
-            raise ValueError("A starting frame is needed to determine axes.")
-
-    def is_separable(self, start_frame=None):
-        """
-        Computes the separability of axes.
-
-        Returns a 1D boolean array of size frame.naxes where True means
-        the axis is completely separable and False means the axis is nonseparable
-        from at least one other axis.
-
-        Parameters
-        ----------
-        start_frame : ~gwcs.coordinate_frames.CoordinateFrame
-            A frame in the WCS pipeline
-            The transform between start_frame and the current frame is used to compute the
-            mapping inputs: outputs.
-            If None the input_frame is used as start_frame.
-
-        See Also
-        --------
-        input_axes : For each output axis return the input axes contributing to it.
-
-        """
-        if self._wcsobj is not None:
-            if start_frame is None:
-                start_frame = self._wcsobj.input_frame
-            else:
-                if not start_frame in self._wcsobj.available_frames:
-                    raise ValueError("Unrecognized frame {0}".format(start_frame))
-            transform = self._wcsobj.get_transform(start_frame, self)
-        else:
-            raise ValueError("A starting frame is needed to determine separability of axes.")
-
-        sep = gwutils.is_separable(transform)
-        return [sep[ax] for ax in self.axes_order]
-
-
-    def transform_to(self, other):
-        """
-        Transform from the current reference system to other
-        """
-        raise NotImplementedError("Subclasses should implement this")
-
     def coordinates(self, *args):
         """ Create world coordinates object"""
         raise NotImplementedError("Subclasses may implement this")
@@ -262,14 +194,11 @@ class CelestialFrame(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
-    wcsobj : ~gwcs.WCS
-        Reference to the WCS object to which this frame belongs.
-
     """
 
     def __init__(self, axes_order=None, reference_frame=None,
                  unit=None, axes_names=None,
-                 name=None, wcsobj=None):
+                 name=None):
         naxes = 2
         if reference_frame is not None:
             if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
@@ -293,7 +222,7 @@ class CelestialFrame(CoordinateFrame):
                                              reference_frame=reference_frame,
                                              unit=unit,
                                              axes_names=axes_names,
-                                             name=name, wcsobj=wcsobj)
+                                             name=name)
 
     def coordinates(self, *args):
         """
@@ -304,27 +233,11 @@ class CelestialFrame(CoordinateFrame):
         args : float
             inputs to wcs.input_frame
         """
-        if not hasattr(self, '_wcsobj') or self._wcsobj is None:
-            raise TypeError("This method requires a WCS object")
-        args = self._wcsobj(*args)
-        args = [args[i] for i in self.axes_order]
+        # Reorder axes if necesary.
         try:
             return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
         except:
             raise
-
-    def transform_to(self, other, *args):
-        """
-        Transform from the current reference frame to other.
-
-        Parameters
-        ----------
-        lon, lat : float
-            longitude and latitude
-        other : str or `BaseCoordinateFrame` class
-            The frame to transform this coordinate into.
-        """
-        return self.coordinates(*args).transform_to(other)
 
 
 class SpectralFrame(CoordinateFrame):
@@ -333,7 +246,7 @@ class SpectralFrame(CoordinateFrame):
 
     Parameters
     ----------
-    axes_order : tuple of int
+    axes_order : tuple or int
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
         Reference frame (usually used with output_frame to convert to world coordinate objects).
@@ -343,33 +256,20 @@ class SpectralFrame(CoordinateFrame):
         Spectral axis name.
     name : str
         Name for this frame.
-    wcsobj : ~gwcs.WCS
-        Reference to the WCS object to which this frame belongs.
     """
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
-                 axes_names=None, name=None, wcsobj=None, reference_position=None):
+                 axes_names=None, name=None, reference_position=None):
         super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                                             axes_names=axes_names, reference_frame=reference_frame,
                                             unit=unit, name=name,
-                                            reference_position=reference_position,
-                                            wcsobj=wcsobj)
+                                            reference_position=reference_position)
 
     def coordinates(self, *args):
-        args = self._wcsobj(*args)
-
         if np.isscalar(args):
             return args * self.unit[0]
         else:
-            if len(getattr(self._wcsobj, self._wcsobj.output_frame).axes_order) > 1:
-                args = [args[i] for i in self.axes_order]
-                return args[0] * self.unit[0]
-            else:
-                return args * self.unit[0]
-
-
-    def transform_to(self, x, other_unit):
-        return self.coordinates(x).to(other_unit, equivalencies=u.spectral())
+            return args[0] * self.unit[0]
 
 
 class CompositeFrame(CoordinateFrame):
@@ -396,11 +296,15 @@ class CompositeFrame(CoordinateFrame):
         for frame in frames:
             axes_order.extend(frame.axes_order)
         for frame in frames:
-            for ind, type, u, n in zip(frame.axes_order, frame.axes_type,
+            for ind, axtype, un, n in zip(frame.axes_order, frame.axes_type,
                                           frame.unit, frame.axes_names):
-                axes_type[ind] = type
+                axes_type[ind] = axtype
                 axes_names[ind] = n
-                unit[ind] = u
+                unit[ind] = un
+        if len(np.unique(axes_order)) != len(axes_order):
+            raise ValueError("Incorrect numbering of axes, "
+                             "axes_order should contain unique numbers, "
+                             "got {}.".format(axes_order))
         super(CompositeFrame, self).__init__(naxes, axes_type=axes_type,
                                              axes_order=axes_order,
                                              unit=unit, axes_names=axes_names,
@@ -413,26 +317,13 @@ class CompositeFrame(CoordinateFrame):
     def __repr__(self):
         return repr(self.frames)
 
-    def _set_wcsobj(self, obj):
-        for frame in self.frames:
-            frame._set_wcsobj(obj)
-        self._wcsobj = obj
-
     def coordinates(self, *args):
-        """
-        Return the output of ``forward_transform`` as quantities.
-
-        Parameters
-        ----------
-        args : float
-            inputs to the WCS in the input_coordinate_frame.
-        """
-        naxes = getattr(self._wcsobj, self._wcsobj.input_frame).naxes
-        if len(args) != naxes:
-            raise TypeError("Expected {0} arguments ({1} given)".format(naxes, len(args)))
-
-        result = tuple([frame.coordinates(*args) for frame in self.frames])
-        return result
+        coo  = []
+        for frame in self.frames:
+            fargs = [args[i] for i in frame.axes_order]
+            print(frame, fargs, frame.axes_order)
+            coo.append(frame.coordinates(*fargs))
+        return coo
 
 
 class Frame2D(CoordinateFrame):
@@ -450,18 +341,15 @@ class Frame2D(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
-    wcsobj : ~gwcs.WCS
-        Reference to the WCS object to which this frame belongs.
     """
 
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
-                 name=None, wcsobj=None):
+                 name=None):
 
         super(Frame2D, self).__init__(2, ["SPATIAL", "SPATIAL"], axes_order, name=name,
-                                      axes_names=axes_names, unit=unit, wcsobj=None)
+                                      axes_names=axes_names, unit=unit)
 
     def coordinates(self, *args):
-        args = self._wcsobj.get_transform(self._wcsobj.input_frame, self)(*args)
         args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un for arg, un in zip(args, self.unit)])
         return coo

@@ -8,19 +8,11 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import re
 import functools
 import numpy as np
-from astropy.modeling import projections
 from astropy.modeling import models as astmodels
 from astropy.modeling.models import Mapping
 from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
-from astropy.utils.misc import isiterable
-
-try:
-    from astropy import time
-    HAS_TIME = True
-except ImportError:
-    HAS_TIME = False
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -29,7 +21,7 @@ sky_pairs = {"equatorial": ["RA--", "DEC-"],
              "galactic": ["GLON", "GLAT"],
              "helioecliptic": ["HLON", "HLAT"],
              "supergalactic": ["SLON", "SLAT"],
-             #"spec": specsystems
+             # "spec": specsystems
              }
 
 radesys = ['ICRS', 'FK5', 'FK4', 'FK4-NO-E', 'GAPPT', 'GALACTIC']
@@ -104,9 +96,9 @@ def _domain_to_bounds(domain):
 def _get_slice(axis_domain):
     step = axis_domain.get('step', 1)
     x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
-      else axis_domain['lower'] + step
+        else axis_domain['lower'] + step
     y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
-      else axis_domain['upper'] + step
+        else axis_domain['upper'] + step
     return slice(x, y, step)
 
 
@@ -188,7 +180,7 @@ def read_wcs_from_header(header):
     wcs_info['VAFACTOR'] = header.get('VAFACTOR', 1)
     wcs_info['NAXIS'] = header.get('NAXIS', 0)
     # date keyword?
-    #wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
+    # wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
     wcs_info['EQUINOX'] = header.get("EQUINOX", None)
     wcs_info['EPOCH'] = header.get("EPOCH", None)
     wcs_info['DATEOBS'] = header.get("MJD-OBS", header.get("DATE-OBS", None))
@@ -210,8 +202,8 @@ def read_wcs_from_header(header):
     else:
         wcs_info['has_cd'] = False
     pc = np.zeros((wcsaxes, wcsaxes))
-    for i in range(1, wcsaxes+1):
-        for j in range(1, wcsaxes+1):
+    for i in range(1, wcsaxes + 1):
+        for j in range(1, wcsaxes + 1):
             try:
                 if wcs_info['has_cd']:
                     pc[i-1, j-1] = header['CD{0}_{1}'.format(i, j)]
@@ -328,21 +320,18 @@ def fitswcs_linear(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
-    wcsaxes = wcs_info['WCSAXES']
-
     pc = wcs_info['PC']
     # get the part of the PC matrix corresponding to the imaging axes
     sky_axes = None
     if pc.shape != (2, 2):
         sky_axes, _ = get_axes(wcs_info)
         i, j = sky_axes
-        sky_pc = np.zeros((2,2))
+        sky_pc = np.zeros((2, 2))
         sky_pc[0, 0] = pc[i, i]
         sky_pc[0, 1] = pc[i, j]
         sky_pc[1, 0] = pc[j, i]
         sky_pc[1, 1] = pc[j, j]
         pc = sky_pc.copy()
-
 
     if sky_axes is not None:
         crpix = []
@@ -354,15 +343,15 @@ def fitswcs_linear(header):
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
 
-    #if wcsaxes == 2:
+    # if wcsaxes == 2:
     rotation = astmodels.AffineTransformation2D(matrix=pc, name='pc_matrix')
-    #elif wcsaxes == 3 :
-        #rotation = AffineTransformation3D(matrix=matrix)
-    #else:
-        #raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
-                          #"{0} given".format(wcsaxes))
+    # elif wcsaxes == 3 :
+    # rotation = AffineTransformation3D(matrix=matrix)
+    # else:
+    # raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
+    # "{0} given".format(wcsaxes))
 
-    translation_models = [astmodels.Shift(-shift, name='crpix' + str(i + 1)) \
+    translation_models = [astmodels.Shift(-shift, name='crpix' + str(i + 1))
                           for i, shift in enumerate(crpix)]
     translation = functools.reduce(lambda x, y: x & y, translation_models)
 
@@ -380,10 +369,10 @@ def fitswcs_linear(header):
 
 
 def fitswcs_nonlinear(header):
-    """                                
+    """
     Create a WCS linear transform from a FITS header.
-                                                                                   
-    Parameters                                                                       
+
+    Parameters
     ----------
     header : astropy.io.fits.Header or dict
         FITS Header or dict with basic FITS WCS keywords.
@@ -402,7 +391,7 @@ def fitswcs_nonlinear(header):
     sky_axes, _ = get_axes(wcs_info)
     phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
     # TODO: write "def compute_lonpole(projcode, l)"
-    # Set a defaul tvalue for now 
+    # Set a defaul tvalue for now
     thetap = 180
     n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
     return projection | n2c
@@ -429,11 +418,11 @@ def create_projection_transform(projcode):
     except AttributeError:
         raise UnsupportedProjectionError(projcode)
 
-    projparams={}
+    projparams = {}
     return projklass(**projparams)
 
 
-########## axis separability #########
+# ######### axis separability #########
 # Functions to determine axis separability
 # The interface will change most likely
 
@@ -535,7 +524,7 @@ def _coord_matrix(model, pos, noutp):
         if pos == 'left':
             mat[: model.n_outputs, :model.n_inputs] = m
         else:
-            mat[-model.n_outputs :, -model.n_inputs:] = m
+            mat[-model.n_outputs:, -model.n_inputs:] = m
         return mat
     if not model.separable:
         # this does not work for more than 2 coordinates
@@ -543,14 +532,14 @@ def _coord_matrix(model, pos, noutp):
         if pos == 'left':
             mat[:model.n_outputs, : model.n_inputs] = 1
         else:
-            mat[-model.n_outputs :, -model.n_inputs:] = 1
+            mat[-model.n_outputs:, -model.n_inputs:] = 1
     else:
         mat = np.zeros((noutp, model.n_inputs))
 
         for i in range(model.n_inputs):
             mat[i, i] = 1
         if pos == 'right':
-            mat = np.roll(mat, (noutp-model.n_outputs))
+            mat = np.roll(mat, (noutp - model.n_outputs))
     return mat
 
 
@@ -580,7 +569,7 @@ def _cstack(left, right):
         cright = _coord_matrix(right, 'right', noutp)
     else:
         cright = np.zeros((noutp, right.shape[1]))
-        cright[-right.shape[0]:, -right.shape[1] :] =1
+        cright[-right.shape[0]:, -right.shape[1]:] = 1
 
     return np.hstack([cleft, cright])
 
@@ -639,8 +628,6 @@ def _separable(transform):
         array([ True,  True,  True,  True], dtype=bool)
 
     """
-
-
     if isinstance(transform, core._CompoundModel):
         is_separable = transform._tree.evaluate(_operators)
     elif isinstance(transform, core.Model):
@@ -657,7 +644,53 @@ def is_separable(transform):
     is_separable = np.where(is_separable != 1, False, True)
     return is_separable
 
+
+def separable_axes(wcsobj, start_frame=None, end_frame=None):
+        """
+        Computes the separability of axes in ``end_frame``.
+
+        Returns a 1D boolean array of size frame.naxes where True means
+        the axis is completely separable and False means the axis is nonseparable
+        from at least one other axis.
+
+        Parameters
+        ----------
+        wcsobj : `~gwcs.wcs.WCS`
+            WCS object
+        start_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            A frame in the WCS pipeline.
+            The transform between start_frame and the end frame is used to compute the
+            mapping inputs: outputs.
+            If None the input_frame is used as start_frame.
+        end_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            A frame in the WCS pipeline.
+            The transform between start_frame and the end frame is used to compute the
+            mapping inputs: outputs.
+            If None wcsobj.output_frame is used.
+
+        See Also
+        --------
+        input_axes : For each output axis return the input axes contributing to it.
+
+        """
+        if wcsobj is not None:
+            if start_frame is None:
+                start_frame = wcsobj.input_frame
+            else:
+                if start_frame not in wcsobj.available_frames:
+                    raise ValueError("Unrecognized frame {0}".format(start_frame))
+            if end_frame is None:
+                end_frame = wcsobj.output_frame
+            else:
+                if end_frame not in wcsobj.available_frames:
+                    raise ValueError("Unrecognized frame {0}".format(end_frame))
+            transform = wcsobj.get_transform(start_frame, end_frame)
+        else:
+            raise ValueError("A starting frame is needed to determine separability of axes.")
+
+        sep = is_separable(transform)
+        return [sep[ax] for ax in self.axes_order]
+
+
 _operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
-        '*': _arith_oper, '/': _arith_oper, '**': _arith_oper}
-
-
+              '*': _arith_oper, '/': _arith_oper, '**': _arith_oper}

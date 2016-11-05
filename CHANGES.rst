@@ -1,4 +1,4 @@
-0.6 (unreleased)
+0.7 (unreleased)
 ----------------
 
 New Features
@@ -6,10 +6,15 @@ New Features
 - Added ``wcs_from_fiducial`` function to wcstools. [#34]
 - Added ``domain`` to the WCS object. [#36]
 - Added ``grid_from_domain`` function. [#36]
+- The WCS object can return now an `~astropy.coordinates.SkyCoord` 
+  or `~astropy.units.Quantity` object. This is triggered by a new
+  parameter to the ``__call__`` method, ``output`` which takes values
+  of "numericaals" (default) or "numericasl_plus".    [#64]
 
 API_Changes
 ^^^^^^^^^^^
 - Added ``atol`` argument to ``LabelMapperDict``, representing the absolute tolerance [#29]
+- The ``CoordinateFrame.transform_to`` method was removed [#64]
 
 Bug Fixes
 ^^^^^^^^^
