@@ -14,6 +14,7 @@ from astropy import wcs as astwcs
 from .. import wcs
 from ..wcstools import *
 from .. import coordinate_frames as cf
+from .. import utils
 from ..utils import CoordinateFrameError
 
 
@@ -24,12 +25,12 @@ m = m1 | m2
 icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
 detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
+spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
 
 pipe = [(detector, m1),
         (focal, m2),
         (icrs, None)
         ]
-
 
 # Test initializing a WCS
 
@@ -124,12 +125,26 @@ def test_return_coordinates():
     x = 1
     y = 2.3
     numerical_result = (26.8, -0.6)
-
+    # Celestial frame
     num_plus_output = w(x, y, output='numericals_plus')
     assert_allclose(w(x, y), numerical_result)
-    assert_allclose(num_plus_output.ra.value, numerical_result[0])
-    assert_allclose(num_plus_output.dec.value, numerical_result[1])
+    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
+    assert_allclose(w.invert(num_plus_output), (x, y))
     assert isinstance(num_plus_output, coord.SkyCoord)
+    # Spectral frame
+    poly = models.Polynomial1D(1, c0=1, c1=2)
+    w = wcs.WCS(forward_transform=poly, output_frame=spec)
+    numerical_result = poly(y)
+    num_plus_output = w(y, output='numericals_plus')
+    assert_allclose(utils._get_values(w.unit, num_plus_output),  numerical_result)
+    assert isinstance(num_plus_output, u.Quantity)
+    # CompositeFrame - [celestial, spectral]
+    output_frame = cf.CompositeFrame(frames=[icrs, spec])
+    transform = m1 & poly
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+    numerical_result = transform(x, y, y)
+    num_plus_output = w(x, y, y, output='numericals_plus')
+    assert_allclose(utils._get_values(w.unit, *num_plus_output), numerical_result)
 
 
 def test_from_fiducial_sky():
@@ -228,7 +243,7 @@ class TestImaging(object):
         n2c = models.RotateNative2Celestial(phi, lon, theta, name='sky_rotation')
 
         tan = models.Pix2Sky_TAN(name='tangent_projection')
-        sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS())
+        sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
         wcs_forward = wcslin | tan | n2c
         pipeline = [('detector', distortion),
                     ('focal', wcs_forward),
@@ -253,7 +268,7 @@ class TestImaging(object):
 
     def test_wcslinear(self):
         ra, dec = self.fitsw.wcs_pix2world(self.xv, self.yv, 1)
-        sky = self.wcs.get_transform('focal', 'CelestialFrame')(self.xv, self.yv)
+        sky = self.wcs.get_transform('focal', 'sky')(self.xv, self.yv)
         assert_allclose(ra, sky[0])
         assert_allclose(dec, sky[1])
 
@@ -277,9 +292,15 @@ class TestImaging(object):
         assert_allclose(footprint, fits_footprint)
 
     def test_inverse(self):
-        sky_coord = self.wcs(1, 2)
+        sky_coord = self.wcs(1, 2, output="numericals_plus")
         with pytest.raises(NotImplementedError):
-            self.wcs.invert(sky_coord[0], sky_coord[1])
+            self.wcs.invert(sky_coord)
+
+    def test_back_coordinates(self):
+        sky_coord = self.wcs(1, 2, output="numericals_plus")
+        sky2foc = self.wcs.get_transform('sky', 'focal')
+        res = self.wcs.transform('sky', 'focal', sky_coord)
+        assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 
     def test_units(self):
         assert(self.wcs.unit == (u.degree, u.degree))
