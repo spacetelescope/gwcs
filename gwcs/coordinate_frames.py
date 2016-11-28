@@ -321,7 +321,6 @@ class CompositeFrame(CoordinateFrame):
         coo  = []
         for frame in self.frames:
             fargs = [args[i] for i in frame.axes_order]
-            print(frame, fargs, frame.axes_order)
             coo.append(frame.coordinates(*fargs))
         return coo
 
