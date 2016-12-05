@@ -95,7 +95,7 @@ is functionally equivalent to the above commands bu returns coordinate objects:
       (<SkyCoord (ICRS): (ra, dec) in deg
           (10.3, 60.0)>, <Quantity 10.6 micron>)
 
-Frames provide additional inormation:
+Frames provide additional information:
 
   >>> print output_frame.axes_type
       [u'SPATIAL', u'SPECTRAL', u'SPATIAL']
