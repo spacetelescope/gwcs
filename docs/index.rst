@@ -10,7 +10,7 @@ Introduction
 
 `GWCS <https://github.com/spacetelescope/gwcs>`__ takes a general approach to WCS.
 It supports a data model which includes the entire transformation pipeline from
-input coordinates (detector by default)  to world cooridnates.
+input coordinates (detector by default)  to world coordinates.
 Transformations can be chained, joined or combined with arithmetic operators
 using the flexible framework of compound models in `~astropy.modeling`.
 In the case of a celestial output frame `~astropy.coordinates` provides
