@@ -30,6 +30,7 @@ class LabelMapperType(TransformType):
             raise TypeError("inputs_mapping must be an instance"
                             "of astropy.modeling.models.Mapping.")
         mapper = node['mapper']
+        atol = node.get('atol', 10**-8)
 
         if isinstance(mapper, NDArrayType):
             if mapper.ndim != 2:
@@ -48,7 +49,7 @@ class LabelMapperType(TransformType):
                 return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
             else:
                 dict_mapper = dict(zip(labels, transforms))
-                return LabelMapperDict(inputs, dict_mapper, inputs_mapping)
+                return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
@@ -56,6 +57,8 @@ class LabelMapperType(TransformType):
         if isinstance(model, LabelMapperArray):
             node['mapper'] = model.mapper
         if isinstance(model, (LabelMapperDict, LabelMapperRange)):
+            if hasattr(model, 'atol'):
+                node['atol'] = model.atol
             mapper = OrderedDict()
             labels = list(model.mapper)
 
