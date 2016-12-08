@@ -49,7 +49,7 @@ def test_labelMapperArray_int(tmpdir):
 def test_LabelMapperDict(tmpdir):
     dmapper = create_scalar_mapper()
     sel = selector.LabelMapperDict(('x', 'y'), dmapper,
-                                   inputs_mapping=Mapping((0,), n_inputs=2))
+                                   inputs_mapping=Mapping((0,), n_inputs=2), atol=1e-3)
     tree = {'model': sel}
     helpers.assert_roundtrip_tree(tree, tmpdir, extensions=GWCSExtension())
 

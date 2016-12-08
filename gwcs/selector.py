@@ -288,11 +288,11 @@ class LabelMapperDict(_LabelMapper):
 
     @property
     def atol(self):
-       return self._atol
+        return self._atol
 
     @atol.setter
     def atol(self, val):
-       self._atol = val
+        self._atol = val
 
     @property
     def inputs(self):
@@ -357,11 +357,10 @@ class LabelMapperRange(_LabelMapper):
     linear = False
     fittable = False
 
-    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
+    def __init__(self, inputs, mapper, inputs_mapping=None, name=None, **kwargs):
         if self._has_overlapping(np.array(list(mapper.keys()))):
             raise ValueError("Overlapping ranges of values are not supported.")
         self._inputs = inputs
-        self._atol = atol
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
@@ -413,14 +412,6 @@ class LabelMapperRange(_LabelMapper):
             return None
         else:
             return ind.item()
-
-    @property
-    def atol(self):
-       return self._atol
-
-    @atol.setter
-    def atol(self, val):
-       self._atol = val
 
     @property
     def inputs(self):
