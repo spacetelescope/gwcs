@@ -391,6 +391,9 @@ class WCS(object):
 
     @property
     def domain(self):
+        """
+        Return the range of acceptable values for each input axis.
+        """
         frames = self.available_frames
         transform_meta = self.get_transform(frames[0], frames[1]).meta
         if 'domain' in transform_meta:
@@ -400,6 +403,9 @@ class WCS(object):
 
     @domain.setter
     def domain(self, value):
+        """
+        Set the range of acceptable values for each input axis.
+        """
         self._validate_domain(value)
         frames = self.available_frames
         transform = self.get_transform(frames[0], frames[1])

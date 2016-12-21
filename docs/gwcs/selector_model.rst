@@ -4,7 +4,7 @@ Discontinuous WCS - An IFU Example
 There are a couple of models in GWCS which help with managing discontinuous WCSs.
 Given (x, y) pixel indices, `~gwcs.selector.LabelMapperArray` returns a label (int or str)
 which uniquely identifies a location in a frame. `~gwcs.selector.RegionsSelector`
-maps different transforms to different locations in the frame of `~gwcs.selector.RegionsSelector.label_mapper`.
+maps different transforms to different locations in the frame of `~gwcs.selector._LabelMapper`.
 
 An example use case is an IFU observation. The locations on the detector where slices are
 projected are labeled with integer numbers. Given an (x, y) pixel, the `~gwcs.selector.LabelMapperArray`
@@ -71,7 +71,7 @@ Create the pixel to world transform for the entire IFU:
 The WCS object now can evaluate simultaneously the transforms of all slices
 
   >>> wifu = wcs.WCS(forward_transform=regions_transform, output_frame=cframe, input_frame=det)
-  >>> x, y = mask.data.shape
+  >>> x, y = mask.mapper.shape
   >>> x, y = np.mgrid[:x, :y]
   >>> r, d, l = wifu(x, y)
 
@@ -91,19 +91,15 @@ is functionally equivalent to the above commands bu returns coordinate objects:
   >>> wifu.available_frames
       ['detector', 'world']
 
-  >>> wifu.world.coordinates(10, 200)
+  >>> wifu.output_frame.coordinates(10, 200)
       (<SkyCoord (ICRS): (ra, dec) in deg
           (10.3, 60.0)>, <Quantity 10.6 micron>)
 
 Frames provide additional information:
 
-  >>> print output_frame.axes_type
+  >>> print(wifu.output_frame.axes_type)
       [u'SPATIAL', u'SPECTRAL', u'SPATIAL']
-  >>> print output_frame.axes_names
+  >>> print(wifu.output_frame.axes_names)
       [u'ra', 'lambda', u'dec']
-  >>> output_frame.unit
+  >>> print(wifu.output_frame.unit)
       [Unit("deg"), Unit("micron"), Unit("deg")]
-
-
-
-
