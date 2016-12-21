@@ -9,7 +9,6 @@ from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
 from astropy.extern import six
-from . import utils as gwutils
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
@@ -321,7 +320,6 @@ class CompositeFrame(CoordinateFrame):
         coo  = []
         for frame in self.frames:
             fargs = [args[i] for i in frame.axes_order]
-            print(frame, fargs, frame.axes_order)
             coo.append(frame.coordinates(*fargs))
         return coo
 

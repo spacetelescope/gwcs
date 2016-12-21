@@ -1,7 +1,7 @@
 GWCS Documentation
-====================
+==================
 
-`GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for constructing and managing
+`GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for managing
 the World Coordinate System (WCS) of astronomical data.
 
 Introduction
@@ -16,9 +16,8 @@ using the flexible framework of compound models in `~astropy.modeling`.
 In the case of a celestial output frame `~astropy.coordinates` provides
 further transformations between standard coordinate frames.
 Spectral output coordinates are instances of `~astropy.units.Quantity`  and are
-transformed to other units with the tools in that package.
-The goal is to provide a flexible toolkit which is easily extendable by adding new
-transforms and frames.
+transformed to other units with the tools in that package. The goal is to provide
+a flexible toolkit which is easily extendable by adding new transforms and frames.
 
 
 Installation
@@ -26,68 +25,84 @@ Installation
 
 `gwcs <https://github.com/spacetelescope/gwcs>`__ requires:
 
-- `numpy <http://www.numpy.org/>`__ 1.6 or later
+- `numpy <http://www.numpy.org/>`__ 1.7 or later
 
-- `astropy <http://www.astropy.org/>`__ 1.1 or later
+- `astropy <http://www.astropy.org/>`__ 1.2 or later
 
 - `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
 
+To install from source::
+
+    git clone https://github.com/spacetelescope/gwcs.git
+    cd gwcs
+    python setup.py install
+
+To install the latest release::
+
+    pip install gwcs
+
+GWCS is also available as part of astroconda.
+
+.. _getting-started:
 
 Getting Started
----------------
+===============
 
-The simplest way to initialize a WCS object is to pass a `forward_transform` and an `output_frame`
-to `~gwcs.wcs.WCS`. As an example, consider a typical basic FITS WCS of an image.
+The WCS data model represents a pipeline of transformations from some
+initial coordinate frame to a standard coordinate frame.
+It is implemented as a list of steps executed in order. Each step defines a
+starting coordinate frame and the transform to the next frame in the pipeline.
+The last step has no transform, only a frame which is the output frame of
+the total transform. As a minimum a WCS object has an ``input_frame`` (defaults to "detector"),
+an ``output_frame`` and the transform between them.
+
+As an example, consider a typical WCS of an image without distortion.
+
 The following imports are generally useful:
 
+  >>> import numpy as np
   >>> from astropy.modeling.models import (Shift, Scale, Rotation2D,
       Pix2Sky_TAN, RotateNative2Celestial, Mapping, Polynomial2D)
   >>> from astropy import coordinates as coord
   >>> from astropy import units as u
   >>> from gwcs import wcs
-  >>> from gwcs import coordinate_frames
+  >>> from gwcs import coordinate_frames as cf
 
-The `forward_transform` is constructed as a combined model using `astropy.modeling`. The frames
-can be strings or subclasses of `~gwcs.coordinate_frames.CoordinateFrame`.
+The ``forward_transform`` is constructed as a combined model using `astropy.modeling`.
+The frames are subclasses of `~gwcs.coordinate_frames.CoordinateFrame` (although strings are
+acceptable too).
 
-  >>> transform = Shift(-10.5) & Shift(-13.2) | Rotation2D(0.0023) | \
-      Scale(.01) & Scale(.04) | Pix2Sky_TAN() | RotateNative2Celestial(5.6, -72.05, 180)
-  >>> sky_frame = coordinate_frames.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
-  >>> w = wcs.WCS(forward_transform=transform, output_frame=sky_frame)
+Create a transform to convert detector coordinates to ICRS.
+
+  >>> det2sky = (Shift(-10.5) & Shift(-13.2) | Rotation2D(0.0023) | \
+      Scale(.01) & Scale(.04) | Pix2Sky_TAN() | \
+      RotateNative2Celestial(5.6, -72.05, 180)).rename("detector2sky")
+
+Create a coordinate frame associated with the detector and a celestial frame.
+
+  >>> detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix))
+  >>> sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
+
+Initialize the WCS:
+
+  >>> wcsobj = wcs.WCS(forward_transform=det2sky, input_frame=detector_frame, output_frame=sky_frame)
+  >>> print(wcsobj)
+      From        Transform
+      ----------- ----------
+      detector     detector2sky
+      icrs         None
 
 To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a function:
 
-  >>> sky = w(1, 2)
+  >>> sky = wcsobj(1, 2)
   >>> print(sky)
-      (5.284139265842845, -72.49775640633503)
+      (5.284139265842838, -72.49775640633504)
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
-  >>> w.invert(*sky)
-      (1.000000000009388, 2.0000000000112728)
-
-Some methods allow managing the transforms in a more detailed manner.
-
-Transforms between frames can be retrieved and evaluated separately.
-
-  >>> dist = w.get_transform('detector', 'focal')
-  >>> dist(1, 2)
-      (0.16, 0.8)
-
-Transforms in the pipeline can be replaced by new transforms.
-
-  >>> new_transform = Shift(1) & Shift(1.5) | distortion
-  >>> w.set_transform('detector', 'focal', new_transform)
-  >>> w(1, 2)
-      (5.257230028926096, -72.53171157138964)
-
-A transform can be inserted before or after a frame in the pipeline.
-
-  >>> scale = Scale(2) & Scale(1)
-  >>> w.insert_transform('icrs', scale, after=False)
-  >>> w(1, 2)
-      (10.514460057852192, -72.53171157138964)
+  >>> wcsobj.invert(*sky)
+      (1.000, 2.000)
 
 
 Using `gwcs`
@@ -97,9 +112,10 @@ Using `gwcs`
 .. toctree::
   :maxdepth: 2
 
-  gwcs/create_wcs
+  gwcs/using_wcs.rst
   gwcs/selector_model.rst
   gwcs/wcstools.rst
+
 
 
 See also

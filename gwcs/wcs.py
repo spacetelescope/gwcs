@@ -225,7 +225,10 @@ class WCS(object):
         result = self.forward_transform(*args)
         output = kwargs.pop('output', None)
         if output == 'numericals_plus':
-            result = self.output_frame.coordinates(*result)
+            if self.output_frame.naxes == 1:
+                result = self.output_frame.coordinates(result)
+            else:
+                result = self.output_frame.coordinates(*result)
         elif output is not None and output != "numericals":
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
@@ -239,18 +242,23 @@ class WCS(object):
 
         Parameters
         ----------
-        args : float or array like
+        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
             coordinates to be inverted
         kwargs : dict
             keyword arguments to be passed to the iterative invert method.
         """
+        if not utils.isnumerical(args[0]):
+            args = utils._get_values(self.unit, *args)
         try:
             result = self.backward_transform(*args)
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
         output = kwargs.pop('output', None)
         if output == 'numericals_plus':
-            return self.input_frame.coordinates(*result)
+            if self.input_frame.naxes == 1:
+                return self.input_frame.coordinates(result)
+            else:
+                return self.input_frame.coordinates(*result)
         else:
             return result
 
@@ -280,12 +288,18 @@ class WCS(object):
             `~astropy.units.Quantity` object.
         """
         transform = self.get_transform(from_frame, to_frame)
+        if not utils.isnumerical(args[0]):
+            args = utils._get_values(self.unit, *args)
+
         result = transform(*args)
         output = kwargs.pop("output", None)
         if output == "numericals_plus":
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
             if to_frame_obj is not None:
-                result = to_frame_obj.coordinates(*result)
+                if to_frame_obj.naxes == 1:
+                    result = to_frame_obj.coordinates(result)
+                else:
+                    result = to_frame_obj.coordinates(*result)
             else:
                 raise TypeError("Coordinate objects could not be created because"
                                 "frame {0} is not defined.".format(to_frame_name))
@@ -377,6 +391,9 @@ class WCS(object):
 
     @property
     def domain(self):
+        """
+        Return the range of acceptable values for each input axis.
+        """
         frames = self.available_frames
         transform_meta = self.get_transform(frames[0], frames[1]).meta
         if 'domain' in transform_meta:
@@ -386,6 +403,9 @@ class WCS(object):
 
     @domain.setter
     def domain(self, value):
+        """
+        Set the range of acceptable values for each input axis.
+        """
         self._validate_domain(value)
         frames = self.available_frames
         transform = self.get_transform(frames[0], frames[1])
@@ -454,4 +474,3 @@ class WCS(object):
             vertices += .5
         result = self.__call__(*vertices)
         return np.asarray(result)
-

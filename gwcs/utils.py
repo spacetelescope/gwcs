@@ -13,6 +13,7 @@ from astropy.modeling.models import Mapping
 from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
+from astropy import units as u
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -100,6 +101,39 @@ def _get_slice(axis_domain):
     y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
         else axis_domain['upper'] + step
     return slice(x, y, step)
+
+
+def _get_values(units, *args):
+    """
+    Return the values of SkyCoord or Quantity objects.
+
+    Parameters
+    ----------
+    units : str or `~astropy.units.Unit`
+        Units of the wcs object.
+        The input values are converted to ``units`` before the values are returned.
+    """
+    val = []
+    values = []
+    print('args', args)
+    for arg in args:
+        print('arg', arg)
+        if isinstance(arg, coords.SkyCoord):
+            try:
+                print('arg1', arg)
+                lon = arg.data.lon
+                lat = arg.data.lat
+            except AttributeError:
+                lon = arg.spherical.lon
+                lat = arg.spherical.lat
+            val.extend([lon, lat])
+        elif isinstance(arg, u.Quantity):
+            val.append(arg)
+        else:
+            raise TypeError("Unsupported coordinate type {}".format(arg))
+    for va, un in zip(val, units):
+        values.append(va.to(un).value)
+    return values
 
 
 def _compute_lon_pole(skycoord, projection):
@@ -422,6 +456,22 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
+def isnumerical(val):
+    """
+    Determine if a value is numerical (number or np.array of numbers).
+    """
+    dtypes = ['uint64', 'float64', 'int8', 'int64', 'int16', 'uint16', 'uint8',
+              'float32', 'int32', 'uint32']
+    isnum = True
+    if isinstance(val, coords.SkyCoord):
+        isnum = False
+    elif isinstance(val, u.Quantity):
+        isnum = False
+    elif isinstance(val, np.ndarray) and val.dtype not in dtypes:
+        isnum = False
+    return isnum
+
+
 # ######### axis separability #########
 # Functions to determine axis separability
 # The interface will change most likely
@@ -689,7 +739,7 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
             raise ValueError("A starting frame is needed to determine separability of axes.")
 
         sep = is_separable(transform)
-        return [sep[ax] for ax in self.axes_order]
+        return [sep[ax] for ax in end_frame.axes_order]
 
 
 _operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
