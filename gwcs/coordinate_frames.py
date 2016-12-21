@@ -9,7 +9,6 @@ from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
 from astropy.extern import six
-from . import utils as gwutils
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',

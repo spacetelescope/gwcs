@@ -58,6 +58,7 @@ class Region(object):
             Pixels which are not included in any region are marked with 0 or "".
         """
 
+
 class Polygon(Region):
 
     """
@@ -84,7 +85,7 @@ class Polygon(Region):
 
         self._vertices = np.asarray(vertices)
         self._bbox = self._get_bounding_box()
-        self._scan_line_range = list(range(self._bbox[1], self._bbox[3]+self._bbox[1]+1))
+        self._scan_line_range = list(range(self._bbox[1], self._bbox[3] + self._bbox[1] + 1))
         # constructs a Global Edge Table (GET) in bbox coordinates
         self._GET = self._construct_ordered_GET()
 
@@ -164,12 +165,12 @@ class Polygon(Region):
         while y <= scline:
             AET = self.update_AET(y, AET)
             scan_line = Edge('scan_line', start=[self._bbox[0], y],
-                             stop=[self._bbox[0]+self._bbox[2], y])
+                             stop=[self._bbox[0] + self._bbox[2], y])
             x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
             xnew = np.asarray(np.sort(x), dtype=np.int)
             for i, j in zip(xnew[::2], xnew[1::2]):
                 data[y][i:j+1] = self._rid
-            y = y+1
+            y = y + 1
         return data
 
     def update_AET(self, y, AET):
@@ -195,12 +196,9 @@ class Polygon(Region):
 
     def __contains__(self, px):
         """even-odd algorithm or smth else better sould be used"""
-        minx = self._vertices[:, 0].min()
-        maxx = self._vertices[:, 0].max()
-        miny = self._vertices[:, 1].min()
-        maxy = self._vertices[:, 1].max()
-        return px[0] >= self._bbox[0] and px[0] <= self._bbox[0]+self._bbox[2] and \
-            px[1] >= self._bbox[1] and px[1] <= self._bbox[1]+self._bbox[3]
+        return px[0] >= self._bbox[0] and px[0] <= self._bbox[0] + self._bbox[2] and \
+            px[1] >= self._bbox[1] and px[1] <= self._bbox[1] + self._bbox[3]
+
 
 class Edge(object):
 
@@ -316,7 +314,7 @@ class Edge(object):
         v = edge._stop - edge._start
         w = self._start - edge._start
         D = np.cross(u, v)
-        return np.cross(v, w)/D * u + self._start
+        return np.cross(v, w) / D * u + self._start
 
     def is_parallel(self, edge):
         u = self._stop - self._start

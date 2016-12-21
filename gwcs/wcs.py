@@ -474,4 +474,3 @@ class WCS(object):
             vertices += .5
         result = self.__call__(*vertices)
         return np.asarray(result)
-

@@ -67,14 +67,8 @@ label mappers.
 """
 from __future__ import absolute_import, division, unicode_literals, print_function
 
-import copy
-import numbers
 import numpy as np
-import warnings
-
-from astropy.extern import six
 from astropy.modeling.core import Model
-from astropy.modeling.parameters import Parameter
 
 from . import region
 from .utils import RegionError, _toindex
@@ -372,15 +366,15 @@ class LabelMapperRange(_LabelMapper):
         Test a list of tuple representing ranges of values has no overlapping ranges.
         """
         d = dict(ranges)
-        start = ranges[:,0]
-        end = ranges[:,1]
+        start = ranges[:, 0]
+        end = ranges[:, 1]
         start.sort()
         l = []
         for v in start:
             l.append([v, d[v]])
         l = np.array(l)
-        start = np.roll(l[: ,0], -1)
-        end = l[: ,1]
+        start = np.roll(l[:, 0], -1)
+        end = l[:, 1]
         if any((end - start)[:-1]  > 0) or any(start[-1] > end):
             return True
         else:
@@ -404,7 +398,7 @@ class LabelMapperRange(_LabelMapper):
            Index of the tuple which defines a range holding the input value.
            None, if the input value is not within any available range.
         """
-        a, b = value_range[:,0], value_range[:,1]
+        a, b = value_range[:, 0], value_range[:, 1]
         ind = np.logical_and(value >= a, value <= b).nonzero()[0]
         if ind.size > 1:
             raise ValueError("There are overlapping ranges.")
@@ -484,7 +478,7 @@ class RegionsSelector(Model):
         self._outputs = outputs
         self.label_mapper = label_mapper
         self._undefined_transform_value = undefined_transform_value
-        self._selector = selector #copy.deepcopy(selector)
+        self._selector = selector  # copy.deepcopy(selector)
 
         if " " in selector.keys() or 0 in selector.keys():
             raise ValueError('"0" and " " are not allowed as keys.')

@@ -739,7 +739,7 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
             raise ValueError("A starting frame is needed to determine separability of axes.")
 
         sep = is_separable(transform)
-        return [sep[ax] for ax in self.axes_order]
+        return [sep[ax] for ax in end_frame.axes_order]
 
 
 _operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
