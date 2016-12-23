@@ -6,10 +6,10 @@ New Features
 - Added ``wcs_from_fiducial`` function to wcstools. [#34]
 - Added ``domain`` to the WCS object. [#36]
 - Added ``grid_from_domain`` function. [#36]
-- The WCS object can return now an `~astropy.coordinates.SkyCoord` 
+- The WCS object can return now an `~astropy.coordinates.SkyCoord`
   or `~astropy.units.Quantity` object. This is triggered by a new
   parameter to the ``__call__`` method, ``output`` which takes values
-  of "numericaals" (default) or "numericasl_plus".    [#64]
+  of "numericals" (default) or "numericals_plus".    [#64]
 
 API_Changes
 ^^^^^^^^^^^
