@@ -29,7 +29,7 @@ Installation
 
 - `astropy <http://www.astropy.org/>`__ 1.2 or later
 
-- `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
+- `asdf <https://asdf.readthedocs.io/en/latest/>`__
 
 To install from source::
 
@@ -41,7 +41,7 @@ To install the latest release::
 
     pip install gwcs
 
-GWCS is also available as part of astroconda.
+GWCS is also available as part of `astroconda <https://github.com/astroconda/astroconda>`__.
 
 .. _getting-started:
 
@@ -128,9 +128,9 @@ See also
   <http://docs.astropy.org/en/stable/coordinates/>`__
 
 - The `Advanced Scientific Data Format (ASDF) standard
-  <http://asdf-standard.readthedocs.org/>`__
+  <https://asdf-standard.readthedocs.io/>`__
   and its `Python implementation
-  <http://pyasdf.readthedocs.org/>`__
+  <https://asdf.readthedocs.io/>`__
 
 
 Reference/API
