@@ -50,15 +50,15 @@ belongs to.
 
 The image above shows the projection of the 6 slits on the detector. Pixels, with a label of 0 do
 not belong to any slit. Assuming the array is stored in
-`ASDF <http://asdf-standard.readthedocs.org/en/latest>`__ format, create the mask:
+`ASDF <https://asdf-standard.readthedocs.io/en/latest>`__ format, create the mask:
 
   >>> from asdf import AsdfFile
   >>> f = AsdfFile.open('mask.asdf')
   >>> data = f.tree['mask']
   >>> mask = selector.LabelMapperArray(data)
 
-For more information on using the `ASDF standard <http://asdf-standard.readthedocs.org/en/latest/>`__ format
-see `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
+For more information on using the `ASDF standard <https://asdf-standard.readthedocs.io/en/latest/>`__ format
+see `asdf <https://pyasdf.readthedocs.io/en/latest/>`__
 
 Create the pixel to world transform for the entire IFU:
 

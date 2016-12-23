@@ -29,7 +29,7 @@ Installation
 
 - `astropy <http://www.astropy.org/>`__ 1.2 or later
 
-- `asdf <http://pyasdf.readthedocs.org/en/latest/>`__
+- `asdf <https://pyasdf.readthedocs.io/en/latest/>`__
 
 To install from source::
 
@@ -128,9 +128,9 @@ See also
   <http://docs.astropy.org/en/stable/coordinates/>`__
 
 - The `Advanced Scientific Data Format (ASDF) standard
-  <http://asdf-standard.readthedocs.org/>`__
+  <https://asdf-standard.readthedocs.io/>`__
   and its `Python implementation
-  <http://pyasdf.readthedocs.org/>`__
+  <https://pyasdf.readthedocs.io/>`__
 
 
 Reference/API
