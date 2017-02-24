@@ -434,7 +434,7 @@ class LabelMapperRange(_LabelMapper):
                                           np.nan, temp)
             ind = ~np.isnan(temp)
 
-            if ind:
+            if ind.any():
                 inputs = [a[ind] for a in args]
                 res[ind] = self.mapper[tuple(val_range)](*inputs)
             else:
