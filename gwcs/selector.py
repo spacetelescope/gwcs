@@ -66,7 +66,7 @@ label mappers.
 
 """
 from __future__ import absolute_import, division, unicode_literals, print_function
-
+import warnings
 import numpy as np
 from astropy.modeling.core import Model
 
@@ -420,7 +420,7 @@ class LabelMapperRange(_LabelMapper):
             keys = args
         keys = keys.flatten()
         # Define an array for the results.
-        res = np.empty(keys.shape)
+        res = np.zeros(keys.shape) + self._no_label
         nan_ind = np.isnan(keys)
         res[nan_ind] = self._no_label
         value_ranges = list(self.mapper.keys())
@@ -428,17 +428,20 @@ class LabelMapperRange(_LabelMapper):
         # which fall within the range it defines.
         for val_range in value_ranges:
             temp = keys.copy()
-            temp[nan_ind] = self._no_label
+            temp[nan_ind] = np.nan
             temp = np.where(np.logical_or(temp <= val_range[0],
                                           temp >= val_range[1]),
-                                          0, temp)
-            ind = temp.nonzero()
-            if ind:
+                                          np.nan, temp)
+            ind = ~np.isnan(temp)
+
+            if ind.any():
                 inputs = [a[ind] for a in args]
                 res[ind] = self.mapper[tuple(val_range)](*inputs)
             else:
                 continue
         res.shape = shape
+        if len(np.nonzero(res)[0]) == 0:
+            warnings.warn("All data is outside the valid range - {0}.".format(self.name))
         return res
 
 

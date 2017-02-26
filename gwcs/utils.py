@@ -203,7 +203,7 @@ def read_wcs_from_header(header):
     except KeyError:
         p = re.compile('ctype[\d]*', re.IGNORECASE)
         ctypes = header['CTYPE*']
-        keys = ctypes.keys()
+        keys = list(ctypes.keys())
         for key in keys[::-1]:
             if p.split(key)[-1] != "":
                 keys.remove(key)
