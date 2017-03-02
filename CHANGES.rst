@@ -4,6 +4,9 @@
 - ``LabelMapperRange`` now returns ``LabelMapperRange._no_label`` when the key is
   not within any range. [#71]
 
+- ``LabelMapperDict`` now returns ``LabelMapperDict._no_label`` when the key does
+  not match. [#72]
+
 0.7 (2016-12-23)
 ----------------
 

@@ -302,11 +302,11 @@ class LabelMapperDict(_LabelMapper):
             keys = args
         keys = keys.flatten()
         # create an empty array for the results
-        res = np.empty(keys.shape)
+        res = np.zeros(keys.shape) + self._no_label
         # If this is part of a combined transform, some of the inputs
         # may be NaNs.
         # Set NaNs to the ``_no_label`` value
-        res[np.isnan(keys)] = self._no_label
+        #res[np.isnan(keys)] = self._no_label
         mapper_keys = list(self.mapper.keys())
         # Loop over the keys in mapper and compare to inputs.
         # Find the indices where they are within ``atol``
