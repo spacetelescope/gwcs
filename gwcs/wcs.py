@@ -2,6 +2,8 @@
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 import functools
+import warnings
+
 import numpy as np
 from astropy.extern import six
 from astropy.modeling.core import Model
@@ -10,6 +12,7 @@ from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
+
 
 __all__ = ['WCS']
 
@@ -151,7 +154,7 @@ class WCS(object):
     @property
     def forward_transform(self):
         """
-        Return the total forward transform - from input to output coordinate frame.
+        Return the total forward transform - from input to outpu coordinate frame.
 
         """
 
@@ -390,10 +393,46 @@ class WCS(object):
         return self._pipeline
 
     @property
+    def bounding_box(self):
+        """
+        Return the range of acceptable values for each input axis.
+        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        """
+        frames = self.available_frames
+        transform_0 = self.get_transform(frames[0], frames[1])
+        frame_0 = getattr(self, frames[0])
+        try:
+            # Model.bounding_mox is in numpy order
+            bb = transform_0.bounding_box[::-1]
+        except NotImplementedError:
+            return None
+        bb = np.array(bb)[np.array(frame_0.axes_order)]
+        return tuple(tuple(item) for item in bb)
+
+    @bounding_box.setter
+    def bounding_box(self, value):
+        """
+        Set the range of acceptable values for each input axis.                                                              
+        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+
+        Parameters
+        ----------
+        value : list
+            List of tuples with ("low", high") values for the range.
+        """
+        frames = self.available_frames
+        transform_0 = self.get_transform(frames[0], frames[1])
+        frame_0 = getattr(self, frames[0])
+        axes_ind = np.argsort(frame_0.axes_order)
+        transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+        self.set_transform(frames[0], frames[1], transform_0)
+
+    @property
     def domain(self):
         """
         Return the range of acceptable values for each input axis.
         """
+        warnings.warn('"domain" was deprecated in v0.8 and will be removed in the next version. Use "bounding_box" instead.')
         frames = self.available_frames
         transform_meta = self.get_transform(frames[0], frames[1]).meta
         if 'domain' in transform_meta:
@@ -406,6 +445,7 @@ class WCS(object):
         """
         Set the range of acceptable values for each input axis.
         """
+        warnings.warn('"domain" was deprecated in v.0.8 and will be removed in the next version. Use "bounding_box" instead.')
         self._validate_domain(value)
         frames = self.available_frames
         transform = self.get_transform(frames[0], frames[1])
