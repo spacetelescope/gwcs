@@ -400,13 +400,12 @@ class WCS(object):
         """
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
-        frame_0 = getattr(self, frames[0])
         try:
             # Model.bounding_box is in numpy order, need to reverse it first.
             bb = transform_0.bounding_box[::-1]
         except NotImplementedError:
             return None
-        bb = np.array(bb)[np.array(frame_0.axes_order)]
+        bb = np.array(bb)[np.array(self.input_frame.axes_order)]
         return tuple(tuple(item) for item in bb)
 
     @bounding_box.setter
@@ -422,8 +421,7 @@ class WCS(object):
         """
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
-        frame_0 = getattr(self, frames[0])
-        axes_ind = np.argsort(frame_0.axes_order)
+        axes_ind = np.argsort(self.input_frame.axes_order)
         transform_0.bounding_box = np.array(value)[axes_ind][::-1]
         self.set_transform(frames[0], frames[1], transform_0)
 
