@@ -154,7 +154,7 @@ class WCS(object):
     @property
     def forward_transform(self):
         """
-        Return the total forward transform - from input to outpu coordinate frame.
+        Return the total forward transform - from input to output coordinate frame.
 
         """
 
@@ -402,7 +402,7 @@ class WCS(object):
         transform_0 = self.get_transform(frames[0], frames[1])
         frame_0 = getattr(self, frames[0])
         try:
-            # Model.bounding_mox is in numpy order
+            # Model.bounding_box is in numpy order, need to reverse it first.
             bb = transform_0.bounding_box[::-1]
         except NotImplementedError:
             return None
@@ -417,8 +417,8 @@ class WCS(object):
 
         Parameters
         ----------
-        value : list
-            List of tuples with ("low", high") values for the range.
+        value : tuple
+            Tuple of tuples with ("low", high") values for the range.
         """
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
