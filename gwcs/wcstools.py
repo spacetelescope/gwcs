@@ -11,14 +11,18 @@ from astropy import coordinates as coord
 from .wcs import WCS
 from .coordinate_frames import *
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
-from .utils import _compute_lon_pole, _get_slice
+from .utils import _compute_lon_pole, _get_slice, _toindex, axis_domain_to_slice
+
+import warnings
+from astropy.utils.decorators import deprecated
+from .utils import _domain_to_bounding_box
 
 
-__all__ = ['wcs_from_fiducial', 'grid_from_domain']
+__all__ = ['wcs_from_fiducial', 'grid_from_domain', 'grid_from_bounding_box']
 
 
 def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
-                      transform=None, name='', domain=None):
+                      transform=None, name='', bounding_box=None, domain=None):
     """
     Create a WCS object from a fiducial point in a coordinate frame.
 
@@ -44,7 +48,7 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
         the number of axes in the coordinate frame.
     name : str
         Name of this WCS.
-    domain : list of dicts
+    bounding_box : tuple
         Domain of this WCS. The format is a list of dictionaries for each
         axis in the input frame
         [{'lower': float, 'upper': float, 'includes_lower': bool,
@@ -54,7 +58,11 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
         if not isinstance(transform, Model):
             raise UnsupportedTransformError("Expected transform to be an instance"
                                             "of astropy.modeling.Model")
-        # transform_outputs = transform.n_outputs
+    if domain is not None:
+        warnings.warning("'domain' was deprecated in 0.8 and will be removed from next"
+                         "version. Use 'bounding_box' instead.")
+        bounding_box = _domain_to_bounding_box(domain)
+    # transform_outputs = transform.n_outputs
     if isinstance(fiducial, coord.SkyCoord):
         coordinate_frame = CelestialFrame(reference_frame=fiducial.frame,
                                           unit=(fiducial.spherical.lon.unit,
@@ -83,11 +91,11 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
         forward_transform = transform | fiducial_transform
     else:
         forward_transform = fiducial_transform
-    if domain is not None:
-        if len(domain) != forward_transform.n_outputs:
-            raise ValueError("Expected the number of items in 'domain' to be equal to the "
+    if bounding_box is not None:
+        if len(bounding_box) != forward_transform.n_outputs:
+            raise ValueError("Expected the number of items in 'bounding_box' to be equal to the "
                              "number of outputs of the forawrd transform.")
-        forward_transform.meta['domain'] = domain
+        forward_transform.bounding_box = bonding_box[::-1]
     return WCS(output_frame=coordinate_frame, forward_transform=forward_transform,
                name=name)
 
@@ -131,6 +139,7 @@ frame2transform = {CelestialFrame: _sky_transform,
                    }
 
 
+@deprecated("0.8", alternative="grid_from_bounding_box")
 def grid_from_domain(domain):
     """
     Create a grid of input points from the WCS domain.
@@ -170,4 +179,49 @@ def grid_from_domain(domain):
         Input points.
     """
     slices = [_get_slice(d) for d in domain]
+    return np.mgrid[slices[::-1]][::-1]
+
+
+def grid_from_bounding_box(bounding_box, step=1, center=True):
+    """
+    Create a grid of input points from the WCS bounding_box.
+
+    Parameters
+    ----------
+    bounding_box : tuple
+        `ref: prop: bounding_box`
+    step : None, tuple
+        A step for the grid in each dimension.
+        If None, step=1.
+    center : bool
+
+    The bounding_box is in order of X, Y [, Z] and the output will be in the same order.
+
+    Examples
+    --------
+    >>> bb = bb=((-1, 2.9), (6, 7.5))
+    >>> grid_from_bounding_box(bb, step=(1, .5)
+        [[[-1. ,  0. ,  1. ,  2. ],
+         [-1. ,  0. ,  1. ,  2. ],
+         [-1. ,  0. ,  1. ,  2. ],
+         [-1. ,  0. ,  1. ,  2. ]],
+
+        [[ 6. ,  6. ,  6. ,  6. ],
+         [ 6.5,  6.5,  6.5,  6.5],
+         [ 7. ,  7. ,  7. ,  7. ],
+         [ 7.5,  7.5,  7.5,  7.5]]])
+
+
+    Returns
+    -------
+    x, y : ndarray
+        Input points.
+    """
+    slices = []
+    if center:
+        bb = _toindex(bounding_box)
+    else:
+        bb = bounding_box
+    for d, s in zip(bb, step):
+        slices.append(slice(d[0], d[1] + s, s))
     return np.mgrid[slices[::-1]][::-1]
