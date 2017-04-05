@@ -7,6 +7,8 @@
 - ``LabelMapperDict`` now returns ``LabelMapperDict._no_label`` when the key does
   not match. [#72]
 
+- Replace ``domain`` with ``bounding_box``. [#74]
+
 0.7 (2016-12-23)
 ----------------
 
