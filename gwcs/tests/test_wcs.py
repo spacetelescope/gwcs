@@ -15,7 +15,7 @@ from .. import wcs
 from ..wcstools import *
 from .. import coordinate_frames as cf
 from .. import utils
-from ..utils import CoordinateFrameError
+from ..utils import CoordinateFrameError, DimensionalityError
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -192,23 +192,24 @@ def test_domain():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
     pipeline = [('detector', trans3), ('sky', None)]
     w = wcs.WCS(pipeline)
-    domain = [{'lower': -1, 'upper': 10, 'include_lower': True, 'include_upper': False, 'step': .1},
-              {'lower': 6, 'upper': 15, 'include_lower': False, 'include_upper': True, 'step': .5}]
-    with pytest.raises(ValueError):
-        w.domain = domain
+    bb = ((-1, 10), (6, 15))
+    with pytest.raises(DimensionalityError):
+        w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
-    w.domain = domain
-    assert w.domain == w.forward_transform.meta['domain']
+    w.bounding_box = bb
+    assert w.bounding_box == w.forward_transform.bounding_box[::-1]
 
 
-def test_grid_from_domain():
-    domain = [{'lower': -1, 'upper': 10, 'includes_lower': True,
-               'includes_upper': False, 'step': .1},
-              {'lower': 6, 'upper': 15, 'includes_lower': False,
-               'includes_upper': True, 'step': .5}]
-    x, y = grid_from_domain(domain)
+def test_grid_from_bounding_box():
+    #domain = [{'lower': -1, 'upper': 10, 'includes_lower': True,
+               #'includes_upper': False, 'step': .1},
+              #{'lower': 6, 'upper': 15, 'includes_lower': False,
+               #'includes_upper': True, 'step': .5}]
+    bb = ((-1, 9.9), (6.5, 15))
+    #x, y = grid_from_domain(domain)
+    x, y = grid_from_bounding_box(bb, step=[.1, .5], center=False)
     assert_allclose(x[:, 0], -1)
     assert_allclose(x[:, -1], 9.9)
     assert_allclose(y[0], 6.5)
@@ -244,15 +245,16 @@ class TestImaging(object):
 
         tan = models.Pix2Sky_TAN(name='tangent_projection')
         sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
+        det = cf.Frame2D('detector')
         wcs_forward = wcslin | tan | n2c
         pipeline = [('detector', distortion),
                     ('focal', wcs_forward),
                     (sky_cs, None)
                     ]
 
-        self.wcs = wcs.WCS(input_frame='detector',
-                           output_frame=sky_cs,
-                           forward_transform=pipeline)
+        self.wcs = wcs.WCS(input_frame = det,
+                           output_frame = sky_cs,
+                           forward_transform = pipeline)
         nx, ny = (5, 2)
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)
@@ -286,8 +288,8 @@ class TestImaging(object):
         assert_allclose(px_coord[1], self.yv, atol=10**-6)
 
     def test_footprint(self):
-        domain = [{'lower': 1, 'upper': 4097}, {'lower': 1, 'upper': 2049}]
-        footprint = (self.wcs.footprint(domain)).T
+        bb = ((1, 4096), (1, 2048))
+        footprint = (self.wcs.footprint(bb)).T
         fits_footprint = self.fitsw.calc_footprint(axes=(4096, 2048))
         assert_allclose(footprint, fits_footprint)
 
