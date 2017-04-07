@@ -230,11 +230,11 @@ class WCS(object):
         """
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
-        #result = self.forward_transform(*args)
 
         # Set values outside the ``bounding_box`` to `fill_value``.
         if with_bounding_box and self.bounding_box:
-            result = self._with_bounding_box(self.forward_transform, fill_value, *args)
+            result = self._with_bounding_box(self.forward_transform, fill_value, *args,
+                                             bbox=self.bounding_box)
         else:
             result = self.forward_transform(*args)
 
@@ -250,14 +250,35 @@ class WCS(object):
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
 
-    def _with_bounding_box(self, transform, fill_value, *args):
-                # Set values outside the ``bounding_box`` to `fill_value``.
-        result = transform(*args)
-        try:
-            bbox = transform.bounding_box[::-1]
-        except NotImplementedError:
-            bbox = None
+    def _with_bounding_box(self, transform, fill_value, *args, bbox=None):
+        """
+        Evaluate the transform respecting the bounding_box.
 
+        TODO: Move this to modeling.
+
+        Parameters
+        ----------
+        transform : `~astropy.modeling.Model`
+            Transform to evaluate
+        fill_value : float
+            Fill value
+        args : list
+           Inputs
+        kwargs: dict, optional
+           pass a bbox here if necessary
+           bbox : a bounding_box
+           Sometimes the bounding_box is attached to part of
+           the transform. Instead of looking for it just pass it.
+        """
+        # Set values outside the ``bounding_box`` to `fill_value``.
+        result = transform(*args)
+        if bbox is None:
+            try:
+                bbox = transform.bounding_box[::-1]
+            except NotImplementedError:
+                bbox = None
+        if bbox is None:
+            return result
         inputs = [np.array(arg) for arg in args]
         result = [np.array(r) for r in result]
 
@@ -459,20 +480,23 @@ class WCS(object):
 
         Parameters
         ----------
-        value : tuple
+        value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
-        try:
-            axes_ind = np.argsort(self.input_frame.axes_order)
-        except AttributeError:
-            # the case of a frame being a string
-            axes_ind = np.arange(transform_0.n_inputs)
-        try:
-            transform_0.bounding_box = np.array(value)[axes_ind][::-1]
-        except IndexError:
-            raise utils.DimensionalityError("The bounding_box does not match the number of inputs.")
+        if value is None:
+            transform_0.bounding_box = value
+        else:
+            try:
+                axes_ind = np.argsort(self.input_frame.axes_order)
+            except AttributeError:
+                # the case of a frame being a string
+                axes_ind = np.arange(transform_0.n_inputs)
+            try:
+                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+            except IndexError:
+                raise utils.DimensionalityError("The bounding_box does not match the number of inputs.")
         self.set_transform(frames[0], frames[1], transform_0)
 
     @property
