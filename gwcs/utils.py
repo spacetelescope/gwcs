@@ -141,12 +141,9 @@ def _get_values(units, *args):
     """
     val = []
     values = []
-    print('args', args)
     for arg in args:
-        print('arg', arg)
         if isinstance(arg, coords.SkyCoord):
             try:
-                print('arg1', arg)
                 lon = arg.data.lon
                 lat = arg.data.lat
             except AttributeError:
