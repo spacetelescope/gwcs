@@ -223,9 +223,9 @@ def test_bounding_box_eval():
     # test scalar outside bbox
     assert_allclose(w(1, 7, 3), [np.nan, np.nan, np.nan])
     # test scalar inside bbox
-    assert_allclose(w(1, 7, 5), [11, 4, 4])
+    assert_allclose(w(1, 7, 5), [11, 14, 4])
     # test arrays
-    assert_allclose(w([1, 1], [7, 7], [3, 5]), [[np.nan, 11], [np.nan, 4], [np.nan, 4]])
+    assert_allclose(w([1, 1], [7, 7], [3, 5]), [[np.nan, 11], [np.nan, 14], [np.nan, 4]])
 
 
 class TestImaging(object):

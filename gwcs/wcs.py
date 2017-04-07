@@ -230,27 +230,13 @@ class WCS(object):
         """
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
-        result = self.forward_transform(*args)
-        print('result', result)
+        #result = self.forward_transform(*args)
 
         # Set values outside the ``bounding_box`` to `fill_value``.
         if with_bounding_box and self.bounding_box:
-            bbox = self.bounding_box
-            inputs= args[:]
-
-            inputs = [np.array(arg) for arg in inputs]
-            result = [np.array(r) for r in result]
-
-            for ind, inp in enumerate(inputs):
-                # Pass an ``out`` array so that ``axis_ind`` is array for scalars as well.
-                axis_ind = np.zeros(inp.shape, dtype=np.bool)
-                axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
-                for ind, _ in enumerate(result):
-                    result[ind][axis_ind] = fill_value
-            if np.isscalar(args[0]):
-                result = tuple([np.asscalar(r) for r in result])
-            else:
-                result = tuple(result)
+            result = self._with_bounding_box(self.forward_transform, fill_value, *args)
+        else:
+            result = self.forward_transform(*args)
 
         if output not in ["numericals", "numericals_plus"]:
             raise ValueError("'output' should be 'numericals' or "
@@ -262,6 +248,29 @@ class WCS(object):
                 result = self.output_frame.coordinates(*result)
         elif output is not None and output != "numericals":
             raise ValueError("Type of output unrecognized {0}".format(output))
+        return result
+
+    def _with_bounding_box(self, transform, fill_value, *args):
+                # Set values outside the ``bounding_box`` to `fill_value``.
+        result = transform(*args)
+        try:
+            bbox = transform.bounding_box[::-1]
+        except NotImplementedError:
+            bbox = None
+
+        inputs = [np.array(arg) for arg in args]
+        result = [np.array(r) for r in result]
+
+        for ind, inp in enumerate(inputs):
+            # Pass an ``out`` array so that ``axis_ind`` is array for scalars as well.
+            axis_ind = np.zeros(inp.shape, dtype=np.bool)
+            axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
+            for ind, _ in enumerate(result):
+                result[ind][axis_ind] = fill_value
+        if np.isscalar(args[0]):
+            result = tuple([np.asscalar(r) for r in result])
+        else:
+            result = tuple(result)
         return result
 
     def invert(self, *args, **kwargs):
