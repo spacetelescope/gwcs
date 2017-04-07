@@ -231,17 +231,20 @@ class WCS(object):
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
-        fill_value = kwargs.pop('fill_value', np.nan)
-        with_bounding_box = kwargs.pop('with_bounding_box', True)
-        output = kwargs.pop("output", "numericals")
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
 
         # Set values outside the ``bounding_box`` to `fill_value``.
-        if with_bounding_box and self.bounding_box:
-            result = self._with_bounding_box(self.forward_transform, fill_value, *args,
-                                             bbox=self.bounding_box)
+        if kwargs['with_bounding_box'] and self.bounding_box:
+            if 'fill_value' not in kwargs:
+                kwargs['fill_value'] = np.nan
+            kwargs['transform'] = self.forward_transform
+            kwargs['bbox'] = self.bounding_box
+            result = self._with_bounding_box(*args, **kwargs)
         else:
             result = self.forward_transform(*args)
 
+        output = kwargs.pop("output", "numericals")
         if output not in ["numericals", "numericals_plus"]:
             raise ValueError("'output' should be 'numericals' or "
                              "'numericals_plus', not '{0}'.".format(output))
@@ -254,7 +257,7 @@ class WCS(object):
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
 
-    def _with_bounding_box(self, transform, fill_value, *args, bbox=None):
+    def _with_bounding_box(self, *args, **kwargs):
         """
         Evaluate the transform respecting the bounding_box.
 
@@ -274,6 +277,9 @@ class WCS(object):
            Sometimes the bounding_box is attached to part of
            the transform. Instead of looking for it just pass it.
         """
+        transform = kwargs.pop('transform', None)
+        bbox = kwargs.pop('bbox', None)
+
         # Set values outside the ``bounding_box`` to `fill_value``.
         result = transform(*args)
         if bbox is None:
@@ -291,7 +297,7 @@ class WCS(object):
             axis_ind = np.zeros(inp.shape, dtype=np.bool)
             axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
             for ind, _ in enumerate(result):
-                result[ind][axis_ind] = fill_value
+                result[ind][axis_ind] = kwargs['fill_value']
         if np.isscalar(args[0]):
             result = tuple([np.asscalar(r) for r in result])
         else:
@@ -320,12 +326,14 @@ class WCS(object):
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
-        fill_value = kwargs.pop('fill_value', np.nan)
         with_bounding_box = kwargs.pop('with_bounding_box', True)
 
         try:
             if with_bounding_box:
-                result = self._with_bounding_box(self.backward_transform, fill_value, *args)
+                if 'fill_value' not in kwargs:
+                    kwargs['fill_value'] = np.nan
+                kwargs['transform'] = self.backward_transform
+                result = self._with_bounding_box(*args, **kwargs)
             else:
                 result = self.backward_transform(*args)
         except (NotImplementedError, KeyError):
@@ -367,15 +375,16 @@ class WCS(object):
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is np.nan).
         """
-        fill_value = kwargs.pop('fill_value', np.nan)
-        with_bounding_box = kwargs.pop('with_bounding_box', True)
-
         transform = self.get_transform(from_frame, to_frame)
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
         if with_bounding_box:
-            result = self._with_bounding_box(transform, fill_value, *args)
+            if 'fill_value' not in kwargs:
+                kwargs['fill_value'] = np.nan
+            kwargs['transform'] = transform
+            result = self._with_bounding_box(*args, **kwargs)
         else:
             result = transform(*args)
         output = kwargs.pop("output", None)
