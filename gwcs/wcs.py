@@ -212,21 +212,49 @@ class WCS(object):
             frame_obj = frame
         return name, frame_obj
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, output="numericals", with_bounding_box=True, fill_value=np.nan):
         """
         Executes the forward transform.
 
         args : float or array-like
             Inputs in the input coordinate system, separate inputs for each dimension.
-        output : str
+        output : str, optional
             One of [``numericals``, ``numericals_plus``]
             If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.units.Quantity` object.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
         result = self.forward_transform(*args)
-        output = kwargs.pop('output', None)
+        print('result', result)
+
+        # Set values outside the ``bounding_box`` to `fill_value``.
+        if with_bounding_box and self.bounding_box:
+            bbox = self.bounding_box
+            inputs= args[:]
+
+            inputs = [np.array(arg) for arg in inputs]
+            result = [np.array(r) for r in result]
+
+            for ind, inp in enumerate(inputs):
+                # Pass an ``out`` array so that ``axis_ind`` is array for scalars as well.
+                axis_ind = np.zeros(inp.shape, dtype=np.bool)
+                axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
+                for ind, _ in enumerate(result):
+                    result[ind][axis_ind] = fill_value
+            if np.isscalar(args[0]):
+                result = tuple([np.asscalar(r) for r in result])
+            else:
+                result = tuple(result)
+
+        if output not in ["numericals", "numericals_plus"]:
+            raise ValueError("'output' should be 'numericals' or "
+                             "'numericals_plus', not '{0}'.".format(output))
         if output == 'numericals_plus':
             if self.output_frame.naxes == 1:
                 result = self.output_frame.coordinates(result)

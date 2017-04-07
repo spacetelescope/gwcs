@@ -203,17 +203,29 @@ def test_domain():
 
 
 def test_grid_from_bounding_box():
-    #domain = [{'lower': -1, 'upper': 10, 'includes_lower': True,
-               #'includes_upper': False, 'step': .1},
-              #{'lower': 6, 'upper': 15, 'includes_lower': False,
-               #'includes_upper': True, 'step': .5}]
     bb = ((-1, 9.9), (6.5, 15))
-    #x, y = grid_from_domain(domain)
     x, y = grid_from_bounding_box(bb, step=[.1, .5], center=False)
     assert_allclose(x[:, 0], -1)
     assert_allclose(x[:, -1], 9.9)
     assert_allclose(y[0], 6.5)
     assert_allclose(y[-1], 15)
+
+
+def test_bounding_box_eval():
+    """
+    Tests evaluation with and without respecting the bounding_box.
+    """
+    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+    pipeline = [('detector', trans3), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = ((-1, 10), (6, 15), (4.3, 6.9))
+
+    # test scalar outside bbox
+    assert_allclose(w(1, 7, 3), [np.nan, np.nan, np.nan])
+    # test scalar inside bbox
+    assert_allclose(w(1, 7, 5), [11, 4, 4])
+    # test arrays
+    assert_allclose(w([1, 1], [7, 7], [3, 5]), [[np.nan, 11], [np.nan, 4], [np.nan, 4]])
 
 
 class TestImaging(object):
