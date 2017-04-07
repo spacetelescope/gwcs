@@ -222,10 +222,16 @@ def test_bounding_box_eval():
 
     # test scalar outside bbox
     assert_allclose(w(1, 7, 3), [np.nan, np.nan, np.nan])
+    assert_allclose(w(1, 7, 3, with_bounding_box=False), [11, 14, 2])
+    assert_allclose(w(1, 7, 3, fill_value=100.3), [100.3, 100.3, 100.3])
+    assert_allclose(w(1, 7, 3, fill_value=np.inf), [np.inf, np.inf, np.inf])
     # test scalar inside bbox
     assert_allclose(w(1, 7, 5), [11, 14, 4])
     # test arrays
     assert_allclose(w([1, 1], [7, 7], [3, 5]), [[np.nan, 11], [np.nan, 14], [np.nan, 4]])
+
+    # test ``transform`` method
+    assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
 
 class TestImaging(object):

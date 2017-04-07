@@ -212,7 +212,7 @@ class WCS(object):
             frame_obj = frame
         return name, frame_obj
 
-    def __call__(self, *args, output="numericals", with_bounding_box=True, fill_value=np.nan):
+    def __call__(self, *args, **kwargs):
         """
         Executes the forward transform.
 
@@ -230,6 +230,10 @@ class WCS(object):
         """
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
+
+        fill_value = kwargs.pop('fill_value', np.nan)
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        output = kwargs.pop("output", "numericals")
 
         # Set values outside the ``bounding_box`` to `fill_value``.
         if with_bounding_box and self.bounding_box:
@@ -307,11 +311,23 @@ class WCS(object):
             coordinates to be inverted
         kwargs : dict
             keyword arguments to be passed to the iterative invert method.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
+
+        fill_value = kwargs.pop('fill_value', np.nan)
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+
         try:
-            result = self.backward_transform(*args)
+            if with_bounding_box:
+                result = self._with_bounding_box(self.backward_transform, fill_value, *args)
+            else:
+                result = self.backward_transform(*args)
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
         output = kwargs.pop('output', None)
@@ -339,20 +355,29 @@ class WCS(object):
             Initial coordinate frame.
         to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
             Coordinate frame into which to transform.
-        args : float
-            input coordinates to transform
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
         output : str
             One of [``numericals``, ``numericals_plus``]
             If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.units.Quantity` object.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
+        fill_value = kwargs.pop('fill_value', np.nan)
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+
         transform = self.get_transform(from_frame, to_frame)
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
-        result = transform(*args)
+        if with_bounding_box:
+            result = self._with_bounding_box(transform, fill_value, *args)
+        else:
+            result = transform(*args)
         output = kwargs.pop("output", None)
         if output == "numericals_plus":
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
@@ -582,9 +607,7 @@ class WCS(object):
             bb = bounding_box
         vertices = np.asarray([[bb[0][0], bb[1][0]], [bb[0][0], bb[1][1]],
                                [bb[0][1], bb[1][1]], [bb[0][1], bb[1][0]]]).T
-        print('bb', bb)
-        print('vert', vertices)
         if center:
             vertices = _toindex(vertices)
-        result = self.__call__(*vertices)
+        result = self.__call__(*vertices, **{'with_bounding_box': False})
         return np.asarray(result)
