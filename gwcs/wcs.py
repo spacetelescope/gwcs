@@ -281,8 +281,6 @@ class WCS(object):
         bbox = kwargs.pop('bbox', None)
         fill_value = kwargs.pop('fill_value', np.nan)
 
-        # Set values outside the ``bounding_box`` to `fill_value``.
-
         if bbox is None:
             try:
                 # Get the bbox from the transform
@@ -307,7 +305,7 @@ class WCS(object):
             axis_ind = np.zeros(inp.shape, dtype=np.bool)
             axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
             nan_ind[axis_ind] = 1
-        
+
         # get an array with indices of valid inputs
         valid_ind = np.logical_not(nan_ind).nonzero()
         # inputs holds only inputs within the bbox
@@ -315,8 +313,8 @@ class WCS(object):
         for arg in args:
             if not arg.shape:
                 # shape is ()
-                if valid_ind[0] != 0:
-                    return tuple([np.nan for a in args])
+                if nan_ind:
+                    return tuple([fill_value for a in args])
                 else:
                     inputs.append(arg)
             else:
@@ -326,7 +324,7 @@ class WCS(object):
             valid_result = [valid_result]
         # combine the valid results with the ``fill_value`` values 
         # outside the bbox
-        result = [np.zeros(args[0].shape) + kwargs['fill_value'] for i in range(len(valid_result))]
+        result = [np.zeros(args[0].shape) + fill_value for i in range(len(valid_result))]
         for ind, r in enumerate(valid_result):
             if not result[ind].shape:
                 # the sahpe is () 

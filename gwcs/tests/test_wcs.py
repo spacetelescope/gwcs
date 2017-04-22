@@ -233,6 +233,17 @@ def test_bounding_box_eval():
     # test ``transform`` method
     assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
+    
+def test_number_of_inputs():
+    points = np.arange(5)
+    values = np.array([1.5, 3.4, 6.7, 7, 32])
+    t = models.Tabular1D(points, values)
+    pipe = [('detector', t), ('world', None)]
+    w = wcs.WCS(pipe)
+    assert_allclose(w(1), 3.4)
+    assert_allclose(w([1, 2]), [3.4, 6.7])
+    assert np.isscalar(w(1))
+
 
 class TestImaging(object):
 
