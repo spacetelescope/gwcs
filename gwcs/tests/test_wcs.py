@@ -234,7 +234,7 @@ def test_bounding_box_eval():
     assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
     
-def test_number_of_inputs():
+def test_format_output():
     points = np.arange(5)
     values = np.array([1.5, 3.4, 6.7, 7, 32])
     t = models.Tabular1D(points, values)
