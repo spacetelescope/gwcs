@@ -525,7 +525,7 @@ class RegionsSelector(Model):
         rids = self.label_mapper(*args).flatten()
         # Raise an error if all pixels are outside regions
         if (rids == self.label_mapper.no_label).all():
-            raise RegionError("The input positions are not inside any region.")
+            warnings.warn("The input positions are not inside any region.")
 
         # Create output arrays and set any pixels not within regions to
         # "undefined_transform_value"
