@@ -279,25 +279,61 @@ class WCS(object):
         """
         transform = kwargs.pop('transform', None)
         bbox = kwargs.pop('bbox', None)
+        fill_value = kwargs.pop('fill_value', np.nan)
 
-        # Set values outside the ``bounding_box`` to `fill_value``.
-        result = transform(*args)
         if bbox is None:
             try:
-                bbox = transform.bounding_box[::-1]
+                # Get the bbox from the transform
+                bbox = transform.bounding_box
             except NotImplementedError:
                 bbox = None
+            if transform.n_inputs > 1 and bbox is not None:
+                # The bbox on a transform is in python order
+                bbox = bbox[::-1]
         if bbox is None:
-            return result
-        inputs = [np.array(arg) for arg in args]
-        result = [np.array(r) for r in result]
-
-        for ind, inp in enumerate(inputs):
+            return transform(*args)
+        
+        args = [np.array(arg) for arg in args]
+        if len(args) == 1:
+            bbox = [bbox]
+            
+        # indices where input is outside the bbox
+        # have a value of 1 in ``nan_ind``
+        nan_ind = np.zeros(args[0].shape)
+        for ind, inp in enumerate(args):
             # Pass an ``out`` array so that ``axis_ind`` is array for scalars as well.
             axis_ind = np.zeros(inp.shape, dtype=np.bool)
             axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
-            for ind, _ in enumerate(result):
-                result[ind][axis_ind] = kwargs['fill_value']
+            nan_ind[axis_ind] = 1
+
+        # get an array with indices of valid inputs
+        valid_ind = np.logical_not(nan_ind).nonzero()
+        # inputs holds only inputs within the bbox
+        inputs = []
+        for arg in args:
+            if not arg.shape:
+                # shape is ()
+                if nan_ind:
+                    return tuple([fill_value for a in args])
+                else:
+                    inputs.append(arg)
+            else:
+                inputs.append(arg[valid_ind])
+        valid_result = transform(*inputs)
+        if transform.n_outputs == 1:
+            valid_result = [valid_result]
+        # combine the valid results with the ``fill_value`` values 
+        # outside the bbox
+        result = [np.zeros(args[0].shape) + fill_value for i in range(len(valid_result))]
+        for ind, r in enumerate(valid_result):
+            if not result[ind].shape:
+                # the sahpe is () 
+                result[ind] = r
+            else:
+                result[ind][valid_ind] = r
+        # format output
+        if transform.n_outputs == 1:
+            return result[0]
         if np.isscalar(args[0]):
             result = tuple([np.asscalar(r) for r in result])
         else:
@@ -494,14 +530,16 @@ class WCS(object):
         transform_0 = self.get_transform(frames[0], frames[1])
         try:
             # Model.bounding_box is in numpy order, need to reverse it first.
-            bb = transform_0.bounding_box[::-1]
+            bb = transform_0.bounding_box#[::-1]
         except NotImplementedError:
             return None
+        if transform_0.n_inputs == 1:
+            return bb
         try:
             axes_order = self.input_frame.axes_order
         except AttributeError:
             axes_order = np.arange(transform_0.n_inputs)
-        bb = np.array(bb)[np.array(axes_order)]
+        bb = np.array(bb[::-1])[np.array(axes_order)]
         return tuple(tuple(item) for item in bb)
 
     @bounding_box.setter
