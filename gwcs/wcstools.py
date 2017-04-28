@@ -219,7 +219,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     """
     slices = []
     if center:
-        bb = _toindex(bounding_box)
+        bb = tuple([(np.floor(b[0] + 0.5), np.ceil(b[1] - .5)) for b in bounding_box])
     else:
         bb = bounding_box
     for d, s in zip(bb, step):

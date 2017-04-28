@@ -7,6 +7,7 @@ from collections import OrderedDict
 import numpy as np
 from numpy.testing import assert_array_equal
 from astropy.modeling import models
+from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
 
 from asdf import yamlutil
@@ -21,7 +22,7 @@ __all__ = ['LabelMapperType', 'RegionsSelectorType']
 
 class LabelMapperType(TransformType):
     name = "transform/label_mapper"
-    types = [LabelMapperArray, LabelMapperDict, LabelMapperRange]
+    types = [LabelMapperArray, LabelMapperDict, LabelMapperRange, LabelMapper]
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -31,12 +32,16 @@ class LabelMapperType(TransformType):
                             "of astropy.modeling.models.Mapping.")
         mapper = node['mapper']
         atol = node.get('atol', 10**-8)
+        no_label = node.get('no_label', np.nan)
 
         if isinstance(mapper, NDArrayType):
             if mapper.ndim != 2:
                 raise NotImplementedError(
                     "GWCS currently only supports 2x2 masks ")
             return LabelMapperArray(mapper, inputs_mapping)
+        elif isinstance(mapper, Model):
+            inputs = node.get('inputs')
+            return LabelMapper(inputs, mapper, inputs_mapping=inputs_mapping, no_label=no_label)
         else:
             inputs = node.get('inputs', None)
             if inputs is not None:
@@ -54,9 +59,16 @@ class LabelMapperType(TransformType):
     @classmethod
     def to_tree_transform(cls, model, ctx):
         node = OrderedDict()
+        node['no_label'] = model.no_label
+        if model.inputs_mapping is not None:
+            node['inputs_mapping'] = model.inputs_mapping
+
         if isinstance(model, LabelMapperArray):
             node['mapper'] = model.mapper
-        if isinstance(model, (LabelMapperDict, LabelMapperRange)):
+        elif isinstance(model, LabelMapper):
+            node['mapper'] = model.mapper
+            node['inputs'] = list(model.inputs)
+        elif isinstance(model, (LabelMapperDict, LabelMapperRange)):
             if hasattr(model, 'atol'):
                 node['atol'] = model.atol
             mapper = OrderedDict()
@@ -71,8 +83,8 @@ class LabelMapperType(TransformType):
             mapper['models'] = transforms
             node['mapper'] = mapper
             node['inputs'] = list(model.inputs)
-        if model.inputs_mapping is not None:
-            node['inputs_mapping'] = model.inputs_mapping
+        else:
+            raise TypeError("Unrecognized type of LabelMapper - {0}".format(model))
 
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
 

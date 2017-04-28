@@ -69,12 +69,14 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import warnings
 import numpy as np
 from astropy.modeling.core import Model
+from astropy.modeling import models as astmodels
 
 from . import region
 from .utils import RegionError, _toindex
 
 
-__all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSelector']
+__all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSelector',
+           'LabelMapper']
 
 
 def get_unique_regions(regions):
@@ -306,7 +308,6 @@ class LabelMapperDict(_LabelMapper):
         # If this is part of a combined transform, some of the inputs
         # may be NaNs.
         # Set NaNs to the ``_no_label`` value
-        #res[np.isnan(keys)] = self._no_label
         mapper_keys = list(self.mapper.keys())
         # Loop over the keys in mapper and compare to inputs.
         # Find the indices where they are within ``atol``
@@ -524,7 +525,7 @@ class RegionsSelector(Model):
         rids = self.label_mapper(*args).flatten()
         # Raise an error if all pixels are outside regions
         if (rids == self.label_mapper.no_label).all():
-            raise RegionError("The input positions are not inside any region.")
+            warnings.warn("The input positions are not inside any region.")
 
         # Create output arrays and set any pixels not within regions to
         # "undefined_transform_value"
@@ -568,3 +569,63 @@ class RegionsSelector(Model):
     @property
     def selector(self):
         return self._selector
+
+
+class LabelMapper(_LabelMapper):
+    """
+    Maps inputs to regions. Returns the region labels corresponding to the inputs.
+
+    Labels are strings or numbers which uniquely identify a location.
+    For example, labels may represent slices of an IFU or names of spherical polygons.
+
+    Parameters
+    ----------
+    mapper : `~astropy.modeling.core.Model`
+        A function which returns a region.
+    no_label : str or int
+        "" or 0
+        A return value for a location which has no corresponding label.
+    inputs_mapping : `~astropy.modeling.mappings.Mapping` or tuple
+        An optional Mapping model to be prepended to the LabelMapper
+        with the purpose to filter the inputs or change their order.
+        If tuple, a `~astropy.modeling.mappings.Mapping` model will be created from it.
+    name : str
+        The name of this transform.
+    """
+
+    outputs = ('label',)
+
+    def __init__(self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs):
+        self._no_label = no_label
+        self.inputs = inputs
+        self.outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
+        if isinstance(inputs_mapping, tuple):
+            inputs_mapping = astmodels.Mapping(inputs_mapping)
+        elif inputs_mapping is not None and not isinstance(inputs_mapping, astmodels.Mapping):
+            raise TypeError("inputs-mapping must be an instance of astropy.modeling.Mapping.")
+
+        self._inputs_mapping = inputs_mapping
+        self._mapper = mapper
+        super(_LabelMapper, self).__init__(name=name, **kwargs)
+
+    @property
+    def mapper(self):
+        return self._mapper
+
+    @property
+    def inputs_mapping(self):
+        return self._inputs_mapping
+
+    @property
+    def no_label(self):
+        return self._no_label
+
+    def evaluate(self, *args):
+        if self.inputs_mapping is not None:
+            args = self.inputs_mapping(*args)
+        if self.n_outputs == 1:
+            args = [args]
+        res = self.mapper(*args)
+        if np.isscalar(res):
+            res = np.array([res])
+        return np.array(res)
