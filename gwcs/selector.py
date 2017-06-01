@@ -541,7 +541,12 @@ class RegionsSelector(Model):
         for rid in uniq:
             ind = (rids == rid)
             inputs = [a[ind] for a in args]
-            result = self._selector[rid](*inputs)
+            if rid in self._selector:
+                result = self._selector[rid](*inputs)
+            else:
+                # If there's no transform for a label, return np.nan
+                result = [np.empty(inputs[0].shape) +
+                          self._undefined_transform_value for i in range(self.n_outputs)]
             for j in range(self.n_outputs):
                 outputs[j][ind] = result[j]
         return outputs

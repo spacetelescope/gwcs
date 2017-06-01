@@ -12,6 +12,11 @@
 - Added a ``LabelMapper`` model where ``mapper`` is an instance of
   `~astropy.modeling.core.Model`. [#78]
 
+- Evaluating a WCS with bounding box was moved to ``astropy.modeling``. [#86]
+
+- RegionsSelector now handles the case when a label does not have a corresponding
+  transform and returns RegionsSelector.undefined_transform_value. [#86]
+
 
 0.7 (2016-12-23)
 ----------------

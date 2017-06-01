@@ -231,20 +231,24 @@ class WCS(object):
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
+        output = kwargs.pop("output", "numericals")
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
 
-        # Set values outside the ``bounding_box`` to `fill_value``.
-        if kwargs['with_bounding_box'] and self.bounding_box:
-            if 'fill_value' not in kwargs:
-                kwargs['fill_value'] = np.nan
-            kwargs['transform'] = self.forward_transform
-            kwargs['bbox'] = self.bounding_box
-            result = self._with_bounding_box(*args, **kwargs)
-        else:
-            result = self.forward_transform(*args)
+        transform = self.forward_transform
+        if self.bounding_box is not None:
+            # Currently compound models do not attempt to combine individual model
+            # bounding boxes. Get the forward transform and assign the ounding_box to it
+            # before evaluating it. The order Model.bounding_box is reversed.
+            axes_ind = self._get_axes_indices()
+            if transform.n_inputs > 1:
+                transform.bounding_box = np.array(self.bounding_box)[axes_ind][::-1]
+            else:
+                transform.bounding_box = self.bounding_box
+        result = transform(*args, **kwargs)
 
-        output = kwargs.pop("output", "numericals")
         if output not in ["numericals", "numericals_plus"]:
             raise ValueError("'output' should be 'numericals' or "
                              "'numericals_plus', not '{0}'.".format(output))
@@ -257,88 +261,6 @@ class WCS(object):
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
 
-    def _with_bounding_box(self, *args, **kwargs):
-        """
-        Evaluate the transform respecting the bounding_box.
-
-        TODO: Move this to modeling.
-
-        Parameters
-        ----------
-        transform : `~astropy.modeling.Model`
-            Transform to evaluate
-        fill_value : float
-            Fill value
-        args : list
-           Inputs
-        kwargs: dict, optional
-           pass a bbox here if necessary
-           bbox : a bounding_box
-           Sometimes the bounding_box is attached to part of
-           the transform. Instead of looking for it just pass it.
-        """
-        transform = kwargs.pop('transform', None)
-        bbox = kwargs.pop('bbox', None)
-        fill_value = kwargs.pop('fill_value', np.nan)
-
-        if bbox is None:
-            try:
-                # Get the bbox from the transform
-                bbox = transform.bounding_box
-            except NotImplementedError:
-                bbox = None
-            if transform.n_inputs > 1 and bbox is not None:
-                # The bbox on a transform is in python order
-                bbox = bbox[::-1]
-        if bbox is None:
-            return transform(*args)
-        
-        args = [np.array(arg) for arg in args]
-        if len(args) == 1:
-            bbox = [bbox]
-            
-        # indices where input is outside the bbox
-        # have a value of 1 in ``nan_ind``
-        nan_ind = np.zeros(args[0].shape)
-        for ind, inp in enumerate(args):
-            # Pass an ``out`` array so that ``axis_ind`` is array for scalars as well.
-            axis_ind = np.zeros(inp.shape, dtype=np.bool)
-            axis_ind = np.logical_or(inp < bbox[ind][0], inp > bbox[ind][1], out=axis_ind)
-            nan_ind[axis_ind] = 1
-
-        # get an array with indices of valid inputs
-        valid_ind = np.logical_not(nan_ind).nonzero()
-        # inputs holds only inputs within the bbox
-        inputs = []
-        for arg in args:
-            if not arg.shape:
-                # shape is ()
-                if nan_ind:
-                    return tuple([fill_value for a in args])
-                else:
-                    inputs.append(arg)
-            else:
-                inputs.append(arg[valid_ind])
-        valid_result = transform(*inputs)
-        if transform.n_outputs == 1:
-            valid_result = [valid_result]
-        # combine the valid results with the ``fill_value`` values 
-        # outside the bbox
-        result = [np.zeros(args[0].shape) + fill_value for i in range(len(valid_result))]
-        for ind, r in enumerate(valid_result):
-            if not result[ind].shape:
-                # the sahpe is () 
-                result[ind] = r
-            else:
-                result[ind][valid_ind] = r
-        # format output
-        if transform.n_outputs == 1:
-            return result[0]
-        if np.isscalar(args[0]):
-            result = tuple([np.asscalar(r) for r in result])
-        else:
-            result = tuple(result)
-        return result
 
     def invert(self, *args, **kwargs):
         """
@@ -362,19 +284,17 @@ class WCS(object):
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
-        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        output = kwargs.pop('output', None)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
 
         try:
-            if with_bounding_box:
-                if 'fill_value' not in kwargs:
-                    kwargs['fill_value'] = np.nan
-                kwargs['transform'] = self.backward_transform
-                result = self._with_bounding_box(*args, **kwargs)
-            else:
-                result = self.backward_transform(*args)
+            result = self.backward_transform(*args, **kwargs)
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
-        output = kwargs.pop('output', None)
+
         if output == 'numericals_plus':
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
@@ -415,15 +335,14 @@ class WCS(object):
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
-        with_bounding_box = kwargs.pop('with_bounding_box', True)
-        if with_bounding_box:
-            if 'fill_value' not in kwargs:
-                kwargs['fill_value'] = np.nan
-            kwargs['transform'] = transform
-            result = self._with_bounding_box(*args, **kwargs)
-        else:
-            result = transform(*args)
         output = kwargs.pop("output", None)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
+
+        result = transform(*args, **kwargs)
+
         if output == "numericals_plus":
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
             if to_frame_obj is not None:
@@ -560,16 +479,20 @@ class WCS(object):
         if value is None:
             transform_0.bounding_box = value
         else:
-            try:
-                axes_ind = np.argsort(self.input_frame.axes_order)
-            except AttributeError:
-                # the case of a frame being a string
-                axes_ind = np.arange(transform_0.n_inputs)
+            axes_ind = self._get_axes_indices()
             try:
                 transform_0.bounding_box = np.array(value)[axes_ind][::-1]
             except IndexError:
                 raise utils.DimensionalityError("The bounding_box does not match the number of inputs.")
         self.set_transform(frames[0], frames[1], transform_0)
+
+    def _get_axes_indices(self):
+        try:
+            axes_ind = np.argsort(self.input_frame.axes_order)
+        except AttributeError:
+            # the case of a frame being a string
+            axes_ind = np.arange(self.forward_transform.n_inputs)
+        return axes_ind
 
     @property
     def domain(self):
