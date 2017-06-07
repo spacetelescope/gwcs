@@ -6,7 +6,7 @@ Test separability of WCS axes.
 from __future__ import absolute_import, division, unicode_literals, print_function
 from astropy.modeling import models
 from astropy.modeling.models import Mapping
-from astropy.tests.helper import pytest
+import pytest
 import numpy as np
 from numpy.testing import utils
 

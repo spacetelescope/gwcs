@@ -27,6 +27,8 @@ env:
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
         - PIP_DEPENDENCIES='git+https://github.com/spacetelescope/pyasdf.git#egg=pyasdf'
+        - ASTROPY_USE_SYSTEM_PYTEST=1
+
     matrix:
         - SETUP_CMD='egg_info'
         - SETUP_CMD='test'
