@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import numpy as np
 from numpy.testing import utils
 from astropy.modeling import models
-from astropy.tests.helper import pytest
+import pytest
 from .. import region, selector
 
 

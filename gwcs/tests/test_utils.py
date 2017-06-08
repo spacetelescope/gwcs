@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 from astropy.io import fits
 from astropy import wcs as fitswcs
 from astropy.utils.data import get_pkg_data_filename
-from astropy.tests.helper import pytest
+import pytest
 from numpy.testing.utils import assert_allclose
 
 from .. import utils as gwutils

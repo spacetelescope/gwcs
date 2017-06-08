@@ -7,7 +7,7 @@ from astropy.modeling import models
 from astropy import coordinates as coord
 from astropy.io import fits
 from astropy import units as u
-from astropy.tests.helper import pytest
+import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
 
