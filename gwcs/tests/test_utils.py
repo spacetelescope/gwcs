@@ -3,7 +3,11 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 
 from astropy.io import fits
 from astropy import wcs as fitswcs
+from astropy import units as u
+from astropy import coordinates as coord
+from astropy.modeling import models
 from astropy.utils.data import get_pkg_data_filename
+from astropy.tests.helper import assert_quantity_allclose
 import pytest
 from numpy.testing.utils import assert_allclose
 
@@ -27,3 +31,16 @@ def test_fits_transform():
     gw1 = gwutils.make_fitswcs_transform(hdr)
     w1 = fitswcs.WCS(hdr)
     assert_allclose(gw1(1, 2), w1.wcs_pix2world(1, 2, 1), atol=10**-8)
+
+
+def test_lon_pole():
+    tan = models.Pix2Sky_TAN()
+    car = models.Pix2Sky_CAR()
+    sky_positive_lat = coord.SkyCoord(3 * u.deg, 1 * u.deg)
+    sky_negative_lat = coord.SkyCoord(3 * u.deg, -1 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, car), 0 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, car), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole((0, 34 * u.rad), tan), 180 * u.deg)
+    assert_allclose(gwutils._compute_lon_pole((1, -34), tan), 180)

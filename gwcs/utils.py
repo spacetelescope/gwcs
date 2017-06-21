@@ -169,30 +169,41 @@ def _compute_lon_pole(skycoord, projection):
 
     Parameters
     ----------
-    skycoord : `astropy.coordinates.SkyCoord`
+    skycoord : `astropy.coordinates.SkyCoord`, or
+               sequence of floats or `~astropy.units.Quantity` of length 2
         The fiducial point of the native coordinate system.
+        If tuple, it's length is 2
     projection : `astropy.modeling.projections.Projection`
         A Projection instance.
 
     Returns
     -------
-    lon_pole : float
-        Longitude in the units of skycoord.spherical
+    lon_pole : float or `~astropy/units.Quantity`
+        Native longitude of the celestial pole [deg].
 
     TODO: Implement all projections
-        Currently this only supports Zenithal projection.
+        Currently this only supports Zenithal and Cylindrical.
     """
     if isinstance(skycoord, coords.SkyCoord):
         lat = skycoord.spherical.lat
+        unit = u.deg
     else:
-        lat = skycoord[1]
-    if isinstance(projection, projections.Zenithal):
-        if lat < 0:
-            lon_pole = 180
+        lon, lat = skycoord
+        if isinstance(lat, u.Quantity):
+            unit = u.deg
         else:
+            unit = None
+    if isinstance(projection, projections.Zenithal):
+        lon_pole = 180
+    elif isinstance(projection, projections.Cylindrical):
+        if lat >= 0:
             lon_pole = 0
+        else:
+            lon_pole = 180
     else:
         raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
+    if unit is not None:
+        lon_pole = lon_pole * unit
     return lon_pole
 
 
