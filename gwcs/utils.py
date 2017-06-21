@@ -172,7 +172,7 @@ def _compute_lon_pole(skycoord, projection):
     skycoord : `astropy.coordinates.SkyCoord`, or
                sequence of floats or `~astropy.units.Quantity` of length 2
         The fiducial point of the native coordinate system.
-        If tuple, it's length is 2
+        If tuple, its length is 2
     projection : `astropy.modeling.projections.Projection`
         A Projection instance.
 
