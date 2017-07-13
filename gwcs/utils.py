@@ -209,10 +209,13 @@ def _compute_lon_pole(skycoord, projection):
 
 def get_projcode(wcs_info):
     # CTYPE here is only the imaging CTYPE keywords
-    sky_axes, _ = get_axes(wcs_info)
+    sky_axes, _, _ = get_axes(wcs_info)
+    if not sky_axes:
+        return None
     projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
         raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
+        #projcode = None
     return projcode
 
 
@@ -288,7 +291,6 @@ def read_wcs_from_header(header):
     wcs_info['CRVAL'] = crval
     wcs_info['CDELT'] = cdelt
     wcs_info['PC'] = pc
-
     return wcs_info
 
 
@@ -303,7 +305,7 @@ def get_axes(header):
 
     Returns
     -------
-    sky_inmap, spectral_inmap : tuples
+    sky_inmap, spectral_inmap, unknown : lists
         indices in the input representing sky and spectral cordinates.
 
     """
@@ -314,14 +316,29 @@ def get_axes(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
-    ctype = [ax[:4] for ax in wcs_info['CTYPE']]
+    ctype = [ax[:4].upper() for ax in wcs_info['CTYPE']]
     sky_inmap = []
     spec_inmap = []
+    unknown = []
+    skysystems = np.array(list(sky_pairs.values())).flatten()
     for ax in ctype:
-        if ax.upper() in specsystems:
-            spec_inmap.append(ctype.index(ax))
+        ind = ctype.index(ax)
+        if ax in specsystems:
+            spec_inmap.append(ind)
+        elif ax in skysystems:
+            sky_inmap.append(ind)
         else:
-            sky_inmap.append(ctype.index(ax))
+            unknown.append(ind)
+
+    if sky_inmap:
+        _is_skysys_consistent(ctype, sky_inmap)
+
+    return sky_inmap, spec_inmap, unknown
+
+
+def _is_skysys_consistent(ctype, sky_inmap):
+    """ Determine if the sky axes in CTYPE mathch to form a standard celestial system."""
+
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
@@ -334,7 +351,6 @@ def get_axes(header):
                     "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
             sky_inmap = sky_inmap[::-1]
             break
-    return sky_inmap, spec_inmap
 
 
 specsystems = ["WAVE", "FREQ", "ENER", "WAVEN", "AWAV",
@@ -366,9 +382,13 @@ def make_fitswcs_transform(header):
         wcs_info = header
     else:
         raise TypeError("Expected a FITS Header or a dict.")
+    transforms = []
     wcs_linear = fitswcs_linear(wcs_info)
+    transforms.append(wcs_linear)
     wcs_nonlinear = fitswcs_nonlinear(wcs_info)
-    return functools.reduce(core._model_oper('|'), [wcs_linear, wcs_nonlinear])
+    if wcs_nonlinear is not None:
+        transforms.append(wcs_nonlinear)
+    return functools.reduce(core._model_oper('|'), transforms)
 
 
 def fitswcs_linear(header):
@@ -390,10 +410,12 @@ def fitswcs_linear(header):
 
     pc = wcs_info['PC']
     # get the part of the PC matrix corresponding to the imaging axes
-    sky_axes = None
+    sky_axes, spec_axes, unknown = get_axes(wcs_info)
     if pc.shape != (2, 2):
-        sky_axes, _ = get_axes(wcs_info)
-        i, j = sky_axes
+        if sky_axes:
+            i, j = sky_axes
+        elif unknown and len(unknown) == 2:
+            i, j = unknown
         sky_pc = np.zeros((2, 2))
         sky_pc[0, 0] = pc[i, i]
         sky_pc[0, 1] = pc[i, j]
@@ -401,12 +423,15 @@ def fitswcs_linear(header):
         sky_pc[1, 1] = pc[j, j]
         pc = sky_pc.copy()
 
-    if sky_axes is not None:
+    sky_axes.extend(unknown)
+    if sky_axes:
         crpix = []
         cdelt = []
         for i in sky_axes:
             crpix.append(wcs_info['CRPIX'][i])
             cdelt.append(wcs_info['CDELT'][i])
+        #crpix = wcs_info['CRPIX'][sky_axes]
+        #cdelt = wcs_info['CDELT'][sky_axes]
     else:
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
@@ -452,17 +477,24 @@ def fitswcs_nonlinear(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
+    transforms = []
     projcode = get_projcode(wcs_info)
-    projection = create_projection_transform(projcode).rename(projcode)
-
+    if projcode is not None:
+        projection = create_projection_transform(projcode).rename(projcode)
+        transforms.append(projection)
     # Create the sky rotation transform
-    sky_axes, _ = get_axes(wcs_info)
-    phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
-    # TODO: write "def compute_lonpole(projcode, l)"
-    # Set a defaul tvalue for now
-    thetap = 180
-    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
-    return projection | n2c
+    sky_axes, _, _ = get_axes(wcs_info)
+    if sky_axes:
+        phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
+        # TODO: write "def compute_lonpole(projcode, l)"
+        # Set a defaul tvalue for now
+        thetap = 180
+        n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
+        transforms.append(n2c)
+    if transforms:
+        return functools.reduce(core._model_oper('|'), transforms)
+    else:
+        return None
 
 
 def create_projection_transform(projcode):

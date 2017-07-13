@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
-
+import numpy as np
 from astropy.io import fits
 from astropy import wcs as fitswcs
 from astropy import units as u
@@ -44,3 +44,43 @@ def test_lon_pole():
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, car), 180 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole((0, 34 * u.rad), tan), 180 * u.deg)
     assert_allclose(gwutils._compute_lon_pole((1, -34), tan), 180)
+
+
+def test_unknown_ctype():
+    wcsinfo = {'CDELT': np.array([  3.61111098e-05,   3.61111098e-05,   2.49999994e-03]),
+               'CRPIX': np.array([ 17.,  16.,   1.]),
+               'CRVAL': np.array([  4.49999564e+01,   1.72786731e-04,   4.84631542e+00]),
+               'CTYPE': np.array(['MRSAL1A', 'MRSBE1A', 'WAVE']),
+               'CUNIT': np.array([u.Unit("deg"), u.Unit("deg"), u.Unit("um")], dtype=object),
+               'PC': np.array([[ 1.,  0.,  0.],
+                               [ 0.,  1.,  0.],
+                               [ 0.,  0.,  1.]]),
+               'WCSAXES': 3,
+               'has_cd': False
+               }
+    transform = gwutils.make_fitswcs_transform(wcsinfo)
+    x = np.linspace(-5, 7, 10)
+    y = np.linspace(-5, 7, 10)
+    expected = (np.array([-0.00079444, -0.0007463 , -0.00069815, -0.00065   , -0.00060185,
+                       -0.0005537 , -0.00050556, -0.00045741, -0.00040926, -0.00036111]
+                      ),
+                np.array([-0.00075833, -0.00071019, -0.00066204, -0.00061389, -0.00056574,
+                       -0.00051759, -0.00046944, -0.0004213 , -0.00037315, -0.000325  ]
+                      )
+                )
+    a, b = transform(x, y)
+    assert_allclose(a, expected[0], atol=10**-8)
+    assert_allclose(b, expected[1], atol=10**-8)
+
+
+def test_get_axes():
+    wcsinfo = {'CTYPE': np.array(['MRSAL1A', 'MRSBE1A', 'WAVE'])}
+    cel, spec, other = gwutils.get_axes(wcsinfo)
+    assert not cel
+    assert spec == [2]
+    assert other == [0, 1]
+    wcsinfo = {'CTYPE': np.array(['RA---TAN', 'WAVE', 'DEC--TAN'])}
+    cel, spec, other = gwutils.get_axes(wcsinfo)
+    assert cel == [0, 2]
+    assert spec == [1]
+    assert not other
