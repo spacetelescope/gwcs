@@ -19,7 +19,7 @@ from astropy.utils.decorators import deprecated
 
 
 # these ctype values do not include yzLN and yzLT pairs
-sky_pairs = {"equatorial": ["RA--", "DEC-"],
+sky_pairs = {"equatorial": ["RA", "DEC"],
              "ecliptic": ["ELON", "ELAT"],
              "galactic": ["GLON", "GLAT"],
              "helioecliptic": ["HLON", "HLAT"],
@@ -316,7 +316,9 @@ def get_axes(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
-    ctype = [ax[:4].upper() for ax in wcs_info['CTYPE']]
+    # Split each CTYPE value at "-" and take the first part.
+    # This should represent the coordinate system.
+    ctype = [ax.split('-')[0].upper() for ax in wcs_info['CTYPE']]
     sky_inmap = []
     spec_inmap = []
     unknown = []
