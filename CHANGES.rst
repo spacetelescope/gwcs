@@ -17,6 +17,8 @@
 - RegionsSelector now handles the case when a label does not have a corresponding
   transform and returns RegionsSelector.undefined_transform_value. [#86]
 
+- GWCS now deals with axes types which are neither celestial nor spectral as "unknown"
+  and creates a transform equivalent to the FITS linear transform. [#92]
 
 0.7 (2016-12-23)
 ----------------
