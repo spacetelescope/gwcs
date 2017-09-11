@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import abc
 from collections import OrderedDict
 import numpy as np
-from astropy.extern import six
+import six
 
 
 @six.add_metaclass(abc.ABCMeta)

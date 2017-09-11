@@ -5,7 +5,7 @@ import functools
 import warnings
 
 import numpy as np
-from astropy.extern import six
+import six
 from astropy.modeling.core import Model
 
 from . import coordinate_frames
