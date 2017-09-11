@@ -8,7 +8,7 @@ import numpy as np
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
-from astropy.extern import six
+import six
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
