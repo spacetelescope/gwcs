@@ -190,17 +190,17 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     ----------
     bounding_box : tuple
         `ref: prop: bounding_box`
-    step : None, tuple
-        A step for the grid in each dimension.
-        If None, step=1.
+    step : scalar or tuple
+        Step size for grid in each dimension.  Scalar applies to all dimensions.
     center : bool
 
-    The bounding_box is in order of X, Y [, Z] and the output will be in the same order.
+    The bounding_box is in order of X, Y [, Z] and the output will be in the
+    same order.
 
     Examples
     --------
-    >>> bb = bb=((-1, 2.9), (6, 7.5))
-    >>> grid_from_bounding_box(bb, step=(1, .5)
+    >>> bb = ((-1, 2.9), (6, 7.5))
+    >>> grid_from_bounding_box(bb, step=(1, .5))
         [[[-1. ,  0. ,  1. ,  2. ],
          [-1. ,  0. ,  1. ,  2. ],
          [-1. ,  0. ,  1. ,  2. ],
@@ -214,14 +214,23 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
 
     Returns
     -------
-    x, y : ndarray
-        Input points.
+    x, y [, z]: ndarray
+        Grid of points.
     """
-    slices = []
     if center:
         bb = tuple([(np.floor(b[0] + 0.5), np.ceil(b[1] - .5)) for b in bounding_box])
     else:
         bb = bounding_box
+
+    step = np.atleast_1d(step)
+    if len(bb) > 1 and len(step) == 1:
+        step = np.repeat(step, len(bb))
+
+    if len(step) != len(bb):
+        raise ValueError('`step` must be a scalar, or tuple with length '
+                         'matching `bounding_box`')
+
+    slices = []
     for d, s in zip(bb, step):
         slices.append(slice(d[0], d[1] + s, s))
     return np.mgrid[slices[::-1]][::-1]
