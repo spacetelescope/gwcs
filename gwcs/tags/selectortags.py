@@ -11,8 +11,8 @@ from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
 
 from asdf import yamlutil
-from asdf.tags.transform.basic import TransformType
 from asdf.tags.core.ndarray import NDArrayType
+from astropy.io.misc.asdf.tags.transform.basic import TransformType
 
 from ..selector import *
 
