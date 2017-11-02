@@ -1,4 +1,6 @@
-0.8 (Unreleased)
+0.9.0 (Unreleased)
+
+0.8.0 (2017-11-02)
 ----------------
 
 - ``LabelMapperRange`` now returns ``LabelMapperRange._no_label`` when the key is
