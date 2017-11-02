@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import numpy as np
 from numpy.testing import utils
 from astropy.modeling import models
-from astropy.tests.helper import pytest
+import pytest
 from .. import region, selector
 
 
@@ -83,10 +83,10 @@ def test_create_mask_two_polygons():
 
 def create_range_mapper():
     m = []
-    for i in np.arange(9) *.1:
+    for i in np.arange(1, 10) *.1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
-        m.append(models.Polynomial2D(2, c0_0=c0_0,
-                                     c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
+        m.append(models.Polynomial2D(2, c0_0=c0_0, c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
+
     keys = np.array([[  4.88,   5.64],
                      [  5.75,   6.5],
                      [  6.67,   7.47 ],
@@ -130,12 +130,12 @@ def test_LabelMapperDict():
 
 def test_LabelMapperRange():
     sel = create_range_mapper()
-    assert(sel(6, 2) == 2.1)
+    assert(sel(6, 2) == 4.2)
 
 
 def test_overalpping_ranges():
     """
-    Overlapping ranges should raise an error.
+    Initializing a ``LabelMapperRange`` with overlapping ranges should raise an error.
     """
     keys = np.array([[  4.88,   5.75],
                      [  5.64,   6.5],
@@ -145,4 +145,13 @@ def test_overalpping_ranges():
         rmapper[tuple(key)] = models.Const1D(4)
     with pytest.raises(ValueError):
         lmr = selector.LabelMapperRange(('x', 'y'), rmapper, inputs_mapping=((0,)))
+
+
+def test_outside_range():
+    """
+    Return ``_no_label`` value when keys are outside the range.
+    """
+    lmr = create_range_mapper()
+    assert lmr(1, 1) == 0
+    assert lmr(5, 1) == 1.2
 

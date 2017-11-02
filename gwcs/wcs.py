@@ -2,14 +2,17 @@
 from __future__ import absolute_import, division, unicode_literals, print_function
 
 import functools
+import warnings
+
 import numpy as np
-from astropy.extern import six
+import six
 from astropy.modeling.core import Model
 
 from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
+
 
 __all__ = ['WCS']
 
@@ -215,15 +218,40 @@ class WCS(object):
 
         args : float or array-like
             Inputs in the input coordinate system, separate inputs for each dimension.
-        output : str
-            One of ["numericals", "numericals_plus"]
-            If "numericals_plus" - returns a `~astropy.coordinates.SkyCoord` or
+        output : str, optional
+            One of [``numericals``, ``numericals_plus``]
+            If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.units.Quantity` object.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
         if self.forward_transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
-        result = self.forward_transform(*args)
-        output = kwargs.pop('output', None)
+
+        output = kwargs.pop("output", "numericals")
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
+
+        transform = self.forward_transform
+        if self.bounding_box is not None:
+            # Currently compound models do not attempt to combine individual model
+            # bounding boxes. Get the forward transform and assign the ounding_box to it
+            # before evaluating it. The order Model.bounding_box is reversed.
+            axes_ind = self._get_axes_indices()
+            if transform.n_inputs > 1:
+                transform.bounding_box = np.array(self.bounding_box)[axes_ind][::-1]
+            else:
+                transform.bounding_box = self.bounding_box
+        result = transform(*args, **kwargs)
+
+        if output not in ["numericals", "numericals_plus"]:
+            raise ValueError("'output' should be 'numericals' or "
+                             "'numericals_plus', not '{0}'.".format(output))
         if output == 'numericals_plus':
             if self.output_frame.naxes == 1:
                 result = self.output_frame.coordinates(result)
@@ -232,6 +260,7 @@ class WCS(object):
         elif output is not None and output != "numericals":
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
+
 
     def invert(self, *args, **kwargs):
         """
@@ -246,14 +275,26 @@ class WCS(object):
             coordinates to be inverted
         kwargs : dict
             keyword arguments to be passed to the iterative invert method.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
+
+        output = kwargs.pop('output', None)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
+
         try:
-            result = self.backward_transform(*args)
+            result = self.backward_transform(*args, **kwargs)
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
-        output = kwargs.pop('output', None)
+
         if output == 'numericals_plus':
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
@@ -278,21 +319,30 @@ class WCS(object):
             Initial coordinate frame.
         to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
             Coordinate frame into which to transform.
-        args : float
-            input coordinates to transform
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
         output : str
-            One of ["numericals", "numericals_plus"]
-            If "numericals_plus" - returns a `~astropy.coordinates.SkyCoord` or
+            One of [``numericals``, ``numericals_plus``]
+            If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.units.Quantity` object.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to any of the inputs being
+             outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is np.nan).
         """
         transform = self.get_transform(from_frame, to_frame)
         if not utils.isnumerical(args[0]):
             args = utils._get_values(self.unit, *args)
 
-        result = transform(*args)
         output = kwargs.pop("output", None)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
+
+        result = transform(*args, **kwargs)
+
         if output == "numericals_plus":
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
             if to_frame_obj is not None:
@@ -336,7 +386,7 @@ class WCS(object):
             New transform to be inserted in the pipeline
         after : bool
             If True, the new transform is inserted in the pipeline
-            immediately after `frame`.
+            immediately after ``frame``.
         """
         name, _ = self._get_frame_name(frame)
         frame_ind = self._get_frame_index(name)
@@ -390,10 +440,67 @@ class WCS(object):
         return self._pipeline
 
     @property
+    def bounding_box(self):
+        """
+        Return the range of acceptable values for each input axis.
+        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        """
+        frames = self.available_frames
+        transform_0 = self.get_transform(frames[0], frames[1])
+        try:
+            # Model.bounding_box is in numpy order, need to reverse it first.
+            bb = transform_0.bounding_box#[::-1]
+        except NotImplementedError:
+            return None
+        if transform_0.n_inputs == 1:
+            return bb
+        try:
+            axes_order = self.input_frame.axes_order
+        except AttributeError:
+            axes_order = np.arange(transform_0.n_inputs)
+        bb = np.array(bb[::-1])[np.array(axes_order)]
+        return tuple(tuple(item) for item in bb)
+
+    @bounding_box.setter
+    def bounding_box(self, value):
+        """
+        Set the range of acceptable values for each input axis.
+
+        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        For two inputs and axes_order(0, 1) the bounding box is ((xlow, xhigh), (ylow, yhigh)).
+
+        Parameters
+        ----------
+        value : tuple or None
+            Tuple of tuples with ("low", high") values for the range.
+        """
+        frames = self.available_frames
+        transform_0 = self.get_transform(frames[0], frames[1])
+        if value is None:
+            transform_0.bounding_box = value
+        else:
+            axes_ind = self._get_axes_indices()
+            try:
+                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+            except IndexError:
+                raise utils.DimensionalityError("The bounding_box does not match the number of inputs.")
+        self.set_transform(frames[0], frames[1], transform_0)
+
+    def _get_axes_indices(self):
+        try:
+            axes_ind = np.argsort(self.input_frame.axes_order)
+        except AttributeError:
+            # the case of a frame being a string
+            axes_ind = np.arange(self.forward_transform.n_inputs)
+        return axes_ind
+
+    @property
     def domain(self):
         """
         Return the range of acceptable values for each input axis.
         """
+        warnings.warn('"domain" was deprecated in v0.8 and will be'
+                      'removed in the next version. Use "bounding_box" instead.')
         frames = self.available_frames
         transform_meta = self.get_transform(frames[0], frames[1]).meta
         if 'domain' in transform_meta:
@@ -406,6 +513,8 @@ class WCS(object):
         """
         Set the range of acceptable values for each input axis.
         """
+        warnings.warn('"domain" was deprecated in v.0.8 and will be removed'
+                      ' in the next version. Use "bounding_box" instead.')
         self._validate_domain(value)
         frames = self.available_frames
         transform = self.get_transform(frames[0], frames[1])
@@ -444,33 +553,31 @@ class WCS(object):
             self.output_frame, self.input_frame, self.forward_transform)
         return fmt
 
-    def footprint(self, domain=None, center=True):
+    def footprint(self, bounding_box=None, center=False):
         """
         Return the footprint of the observation in world coordinates.
 
         Parameters
         ----------
-        domain : slice or tuple of floats: (start, stop, step) or (start, stop) or (stop,)
-            size of image
+        bounding_box : tuple of floats: (start, stop)
+            `prop: bounding_box`
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
 
         Returns
         -------
-        coord : (4, 2) array of (*x*, *y*) coordinates.
+        coord : array of coordinates in the output_frame.
             The order is counter-clockwise starting with the bottom left corner.
         """
-        if domain is None:
-            if self.domain is None:
-                raise TypeError("Need a valid domain to compute the footprint.")
-            domain = self.domain
-        self._validate_domain(domain)
-
-        bounds = utils._domain_to_bounds(domain)
-        vertices = np.asarray([[bounds[0][0], bounds[1][0]], [bounds[0][0], bounds[1][1]],
-                               [bounds[0][1], bounds[1][1]], [bounds[0][1], bounds[1][0]]])
-        vertices = _toindex(vertices).T
-        if not center:
-            vertices += .5
-        result = self.__call__(*vertices)
+        if bounding_box is None:
+            if self.bounding_box is None:
+                raise TypeError("Need a valid bounding_box to compute the footprint.")
+            bb = self.bounding_box
+        else:
+            bb = bounding_box
+        vertices = np.asarray([[bb[0][0], bb[1][0]], [bb[0][0], bb[1][1]],
+                               [bb[0][1], bb[1][1]], [bb[0][1], bb[1][0]]]).T
+        if center:
+            vertices = _toindex(vertices)
+        result = self.__call__(*vertices, **{'with_bounding_box': False})
         return np.asarray(result)

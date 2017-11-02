@@ -1,3 +1,25 @@
+0.8.0 (2017-11-02)
+----------------
+
+- ``LabelMapperRange`` now returns ``LabelMapperRange._no_label`` when the key is
+  not within any range. [#71]
+
+- ``LabelMapperDict`` now returns ``LabelMapperDict._no_label`` when the key does
+  not match. [#72]
+
+- Replace ``domain`` with ``bounding_box``. [#74]
+
+- Added a ``LabelMapper`` model where ``mapper`` is an instance of
+  `~astropy.modeling.core.Model`. [#78]
+
+- Evaluating a WCS with bounding box was moved to ``astropy.modeling``. [#86]
+
+- RegionsSelector now handles the case when a label does not have a corresponding
+  transform and returns RegionsSelector.undefined_transform_value. [#86]
+
+- GWCS now deals with axes types which are neither celestial nor spectral as "unknown"
+  and creates a transform equivalent to the FITS linear transform. [#92]
+
 0.7 (2016-12-23)
 ----------------
 

@@ -15,9 +15,11 @@ from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
 
+from astropy.utils.decorators import deprecated
+
 
 # these ctype values do not include yzLN and yzLT pairs
-sky_pairs = {"equatorial": ["RA--", "DEC-"],
+sky_pairs = {"equatorial": ["RA", "DEC"],
              "ecliptic": ["ELON", "ELAT"],
              "galactic": ["GLON", "GLAT"],
              "helioecliptic": ["HLON", "HLAT"],
@@ -40,10 +42,10 @@ class UnsupportedProjectionError(Exception):
         super(UnsupportedProjectionError, self).__init__(message)
 
 
-class ModelDimensionalityError(Exception):
+class DimensionalityError(Exception):
 
     def __init__(self, message):
-        super(ModelDimensionalityError, self).__init__(message)
+        super(DimensionalityError, self).__init__(message)
 
 
 class RegionError(Exception):
@@ -57,6 +59,12 @@ class CoordinateFrameError(Exception):
     def __init__(self, message):
         super(CoordinateFrameError, self).__init__(message)
 
+
+def _domain_to_bounding_box(domain):
+    bb = tuple([(item['lower'], item['upper']) for item in domain])
+    if len(bb) == 1:
+        bb = bb[0]
+    return bb
 
 def _toindex(value):
     """
@@ -77,10 +85,12 @@ def _toindex(value):
     >>> _toindex(np.array([1.5, 2.49999]))
     array([2, 2])
     """
-    indx = np.asarray(np.floor(value + 0.5), dtype=np.int)
+    indx = np.asarray(np.floor(np.asarray(value) + 0.5), dtype=np.int)
     return indx
 
 
+@deprecated("0.8", message="_domain has been deprecated in 0.8 and will be"
+            "removed in the next version", alternative="bounding_box")
 def _domain_to_bounds(domain):
     def _get_bounds(axis_domain):
         step = axis_domain.get('step', 1)
@@ -95,11 +105,27 @@ def _domain_to_bounds(domain):
 
 
 def _get_slice(axis_domain):
+    """ TODO: Remove when domain is removed"""
     step = axis_domain.get('step', 1)
     x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
         else axis_domain['lower'] + step
     y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
         else axis_domain['upper'] + step
+    return slice(x, y, step)
+
+
+def axis_domain_to_slice(axis_domain, step):
+    """
+    Return a slice from the bounding_box for an axis.
+
+    Parameters
+    ----------
+    axis_domain : tuple
+        The range of acceptable input values for an axis, usually from bounding_box.
+    step : int
+        A step to use in the slice.
+    """
+    x, y = axis_domain
     return slice(x, y, step)
 
 
@@ -115,12 +141,9 @@ def _get_values(units, *args):
     """
     val = []
     values = []
-    print('args', args)
     for arg in args:
-        print('arg', arg)
         if isinstance(arg, coords.SkyCoord):
             try:
-                print('arg1', arg)
                 lon = arg.data.lon
                 lat = arg.data.lat
             except AttributeError:
@@ -146,39 +169,53 @@ def _compute_lon_pole(skycoord, projection):
 
     Parameters
     ----------
-    skycoord : `astropy.coordinates.SkyCoord`
+    skycoord : `astropy.coordinates.SkyCoord`, or
+               sequence of floats or `~astropy.units.Quantity` of length 2
         The fiducial point of the native coordinate system.
+        If tuple, its length is 2
     projection : `astropy.modeling.projections.Projection`
         A Projection instance.
 
     Returns
     -------
-    lon_pole : float
-        Longitude in the units of skycoord.spherical
+    lon_pole : float or `~astropy/units.Quantity`
+        Native longitude of the celestial pole [deg].
 
     TODO: Implement all projections
-        Currently this only supports Zenithal projection.
+        Currently this only supports Zenithal and Cylindrical.
     """
     if isinstance(skycoord, coords.SkyCoord):
         lat = skycoord.spherical.lat
+        unit = u.deg
     else:
-        lat = skycoord[1]
-    if isinstance(projection, projections.Zenithal):
-        if lat < 0:
-            lon_pole = 180
+        lon, lat = skycoord
+        if isinstance(lat, u.Quantity):
+            unit = u.deg
         else:
+            unit = None
+    if isinstance(projection, projections.Zenithal):
+        lon_pole = 180
+    elif isinstance(projection, projections.Cylindrical):
+        if lat >= 0:
             lon_pole = 0
+        else:
+            lon_pole = 180
     else:
         raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
+    if unit is not None:
+        lon_pole = lon_pole * unit
     return lon_pole
 
 
 def get_projcode(wcs_info):
     # CTYPE here is only the imaging CTYPE keywords
-    sky_axes, _ = get_axes(wcs_info)
+    sky_axes, _, _ = get_axes(wcs_info)
+    if not sky_axes:
+        return None
     projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
         raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
+        #projcode = None
     return projcode
 
 
@@ -203,7 +240,7 @@ def read_wcs_from_header(header):
     except KeyError:
         p = re.compile('ctype[\d]*', re.IGNORECASE)
         ctypes = header['CTYPE*']
-        keys = ctypes.keys()
+        keys = list(ctypes.keys())
         for key in keys[::-1]:
             if p.split(key)[-1] != "":
                 keys.remove(key)
@@ -254,7 +291,6 @@ def read_wcs_from_header(header):
     wcs_info['CRVAL'] = crval
     wcs_info['CDELT'] = cdelt
     wcs_info['PC'] = pc
-
     return wcs_info
 
 
@@ -269,7 +305,7 @@ def get_axes(header):
 
     Returns
     -------
-    sky_inmap, spectral_inmap : tuples
+    sky_inmap, spectral_inmap, unknown : lists
         indices in the input representing sky and spectral cordinates.
 
     """
@@ -280,14 +316,31 @@ def get_axes(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
-    ctype = [ax[:4] for ax in wcs_info['CTYPE']]
+    # Split each CTYPE value at "-" and take the first part.
+    # This should represent the coordinate system.
+    ctype = [ax.split('-')[0].upper() for ax in wcs_info['CTYPE']]
     sky_inmap = []
     spec_inmap = []
+    unknown = []
+    skysystems = np.array(list(sky_pairs.values())).flatten()
     for ax in ctype:
-        if ax.upper() in specsystems:
-            spec_inmap.append(ctype.index(ax))
+        ind = ctype.index(ax)
+        if ax in specsystems:
+            spec_inmap.append(ind)
+        elif ax in skysystems:
+            sky_inmap.append(ind)
         else:
-            sky_inmap.append(ctype.index(ax))
+            unknown.append(ind)
+
+    if sky_inmap:
+        _is_skysys_consistent(ctype, sky_inmap)
+
+    return sky_inmap, spec_inmap, unknown
+
+
+def _is_skysys_consistent(ctype, sky_inmap):
+    """ Determine if the sky axes in CTYPE mathch to form a standard celestial system."""
+
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
@@ -300,7 +353,6 @@ def get_axes(header):
                     "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
             sky_inmap = sky_inmap[::-1]
             break
-    return sky_inmap, spec_inmap
 
 
 specsystems = ["WAVE", "FREQ", "ENER", "WAVEN", "AWAV",
@@ -332,9 +384,13 @@ def make_fitswcs_transform(header):
         wcs_info = header
     else:
         raise TypeError("Expected a FITS Header or a dict.")
+    transforms = []
     wcs_linear = fitswcs_linear(wcs_info)
+    transforms.append(wcs_linear)
     wcs_nonlinear = fitswcs_nonlinear(wcs_info)
-    return functools.reduce(core._model_oper('|'), [wcs_linear, wcs_nonlinear])
+    if wcs_nonlinear is not None:
+        transforms.append(wcs_nonlinear)
+    return functools.reduce(core._model_oper('|'), transforms)
 
 
 def fitswcs_linear(header):
@@ -356,10 +412,12 @@ def fitswcs_linear(header):
 
     pc = wcs_info['PC']
     # get the part of the PC matrix corresponding to the imaging axes
-    sky_axes = None
+    sky_axes, spec_axes, unknown = get_axes(wcs_info)
     if pc.shape != (2, 2):
-        sky_axes, _ = get_axes(wcs_info)
-        i, j = sky_axes
+        if sky_axes:
+            i, j = sky_axes
+        elif unknown and len(unknown) == 2:
+            i, j = unknown
         sky_pc = np.zeros((2, 2))
         sky_pc[0, 0] = pc[i, i]
         sky_pc[0, 1] = pc[i, j]
@@ -367,12 +425,15 @@ def fitswcs_linear(header):
         sky_pc[1, 1] = pc[j, j]
         pc = sky_pc.copy()
 
-    if sky_axes is not None:
+    sky_axes.extend(unknown)
+    if sky_axes:
         crpix = []
         cdelt = []
         for i in sky_axes:
             crpix.append(wcs_info['CRPIX'][i])
             cdelt.append(wcs_info['CDELT'][i])
+        #crpix = wcs_info['CRPIX'][sky_axes]
+        #cdelt = wcs_info['CDELT'][sky_axes]
     else:
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
@@ -418,17 +479,24 @@ def fitswcs_nonlinear(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
+    transforms = []
     projcode = get_projcode(wcs_info)
-    projection = create_projection_transform(projcode).rename(projcode)
-
+    if projcode is not None:
+        projection = create_projection_transform(projcode).rename(projcode)
+        transforms.append(projection)
     # Create the sky rotation transform
-    sky_axes, _ = get_axes(wcs_info)
-    phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
-    # TODO: write "def compute_lonpole(projcode, l)"
-    # Set a defaul tvalue for now
-    thetap = 180
-    n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
-    return projection | n2c
+    sky_axes, _, _ = get_axes(wcs_info)
+    if sky_axes:
+        phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
+        # TODO: write "def compute_lonpole(projcode, l)"
+        # Set a defaul tvalue for now
+        thetap = 180
+        n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
+        transforms.append(n2c)
+    if transforms:
+        return functools.reduce(core._model_oper('|'), transforms)
+    else:
+        return None
 
 
 def create_projection_transform(projcode):

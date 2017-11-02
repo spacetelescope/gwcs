@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from astropy import units as u
 from astropy import coordinates as coord
-from astropy.tests.helper import pytest
+import pytest
 
 from .. import coordinate_frames as cf
 
