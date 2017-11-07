@@ -24,6 +24,6 @@ Status
 .. image:: https://travis-ci.org/spacetelescope/gwcs.svg
     :target: https://travis-ci.org/spacetelescope/gwcs
     :alt: GWCS's Travis CI Status
-    
 .. image:: https://coveralls.io/repos/github/spacetelescope/gwcs/badge.svg?branch=master
-:target: https://coveralls.io/github/spacetelescope/gwcs?branch=master
+    :target: https://coveralls.io/github/spacetelescope/gwcs?branch=master
+    :alt: Test Coverage Status
