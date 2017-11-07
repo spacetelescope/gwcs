@@ -4,6 +4,7 @@ Test regions
 """
 from __future__ import absolute_import, division, unicode_literals, print_function
 
+import warnings
 import numpy as np
 from numpy.testing import utils
 from astropy.modeling import models
@@ -143,6 +144,7 @@ def test_overalpping_ranges():
     rmapper = {}
     for key in keys:
         rmapper[tuple(key)] = models.Const1D(4)
+
     with pytest.raises(ValueError):
         lmr = selector.LabelMapperRange(('x', 'y'), rmapper, inputs_mapping=((0,)))
 
@@ -151,6 +153,7 @@ def test_outside_range():
     """
     Return ``_no_label`` value when keys are outside the range.
     """
+    warnings.filterwarnings("ignore", message="^All data is outside the valid range")
     lmr = create_range_mapper()
     assert lmr(1, 1) == 0
     assert lmr(5, 1) == 1.2
