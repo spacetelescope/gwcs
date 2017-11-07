@@ -21,7 +21,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.11
+        - NUMPY_VERSION=stable
         - ASTROPY_VERSION=development
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
@@ -58,11 +58,11 @@ matrix:
         - python: 3.5
           env: MAIN_CMD='pycodestyle gwcs --count' SETUP_CMD=''
 
-    allow_failures:
+    #allow_failures:
         # Do a PEP8 test with pycodestyle
         # (allow to fail unless your code completely compliant)
-        - python: 3.5
-          env: MAIN_CMD='pycodestyle gwcs --count' SETUP_CMD=''
+        #- python: 3.5
+        #  env: MAIN_CMD='pycodestyle gwcs --count' SETUP_CMD=''
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
@@ -75,4 +75,4 @@ after_success:
     # If coveralls.io is set up for this package, uncomment the line
     # below and replace "packagename" with the name of your package.
     # The coveragerc file may be customized as needed for your package.
-    # - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='packagename/tests/coveragerc'; fi
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='packagename/tests/coveragerc'; fi

@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
-
+import warnings
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.modeling import models
@@ -233,7 +233,7 @@ def test_bounding_box_eval():
     # test ``transform`` method
     assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
-    
+
 def test_format_output():
     points = np.arange(5)
     values = np.array([1.5, 3.4, 6.7, 7, 32])
@@ -247,8 +247,12 @@ def test_format_output():
 
 class TestImaging(object):
 
+    #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
+    #                            module="astropy.wcs.wcs")
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+        #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
+        #                        module="astropy.wcs.wcs")
         self.fitsw = astwcs.WCS(hdr)
         a_coeff = hdr['A_*']
         a_order = a_coeff.pop('A_ORDER')
@@ -289,6 +293,7 @@ class TestImaging(object):
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
 
+    @pytest.mark.filterwarnings('ignore')
     def test_distortion(self):
         sipx, sipy = self.fitsw.sip_pix2foc(self.xv, self.yv, 1)
         sipx = np.array(sipx) + 2048
