@@ -96,7 +96,7 @@ class LabelMapperType(TransformType):
             assert(a.mapper.__class__ == b.mapper.__class__)
             assert(all(np.in1d(list(a.mapper), list(b.mapper))))
             for k in a.mapper:
-                assert (a.mapper[k].__class__  == b.mapper[k].__class__)
+                assert (a.mapper[k].__class__ == b.mapper[k].__class__)
                 assert(all(a.mapper[k].parameters == b.mapper[k].parameters))
             assert (a.inputs == b.inputs)
             assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping)
@@ -129,10 +129,10 @@ class RegionsSelectorType(TransformType):
             values.append(model.selector[l])
         selector['labels'] = labels
         selector['transforms'] = values
-        node['inputs']= list(model.inputs)
+        node['inputs'] = list(model.inputs)
         node['outputs'] = list(model.outputs)
         node['selector'] = selector
-        node['label_mapper'] =  model.label_mapper
+        node['label_mapper'] = model.label_mapper
         node['undefined_transform_value'] = model.undefined_transform_value
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
 

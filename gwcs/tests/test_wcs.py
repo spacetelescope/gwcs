@@ -136,7 +136,7 @@ def test_return_coordinates():
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
     numerical_result = poly(y)
     num_plus_output = w(y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, num_plus_output),  numerical_result)
+    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
@@ -233,7 +233,7 @@ def test_bounding_box_eval():
     # test ``transform`` method
     assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
-    
+
 def test_format_output():
     points = np.arange(5)
     values = np.array([1.5, 3.4, 6.7, 7, 32])
@@ -247,8 +247,12 @@ def test_format_output():
 
 class TestImaging(object):
 
+    #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
+    #                            module="astropy.wcs.wcs")
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+        #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
+        #                        module="astropy.wcs.wcs")
         self.fitsw = astwcs.WCS(hdr)
         a_coeff = hdr['A_*']
         a_order = a_coeff.pop('A_ORDER')
@@ -281,14 +285,15 @@ class TestImaging(object):
                     (sky_cs, None)
                     ]
 
-        self.wcs = wcs.WCS(input_frame = det,
-                           output_frame = sky_cs,
-                           forward_transform = pipeline)
+        self.wcs = wcs.WCS(input_frame=det,
+                           output_frame=sky_cs,
+                           forward_transform=pipeline)
         nx, ny = (5, 2)
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
 
+    @pytest.mark.filterwarnings('ignore')
     def test_distortion(self):
         sipx, sipy = self.fitsw.sip_pix2foc(self.xv, self.yv, 1)
         sipx = np.array(sipx) + 2048
@@ -329,7 +334,6 @@ class TestImaging(object):
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, output="numericals_plus")
-        sky2foc = self.wcs.get_transform('sky', 'focal')
         res = self.wcs.transform('sky', 'focal', sky_coord)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 

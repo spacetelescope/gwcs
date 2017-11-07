@@ -226,11 +226,11 @@ class LabelMapperArray(_LabelMapper):
         Examples
         --------
         >>> regions = {1: [[795, 970], [2047, 970], [2047, 999], [795, 999], [795, 970]],
-                       2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
-                       3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
-                       4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
-                      }
-        >>> mapper = selector.LabelMapperArray.from_vertices((2400, 2400), regions)
+        ...            2: [[844, 1067], [2047, 1067], [2047, 1113], [844, 1113], [844, 1067]],
+        ...            3: [[654, 1029], [2047, 1029], [2047, 1078], [654, 1078], [654, 1029]],
+        ...            4: [[772, 990], [2047, 990], [2047, 1042], [772, 1042], [772, 990]]
+        ...           }
+        >>> mapper = LabelMapperArray.from_vertices((2400, 2400), regions)
 
         """
         labels = np.array(list(regions.keys()))
@@ -376,7 +376,7 @@ class LabelMapperRange(_LabelMapper):
         l = np.array(l)
         start = np.roll(l[:, 0], -1)
         end = l[:, 1]
-        if any((end - start)[:-1]  > 0) or any(start[-1] > end):
+        if any((end - start)[:-1] > 0) or any(start[-1] > end):
             return True
         else:
             return False

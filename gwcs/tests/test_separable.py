@@ -76,4 +76,3 @@ def test_coord_matrix():
 @pytest.mark.parametrize(('compound_model', 'result'), compound_models.values())
 def test_separable(compound_model, result):
     utils.assert_allclose(is_separable(compound_model), result)
-

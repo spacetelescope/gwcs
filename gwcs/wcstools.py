@@ -11,7 +11,7 @@ from astropy import coordinates as coord
 from .wcs import WCS
 from .coordinate_frames import *
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
-from .utils import _compute_lon_pole, _get_slice, _toindex, axis_domain_to_slice
+from .utils import _compute_lon_pole, _get_slice
 
 import warnings
 from astropy.utils.decorators import deprecated
@@ -201,16 +201,12 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     --------
     >>> bb = ((-1, 2.9), (6, 7.5))
     >>> grid_from_bounding_box(bb, step=(1, .5))
-        [[[-1. ,  0. ,  1. ,  2. ],
-         [-1. ,  0. ,  1. ,  2. ],
-         [-1. ,  0. ,  1. ,  2. ],
-         [-1. ,  0. ,  1. ,  2. ]],
-
-        [[ 6. ,  6. ,  6. ,  6. ],
-         [ 6.5,  6.5,  6.5,  6.5],
-         [ 7. ,  7. ,  7. ,  7. ],
-         [ 7.5,  7.5,  7.5,  7.5]]])
-
+    array([[[-1. ,  0. ,  1. ,  2. ,  3. ],
+            [-1. ,  0. ,  1. ,  2. ,  3. ],
+            [-1. ,  0. ,  1. ,  2. ,  3. ]],
+           [[ 6. ,  6. ,  6. ,  6. ,  6. ],
+            [ 6.5,  6.5,  6.5,  6.5,  6.5],
+            [ 7. ,  7. ,  7. ,  7. ,  7. ]]])
 
     Returns
     -------
