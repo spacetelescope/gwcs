@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 import six
 from astropy.modeling.core import Model
+from astropy.modeling import utils as mutils
 
 from . import coordinate_frames
 from .utils import CoordinateFrameError
@@ -448,8 +449,7 @@ class WCS(object):
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         try:
-            # Model.bounding_box is in numpy order, need to reverse it first.
-            bb = transform_0.bounding_box#[::-1]
+            bb = transform_0.bounding_box
         except NotImplementedError:
             return None
         if transform_0.n_inputs == 1:
@@ -458,6 +458,7 @@ class WCS(object):
             axes_order = self.input_frame.axes_order
         except AttributeError:
             axes_order = np.arange(transform_0.n_inputs)
+        # Model.bounding_box is in python order, need to reverse it first.
         bb = np.array(bb[::-1])[np.array(axes_order)]
         return tuple(tuple(item) for item in bb)
 
@@ -479,11 +480,19 @@ class WCS(object):
         if value is None:
             transform_0.bounding_box = value
         else:
-            axes_ind = self._get_axes_indices()
             try:
+                # Make sure the dimensions of the new bbox are correct.
+                mutils._BoundingBox.validate(transform_0, value)
+                #transform_0.bounding_box.validate(transform_0, value)
+            except:
+                raise
+            # get the sorted order of axes' indices
+            axes_ind = self._get_axes_indices()
+            if transform_0.n_inputs == 1:
+                transform_0.bounding_box = value
+            else:
+                # The axes in bounding_box in modeling follow python order
                 transform_0.bounding_box = np.array(value)[axes_ind][::-1]
-            except IndexError:
-                raise utils.DimensionalityError("The bounding_box does not match the number of inputs.")
         self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
