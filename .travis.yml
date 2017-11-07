@@ -26,6 +26,7 @@ env:
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
         - PIP_DEPENDENCIES='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
+        - PIP_DEPENDENCIES="pytest-astropy"
         - ASTROPY_USE_SYSTEM_PYTEST=1
 
     matrix:
@@ -41,7 +42,7 @@ matrix:
 
         # Do a coverage test.
         - python: 3.5
-          env: SETUP_CMD='test --coverage'
+          env: SETUP_CMD='test --coverage --open-files --remote-data'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
@@ -58,11 +59,6 @@ matrix:
         - python: 3.5
           env: MAIN_CMD='pycodestyle gwcs --count' SETUP_CMD=''
 
-    #allow_failures:
-        # Do a PEP8 test with pycodestyle
-        # (allow to fail unless your code completely compliant)
-        #- python: 3.5
-        #  env: MAIN_CMD='pycodestyle gwcs --count' SETUP_CMD=''
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
