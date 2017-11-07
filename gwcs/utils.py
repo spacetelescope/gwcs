@@ -17,6 +17,8 @@ from astropy import units as u
 
 from astropy.utils.decorators import deprecated
 
+# Skip doctests until the astropy PR is merged.
+__doctest_skip__ = ['*']
 
 # these ctype values do not include yzLN and yzLT pairs
 sky_pairs = {"equatorial": ["RA", "DEC"],
@@ -619,6 +621,7 @@ def _coord_matrix(model, pos, noutp):
 
     Examples
     --------
+    >>> from astropy.modeling.models import Shift, Rotation2D
     >>> _coord_matrix(Shift(1), 'left', 2)
         array([[ 1.],
         [ 0.]])
@@ -736,13 +739,14 @@ def _separable(transform):
 
     Examples
     --------
-    >>> separable(Shift(1) & Shift(2) | Scale(1) & Scale(2))
+    >>> from astropy.modeling.models import Shift, Scale, Polynomial2D, Mapping
+    >>> _separable(Shift(1) & Shift(2) | Scale(1) & Scale(2))
         array([ True,  True], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Rotation2D(2))
+    >>> _separable(Shift(1) & Shift(2) | Rotation2D(2))
         array([False, False], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]) | Polynomial2D(1) & Polynomial2D(2))
+    >>> _separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]) | Polynomial2D(1) & Polynomial2D(2))
         array([False, False], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]))
+    >>> _separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]))
         array([ True,  True,  True,  True], dtype=bool)
 
     """
