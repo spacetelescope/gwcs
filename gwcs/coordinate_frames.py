@@ -214,7 +214,7 @@ class CelestialFrame(CoordinateFrame):
         if axes_order is None:
             axes_order = tuple(range(naxes))
         if unit is None:
-            unit = tuple([u.degree]  * naxes)
+            unit = tuple([u.degree] * naxes)
         axes_type = ['SPATIAL'] * naxes
         super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
                                              axes_order=axes_order,
@@ -317,7 +317,7 @@ class CompositeFrame(CoordinateFrame):
         return repr(self.frames)
 
     def coordinates(self, *args):
-        coo  = []
+        coo = []
         for frame in self.frames:
             fargs = [args[i] for i in frame.axes_order]
             coo.append(frame.coordinates(*fargs))

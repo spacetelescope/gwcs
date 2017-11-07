@@ -279,14 +279,14 @@ def read_wcs_from_header(header):
         for j in range(1, wcsaxes + 1):
             try:
                 if wcs_info['has_cd']:
-                    pc[i-1, j-1] = header['CD{0}_{1}'.format(i, j)]
+                    pc[i - 1, j - 1] = header['CD{0}_{1}'.format(i, j)]
                 else:
-                    pc[i-1, j-1] = header['PC{0}_{1}'.format(i, j)]
+                    pc[i - 1, j - 1] = header['PC{0}_{1}'.format(i, j)]
             except KeyError:
                 if i == j:
-                    pc[i-1, j-1] = 1.
+                    pc[i - 1, j - 1] = 1.
                 else:
-                    pc[i-1, j-1] = 0.
+                    pc[i - 1, j - 1] = 0.
     wcs_info['CTYPE'] = ctype
     wcs_info['CUNIT'] = cunit
     wcs_info['CRPIX'] = crpix

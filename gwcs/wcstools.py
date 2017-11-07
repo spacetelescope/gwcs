@@ -11,7 +11,7 @@ from astropy import coordinates as coord
 from .wcs import WCS
 from .coordinate_frames import *
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
-from .utils import _compute_lon_pole, _get_slice, _toindex, axis_domain_to_slice
+from .utils import _compute_lon_pole, _get_slice
 
 import warnings
 from astropy.utils.decorators import deprecated

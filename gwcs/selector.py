@@ -376,7 +376,7 @@ class LabelMapperRange(_LabelMapper):
         l = np.array(l)
         start = np.roll(l[:, 0], -1)
         end = l[:, 1]
-        if any((end - start)[:-1]  > 0) or any(start[-1] > end):
+        if any((end - start)[:-1] > 0) or any(start[-1] > end):
             return True
         else:
             return False

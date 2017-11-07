@@ -44,10 +44,10 @@ def polygon1(shape=(9, 9)):
     ar[1, 2] = 1
     ar[2][2:4] = 1
     ar[3][1:4] = 1
-    ar[4][:4] =1
-    ar[5][1:4] =1
-    ar[6][2:7] =1
-    ar[7][3:6] =1
+    ar[4][:4] = 1
+    ar[5][1:4] = 1
+    ar[6][2:7] = 1
+    ar[7][3:6] = 1
     #ar[8][3:4] =1 ##need to include this in the future if padding top and left
     return ar
 
@@ -84,19 +84,19 @@ def test_create_mask_two_polygons():
 
 def create_range_mapper():
     m = []
-    for i in np.arange(1, 10) *.1:
+    for i in np.arange(1, 10) * .1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
         m.append(models.Polynomial2D(2, c0_0=c0_0, c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
 
-    keys = np.array([[  4.88,   5.64],
-                     [  5.75,   6.5],
-                     [  6.67,   7.47 ],
-                     [  7.7,   8.63],
-                     [  8.83,  9.96],
-                     [  10.19  ,  11.49],
-                     [ 11.77,  13.28],
-                     [ 13.33,  15.34],
-                     [ 15.56,  18.09]])
+    keys = np.array([[4.88, 5.64],
+                     [5.75, 6.5],
+                     [6.67, 7.47],
+                     [7.7, 8.63],
+                     [8.83, 9.96],
+                     [10.19, 11.49],
+                     [11.77, 13.28],
+                     [13.33, 15.34],
+                     [15.56, 18.09]])
 
     rmapper = {}
     for k, v in zip(keys, m):
@@ -109,12 +109,12 @@ def create_range_mapper():
 
 def create_scalar_mapper():
     m = []
-    for i in np.arange(5) *.1:
+    for i in np.arange(5) * .1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
         m.append(models.Polynomial2D(2, c0_0=c0_0,
                                      c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
-    keys = [ -1.95805483,  -1.67833272,  -1.39861060,
-             -1.11888848,  -8.39166358]
+    keys = [-1.95805483, -1.67833272, -1.39861060,
+            -1.11888848, -8.39166358]
 
     dmapper = {}
     for k, v in zip(keys, m):
@@ -138,15 +138,15 @@ def test_overalpping_ranges():
     """
     Initializing a ``LabelMapperRange`` with overlapping ranges should raise an error.
     """
-    keys = np.array([[  4.88,   5.75],
-                     [  5.64,   6.5],
-                     [  6.67,   7.47 ]])
+    keys = np.array([[4.88, 5.75],
+                     [5.64, 6.5],
+                     [6.67, 7.47]])
     rmapper = {}
     for key in keys:
         rmapper[tuple(key)] = models.Const1D(4)
 
     with pytest.raises(ValueError):
-        lmr = selector.LabelMapperRange(('x', 'y'), rmapper, inputs_mapping=((0,)))
+        selector.LabelMapperRange(('x', 'y'), rmapper, inputs_mapping=((0,)))
 
 
 def test_outside_range():
@@ -157,4 +157,3 @@ def test_outside_range():
     lmr = create_range_mapper()
     assert lmr(1, 1) == 0
     assert lmr(5, 1) == 1.2
-

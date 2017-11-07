@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
-import warnings
+
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.modeling import models
@@ -136,7 +136,7 @@ def test_return_coordinates():
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
     numerical_result = poly(y)
     num_plus_output = w(y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, num_plus_output),  numerical_result)
+    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
@@ -285,9 +285,9 @@ class TestImaging(object):
                     (sky_cs, None)
                     ]
 
-        self.wcs = wcs.WCS(input_frame = det,
-                           output_frame = sky_cs,
-                           forward_transform = pipeline)
+        self.wcs = wcs.WCS(input_frame=det,
+                           output_frame=sky_cs,
+                           forward_transform=pipeline)
         nx, ny = (5, 2)
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)
@@ -334,7 +334,6 @@ class TestImaging(object):
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, output="numericals_plus")
-        sky2foc = self.wcs.get_transform('sky', 'focal')
         res = self.wcs.transform('sky', 'focal', sky_coord)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 

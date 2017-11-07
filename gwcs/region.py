@@ -127,7 +127,7 @@ class Polygon(Region):
         """
         Create a list of Edge objects from vertices
         """
-        return [Edge(name='E{}'.format(i-1), start=self._vertices[i-1], stop=self._vertices[i])
+        return [Edge(name='E{}'.format(i - 1), start=self._vertices[i - 1], stop=self._vertices[i])
                 for i in range(1, len(self._vertices))
                 ]
 
@@ -169,7 +169,7 @@ class Polygon(Region):
             x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
             xnew = np.asarray(np.sort(x), dtype=np.int)
             for i, j in zip(xnew[::2], xnew[1::2]):
-                data[y][i:j+1] = self._rid
+                data[y][i:j + 1] = self._rid
             y = y + 1
         return data
 
