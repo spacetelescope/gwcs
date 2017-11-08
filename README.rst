@@ -1,7 +1,7 @@
 GWCS
 ====
 
-Generalized World Coordinate System (GWCS) is an `Astropy`_ affiliated package to provide tools for managing the world coordinate system of astromnomical data.
+Generalized World Coordinate System (GWCS) is an `Astropy`_ affiliated package providing tools for managing the World Coordinate System of astromnomical data.
    
 
 Installation
@@ -33,6 +33,6 @@ If you use GWCS, please cite the package via its Zenodo record.
 License
 -------
 
-GWCS is licensed via a 3-clause BSD style license.
+GWCS is licensed under a 3-clause BSD style license.
 
 .. _Astropy: http://www.astropy.org/
