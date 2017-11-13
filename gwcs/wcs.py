@@ -228,7 +228,8 @@ class WCS(object):
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is np.nan).
         """
-        if self.forward_transform is None:
+        transform = self.forward_transform
+        if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         output = kwargs.pop("output", "numericals")
@@ -237,7 +238,6 @@ class WCS(object):
         if 'fill_value' not in kwargs:
             kwargs['fill_value'] = np.nan
 
-        transform = self.forward_transform
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
             # bounding boxes. Get the forward transform and assign the ounding_box to it
