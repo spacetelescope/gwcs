@@ -25,7 +25,8 @@ env:
         - ASTROPY_VERSION=development
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
-        - PIP_DEPENDENCIES='pytest-astropy git+https://github.com/spacetelescope/asdf.git#egg=asdf'
+        - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
+        - PIP_DEPENDENCIES="pytest-astropy $ASDF_GIT"
         - ASTROPY_USE_SYSTEM_PYTEST=1
 
     matrix:
