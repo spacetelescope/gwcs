@@ -4,10 +4,16 @@
 New Features
 ^^^^^^^^^^^^
 
+- Removed deprecated ``grid_from_domain`` function and ``WCS.domain`` property. [#119]
+
+- Support for Python 2.x, 3.0, 3.1, 3.2, 3.3 and 3.4 was removed. [#119]
+
+
 Bug Fixes
 ^^^^^^^^^
 
 - Fixed a bug in ``bounding_box`` definition when the WCS has only one axis. [#117]
+
 
 0.8.0 (2017-11-02)
 ------------------

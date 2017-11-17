@@ -4,15 +4,23 @@
 import glob
 import os
 import sys
+import builtins
 
 import ah_bootstrap
 from setuptools import setup
 
-#A dirty hack to get around some early import/configurations ambiguities
-if sys.version_info[0] >= 3:
-    import builtins
-else:
-    import __builtin__ as builtins
+if sys.version_info < (3, 4):
+    error = """
+    GWCS 0.9+ does not support Python 2.x, 3.0, 3.1, 3.2, 3.3 or 3.4.
+    Beginning with GWCS 0.9, Python 3.5 and above is required.
+
+    This may be due to an out of date pip
+
+    Make sure you have pip >= 9.0.1.
+
+    """
+    sys.exit(error)
+
 builtins._ASTROPY_SETUP_ = True
 
 from astropy_helpers.setup_helpers import (
@@ -46,7 +54,7 @@ LONG_DESCRIPTION = package.__doc__
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.9dev'
+VERSION = '0.9.dev'
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
@@ -93,7 +101,8 @@ setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
-      requires=['astropy'],
+      requires=['astropy', 'asdf'],
+      python_requires='>=3.5',
       install_requires=['astropy', 'asdf'],
       provides=[PACKAGENAME],
       author=AUTHOR,

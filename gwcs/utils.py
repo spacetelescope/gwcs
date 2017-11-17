@@ -17,7 +17,7 @@ from astropy import units as u
 
 from astropy.utils.decorators import deprecated
 
-# Skip doctests until the astropy PR is merged.
+# Skip doctests until the astropy "separable" PR is merged.
 __doctest_skip__ = ['*']
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -62,12 +62,6 @@ class CoordinateFrameError(Exception):
         super(CoordinateFrameError, self).__init__(message)
 
 
-def _domain_to_bounding_box(domain):
-    bb = tuple([(item['lower'], item['upper']) for item in domain])
-    if len(bb) == 1:
-        bb = bb[0]
-    return bb
-
 def _toindex(value):
     """
     Convert value to an int or an int array.
@@ -89,46 +83,6 @@ def _toindex(value):
     """
     indx = np.asarray(np.floor(np.asarray(value) + 0.5), dtype=np.int)
     return indx
-
-
-@deprecated("0.8", message="_domain has been deprecated in 0.8 and will be"
-            "removed in the next version", alternative="bounding_box")
-def _domain_to_bounds(domain):
-    def _get_bounds(axis_domain):
-        step = axis_domain.get('step', 1)
-        x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
-            else axis_domain['lower'] + step
-        y = axis_domain['upper'] - 1 if not axis_domain.get('includes_upper', False) \
-            else axis_domain['upper']
-        return (x, y)
-
-    bounds = [_get_bounds(d) for d in domain]
-    return bounds
-
-
-def _get_slice(axis_domain):
-    """ TODO: Remove when domain is removed"""
-    step = axis_domain.get('step', 1)
-    x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
-        else axis_domain['lower'] + step
-    y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
-        else axis_domain['upper'] + step
-    return slice(x, y, step)
-
-
-def axis_domain_to_slice(axis_domain, step):
-    """
-    Return a slice from the bounding_box for an axis.
-
-    Parameters
-    ----------
-    axis_domain : tuple
-        The range of acceptable input values for an axis, usually from bounding_box.
-    step : int
-        A step to use in the slice.
-    """
-    x, y = axis_domain
-    return slice(x, y, step)
 
 
 def _get_values(units, *args):

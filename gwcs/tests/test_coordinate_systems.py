@@ -11,6 +11,7 @@ from .. import coordinate_frames as cf
 
 
 coord_frames = coord.builtin_frames.__all__[:]
+
 # Need to write a better test, using a dict {coord_frame: input_parameters}
 # For now remove OffsetFrame, issue #55
 try:
@@ -74,10 +75,19 @@ def test_coordinates_composite(inputs):
 
 
 @pytest.mark.parametrize(('frame'), coord_frames)
-def test_attributes(frame):
+def test_celestial_attributes_length(frame):
     """
     Test getting default values for  CoordinateFrame attributes from reference_frame.
     """
     cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
+    if cel.naxes != 2:
+        print(frame, cel.naxes)
     assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
            len(cel.axes_order) == cel.naxes)
+
+
+def test_axes_type():
+    assert(icrs.axes_type == ('SPATIAL', 'SPATIAL'))
+    assert(spec1.axes_type == ('SPECTRAL',))
+    assert(detector.axes_type == ('SPATIAL', 'SPATIAL'))
+    assert(focal.axes_type == ('SPATIAL', 'SPATIAL'))

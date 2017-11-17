@@ -5,7 +5,6 @@ import functools
 import warnings
 
 import numpy as np
-import six
 from astropy.modeling.core import Model
 from astropy.modeling import utils as mutils
 
@@ -18,7 +17,7 @@ from . import utils
 __all__ = ['WCS']
 
 
-class WCS(object):
+class WCS:
 
     """
     Basic WCS class.
@@ -205,7 +204,7 @@ class WCS(object):
         frame_obj : `~gwcs.coordinate_frames.CoordinateFrame`
             Frame instance or None (if `frame` is str)
         """
-        if isinstance(frame, six.string_types):
+        if isinstance(frame, str):
             name = frame
             frame_obj = None
         else:
@@ -502,46 +501,6 @@ class WCS(object):
             # the case of a frame being a string
             axes_ind = np.arange(self.forward_transform.n_inputs)
         return axes_ind
-
-    @property
-    def domain(self):
-        """
-        Return the range of acceptable values for each input axis.
-        """
-        warnings.warn('"domain" was deprecated in v0.8 and will be'
-                      'removed in the next version. Use "bounding_box" instead.')
-        frames = self.available_frames
-        transform_meta = self.get_transform(frames[0], frames[1]).meta
-        if 'domain' in transform_meta:
-            return transform_meta['domain']
-        else:
-            return None
-
-    @domain.setter
-    def domain(self, value):
-        """
-        Set the range of acceptable values for each input axis.
-        """
-        warnings.warn('"domain" was deprecated in v.0.8 and will be removed'
-                      ' in the next version. Use "bounding_box" instead.')
-        self._validate_domain(value)
-        frames = self.available_frames
-        transform = self.get_transform(frames[0], frames[1])
-        transform.meta['domain'] = value
-        self.set_transform(frames[0], frames[1], transform)
-
-    def _validate_domain(self, domain):
-        n_inputs = self.forward_transform.n_inputs
-        if len(domain) != n_inputs:
-            raise ValueError("The number of domains should match the number "
-                             "of inputs {0}".format(n_inputs))
-        if not isinstance(domain, (list, tuple)) or \
-           not all([isinstance(d, dict) for d in domain]):
-            raise TypeError('"domain" should be a list of dictionaries for each axis in the input_frame'
-                            "[{'lower': low_x, "
-                            "'upper': high_x, "
-                            "'includes_lower': bool, "
-                            "'includes_upper': bool}]")
 
     def __str__(self):
         from astropy.table import Table
