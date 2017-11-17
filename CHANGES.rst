@@ -7,7 +7,7 @@ New Features
 Bug Fixes
 ^^^^^^^^^
 
-- Fixed a bug in ``bounding_box`` definition when the WCs has only one axis. [#117]
+- Fixed a bug in ``bounding_box`` definition when the WCS has only one axis. [#117]
 
 0.8.0 (2017-11-02)
 ------------------
