@@ -15,7 +15,7 @@ from .utils import _compute_lon_pole, _get_slice
 
 import warnings
 from astropy.utils.decorators import deprecated
-from .utils import _domain_to_bounding_box
+from .utils import _domain_to_bounding_box, _toindex
 
 
 __all__ = ['wcs_from_fiducial', 'grid_from_domain', 'grid_from_bounding_box']
@@ -202,11 +202,15 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     >>> bb = ((-1, 2.9), (6, 7.5))
     >>> grid_from_bounding_box(bb, step=(1, .5))
     array([[[-1. ,  0. ,  1. ,  2. ,  3. ],
-            [-1. ,  0. ,  1. ,  2. ,  3. ],
-            [-1. ,  0. ,  1. ,  2. ,  3. ]],
-           [[ 6. ,  6. ,  6. ,  6. ,  6. ],
-            [ 6.5,  6.5,  6.5,  6.5,  6.5],
-            [ 7. ,  7. ,  7. ,  7. ,  7. ]]])
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ]],
+       [[ 6. ,  6. ,  6. ,  6. ,  6. ],
+        [ 6.5,  6.5,  6.5,  6.5,  6.5],
+        [ 7. ,  7. ,  7. ,  7. ,  7. ],
+        [ 7.5,  7.5,  7.5,  7.5,  7.5],
+        [ 8. ,  8. ,  8. ,  8. ,  8. ]]])
 
     Returns
     -------
