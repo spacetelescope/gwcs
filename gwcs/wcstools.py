@@ -15,7 +15,7 @@ from .utils import _compute_lon_pole, _get_slice
 
 import warnings
 from astropy.utils.decorators import deprecated
-from .utils import _domain_to_bounding_box
+from .utils import _domain_to_bounding_box, _toindex
 
 
 __all__ = ['wcs_from_fiducial', 'grid_from_domain', 'grid_from_bounding_box']
@@ -189,7 +189,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     Parameters
     ----------
     bounding_box : tuple
-        `ref: prop: bounding_box`
+        The bounding_box of a WCS object, `~gwcs.wcs.WCS.bounding_box`.
     step : scalar or tuple
         Step size for grid in each dimension.  Scalar applies to all dimensions.
     center : bool
@@ -202,25 +202,36 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     >>> bb = ((-1, 2.9), (6, 7.5))
     >>> grid_from_bounding_box(bb, step=(1, .5))
     array([[[-1. ,  0. ,  1. ,  2. ,  3. ],
-            [-1. ,  0. ,  1. ,  2. ,  3. ],
-            [-1. ,  0. ,  1. ,  2. ,  3. ]],
-           [[ 6. ,  6. ,  6. ,  6. ,  6. ],
-            [ 6.5,  6.5,  6.5,  6.5,  6.5],
-            [ 7. ,  7. ,  7. ,  7. ,  7. ]]])
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ],
+        [-1. ,  0. ,  1. ,  2. ,  3. ]],
+       [[ 6. ,  6. ,  6. ,  6. ,  6. ],
+        [ 6.5,  6.5,  6.5,  6.5,  6.5],
+        [ 7. ,  7. ,  7. ,  7. ,  7. ],
+        [ 7.5,  7.5,  7.5,  7.5,  7.5],
+        [ 8. ,  8. ,  8. ,  8. ,  8. ]]])
 
     Returns
     -------
     x, y [, z]: ndarray
         Grid of points.
     """
+    # 1D case
+    if np.isscalar(bounding_box[0]):
+        nd = 1
+        bounding_box = (bounding_box, )
+    else:
+        nd = len(bounding_box)
     if center:
-        bb = tuple([(np.floor(b[0] + 0.5), np.ceil(b[1] - .5)) for b in bounding_box])
+        bb = tuple([tuple(bb) for bb in _toindex(bounding_box)])
     else:
         bb = bounding_box
 
+
     step = np.atleast_1d(step)
-    if len(bb) > 1 and len(step) == 1:
-        step = np.repeat(step, len(bb))
+    if nd > 1 and len(step) == 1:
+        step = np.repeat(step, nd)
 
     if len(step) != len(bb):
         raise ValueError('`step` must be a scalar, or tuple with length '

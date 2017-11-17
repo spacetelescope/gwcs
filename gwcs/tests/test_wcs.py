@@ -193,13 +193,20 @@ def test_domain():
     pipeline = [('detector', trans3), ('sky', None)]
     w = wcs.WCS(pipeline)
     bb = ((-1, 10), (6, 15))
-    with pytest.raises(DimensionalityError):
+    with pytest.raises(ValueError):
         w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
     assert w.bounding_box == w.forward_transform.bounding_box[::-1]
+
+    pipeline = [("detector", models.Shift(2)), ("sky", None)]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = (1, 5)
+    assert w.bounding_box == w.forward_transform.bounding_box
+    with pytest.raises(ValueError):
+        w.bounding_box = ((1, 5), (2, 6))
 
 
 def test_grid_from_bounding_box():
