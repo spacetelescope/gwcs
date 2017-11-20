@@ -114,9 +114,16 @@ def test_backward_transform():
     Test backward transform raises an error when an analytical
     inverse is not available.
     """
-    w = wcs.WCS(forward_transform=models.Polynomial1D(1) & models.Scale(2), output_frame='sky')
+    # Test that an error is raised when one of the models has not inverse.
+    poly = models.Polynomial1D(1, c0=4)
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame='sky')
     with pytest.raises(NotImplementedError):
         w.backward_transform
+
+    # test backward transform
+    poly.inverse = models.Shift(-4)
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame='sky')
+    assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
 def test_return_coordinates():
@@ -188,7 +195,7 @@ def test_from_fiducial_frame2d():
     assert_allclose(w(1, 1), (35.5, 13.3))
 
 
-def test_domain():
+def test_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
     pipeline = [('detector', trans3), ('sky', None)]
     w = wcs.WCS(pipeline)
@@ -250,6 +257,12 @@ def test_format_output():
     assert_allclose(w(1), 3.4)
     assert_allclose(w([1, 2]), [3.4, 6.7])
     assert np.isscalar(w(1))
+
+
+def test_available_frames():
+    w = wcs.WCS(pipe)
+    assert w.available_frames == ['detector', 'focal', 'icrs']
+
 
 
 class TestImaging(object):

@@ -2,13 +2,10 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 import numpy as np
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
-import six
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
@@ -22,7 +19,7 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
                                "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
 
 
-class CoordinateFrame(object):
+class CoordinateFrame:
 
     """
     Base class for CoordinateFrames.
@@ -52,7 +49,7 @@ class CoordinateFrame(object):
                  name=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
-        if isinstance(axes_type, six.string_types):
+        if isinstance(axes_type, str):
             self._axes_type = (axes_type,)
         else:
             self._axes_type = tuple(axes_type)
@@ -67,7 +64,7 @@ class CoordinateFrame(object):
             else:
                 self._unit = tuple([u.Unit(au) for au in unit])
         if axes_names is not None:
-            if isinstance(axes_names, six.string_types):
+            if isinstance(axes_names, str):
                 axes_names = (axes_names,)
             else:
                 axes_names = tuple(axes_names)

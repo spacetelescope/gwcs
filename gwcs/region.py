@@ -1,13 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, unicode_literals, print_function
 import abc
 from collections import OrderedDict
 import numpy as np
-import six
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Region(object):
+class Region(metaclass=abc.ABCMeta):
 
     """
     Base class for regions.
@@ -200,7 +197,7 @@ class Polygon(Region):
             px[1] >= self._bbox[1] and px[1] <= self._bbox[1] + self._bbox[3]
 
 
-class Edge(object):
+class Edge:
 
     """
     Edge representation.

@@ -65,7 +65,6 @@ label mappers.
 
 
 """
-from __future__ import absolute_import, division, unicode_literals, print_function
 import warnings
 import numpy as np
 from astropy.modeling.core import Model
