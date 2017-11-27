@@ -138,6 +138,12 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     """
     Create a grid of input points from the WCS bounding_box.
 
+    Note: If ``bbox`` is a tuple describing the range of an axis in ``bounding_box``,
+          ``x.5`` is considered part of the next pixel in ``bbox[0]``
+          and part of the previous pixel in ``bbox[1]``. In this way if
+          ``bbox`` describes the edges of an image the indexing includes
+          only pixels within the image.
+
     Parameters
     ----------
     bounding_box : tuple
@@ -152,23 +158,30 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     Examples
     --------
     >>> bb = ((-1, 2.9), (6, 7.5))
-    >>> grid_from_bounding_box(bb, step=(1, .5))
+    >>> grid_from_bounding_box(bb, step=(1, .5), center=False)
     array([[[-1. ,  0. ,  1. ,  2. ,  3. ],
-        [-1. ,  0. ,  1. ,  2. ,  3. ],
-        [-1. ,  0. ,  1. ,  2. ,  3. ],
-        [-1. ,  0. ,  1. ,  2. ,  3. ],
-        [-1. ,  0. ,  1. ,  2. ,  3. ]],
-       [[ 6. ,  6. ,  6. ,  6. ,  6. ],
-        [ 6.5,  6.5,  6.5,  6.5,  6.5],
-        [ 7. ,  7. ,  7. ,  7. ,  7. ],
-        [ 7.5,  7.5,  7.5,  7.5,  7.5],
-        [ 8. ,  8. ,  8. ,  8. ,  8. ]]])
+            [-1. ,  0. ,  1. ,  2. ,  3. ],
+            [-1. ,  0. ,  1. ,  2. ,  3. ],
+            [-1. ,  0. ,  1. ,  2. ,  3. ]],
+           [[ 6. ,  6. ,  6. ,  6. ,  6. ],
+            [ 6.5,  6.5,  6.5,  6.5,  6.5],
+            [ 7. ,  7. ,  7. ,  7. ,  7. ],
+            [ 7.5,  7.5,  7.5,  7.5,  7.5]]])
+
+    >>> bb = ((-1, 2.9), (6, 7.5))
+    >>> grid_from_bounding_box(bb)
+    array([[[-1.,  0.,  1.,  2.,  3.],
+            [-1.,  0.,  1.,  2.,  3.]],
+           [[ 6.,  6.,  6.,  6.,  6.],
+            [ 7.,  7.,  7.,  7.,  7.]]])
 
     Returns
     -------
     x, y [, z]: ndarray
         Grid of points.
     """
+    def _bbox_to_pixel(bbox):
+        return (np.floor(bbox[0] + 0.5), np.ceil(bbox[1] - 0.5))
     # 1D case
     if np.isscalar(bounding_box[0]):
         nd = 1
@@ -176,7 +189,8 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     else:
         nd = len(bounding_box)
     if center:
-        bb = tuple([tuple(bb) for bb in _toindex(bounding_box)])
+        bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box])
+
     else:
         bb = bounding_box
 
