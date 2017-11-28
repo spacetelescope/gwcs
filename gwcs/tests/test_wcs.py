@@ -228,7 +228,7 @@ def test_grid_from_bounding_box():
 def test_grid_from_bounding_box_1d():
     # Test 1D case
     x = grid_from_bounding_box((-.5, 4.5))
-    assert_allclose(x, [ 0.,  1.,  2.,  3.,  4.])
+    assert_allclose(x, [0., 1., 2., 3., 4.])
 
 
 def test_grid_from_bounding_box_step():
