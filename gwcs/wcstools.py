@@ -185,12 +185,12 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     # 1D case
     if np.isscalar(bounding_box[0]):
         nd = 1
+        print('nd', nd)
         bounding_box = (bounding_box, )
     else:
         nd = len(bounding_box)
     if center:
         bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box])
-
     else:
         bb = bounding_box
 
@@ -206,4 +206,8 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     slices = []
     for d, s in zip(bb, step):
         slices.append(slice(d[0], d[1] + s, s))
-    return np.mgrid[slices[::-1]][::-1]
+    grid = np.mgrid[slices[::-1]][::-1]
+    if nd == 1:
+        return grid[0]
+    else:
+        return grid

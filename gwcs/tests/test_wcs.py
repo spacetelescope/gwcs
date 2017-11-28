@@ -225,6 +225,23 @@ def test_grid_from_bounding_box():
     assert_allclose(y[-1], 15)
 
 
+def test_grid_from_bounding_box_1d():
+    # Test 1D case
+    x = grid_from_bounding_box((-.5, 4.5))
+    assert_allclose(x, [ 0.,  1.,  2.,  3.,  4.])
+
+
+def test_grid_from_bounding_box_step():
+    bb = ((-0.5, 5.5), (-0.5, 4.5))
+    x, y = grid_from_bounding_box(bb)
+    x1, y1 = grid_from_bounding_box(bb, step=(1, 1))
+    assert_allclose(x, x1)
+    assert_allclose(y, y1)
+
+    with pytest.raises(ValueError):
+        grid_from_bounding_box(bb, step=(1, 2, 1))
+
+
 def test_grid_from_bounding_box_2():
     bb = ((-0.5, 5.5), (-0.5, 4.5))
     x, y = grid_from_bounding_box(bb)
@@ -232,7 +249,7 @@ def test_grid_from_bounding_box_2():
     assert_allclose(y, np.repeat(np.array([np.arange(5)]), 6, 0).T)
 
     bb = ((-0.5, 5.5), (-0.5, 4.6))
-    x, y = grid_from_bounding_box(bb)
+    x, y = grid_from_bounding_box(bb, center=True)
     assert_allclose(x, np.repeat([np.arange(6)], 6, axis=0))
     assert_allclose(y, np.repeat(np.array([np.arange(6)]), 6, 0).T)
 
