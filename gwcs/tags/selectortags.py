@@ -12,7 +12,9 @@ from astropy.utils.misc import isiterable
 
 from asdf import yamlutil
 from asdf.tags.core.ndarray import NDArrayType
-from astropy.io.misc.asdf.tags.transform.basic import TransformType
+#from astropy.io.misc.asdf.tags.transform.basic import TransformType
+from ..gwcs_types import GWCSTransformType
+
 
 from ..selector import *
 
@@ -20,8 +22,8 @@ from ..selector import *
 __all__ = ['LabelMapperType', 'RegionsSelectorType']
 
 
-class LabelMapperType(TransformType):
-    name = "transform/label_mapper"
+class LabelMapperType(GWCSTransformType):
+    name = "label_mapper"
     types = [LabelMapperArray, LabelMapperDict, LabelMapperRange, LabelMapper]
 
     @classmethod
@@ -104,8 +106,8 @@ class LabelMapperType(TransformType):
             assert_array_equal(a.mapper, b.mapper)
 
 
-class RegionsSelectorType(TransformType):
-    name = "transform/regions_selector"
+class RegionsSelectorType(GWCSTransformType):
+    name = "regions_selector"
     types = [RegionsSelector]
 
     @classmethod
