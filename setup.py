@@ -97,10 +97,13 @@ for root, dirs, files in os.walk(PACKAGENAME):
                     os.path.relpath(root, PACKAGENAME), filename))
 package_info['package_data'][PACKAGENAME].extend(c_files)
 
+entry_points = dict(asdf_extensions='gwcs = gwcs.extension:GWCSExtension')
+
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
+      entry_points=entry_points,
       requires=['astropy', 'asdf'],
       python_requires='>=3.5',
       install_requires=['astropy', 'asdf'],
