@@ -15,13 +15,13 @@ _REQUIRES = ['astropy']
 
 
 __all__ = ["WCSType", "CelestialFrameType", "CompositeFrame", "FrameType",
-           "Spectralframe", "StepType"]
+           "SpectralFrameType", "StepType"]
 
 
 class WCSType(GWCSType):
     name = "wcs"
     requires = _REQUIRES
-    types = ['WCS']
+    types = [WCS]
     version = '1.2.0'
 
     @classmethod
@@ -73,7 +73,7 @@ class StepType(dict, GWCSType):
 class FrameType(GWCSType):
     name = "frame"
     requires = ['astropy-1.3.3']
-    types = ['CoordinateFrame']
+    types = [CoordinateFrame]
     version = '1.2.0'
 
     import astropy
@@ -291,9 +291,9 @@ class CelestialFrameType(FrameType):
         assert old.reference_position == new.reference_position
 
 
-class SpectralFrame(FrameType):
+class SpectralFrameType(FrameType):
     name = "spectral_frame"
-    types = ['gwcs.SpectralFrame']
+    types = [SpectralFrame]
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -304,7 +304,7 @@ class SpectralFrame(FrameType):
         if 'reference_position' in node:
             node['reference_position'] = node['reference_position'].upper()
 
-        return gwcs.SpectralFrame(**node)
+        return SpectralFrame(**node)
 
     @classmethod
     def to_tree(cls, frame, ctx):
