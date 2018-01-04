@@ -3,8 +3,6 @@
 Utility function for WCS
 
 """
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 import re
 import functools
 import numpy as np

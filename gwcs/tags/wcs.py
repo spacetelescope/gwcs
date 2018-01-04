@@ -14,7 +14,7 @@ from ..wcs import WCS
 _REQUIRES = ['astropy']
 
 
-__all__ = ["WCSType", "CelestialFrameType", "CompositeFrame", "FrameType",
+__all__ = ["WCSType", "CelestialFrameType", "CompositeFrameType", "FrameType",
            "SpectralFrameType", "StepType"]
 
 
@@ -22,7 +22,7 @@ class WCSType(GWCSType):
     name = "wcs"
     requires = _REQUIRES
     types = [WCS]
-    version = '1.2.0'
+    version = '1.0.0'
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -33,25 +33,25 @@ class WCSType(GWCSType):
         return WCS(steps, name=name)
 
     @classmethod
-    def to_tree(cls, gwcs, ctx):
+    def to_tree(cls, gwcsobj, ctx):
         def get_frame(frame_name):
-            frame = getattr(gwcs, frame_name)
+            frame = getattr(gwcsobj, frame_name)
             if frame is None:
                 return frame_name
             return frame
 
-        frames = gwcs.available_frames
+        frames = gwcsobj.available_frames
         steps = []
         for i in range(len(frames) - 1):
             frame_name = frames[i]
             frame = get_frame(frame_name)
-            transform = gwcs.get_transform(frames[i], frames[i + 1])
+            transform = gwcsobj.get_transform(frames[i], frames[i + 1])
             steps.append(StepType({'frame': frame, 'transform': transform}))
         frame_name = frames[-1]
         frame = get_frame(frame_name)
         steps.append(StepType({'frame': frame}))
 
-        return {'name': gwcs.name,
+        return {'name': gwcsobj.name,
                 'steps': yamlutil.custom_tree_to_tagged_tree(steps, ctx)}
 
     @classmethod
@@ -67,19 +67,13 @@ class WCSType(GWCSType):
 class StepType(dict, GWCSType):
     name = "step"
     requires = _REQUIRES
-    version = '1.2.0'
+    version = '1.0.0'
 
 
 class FrameType(GWCSType):
     name = "frame"
-    requires = ['astropy-1.3.3']
     types = [CoordinateFrame]
-    version = '1.2.0'
-
-    import astropy
-    _astropy_version = astropy.__version__
-    # This indicates that Cartesian Differential is not available
-    _old_astropy = astropy.__version__ <= '1.3.3'
+    version = '1.0.0'
 
     @classmethod
     def _get_reference_frame_mapping(cls):
@@ -132,29 +126,13 @@ class FrameType(GWCSType):
         for name in frame_cls.get_frame_attr_names().keys():
             val = reference_frame.get(name)
             if val is not None:
-                # These are deprecated fields that must be handled as a special
-                # case for older versions of the schema
-                if name in ['galcen_ra', 'galcen_dec']:
-                    continue
-                # There was no schema for quantities in v1.0.0
-                if name in ['galcen_distance', 'roll', 'z_sun'] and version == '1.0.0':
-                    val = Quantity(val[0], unit=val[1])
-                # These fields are known to be CartesianRepresentations
                 if name in ['obsgeoloc', 'obsgeovel']:
-                    if version == '1.0.0':
-                        unit = val[1]
-                        x = Quantity(val[0][0], unit=unit)
-                        y = Quantity(val[0][1], unit=unit)
-                        z = Quantity(val[0][2], unit=unit)
-                    else:
-                        x = QuantityType.from_tree(val[0], ctx)
-                        y = QuantityType.from_tree(val[1], ctx)
-                        z = QuantityType.from_tree(val[2], ctx)
+                    x = QuantityType.from_tree(val[0], ctx)
+                    y = QuantityType.from_tree(val[1], ctx)
+                    z = QuantityType.from_tree(val[2], ctx)
                     val = CartesianRepresentation(x, y, z)
-                elif not cls._old_astropy and name == 'galcen_v_sun':
+                elif name == 'galcen_v_sun':
                     from astropy.coordinates import CartesianDifferential
-                    # This field only exists since v1.1.0, and it only uses
-                    # CartesianDifferential after v1.3.3
                     d_x = QuantityType.from_tree(val[0], ctx)
                     d_y = QuantityType.from_tree(val[1], ctx)
                     d_z = QuantityType.from_tree(val[2], ctx)
@@ -164,13 +142,7 @@ class FrameType(GWCSType):
                 frame_kwargs[name] = val
         has_ra_and_dec = reference_frame.get('galcen_dec') and \
             reference_frame.get('galcen_ra')
-        if version == '1.0.0' and has_ra_and_dec:
-            # Convert deprecated ra and dec fields into galcen_coord
-            galcen_dec = reference_frame['galcen_dec']
-            galcen_ra = reference_frame['galcen_ra']
-            dec = Quantity(galcen_dec[0], unit=galcen_dec[1])
-            ra = Quantity(galcen_ra[0], unit=galcen_ra[1])
-            frame_kwargs['galcen_coord'] = ICRS(dec=dec, ra=ra)
+
         return frame_cls(**frame_kwargs)
 
     @classmethod
@@ -196,10 +168,9 @@ class FrameType(GWCSType):
     @classmethod
     def _to_tree(cls, frame, ctx):
         import numpy as np
+        from astropy.coordinates import CartesianDifferential
         from astropy.coordinates import CartesianRepresentation
         from astropy.io.misc.asdf.tags.unit.quantity import QuantityType
-        if not cls._old_astropy:
-            from astropy.coordinates import CartesianDifferential
 
         node = {}
 
@@ -223,7 +194,7 @@ class FrameType(GWCSType):
                 if isinstance(frameval, CartesianRepresentation):
                     value = [frameval.x, frameval.y, frameval.z]
                     frameval = value
-                elif not cls._old_astropy and isinstance(frameval, CartesianDifferential):
+                elif isinstance(frameval, CartesianDifferential):
                     value = [frameval.d_x, frameval.d_y, frameval.d_z]
                     frameval = value
                 yamlval = yamlutil.custom_tree_to_tagged_tree(frameval, ctx)
@@ -234,7 +205,6 @@ class FrameType(GWCSType):
         if frame.unit is not None:
             node['unit'] = yamlutil.custom_tree_to_tagged_tree(
                 list(frame.unit), ctx)
-
         return node
 
     @classmethod
@@ -257,11 +227,8 @@ class FrameType(GWCSType):
 
     @classmethod
     def from_tree(cls, node, ctx):
-        import gwcs
-
         node = cls._from_tree(node, ctx)
-
-        return gwcs.Frame2D(**node)
+        return Frame2D(**node)
 
     @classmethod
     def to_tree(cls, frame, ctx):
@@ -269,16 +236,13 @@ class FrameType(GWCSType):
 
 class CelestialFrameType(FrameType):
     name = "celestial_frame"
-    types = ['gwcs.CelestialFrame']
-    supported_versions = (1, 2, 0)
+    types = [CelestialFrame]
+    supported_versions = "1.0.0"
 
     @classmethod
     def from_tree(cls, node, ctx):
-        import gwcs
-
         node = cls._from_tree(node, ctx)
-
-        return gwcs.CelestialFrame(**node)
+        return CelestialFrame(**node)
 
     @classmethod
     def to_tree(cls, frame, ctx):
@@ -297,8 +261,6 @@ class SpectralFrameType(FrameType):
 
     @classmethod
     def from_tree(cls, node, ctx):
-        import gwcs
-
         node = cls._from_tree(node, ctx)
 
         if 'reference_position' in node:
@@ -316,22 +278,20 @@ class SpectralFrameType(FrameType):
         return node
 
 
-class CompositeFrame(FrameType):
+class CompositeFrameType(FrameType):
     name = "composite_frame"
-    types = ['gwcs.CompositeFrame']
-    version = '1.2.0'
+    types = [CompositeFrame]
+    version = '1.0.0'
 
     @classmethod
     def from_tree(cls, node, ctx):
-        import gwcs
-
         if len(node) != 2:
             raise ValueError("CompositeFrame has extra properties")
 
         name = node['name']
         frames = node['frames']
 
-        return gwcs.CompositeFrame(frames, name)
+        return CompositeFrame(frames, name)
 
     @classmethod
     def to_tree(cls, frame, ctx):

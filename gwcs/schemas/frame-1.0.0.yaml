@@ -1,7 +1,7 @@
 %YAML 1.1
 ---
 $schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
-id: "http://stsci.edu/schemas/gwcs/frame-1.2.0"
+id: "http://stsci.edu/schemas/gwcs/frame-1.0.0"
 
 title: |
   The base class of all coordinate frames.
@@ -18,13 +18,13 @@ examples:
     - |
         A celestial frame in the FK4 reference frame.
     - |
-        !wcs/celestial_frame-1.2.0
+        !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
           axes_names: [ra, dec]
           name: CelestialFrame
           reference_frame:
+            equinox: !time/time-1.1.0 {scale: tai, value: B1950.000}
+            obstime: !time/time-1.1.0 1999-01-01T00:00:00.123
             type: FK4
-            equinox: !time/time-1.1.0 '2010-01-01 00:00:00.000'
-            obstime: !time/time-1.1.0 '2015-01-01 00:00:00.000'
           unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
 
 type: object
@@ -96,7 +96,7 @@ properties:
 
             `FK5`, `FK4`, `FK4_noeterms`
 
-        $ref: ../time/time-1.1.0
+        $ref: ../asdf/time/time-1.1.0
 
       obstime:
         description: |
@@ -107,13 +107,13 @@ properties:
             `FK4`, `FK4_noeterms`, `GCRS`, `CIRS`, `ITRS`
 
           If not provided, it defaults to the same value as `equinox`.
-        $ref: ../time/time-1.1.0
+        $ref: ../asdf/time/time-1.1.0
 
       galcen_distance:
         description: |
           The distance from the Sun to the Galactic center.  Required when
           `reference_frame` is `galactocentric`.
-        $ref: ../unit/quantity-1.1.0
+        $ref: ../asdf/unit/quantity-1.1.0
 
       galcen_coord:
         description: |
@@ -127,7 +127,7 @@ properties:
           velocity components.
         type: array
         items:
-          $ref: ../unit/quantity-1.1.0
+          $ref: ../asdf/unit/quantity-1.1.0
         minItems: 3
         maxItems: 3
         default:
@@ -140,14 +140,14 @@ properties:
           The distance from the sun to the galactic midplane.  Required
           when `reference_frame` is `galactocentric`.
           `reference_frame` is `galactocentric`.
-        $ref: ../unit/quantity-1.1.0
+        $ref: ../asdf/unit/quantity-1.1.0
 
       roll:
         description: |
           The angle to rotate about the final x-axis, relative to the
           orientation for `galactic`.  Required when `reference_frame` is
           `galactocentric`.
-        $ref: ../unit/quantity-1.1.0
+        $ref: ../asdf/unit/quantity-1.1.0
 
       obsgeoloc:
         description: |
@@ -157,7 +157,7 @@ properties:
           when `reference_frame` is `GCRS` or `precessed_geocentric`.
         type: array
         items:
-          $ref: ../unit/quantity-1.1.0
+          $ref: ../asdf/unit/quantity-1.1.0
         minItems: 3
         maxItems: 3
         default:
@@ -173,7 +173,7 @@ properties:
           when `reference_frame` is `GCRS` or `precessed_geocentric`.
         type: array
         items:
-          $ref: ../unit/quantity-1.1.0
+          $ref: ../asdf/unit/quantity-1.1.0
         minItems: 3
         maxItems: 3
         default:
@@ -188,7 +188,7 @@ properties:
       Units for each axis.
     type: array
     items:
-      $ref: ../unit/unit-1.0.0
+      $ref: ../asdf/unit/unit-1.0.0
 
 required: [name]
 additionalProperties: true

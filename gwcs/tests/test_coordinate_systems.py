@@ -1,8 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 from functools import partial
-
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy import units as u
@@ -83,8 +80,6 @@ def test_celestial_attributes_length(frame):
     Test getting default values for  CoordinateFrame attributes from reference_frame.
     """
     cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
-    if cel.naxes != 2:
-        print(frame, cel.naxes)
     assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
            len(cel.axes_order) == cel.naxes)
 
