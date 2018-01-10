@@ -1,10 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import absolute_import, division, unicode_literals, print_function
 
+from functools import partial
+
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy import units as u
 from astropy import coordinates as coord
+from astropy.time import Time
 import pytest
 
 from .. import coordinate_frames as cf
@@ -91,3 +94,32 @@ def test_axes_type():
     assert(spec1.axes_type == ('SPECTRAL',))
     assert(detector.axes_type == ('SPATIAL', 'SPATIAL'))
     assert(focal.axes_type == ('SPATIAL', 'SPATIAL'))
+
+
+def test_temporal_relative():
+    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
+    assert t.coordinates(10) == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
+
+    a = t.coordinates((10, 20))
+    assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
+
+    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"))
+    assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
+
+    a = t.coordinates((10, 20) * u.s)
+    assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
+
+
+def test_temporal_absolute():
+    t = cf.TemporalFrame()
+    assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00")
+
+    a = t.coordinates(("2018-01-01T00:00:00", "2018-01-01T00:10:00"))
+    assert a[0] == Time("2018-01-01T00:00:00")
+    assert a[1] == Time("2018-01-01T00:10:00")
+
+    t = cf.TemporalFrame(reference_frame=partial(Time, scale='tai'))
+    assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00", scale='tai')
