@@ -3,6 +3,8 @@
 Defines coordinate frames and ties them to data axes.
 """
 import numpy as np
+
+import astropy.time
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
@@ -78,10 +80,7 @@ class CoordinateFrame:
         else:
             self._name = name
 
-        if reference_position is not None:
-            self._reference_position = reference_position
-        else:
-            self._reference_position = None
+        self._reference_position = reference_position
 
         super(CoordinateFrame, self).__init__()
 
@@ -114,7 +113,7 @@ class CoordinateFrame:
 
     @property
     def naxes(self):
-        """ The number of axes intheis frame."""
+        """ The number of axes in this frame."""
         return self._naxes
 
     @property
@@ -134,14 +133,13 @@ class CoordinateFrame:
 
     @property
     def reference_frame(self):
+        """ Reference frame, used to convert to world coordinate objects. """
         return self._reference_frame
 
     @property
     def reference_position(self):
-        try:
-            return self._reference_position
-        except AttributeError:
-            return None
+        """ Reference Position. """
+        return getattr(self, "_reference_position", None)
 
     def input_axes(self, start_frame=None):
         """
@@ -229,11 +227,8 @@ class CelestialFrame(CoordinateFrame):
         args : float
             inputs to wcs.input_frame
         """
-        # Reorder axes if necesary.
-        try:
-            return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
-        except:
-            raise
+        # Reorder axes if necessary.
+        return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
 
 
 class SpectralFrame(CoordinateFrame):
@@ -266,6 +261,54 @@ class SpectralFrame(CoordinateFrame):
             return args * self.unit[0]
         else:
             return args[0] * self.unit[0]
+
+
+class TemporalFrame(CoordinateFrame):
+    """
+    A coordinate frame for time axes.
+
+    Parameters
+    ----------
+    axes_order : tuple or int
+        A dimension in the input data that corresponds to this axis.
+    reference_frame : `object`
+        The object to instantiate to represent the time coordinate. Defaults to
+        `astropy.time.Time`. Use partial functions to customise the
+        `~astropy.time.Time` instance.
+    reference_time : `astropy.time.Time` or `None`
+        Reference time, the time of the 0th coordinate. If none the values of
+        the axis are assumed to be valid times.
+    unit : str or units.Unit instance
+        Spectral unit.
+    axes_names : str
+        Spectral axis name.
+    name : str
+        Name for this frame.
+    """
+
+    def __init__(self, axes_order=(0,), reference_time=None,
+                 reference_frame=astropy.time.Time, unit=None,
+                 axes_names=None, name=None):
+
+        super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
+                         axes_names=axes_names, reference_frame=reference_frame,
+                         unit=unit, name=name,
+                         reference_position=reference_time)
+
+    def coordinates(self, *args):
+        if np.isscalar(args):
+            dt = args
+        else:
+            dt = args[0]
+
+        if self.reference_position:
+            if not isinstance(dt, u.Quantity):
+                dt = dt * self.unit[0]
+
+            return self.reference_position + dt
+
+        else:
+            return self.reference_frame(dt)
 
 
 class CompositeFrame(CoordinateFrame):

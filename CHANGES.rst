@@ -4,6 +4,8 @@
 New Features
 ^^^^^^^^^^^^
 
+- Added a ``TemporalFrame`` to represent relative or absolute time axes. [#125]
+
 - Removed deprecated ``grid_from_domain`` function and ``WCS.domain`` property. [#119]
 
 - Support for Python 2.x, 3.0, 3.1, 3.2, 3.3 and 3.4 was removed. [#119]
