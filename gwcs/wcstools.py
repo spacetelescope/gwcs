@@ -185,7 +185,6 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     # 1D case
     if np.isscalar(bounding_box[0]):
         nd = 1
-        print('nd', nd)
         bounding_box = (bounding_box, )
     else:
         nd = len(bounding_box)

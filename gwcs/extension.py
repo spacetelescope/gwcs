@@ -13,13 +13,13 @@ from .gwcs_types import _gwcs_types
 
 
 SCHEMA_PATH = os.path.abspath(
-os.path.join(os.path.dirname(__file__), 'schemas'))
+    os.path.join(os.path.dirname(__file__), 'schemas'))
 
 
 class GWCSExtension(BuiltinExtension):
     @property
     def types(self):
-        return _gwcs_types #[LabelMapperType, RegionsSelectorType]
+        return _gwcs_types
 
     @property
     def tag_mapping(self):
@@ -28,6 +28,6 @@ class GWCSExtension(BuiltinExtension):
 
     @property
     def url_mapping(self):
-        return [('http://stsci.edu/schemas/gwcs/',
-                 util.filepath_to_url(SCHEMA_PATH) +
-                 '/{url_suffix}.yaml')]
+        return [('http://stsci.edu/schemas/gwcs',
+                 util.filepath_to_url(os.path.join(SCHEMA_PATH, "stsci.edu")) +
+                 '/gwcs{url_suffix}.yaml')]

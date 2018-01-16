@@ -21,34 +21,34 @@ examples:
 
     - |
         !<tag:stsci.edu:gwcs/label_mapper-1.0.0>
-        mapper: !core/ndarray-1.0.0
-          data:
-          - [1, 0, 2]
-          - [1, 0, 2]
-          - [1, 0, 2]
-          datatype: int64
-          shape: [3, 3]
-          no_label: 0
+          mapper: !core/ndarray-1.0.0
+            data:
+            - [1, 0, 2]
+            - [1, 0, 2]
+            - [1, 0, 2]
+            datatype: int64
+            shape: [3, 3]
+            no_label: 0
 
   -
     - Map numbers dictionary to transforms which return labels.
 
     - |
         !<tag:stsci.edu:gwcs/label_mapper-1.0.0>
-        atol: 1.0e-08
-        inputs: [x, y]
-        inputs_mapping: !transform/remap_axes-1.1.0
-            mapping: [0]
-            n_inputs: 2
-        mapper: !!omap
-          - !!omap
-            labels: [-1.67833272, -1.9580548, -1.118888]
-          - !!omap
-            models:
-            - !transform/shift-1.1.0 {offset: 6.0}
-            - !transform/shift-1.1.0 {offset: 2.0}
-            - !transform/shift-1.1.0 {offset: 4.0}
-        no_label: 0
+          atol: 1.0e-08
+          inputs: [x, y]
+          inputs_mapping: !transform/remap_axes-1.1.0
+              mapping: [0]
+              n_inputs: 2
+          mapper: !!omap
+            - !!omap
+              labels: [-1.67833272, -1.9580548, -1.118888]
+            - !!omap
+              models:
+              - !transform/shift-1.1.0 {offset: 6.0}
+              - !transform/shift-1.1.0 {offset: 2.0}
+              - !transform/shift-1.1.0 {offset: 4.0}
+          no_label: 0
 
   -
     - Map a number within a range of numbers to transforms which return labels.
