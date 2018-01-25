@@ -1,7 +1,7 @@
 %YAML 1.1
 ---
 $schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
-id: "http://stsci.edu/schemas/asdf/wcs/frame-1.2.0"
+id: "http://stsci.edu/schemas/asdf/wcs/frame-1.1.0"
 title: |
   The base class of all coordinate frames.
 
@@ -9,21 +9,16 @@ description: |
   These objects are designed to be nested in arbitrary ways to build up
   transformation pipelines out of a number of low-level pieces.
 
-  Most of these coordinate frames are defined in [IERS
-  conventions](http://www.iers.org/IERS/EN/Publications/TechnicalNotes/tn36.html).
-
 examples:
   -
     - |
-        A celestial frame in the FK4 reference frame.
+        A celestial frame in the ICRS reference frame.
     - |
-        !wcs/celestial_frame-1.2.0
-          axes_names: [ra, dec]
+        !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
+          axes_names: [lon, lat]
           name: CelestialFrame
-          reference_frame:
-            type: FK4
-            equinox: !time/time-1.1.0 '2010-01-01 00:00:00.000'
-            obstime: !time/time-1.1.0 '2015-01-01 00:00:00.000'
+          reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+            frame_attributes: {}
           unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
 
 type: object
