@@ -17,7 +17,6 @@ _REQUIRES = ['astropy']
 __all__ = ["WCSType", "CelestialFrameType", "CompositeFrameType", "FrameType",
            "SpectralFrameType", "StepType"]
 
-
 class WCSType(GWCSType):
     name = "wcs"
     requires = _REQUIRES
@@ -70,7 +69,7 @@ class StepType(dict, GWCSType):
     version = '1.0.0'
 
 
-class FrameType(GWCSType):
+class FrameType10(GWCSType):
     name = "frame"
     types = [CoordinateFrame]
     version = '1.0.0'
@@ -234,10 +233,92 @@ class FrameType(GWCSType):
     def to_tree(cls, frame, ctx):
         return cls._to_tree(frame, ctx)
 
+
+class FrameType(GWCSType):
+    name = "frame"
+    requires = _REQUIRES
+    types = [CoordinateFrame]
+    version = '1.1.0'
+
+    @classmethod
+    def _from_tree(cls, node, ctx):
+        kwargs = {'name': node['name']}
+
+        if 'axes_names' in node:
+            kwargs['axes_names'] = node['axes_names']
+
+        if 'reference_frame' in node:
+            kwargs['reference_frame'] = yamlutil.tagged_tree_to_custom_tree(node['reference_frame'], ctx)
+
+        if 'axes_order' in node:
+            kwargs['axes_order'] = tuple(node['axes_order'])
+
+        if 'unit' in node:
+            kwargs['unit'] = tuple(
+                yamlutil.tagged_tree_to_custom_tree(node['unit'], ctx))
+
+        return kwargs
+
+    @classmethod
+    def _to_tree(cls, frame, ctx):
+
+        node = {}
+
+        node['name'] = frame.name
+
+        if frame.axes_order != (0, 1):
+            node['axes_order'] = list(frame.axes_order)
+
+        if frame.axes_names is not None:
+            node['axes_names'] = list(frame.axes_names)
+
+        if frame.reference_frame is not None:
+            node['reference_frame'] = yamlutil.custom_tree_to_tagged_tree(frame.reference_frame, ctx)
+
+        if frame.unit is not None:
+            node['unit'] = yamlutil.custom_tree_to_tagged_tree(
+                list(frame.unit), ctx)
+
+        return node
+
+    @classmethod
+    def _assert_equal(cls, old, new):
+        from ...tests import helpers
+
+        assert old.name == new.name
+        assert old.axes_order == new.axes_order
+        assert old.axes_names == new.axes_names
+        assert type(old.reference_frame) is type(new.reference_frame)
+        assert old.unit == new.unit
+
+        if old.reference_frame is not None:
+            for name in old.reference_frame.get_frame_attr_names().keys():
+                helpers.assert_tree_match(
+                    getattr(old.reference_frame, name),
+                    getattr(new.reference_frame, name))
+
+    @classmethod
+    def assert_equal(cls, old, new):
+        cls._assert_equal(old, new)
+
+    @classmethod
+    def from_tree(cls, node, ctx):
+        import gwcs
+
+        node = cls._from_tree(node, ctx)
+
+        return gwcs.Frame2D(**node)
+
+    @classmethod
+    def to_tree(cls, frame, ctx):
+        return cls._to_tree(frame, ctx)
+
+
 class CelestialFrameType(FrameType):
     name = "celestial_frame"
     types = [CelestialFrame]
     supported_versions = "1.0.0"
+    version = "1.0.0"
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -258,6 +339,7 @@ class CelestialFrameType(FrameType):
 class SpectralFrameType(FrameType):
     name = "spectral_frame"
     types = [SpectralFrame]
+    version = "1.0.0"
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -305,3 +387,51 @@ class CompositeFrameType(FrameType):
         assert old.name == new.name
         for old_frame, new_frame in zip(old.frames, new.frames):
             helpers.assert_tree_match(old_frame, new_frame)
+
+
+# class TemporalFrame(GWCSType):
+#     name = "temporal_frame"
+#     requires = _REQUIRES
+#     types = [TemporalFrame]
+#     version = '1.0.0'
+
+#     @classmethod
+#     def to_tree(cls, frame, ctx):
+#         import astropy.time
+
+#         node = {}
+
+#         node['name'] = frame.name
+
+#         if frame.axes_order != (0, 1):
+#             node['axes_order'] = list(frame.axes_order)
+
+#         if frame.axes_names is not None:
+#             node['axes_names'] = list(frame.axes_names)
+
+#         if frame.reference_frame is not None:
+#             if frame.reference_frame is not astropy.time.Time:
+#                 raise ValueError("Can not save reference_frame unless it's Time")
+
+#         if frame.reference_position is not None:
+#             node['reference_time'] = yamlutil.custom_tree_to_tagged_tree(
+#                 frame.reference_position, ctx)
+
+#         if frame.unit is not None:
+#             node['unit'] = yamlutil.custom_tree_to_tagged_tree(
+#                 list(frame.unit), ctx)
+
+#         return node
+
+#     @classmethod
+#     def from_tree(cls, node, ctx):
+
+#         name = node['name']
+#         axes_order = node.get('axes_order', None)
+#         axes_names = node.get('axes_names', None)
+#         reference_frame = node.get('reference_frame', astropy.time.Time)
+#         reference_time = node.get('reference_time', None)
+#         unit = node.get('unit', None)
+
+#         return TemporalFrame(axes_order, reference_time,
+#                              reference_frame, unit, axes_names, name)

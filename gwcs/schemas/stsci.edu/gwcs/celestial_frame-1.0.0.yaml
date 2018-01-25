@@ -22,4 +22,6 @@ allOf:
         minItems: 2
         maxItems: 3
 
-  - $ref: frame-1.0.0
+  - anyOf:
+    - $ref: frame-1.0.0
+    - $ref: frame-1.1.0
