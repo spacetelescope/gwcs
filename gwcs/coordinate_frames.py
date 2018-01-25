@@ -11,7 +11,7 @@ from astropy import coordinates as coord
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame']
+           'CoordinateFrame', 'TemporalFrame']
 
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
