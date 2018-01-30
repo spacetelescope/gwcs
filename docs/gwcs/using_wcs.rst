@@ -58,12 +58,12 @@ the result of the WCS transform as an `astropy.coordinates.SkyCoord` object and 
 them to other standard coordinate frames supported by `astropy.coordinates`.
 
   >>> skycoord = wcsobj(1, 2, output="numericals_plus")
-  >>> print(skycoord)
-      <SkyCoord (ICRS): (ra, dec) in deg
-          ( 6.62759055, -68.75445668)>
-  >>> print(skycoord.transform_to("galactic"))
-      <SkyCoord (Galactic): (l, b) in deg
-          ( 306.31586901, -48.20968112)>
+  >>> print(skycoord) # doctest: +SKIP
+  <SkyCoord (ICRS): (ra, dec) in deg
+      (6.62759055, -68.75445668)>
+  >>> print(skycoord.transform_to("galactic")) # doctest: +SKIP
+  <SkyCoord (Galactic): (l, b) in deg
+      (306.31586901, -48.20968112)>
 
 Some methods allow managing the transforms in a more detailed manner.
 
