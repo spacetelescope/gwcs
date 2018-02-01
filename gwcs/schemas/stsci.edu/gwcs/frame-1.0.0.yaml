@@ -2,7 +2,6 @@
 ---
 $schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
 id: "http://stsci.edu/schemas/gwcs/frame-1.0.0"
-
 title: |
   The base class of all coordinate frames.
 
@@ -10,21 +9,16 @@ description: |
   These objects are designed to be nested in arbitrary ways to build up
   transformation pipelines out of a number of low-level pieces.
 
-  Most of these coordinate frames are defined in [IERS
-  conventions](http://www.iers.org/IERS/EN/Publications/TechnicalNotes/tn36.html).
-
 examples:
   -
     - |
-        A celestial frame in the FK4 reference frame.
+        A celestial frame in the ICRS reference frame.
     - |
         !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
-          axes_names: [ra, dec]
+          axes_names: [lon, lat]
           name: CelestialFrame
-          reference_frame:
-            equinox: !time/time-1.1.0 {scale: tai, value: B1950.000}
-            obstime: !time/time-1.1.0 1999-01-01T00:00:00.123
-            type: FK4
+          reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+            frame_attributes: {}
           unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
 
 type: object
@@ -53,142 +47,14 @@ properties:
   reference_frame:
     description: |
       The reference frame.
-    type: object
-    properties:
-      type:
-        description: |
-          The reference frame type.  Some reference frame types
-          require additional properties, listed next to each reference
-          frame type below.
-
-          The reference frames types are:
-
-          - `ICRS`
-
-          - `FK5`: `equinox`.
-
-          - `FK4`: `equinox` and optionally `obstime`.
-
-          - `FK4_noeterms`: `equinox` and optionally `obstime`.
-
-          - `galactic`
-
-          - `galactocentric`: `galcen_distance`, `galcen_ra`,
-            `galcen_dec`, `z_sun` and `roll`.
-
-          - `GCRS`: `obstime`, `obsgeoloc`, and `obsgeovel`.
-
-          - `CIRS`: `obstime`.
-
-          - `ITRS`: `obstime`.
-
-          - `precessed_geocentric`: `obstime`, `obsgeoloc`, and
-            `obsgeovel`.
-
-        enum: [ICRS, FK5, FK4, FK4_noeterms, galactic, galactocentric,
-               GCRS, CIRS, ITRS, precessed_geocentric]
-        default: ICRS
-
-      equinox:
-        description: |
-          The equinox of the reference frame.  Required when
-          `reference_frame` one of:
-
-            `FK5`, `FK4`, `FK4_noeterms`
-
-        $ref: ../asdf/time/time-1.1.0
-
-      obstime:
-        description: |
-          The observation time of the reference frame, used to determine
-          the location of the Earth.  Required when `reference_frame` is
-          one of:
-
-            `FK4`, `FK4_noeterms`, `GCRS`, `CIRS`, `ITRS`
-
-          If not provided, it defaults to the same value as `equinox`.
-        $ref: ../asdf/time/time-1.1.0
-
-      galcen_distance:
-        description: |
-          The distance from the Sun to the Galactic center.  Required when
-          `reference_frame` is `galactocentric`.
-        $ref: ../asdf/unit/quantity-1.1.0
-
-      galcen_coord:
-        description: |
-          The ICRS coordinates of the Galactic center. Required when
-          `reference_frame` is `galactocentric`.
-        $ref: "tag:astropy.org:astropy/coordinates/frames/icrs-1.0.0"
-
-      galcen_v_sun:
-        description: |
-          The velocity of the sun in the galactocentric frame as Cartesian
-          velocity components.
-        type: array
-        items:
-          $ref: ../asdf/unit/quantity-1.1.0
-        minItems: 3
-        maxItems: 3
-        default:
-          - { value: [0], unit: k/s }
-          - { value: [0], unit: k/s }
-          - { value: [0], unit: k/s }
-
-      z_sun:
-        description: |
-          The distance from the sun to the galactic midplane.  Required
-          when `reference_frame` is `galactocentric`.
-          `reference_frame` is `galactocentric`.
-        $ref: ../asdf/unit/quantity-1.1.0
-
-      roll:
-        description: |
-          The angle to rotate about the final x-axis, relative to the
-          orientation for `galactic`.  Required when `reference_frame` is
-          `galactocentric`.
-        $ref: ../asdf/unit/quantity-1.1.0
-
-      obsgeoloc:
-        description: |
-          3-vector giving the position of the observer relative to the
-          center-of-mass of the Earth, oriented the same as
-          BCRS/ICRS. Defaults to `[0, 0, 0]`, meaning "true" GCRS.  Used
-          when `reference_frame` is `GCRS` or `precessed_geocentric`.
-        type: array
-        items:
-          $ref: ../asdf/unit/quantity-1.1.0
-        minItems: 3
-        maxItems: 3
-        default:
-          - { value: [0], unit: m }
-          - { value: [0], unit: m }
-          - { value: [0], unit: m }
-
-      obsgeovel:
-        description: |
-          3-vector giving the velocity of the observer relative to the
-          center-of-mass of the Earth, oriented the same as
-          BCRS/ICRS. Defaults to `[0, 0, 0]`, meaning "true" GCRS.  Used
-          when `reference_frame` is `GCRS` or `precessed_geocentric`.
-        type: array
-        items:
-          $ref: ../asdf/unit/quantity-1.1.0
-        minItems: 3
-        maxItems: 3
-        default:
-          - { value: [0], unit: m/s }
-          - { value: [0], unit: m/s }
-          - { value: [0], unit: m/s }
-
-    required: [type]
+    $ref: "tag:astropy.org:astropy/coordinates/frames/baseframe-1.0.0"
 
   unit:
     description: |
       Units for each axis.
     type: array
     items:
-      $ref: ../asdf/unit/unit-1.0.0
+      $ref: "tag:stsci.edu:asdf/unit/unit-1.0.0"
 
 required: [name]
 additionalProperties: true
