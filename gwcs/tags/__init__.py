@@ -3,3 +3,4 @@
 
 from .wcs import *
 from .selectortags import *
+from .lookuptable import *

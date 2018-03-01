@@ -1,0 +1,34 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/lookuptable-1.0.0"
+tag: "tag:stsci.edu:gwcs/lookuptable-1.0.0"
+title: >
+  A one dimensional Lookup Table.
+description: |
+  LookupTable supports a bi-directional mapping between pixel number and a value.
+
+examples:
+  -
+    - A Quantity lookup table
+
+    - |
+        !<tag:stsci.edu:gwcs/lookuptable-1.0.0>
+          lookup_table: !unit/quantity-1.1.0
+            unit: !unit/unit-1.0.0 s
+            value: !core/ndarray-1.0.0
+              source: 2
+              datatype: float64
+              byteorder: little
+              shape: [77]
+
+type: object
+properties:
+  lookup_table:
+    description: >
+      Table values.
+    anyOf:
+      - type: array
+      - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+      - $ref: "tag:stsci.edu:asdf/unit/quantity-1.1.0"
+required: [lookup_table]
