@@ -290,7 +290,7 @@ class WCS:
         except (NotImplementedError, KeyError):
             result = self._invert(*qargs, **kwargs)
 
-        if output == 'numericals_plus':
+        if output == 'numericals_plus' and self.input_frame:
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
             else:
