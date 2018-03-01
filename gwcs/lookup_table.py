@@ -1,7 +1,7 @@
 import numpy as np
 
 import astropy.units as u
-from astropy.modeling.core import Model
+from astropy.modeling.core import Model, _prepare_inputs_single_model
 
 __all__ = ['LookupTable']
 
@@ -98,7 +98,7 @@ class _ReverseLookupTable(LookupTable):
             return super().prepare_inputs(*inputs, model_set_axis=None,
                                           equivalencies=None, **kwargs)
         else:
-            return inputs, ((1,),)
+            return _prepare_inputs_single_model(self, [], inputs, **kwargs)
 
     def evaluate(self, point):
         if issubclass(self.lookup_table.dtype.type, np.number):
