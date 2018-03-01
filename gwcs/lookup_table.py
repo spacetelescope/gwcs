@@ -80,10 +80,7 @@ class _ReverseLookupTable(LookupTable):
 
     @property
     def return_units(self):
-        if hasattr(self.lookup_table, 'unit'):
-            return {'y': u.pixel}
-        else:
-            return None
+        return None
 
     def prepare_inputs(self, *inputs, model_set_axis=None, equivalencies=None,
                        **kwargs):
@@ -114,4 +111,10 @@ class _ReverseLookupTable(LookupTable):
 
         if not inds.size:
             raise ValueError("Value not found in lookup table")
+
+        # There is some strange interaction between inverse and return units,
+        # where this needs to be done here and not with return units.
+        if hasattr(self.lookup_table, 'unit'):
+            inds = u.Quantity(inds, u.pix)
+
         return inds

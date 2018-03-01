@@ -39,10 +39,7 @@ def test_evaluate(lut):
 def test_lut_inverse(lutm):
     inv = lutm.inverse
     assert isinstance(inv, _ReverseLookupTable)
-    if isinstance(lutm.lookup_table, u.Quantity):
-        assert inv.return_units == {'y': u.pix}
-    else:
-        assert inv.return_units is None
+    assert inv.return_units is None
 
 
 @pytest.mark.parametrize('lut', ([1, 2, 3], [1, 2, 3] * u.m, ['a', 'b', 'c']))
