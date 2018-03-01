@@ -277,7 +277,7 @@ class WCS:
             Output value for inputs outside the bounding_box (default is np.nan).
         """
 
-        args = self.output_frame.coordinate_to_quantity(*args)
+        qargs = self.output_frame.coordinate_to_quantity(*args)
 
         output = kwargs.pop('output', None)
         if 'with_bounding_box' not in kwargs:
@@ -286,9 +286,9 @@ class WCS:
             kwargs['fill_value'] = np.nan
 
         try:
-            result = self.backward_transform(*args, **kwargs)
+            result = self.backward_transform(*qargs, **kwargs)
         except (NotImplementedError, KeyError):
-            result = self._invert(*args, **kwargs)
+            result = self._invert(*qargs, **kwargs)
 
         if output == 'numericals_plus':
             if self.input_frame.naxes == 1:

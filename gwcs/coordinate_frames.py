@@ -401,7 +401,11 @@ class CompositeFrame(CoordinateFrame):
     def coordinate_to_quantity(self, *coords):
         qs = []
         for _frame, arg in zip(self.frames, coords):
-            qs.append(_frame.coordinate_to_quantity(arg))
+            ret = _frame.coordinate_to_quantity(arg)
+            if isinstance(ret, tuple):
+                qs += list(ret)
+            else:
+                qs.append(ret)
         return qs
 
 
