@@ -248,6 +248,9 @@ class CelestialFrame(CoordinateFrame):
 
             return lon, lat
 
+        elif isinstance(coords[0], u.Quantity):
+            return (coords[0], )
+
         elif all(isinstance(a, u.Quantity) for a in coords[0]):
             return tuple(coords[0])
         else:
