@@ -235,9 +235,8 @@ class CelestialFrame(CoordinateFrame):
         # Reorder axes if necessary.
         return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
 
-    def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], coord.SkyCoord):
-            arg = coords[0]
+    def coordinate_to_quantity(self, arg):
+        if isinstance(arg, coord.SkyCoord):
             arg = arg.transform_to(self._reference_frame)
             try:
                 lon = arg.data.lon
@@ -248,13 +247,11 @@ class CelestialFrame(CoordinateFrame):
 
             return lon, lat
 
-        elif isinstance(coords[0], u.Quantity):
-            return (coords[0], )
+        elif all(isinstance(a, u.Quantity) for a in arg):
+            return tuple(arg)
 
-        elif all(isinstance(a, u.Quantity) for a in coords[0]):
-            return tuple(coords[0])
         else:
-            raise ValueError("Could not convert input {} to lon and lat quantities.".format(coords[0]))
+            raise ValueError("Could not convert input {} to lon and lat quantities.".format(arg))
 
 
 class SpectralFrame(CoordinateFrame):
@@ -411,8 +408,21 @@ class CompositeFrame(CoordinateFrame):
         return coo
 
     def coordinate_to_quantity(self, *coords):
+        if len(coords) == len(self.frames):
+            args = coords
+        elif len(coords) == self.naxes:
+            args = []
+            for _frame in self.frames:
+                if _frame.naxes > 1:
+                    # Collect the arguments for this frame based on axes_order
+                    args.append([coords[i] for i in _frame.axes_order])
+                else:
+                    args.append(coords[_frame.axes_order[0]])
+        else:
+            raise ValueError("Incorrect number of arguments")
+
         qs = []
-        for _frame, arg in zip(self.frames, coords):
+        for _frame, arg in zip(self.frames, args):
             ret = _frame.coordinate_to_quantity(arg)
             if isinstance(ret, tuple):
                 qs += list(ret)
