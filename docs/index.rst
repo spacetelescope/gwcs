@@ -11,7 +11,7 @@ Introduction
 `GWCS <https://github.com/spacetelescope/gwcs>`__ takes a general approach to
 the problem of expressing transformations between pixel and world coordinates.
 The term "World Coordinate System" encapsulates this transformation, although
-that term is sometimes mis-understood to mean "the FITS implementation of WCS"
+that term is sometimes misunderstood to mean "the FITS implementation of WCS"
 (See `the discussion in APE14 <https://github.com/astropy/astropy-APEs/blob/master/APE14.rst#backgroundterminology>`_
 for more on this topic).
 
