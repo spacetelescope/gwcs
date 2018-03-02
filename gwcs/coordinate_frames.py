@@ -11,7 +11,7 @@ from astropy import coordinates as coord
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame']
+           'CoordinateFrame', 'TemporalFrame']
 
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
@@ -257,6 +257,8 @@ class SpectralFrame(CoordinateFrame):
                                             reference_position=reference_position)
 
     def coordinates(self, *args):
+        if hasattr(args[0], 'unit'):
+            return args[0]
         if np.isscalar(args):
             return args * self.unit[0]
         else:

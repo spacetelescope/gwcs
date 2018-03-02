@@ -168,7 +168,7 @@ def test_from_fiducial_composite():
     celestial = cf.CelestialFrame(reference_frame=sky.frame, unit=(sky.spherical.lon.unit,
                                   sky.spherical.lat.unit), axes_order=(1, 2))
     coord_frame = cf.CompositeFrame([spec, celestial], name='cube_frame')
-    w = wcs_from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan)
+    w = wcs_from_fiducial([.5, sky], coord_frame, projection=tan)
     assert isinstance(w.cube_frame.frames[1].reference_frame, coord.FK5)
     assert_allclose(w(1, 1, 1), (1.5, 96.52373368309931, -71.37420187296995))
     # test returning coordinate objects with composite output_frame
@@ -179,7 +179,7 @@ def test_from_fiducial_composite():
     assert_allclose(res[1].dec.value, -70.30322020351122)
 
     trans = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    w = wcs_from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan,
+    w = wcs_from_fiducial([.5, sky], coord_frame, projection=tan,
                           transform=trans)
     assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
     # test coordinate object output
