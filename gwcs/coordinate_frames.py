@@ -238,6 +238,7 @@ class CelestialFrame(CoordinateFrame):
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], coord.SkyCoord):
             arg = coords[0]
+            arg = arg.transform_to(self._reference_frame)
             try:
                 lon = arg.data.lon
                 lat = arg.data.lat
@@ -246,6 +247,11 @@ class CelestialFrame(CoordinateFrame):
                 lat = arg.spherical.lat
 
             return lon, lat
+
+        elif all(isinstance(a, u.Quantity) for a in coords[0]):
+            return tuple(coords[0])
+        else:
+            raise ValueError("Could not convert input {} to lon and lat quantities.".format(coords[0]))
 
 
 class SpectralFrame(CoordinateFrame):
@@ -343,6 +349,9 @@ class TemporalFrame(CoordinateFrame):
                 # If we can't convert to a quantity just drop the object out
                 # and hope the transform can cope.
                 return coords[0]
+        # Is already a quantity
+        elif hasattr(coords[0], 'unit'):
+            return coords[0]
 
         raise ValueError("Can not convert {} to Quantity".format(coords[0]))
 
