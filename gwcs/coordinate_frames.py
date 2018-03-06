@@ -235,7 +235,14 @@ class CelestialFrame(CoordinateFrame):
         # Reorder axes if necessary.
         return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
 
-    def coordinate_to_quantity(self, arg):
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == 2:
+            arg = coords
+        elif len(coords) == 1:
+            arg = coords[0]
+        else:
+            raise ValueError("Unexpected number of celestial coordinates in input {}".format(coords))
+
         if isinstance(arg, coord.SkyCoord):
             arg = arg.transform_to(self._reference_frame)
             try:
