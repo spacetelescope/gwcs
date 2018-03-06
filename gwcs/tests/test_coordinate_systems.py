@@ -1,11 +1,15 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from functools import partial
+
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from astropy import units as u
+
+import astropy.units as u
+from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.time import Time
-import pytest
+from astropy.tests.helper import assert_quantity_allclose
 
 from .. import coordinate_frames as cf
 
@@ -121,3 +125,72 @@ def test_temporal_absolute():
 
     t = cf.TemporalFrame(reference_frame=partial(Time, scale='tai'))
     assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00", scale='tai')
+
+
+@pytest.mark.parametrize('inp', [
+    (10*u.deg, 20*u.deg),
+    ((10*u.deg, 20*u.deg),),
+    (u.Quantity([10, 20], u.deg),),
+    (coord.SkyCoord(10*u.deg, 20*u.deg, frame=coord.ICRS),),
+    # This is the same as 10,20 in ICRS
+    (coord.SkyCoord(119.26936774, -42.79039286, unit=u.deg, frame='galactic'),)
+    ])
+def test_coordinate_to_quantity_celestial(inp):
+    cel = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))
+
+    lon, lat = cel.coordinate_to_quantity(*inp)
+    assert_quantity_allclose(lon, 10*u.deg)
+    assert_quantity_allclose(lat, 20*u.deg)
+
+
+@pytest.mark.parametrize('inp', [
+    (100,),
+    (100*u.nm,),
+    (0.1*u.um,),
+    ])
+def test_coordinate_to_quantity_spectral(inp):
+    spec = cf.SpectralFrame(unit=u.nm, axes_order=(1, ))
+    wav = spec.coordinate_to_quantity(*inp)
+    assert_quantity_allclose(wav, 100*u.nm)
+
+
+@pytest.mark.parametrize('inp', [
+    (Time("2011-01-01T00:00:10"),),
+    (10*u.s,)
+    ])
+def test_coordinate_to_quantity_temporal(inp):
+    temp = cf.TemporalFrame(reference_time=Time("2011-01-01T00:00:00"), unit=u.s)
+
+    t = temp.coordinate_to_quantity(*inp)
+
+    assert_quantity_allclose(t, 10*u.s)
+
+    temp2 = cf.TemporalFrame(unit=u.s)
+
+    tt = Time("2011-01-01T00:00:00")
+    t = temp2.coordinate_to_quantity(tt)
+
+    assert t is tt
+
+
+@pytest.mark.parametrize('inp', [
+    (211*u.AA, 0*u.s, 0*u.arcsec, 0*u.arcsec),
+    (211*u.AA, 0*u.s, (0*u.arcsec, 0*u.arcsec)),
+    (211*u.AA, 0*u.s, (0, 0)*u.arcsec),
+    (211*u.AA, Time("2011-01-01T00:00:00"), (0, 0)*u.arcsec),
+    (211*u.AA, Time("2011-01-01T00:00:00"), coord.SkyCoord(0, 0, unit=u.arcsec)),
+    ])
+def test_coordinate_to_quantity_composite(inp):
+    # Composite
+    wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
+    time_frame = cf.TemporalFrame(
+        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+    sky_frame = cf.CelestialFrame(axes_order=(2, 3), reference_frame=coord.ICRS())
+
+    comp = cf.CompositeFrame([wave_frame, time_frame, sky_frame])
+
+    coords = comp.coordinate_to_quantity(*inp)
+
+    expected = (211*u.AA, 0*u.s, 0*u.arcsec, 0*u.arcsec)
+    for output, exp in zip(coords, expected):
+        assert_quantity_allclose(output, exp)
