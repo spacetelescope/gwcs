@@ -324,7 +324,7 @@ sky_systems_map = {'ICRS': coords.ICRS,
                    }
 
 
-def make_fitswcs_transform(header):
+def make_fitswcs_transform(header, dict_to_fits=False):
     """
     Create a basic FITS WCS transform.
     It does not include distortions.
@@ -334,13 +334,23 @@ def make_fitswcs_transform(header):
     header : astropy.io.fits.Header or dict
         FITS Header (or dict) with basic WCS information
 
+    dict_to_fits : bool
+        Convert given header (if dict) to FITS header
+        before further processing.
+
     """
-    if isinstance(header, fits.Header):
-        wcs_info = read_wcs_from_header(header)
-    elif isinstance(header, dict):
-        wcs_info = header
-    else:
+    if not isinstance(header, (fits.Header, dict)):
         raise TypeError("Expected a FITS Header or a dict.")
+
+    if isinstance(header, dict) and dict_to_fits:
+        header = fits.Header(header)
+
+    if isinstance(header, fits.Header):
+        # This converts CD matrix into PC for linear transformation below.
+        wcs_info = read_wcs_from_header(header)
+    else:
+        wcs_info = header
+
     transforms = []
     wcs_linear = fitswcs_linear(wcs_info)
     transforms.append(wcs_linear)

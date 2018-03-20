@@ -72,6 +72,30 @@ def test_unknown_ctype():
     assert_allclose(b, expected[1], atol=10**-8)
 
 
+# https://github.com/spacetelescope/gwcs/issues/139
+def test_transform_hdr_dict():
+    """2D test case from Ginga."""
+    header = {
+        'BITPIX': -32, 'BLANK': -32768, 'BUNIT': 'ADU', 'EXTEND': False,
+        'CD1_1': -5.611e-05, 'CD1_2': 0.0, 'CD2_1': 0.0, 'CD2_2': 5.611e-05,
+        'CDELT1': -5.611e-05, 'CDELT2': 5.611e-05,
+        'CRPIX1': 5276.0, 'CRPIX2': 25.0,
+        'CRVAL1': 299.91736667, 'CRVAL2': 22.68769444,
+        'CTYPE1': 'RA---TAN', 'CTYPE2': 'DEC--TAN',
+        'CUNIT1': 'degree', 'CUNIT2': 'degree', 'EQUINOX': 2000.0,
+        'NAXIS': 2, 'NAXIS1': 2272, 'NAXIS2': 4273,
+        'RA': '19:59:40.168', 'RA2000': '19:59:40.168',
+        'DEC': '+22:41:15.70', 'DEC2000': '+22:41:15.70', 'RADECSYS': 'FK5',
+        'SIMPLE': True, 'WCS-ORIG': 'SUBARU Toolkit'}
+    w = gwutils.make_fitswcs_transform(header, dict_to_fits=True)
+    xy_ans = np.array([120, 100])
+    radec_deg_ans = (300.2308791294835, 22.691653517073615)
+
+    # TODO: Check with Nadia
+    assert_allclose(w(*xy_ans), radec_deg_ans, rtol=1e-5)
+    assert_allclose(w.inverse(*radec_deg_ans), xy_ans + 1)
+
+
 def test_get_axes():
     wcsinfo = {'CTYPE': np.array(['MRSAL1A', 'MRSBE1A', 'WAVE'])}
     cel, spec, other = gwutils.get_axes(wcsinfo)
