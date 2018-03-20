@@ -7,14 +7,10 @@ import re
 import functools
 import numpy as np
 from astropy.modeling import models as astmodels
-from astropy.modeling.models import Mapping
-from astropy.modeling import core, projections
+from astropy.modeling import core, projections, is_separable
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
-
-from astropy.utils.decorators import deprecated
-
 
 # these ctype values do not include yzLN and yzLT pairs
 sky_pairs = {"equatorial": ["RA", "DEC"],
@@ -89,7 +85,8 @@ def _get_values(units, *args):
     ----------
     units : str or `~astropy.units.Unit`
         Units of the wcs object.
-        The input values are converted to ``units`` before the values are returned.
+        The input values are converted to ``units`` before
+        the values are returned.
     """
     val = []
     values = []
@@ -116,7 +113,8 @@ def _compute_lon_pole(skycoord, projection):
     Compute the longitude of the celestial pole of a standard frame in the
     native frame.
 
-    This angle then can be used as one of the Euler angles (the other two being skyccord)
+    This angle then can be used as one of the Euler angles
+    (the other two being skycoord)
     to rotate the native frame into the standard frame ``skycoord.frame``.
 
     Parameters
@@ -153,7 +151,8 @@ def _compute_lon_pole(skycoord, projection):
         else:
             lon_pole = 180
     else:
-        raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
+        raise UnsupportedProjectionError(
+            "Projection {0} is not supported.".format(projection))
     if unit is not None:
         lon_pole = lon_pole * unit
     return lon_pole
@@ -166,7 +165,8 @@ def get_projcode(wcs_info):
         return None
     projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
-        raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
+        raise UnsupportedProjectionError(
+            'Projection code %s, not recognized' % projcode)
         #projcode = None
     return projcode
 
@@ -291,18 +291,23 @@ def get_axes(header):
 
 
 def _is_skysys_consistent(ctype, sky_inmap):
-    """ Determine if the sky axes in CTYPE mathch to form a standard celestial system."""
+    """
+    Determine if the sky axes in CTYPE mathch to form a
+    standard celestial system.
+    """
 
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
+                    "Inconsistent ctype for sky coordinates "
+                    "{0} and {1}".format(*ctype))
             break
         elif ctype[sky_inmap[1]] == item[0]:
             if ctype[sky_inmap[0]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
+                    "Inconsistent ctype for sky coordinates "
+                    "{0} and {1}".format(*ctype))
             sky_inmap = sky_inmap[::-1]
             break
 
@@ -404,7 +409,7 @@ def fitswcs_linear(header):
 
     if not wcs_info['has_cd']:
         # Do not compute scaling since CDELT* = 1 if CD is present.
-        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1)) \
+        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1))
                           for i, scale in enumerate(cdelt)]
 
         scaling = functools.reduce(lambda x, y: x & y, scaling_models)
@@ -443,7 +448,8 @@ def fitswcs_nonlinear(header):
         # TODO: write "def compute_lonpole(projcode, l)"
         # Set a defaul tvalue for now
         thetap = 180
-        n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
+        n2c = astmodels.RotateNative2Celestial(
+            phip, lonp, thetap, name="crval")
         transforms.append(n2c)
     if transforms:
         return functools.reduce(core._model_oper('|'), transforms)
@@ -497,8 +503,8 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
         Computes the separability of axes in ``end_frame``.
 
         Returns a 1D boolean array of size frame.naxes where True means
-        the axis is completely separable and False means the axis is nonseparable
-        from at least one other axis.
+        the axis is completely separable and False means the axis is
+        nonseparable from at least one other axis.
 
         Parameters
         ----------
@@ -506,12 +512,14 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
             WCS object
         start_frame : `~gwcs.coordinate_frames.CoordinateFrame`
             A frame in the WCS pipeline.
-            The transform between start_frame and the end frame is used to compute the
+            The transform between start_frame and the end frame
+            is used to compute the
             mapping inputs: outputs.
             If None the input_frame is used as start_frame.
         end_frame : `~gwcs.coordinate_frames.CoordinateFrame`
             A frame in the WCS pipeline.
-            The transform between start_frame and the end frame is used to compute the
+            The transform between start_frame and the end frame
+            is used to compute the
             mapping inputs: outputs.
             If None wcsobj.output_frame is used.
 
@@ -525,15 +533,18 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
                 start_frame = wcsobj.input_frame
             else:
                 if start_frame not in wcsobj.available_frames:
-                    raise ValueError("Unrecognized frame {0}".format(start_frame))
+                    raise ValueError(
+                        "Unrecognized frame {0}".format(start_frame))
             if end_frame is None:
                 end_frame = wcsobj.output_frame
             else:
                 if end_frame not in wcsobj.available_frames:
-                    raise ValueError("Unrecognized frame {0}".format(end_frame))
+                    raise ValueError(
+                        "Unrecognized frame {0}".format(end_frame))
             transform = wcsobj.get_transform(start_frame, end_frame)
         else:
-            raise ValueError("A starting frame is needed to determine separability of axes.")
+            raise ValueError("A starting frame is needed to determine "
+                             "separability of axes.")
 
         sep = is_separable(transform)
         return [sep[ax] for ax in end_frame.axes_order]
