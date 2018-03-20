@@ -60,8 +60,7 @@ matrix:
           env: MAIN_CMD='flake8 gwcs --count' SETUP_CMD=''
 
     allow_failures:
-
-       - python: 3.5
+        - python: 3.5
           env: MAIN_CMD='flake8 gwcs --count' SETUP_CMD=''
 
 install:
