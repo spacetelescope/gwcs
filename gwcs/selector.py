@@ -442,7 +442,7 @@ class LabelMapperRange(_LabelMapper):
             temp[nan_ind] = np.nan
             temp = np.where(np.logical_or(temp <= val_range[0],
                                           temp >= val_range[1]),
-                                          np.nan, temp)
+                            np.nan, temp)
             ind = ~np.isnan(temp)
 
             if ind.any():

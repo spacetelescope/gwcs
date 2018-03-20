@@ -2,13 +2,12 @@
 import os
 from asdf import util
 from asdf.extension import BuiltinExtension
-from .tags.wcs import *
-from .tags.selectortags import *
-from .tags import *
+from .tags.wcs import *  # noqa
+from .tags.selectortags import *  # noqa
 
 # Make sure that all tag implementations are imported by the time we create
 # the extension class so that _gwcs_types is populated correctly.
-from .tags import *
+from .tags import *  # noqa
 from .gwcs_types import _gwcs_types
 
 

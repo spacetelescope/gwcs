@@ -10,7 +10,6 @@ import six
 
 from astropy.io.misc.asdf.tags.transform.basic import TransformType
 from asdf.asdftypes import ExtensionTypeMeta, CustomType
-from asdf.asdftypes import AsdfType
 from astropy.io.misc.asdf.types import AstropyTypeMeta
 
 
