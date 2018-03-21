@@ -1,6 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
-import warnings
 
 import numpy as np
 from astropy.modeling.core import Model
@@ -258,7 +257,6 @@ class WCS:
         elif output is not None and output != "numericals":
             raise ValueError("Type of output unrecognized {0}".format(output))
         return result
-
 
     def invert(self, *args, **kwargs):
         """

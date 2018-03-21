@@ -11,11 +11,6 @@ from .coordinate_frames import *
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
 
-import warnings
-from astropy.utils.decorators import deprecated
-from .utils import _toindex
-
-
 __all__ = ['wcs_from_fiducial', 'grid_from_bounding_box']
 
 
@@ -128,6 +123,7 @@ def _frame2D_transform(fiducial, **kwargs):
                                           [models.Shift(val) for val in fiducial])
     return fiducial_transform
 
+
 frame2transform = {CelestialFrame: _sky_transform,
                    SpectralFrame: _spectral_transform,
                    Frame2D: _frame2D_transform
@@ -192,7 +188,6 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
         bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box])
     else:
         bb = bounding_box
-
 
     step = np.atleast_1d(step)
     if nd > 1 and len(step) == 1:
