@@ -438,6 +438,36 @@ class CompositeFrame(CoordinateFrame):
         return qs
 
 
+class StokesFrame(CoordinateFrame):
+    """
+    A coordinate frame for representing stokes polarisation states
+
+    Parameters
+    ----------
+    name : str
+        Name of this frame.
+    """
+
+    def __init__(self, axes_order=(0,), name=None):
+        self._stokes_components = ['I', 'Q', 'U', 'V']
+        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
+                                          axes_names=("stokes",), unit=u.one)
+
+    def coordinates(self, *args):
+        if hasattr(args[0], 'value'):
+            arg = args[0].value
+        else:
+            arg = args[0]
+        return self._stokes_components[int(arg)]
+
+    def coordinate_to_quantity(self, *coords):
+        if isinstance(coords[0], str):
+            if coords[0] in self._stokes_components:
+                return self._stokes_components.index(coords[0]) * u.pix
+        else:
+            return coords[0]
+
+
 class Frame2D(CoordinateFrame):
     """
     A 2D coordinate frame.
