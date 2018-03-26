@@ -30,6 +30,12 @@ pipe = [(detector, m1),
         (icrs, None)
         ]
 
+# Create some data.
+nx, ny = (5, 2)
+x = np.linspace(0, 1, nx)
+y = np.linspace(0, 1, ny)
+xv, yv = np.meshgrid(x, y)
+
 # Test initializing a WCS
 
 def test_create_wcs():
@@ -324,6 +330,28 @@ def test_footprint():
 
     assert_equal(w.footprint(axis_type='spectral'), np.array([2, 12]))
 
+    
+def test_high_level_api():
+    """
+    Test WCS high level API.
+    """
+    output_frame = cf.CompositeFrame(frames=[icrs, spec])
+    transform = m1 & models.Scale(1.5)
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+
+    r, d, l = w(xv, yv, xv)
+    world_coord = w.pixel_to_world(xv, yv, xv)
+    assert isinstance(world_coord[0], coord.SkyCoord)
+    assert isinstance(world_coord[1], u.Quantity)
+    assert_allclose(world_coord[0].data.lon.value, r)
+    assert_allclose(world_coord[0].data.lat.value, d)
+    assert_allclose(world_coord[1].value, l)
+
+    x1, y1, z1 = w.world_to_pixel(*world_coord)
+    assert_allclose(x1, xv)
+    assert_allclose(y1, yv)
+    assert_allclose(z1, xv)
+
 
 class TestImaging(object):
     def setup_class(self):
@@ -363,10 +391,7 @@ class TestImaging(object):
         self.wcs = wcs.WCS(input_frame=det,
                            output_frame=sky_cs,
                            forward_transform=pipeline)
-        nx, ny = (5, 2)
-        x = np.linspace(0, 1, nx)
-        y = np.linspace(0, 1, ny)
-        self.xv, self.yv = np.meshgrid(x, y)
+        self.xv, self.yv = xv, yv
 
     @pytest.mark.filterwarnings('ignore')
     def test_distortion(self):
@@ -419,3 +444,10 @@ class TestImaging(object):
         with pytest.raises(wcs.CoordinateFrameError):
             assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names ==
                    self.wcs.forward_transform[1:].submodel_names)
+
+    def test_pixel_to_world(self):
+        sky_coord = self.wcs.pixel_to_world(self.xv, self.yv)
+        ra, dec = self.fitsw.all_pix2world(self.xv, self.yv, 1)
+        assert isinstance(sky_coord, coord.SkyCoord)
+        assert_allclose(sky_coord.data.lon.value, ra)
+        assert_allclose(sky_coord.data.lat.value, dec)

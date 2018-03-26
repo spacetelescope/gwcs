@@ -68,5 +68,15 @@ properties:
     items:
       $ref: "tag:stsci.edu:asdf/unit/unit-1.0.0"
 
+  axis_physical_types:
+    description: |
+      An iterable of strings describing the physical type for each world axis.
+      These should be names from the VO UCD1+ controlled Vocabulary
+      (http://www.ivoa.net/documents/latest/UCDlist.html).
+    type: array
+    items:
+      type:
+        string
+    
 required: [name]
 additionalProperties: true

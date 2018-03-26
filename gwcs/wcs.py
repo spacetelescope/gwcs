@@ -5,6 +5,7 @@ import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import utils as mutils
 
+from .api import GWCSAPIMixin
 from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
@@ -14,7 +15,7 @@ from . import utils
 __all__ = ['WCS']
 
 
-class WCS:
+class WCS(GWCSAPIMixin):
     """
     Basic WCS class.
 
@@ -36,9 +37,11 @@ class WCS:
 
     def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
                  name=""):
+        #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
         self._name = name
+        self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
@@ -61,7 +64,6 @@ class WCS:
                     super(WCS, self).__setattr__(name, frame_obj)
                     #self._pipeline.append((name, item[1]))
                     self._pipeline = forward_transform
-                    
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(

@@ -98,6 +98,9 @@ class FrameType(GWCSType):
             kwargs['unit'] = tuple(
                 yamlutil.tagged_tree_to_custom_tree(node['unit'], ctx))
 
+        if 'axis_physical_type' in node:
+            kwargs['axis_physical_type'] = tuple(node['axis_physical_type'])
+
         return kwargs
 
     @classmethod
@@ -112,7 +115,7 @@ class FrameType(GWCSType):
             node['axes_type'] = frame.axes_type
             node['naxes'] = frame.naxes
 
-        if frame.axes_order != (0, 1):
+        if frame.axes_order is not None:
             node['axes_order'] = list(frame.axes_order)
 
         if frame.axes_names is not None:
@@ -126,6 +129,9 @@ class FrameType(GWCSType):
             node['unit'] = yamlutil.custom_tree_to_tagged_tree(
                 list(frame.unit), ctx)
 
+        if frame.axis_physical_types is not None:
+            node['axis_physical_types'] = list(frame.axis_physical_types)
+                                                 
         return node
 
     @classmethod

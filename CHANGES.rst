@@ -9,6 +9,9 @@ New Features
   The effect is that a ``WCS`` object can now be initialized with
   a ``pipeline`` from a different ``WCS`` object. [#174]
 
+- Implement support for astropy APE 14
+  (https://doi.org/10.5281/zenodo.1188875). [#146]
+
 Bug Fixes
 ^^^^^^^^^
 
