@@ -5,7 +5,6 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import astropy.time
 
 from asdf import yamlutil
-from asdf.tests import helpers
 from ..gwcs_types import GWCSType
 from ..coordinate_frames import (Frame2D, CoordinateFrame, CelestialFrame,
                                  SpectralFrame, TemporalFrame, CompositeFrame)
@@ -57,6 +56,7 @@ class WCSType(GWCSType):
 
     @classmethod
     def assert_equal(cls, old, new):
+        from asdf.tests import helpers
         assert old.name == new.name
         assert len(old.available_frames) == len(new.available_frames)
         for (old_frame, old_transform), (new_frame, new_transform) in zip(
@@ -120,7 +120,7 @@ class FrameType(GWCSType):
 
     @classmethod
     def _assert_equal(cls, old, new):
-
+        from asdf.tests import helpers
         assert old.name == new.name
         assert old.axes_order == new.axes_order
         assert old.axes_names == new.axes_names
@@ -215,6 +215,7 @@ class CompositeFrameType(FrameType):
 
     @classmethod
     def assert_equal(cls, old, new):
+        from asdf.tests import helpers
         assert old.name == new.name
         for old_frame, new_frame in zip(old.frames, new.frames):
             helpers.assert_tree_match(old_frame, new_frame)
