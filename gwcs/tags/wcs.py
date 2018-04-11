@@ -81,6 +81,11 @@ class FrameType(GWCSType):
     def _from_tree(cls, node, ctx):
         kwargs = {'name': node['name']}
 
+        if 'axes_type' in node and 'naxes' in node:
+            kwargs.update({
+                'axes_type': node['axes_type'],
+                'naxes': node['naxes']})
+
         if 'axes_names' in node:
             kwargs['axes_names'] = node['axes_names']
 
@@ -102,6 +107,11 @@ class FrameType(GWCSType):
         node = {}
 
         node['name'] = frame.name
+
+        # We want to check that it is exactly this type and not a subclass
+        if type(frame) is CoordinateFrame:
+            node['axes_type'] = frame.axes_type
+            node['naxes'] = frame.naxes
 
         if frame.axes_order != (0, 1):
             node['axes_order'] = list(frame.axes_order)
@@ -140,12 +150,21 @@ class FrameType(GWCSType):
     @classmethod
     def from_tree(cls, node, ctx):
         node = cls._from_tree(node, ctx)
-
-        return Frame2D(**node)
+        return CoordinateFrame(**node)
 
     @classmethod
     def to_tree(cls, frame, ctx):
         return cls._to_tree(frame, ctx)
+
+
+class Frame2DType(FrameType):
+    name = "frame2d"
+    types = [Frame2D]
+
+    @classmethod
+    def from_tree(cls, node, ctx):
+        node = cls._from_tree(node, ctx)
+        return Frame2D(**node)
 
 
 class CelestialFrameType(FrameType):
