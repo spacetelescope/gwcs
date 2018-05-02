@@ -160,7 +160,6 @@ def test_from_fiducial_sky():
     assert_allclose(w(.1, .1), (93.7210280925364, -72.29972666307474))
 
 
-@pytest.mark.xfail(reason="Units in gwcs not supported yet.")
 def test_from_fiducial_composite():
     sky = coord.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
     tan = models.Pix2Sky_TAN()

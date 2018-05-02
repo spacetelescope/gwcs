@@ -278,6 +278,8 @@ class WCS:
         """
         if not utils.isnumerical(args[0]):
             args = self.output_frame.coordinate_to_quantity(*args)
+            if not self.forward_transform.uses_quantity:
+                args = [a.to_value(unit) for a, unit in zip(args, self.output_frame.unit)]
 
         output = kwargs.pop('output', None)
         if 'with_bounding_box' not in kwargs:
