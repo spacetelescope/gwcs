@@ -52,12 +52,6 @@ class LookupTable(Model):
         return _ReverseLookupTable(self.lookup_table)
 
 
-def _unquantify_allclose_arguments(actual, desired, rtol=1e-5, atol=None):
-    # Wrap this to provide default values
-    from astropy.tests.helper import _unquantify_allclose_arguments
-    return _unquantify_allclose_arguments(actual, desired, rtol, atol)
-
-
 class _ReverseLookupTable(LookupTable):
     """
     The inverse lookup table.
@@ -67,7 +61,6 @@ class _ReverseLookupTable(LookupTable):
     using ``isclose`` with ``rtol=1e-15`` to avoid issues with floating point
     precision.
     """
-
 
     linear = False
     fittable = False
@@ -100,7 +93,7 @@ class _ReverseLookupTable(LookupTable):
     def evaluate(self, point):
         if issubclass(self.lookup_table.dtype.type, np.number):
             if isinstance(self.lookup_table, u.Quantity):
-                isclose = lambda *args, **kwargs: np.isclose(*_unquantify_allclose_arguments(*args, **kwargs))
+                isclose = u.isclose
             else:
                 isclose = np.isclose
 
