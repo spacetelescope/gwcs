@@ -77,11 +77,14 @@ def test_coordinates_composite(inputs):
 @pytest.mark.parametrize(('frame'), coord_frames)
 def test_celestial_attributes_length(frame):
     """
-    Test getting default values for  CoordinateFrame attributes from reference_frame.
+    Test getting default values for 
+    CelestialFrame attributes from reference_frame.
     """
-    cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
-    assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
-           len(cel.axes_order) == cel.naxes)
+    fr = getattr(coord, frame)
+    if issubclass(fr, coord.BaseCoordinateFrame):
+        cel = cf.CelestialFrame(reference_frame=fr())
+        assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
+               len(cel.axes_order) == cel.naxes)
 
 
 def test_axes_type():
