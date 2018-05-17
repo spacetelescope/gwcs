@@ -10,6 +10,9 @@ New Features
 
 - Support for Python 2.x, 3.0, 3.1, 3.2, 3.3 and 3.4 was removed. [#119]
 
+- Support serialising the base ``CoordinateFrame`` class to asdf, by making
+  a specific tag and schema for ``Frame2D`` [#150]
+
 
 Bug Fixes
 ^^^^^^^^^
