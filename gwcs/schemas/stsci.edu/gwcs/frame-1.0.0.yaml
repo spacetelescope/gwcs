@@ -21,6 +21,18 @@ examples:
             frame_attributes: {}
           unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
 
+  -
+    - |
+        A pixel frame in three dimensions
+    - |
+        !<tag:stsci.edu:gwcs/frame-1.0.0>
+          axes_names: [raster position, slit position, wavelength]
+          axes_order: [0, 1, 2]
+          axes_type: [SPATIAL, SPATIAL, SPECTRAL]
+          name: pixel
+          naxes: 3
+          unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
+
 type: object
 properties:
   name:
