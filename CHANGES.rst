@@ -16,6 +16,9 @@ New Features
 
 - Add a ``StokesFrame`` which converts from 'I', 'Q', 'U', 'V' to 0-3. [#133]
 
+- Support serialising the base ``CoordinateFrame`` class to asdf, by making
+  a specific tag and schema for ``Frame2D`` [#150]
+
 
 Bug Fixes
 ^^^^^^^^^

@@ -1,0 +1,36 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/frame2d-1.0.0"
+tag: "tag:stsci.edu:gwcs/frame2d-1.0.0"
+
+title: >
+  Represents a 2D frame.
+
+examples:
+  -
+    - |
+        A two dimensional spatial frame
+    - |
+        !<tag:stsci.edu:gwcs/frame2d-1.0.0>
+          axes_names: [lon, lat]
+          name: Frame2D
+          unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
+
+
+allOf:
+  - type: object
+    properties:
+      axes_names:
+        minItems: 2
+        maxItems: 2
+
+      axes_order:
+        minItems: 2
+        maxItems: 2
+
+      unit:
+        minItems: 2
+        maxItems: 2
+
+  - $ref: frame-1.0.0
