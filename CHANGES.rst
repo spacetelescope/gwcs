@@ -10,6 +10,12 @@ New Features
 
 - Support for Python 2.x, 3.0, 3.1, 3.2, 3.3 and 3.4 was removed. [#119]
 
+- Add a ``coordinate_to_quantity`` method to ``CoordinateFrame`` which handles
+  converting rich coordinate input to numerical values. It is an inverse of the
+  ``coordinates`` method. [#133]
+
+- Add a ``StokesFrame`` which converts from 'I', 'Q', 'U', 'V' to 0-3. [#133]
+
 - Support serialising the base ``CoordinateFrame`` class to asdf, by making
   a specific tag and schema for ``Frame2D`` [#150]
 

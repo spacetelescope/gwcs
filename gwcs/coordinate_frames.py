@@ -22,9 +22,8 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
 
 
 class CoordinateFrame:
-
     """
-    Base class for CoordinateFrames.
+    Base class for Coordinate Frames.
 
     Parameters
     ----------
@@ -168,9 +167,15 @@ class CoordinateFrame:
         """ Create world coordinates object"""
         raise NotImplementedError("Subclasses may implement this")
 
+    def coordinate_to_quantity(self, *coords):
+        """
+        Given a rich coordinate object return an astropy quantity object.
+        """
+        # NoOp leaves it to the model to handle
+        return coords
+
 
 class CelestialFrame(CoordinateFrame):
-
     """
     Celestial Frame Representation
 
@@ -230,6 +235,37 @@ class CelestialFrame(CoordinateFrame):
         # Reorder axes if necessary.
         return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
 
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == 2:
+            arg = coords
+        elif len(coords) == 1:
+            arg = coords[0]
+        else:
+            if self.name is not None:
+                name = self.name
+            else:
+                name = self.__class__.__name__
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
+
+        if isinstance(arg, coord.SkyCoord):
+            arg = arg.transform_to(self._reference_frame)
+            try:
+                lon = arg.data.lon
+                lat = arg.data.lat
+            except AttributeError:
+                lon = arg.spherical.lon
+                lat = arg.spherical.lat
+
+            return lon, lat
+
+        elif all(isinstance(a, u.Quantity) for a in arg):
+            return tuple(arg)
+
+        else:
+            raise ValueError("Could not convert input {} to lon and lat quantities.".format(arg))
+
 
 class SpectralFrame(CoordinateFrame):
     """
@@ -263,6 +299,12 @@ class SpectralFrame(CoordinateFrame):
             return args * self.unit[0]
         else:
             return args[0] * self.unit[0]
+
+    def coordinate_to_quantity(self, *coords):
+        if hasattr(coords[0], 'unit'):
+            return coords[0]
+        else:
+            return coords[0] * self.unit[0]
 
 
 class TemporalFrame(CoordinateFrame):
@@ -304,7 +346,7 @@ class TemporalFrame(CoordinateFrame):
             dt = args[0]
 
         if self.reference_position:
-            if not isinstance(dt, u.Quantity):
+            if not hasattr(dt, 'unit'):
                 dt = dt * self.unit[0]
 
             return self.reference_position + dt
@@ -312,16 +354,29 @@ class TemporalFrame(CoordinateFrame):
         else:
             return self.reference_frame(dt)
 
+    def coordinate_to_quantity(self, *coords):
+        if isinstance(coords[0], astropy.time.Time):
+            if self.reference_position:
+                return (coords[0] - self.reference_position).to(self.unit[0])
+            else:
+                # If we can't convert to a quantity just drop the object out
+                # and hope the transform can cope.
+                return coords[0]
+        # Is already a quantity
+        elif hasattr(coords[0], 'unit'):
+            return coords[0]
+
+        raise ValueError("Can not convert {} to Quantity".format(coords[0]))
+
 
 class CompositeFrame(CoordinateFrame):
-
     """
     Represents one or more frames.
 
     Parameters
     ----------
     frames : list
-        List of frames (TimeFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
+        List of frames (TemporalFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
     name : str
         Name for this frame.
 
@@ -365,9 +420,61 @@ class CompositeFrame(CoordinateFrame):
             coo.append(frame.coordinates(*fargs))
         return coo
 
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == len(self.frames):
+            args = coords
+        elif len(coords) == self.naxes:
+            args = []
+            for _frame in self.frames:
+                if _frame.naxes > 1:
+                    # Collect the arguments for this frame based on axes_order
+                    args.append([coords[i] for i in _frame.axes_order])
+                else:
+                    args.append(coords[_frame.axes_order[0]])
+        else:
+            raise ValueError("Incorrect number of arguments")
+
+        qs = []
+        for _frame, arg in zip(self.frames, args):
+            ret = _frame.coordinate_to_quantity(arg)
+            if isinstance(ret, tuple):
+                qs += list(ret)
+            else:
+                qs.append(ret)
+        return qs
+
+
+class StokesFrame(CoordinateFrame):
+    """
+    A coordinate frame for representing stokes polarisation states
+
+    Parameters
+    ----------
+    name : str
+        Name of this frame.
+    """
+
+    def __init__(self, axes_order=(0,), name=None):
+        self._stokes_components = ['I', 'Q', 'U', 'V']
+        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
+                                          axes_names=("stokes",), unit=u.one)
+
+    def coordinates(self, *args):
+        if hasattr(args[0], 'value'):
+            arg = args[0].value
+        else:
+            arg = args[0]
+        return self._stokes_components[int(arg)]
+
+    def coordinate_to_quantity(self, *coords):
+        if isinstance(coords[0], str):
+            if coords[0] in self._stokes_components:
+                return self._stokes_components.index(coords[0]) * u.pix
+        else:
+            return coords[0]
+
 
 class Frame2D(CoordinateFrame):
-
     """
     A 2D coordinate frame.
 
@@ -393,3 +500,23 @@ class Frame2D(CoordinateFrame):
         args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un for arg, un in zip(args, self.unit)])
         return coo
+
+    def coordinate_to_quantity(self, *coords):
+        # list or tuple
+        if len(coords) == 1 and astutil.isiterable(coords[0]):
+            coords = list(coords[0])
+        elif len(coords) == 2:
+            coords = list(coords)
+        else:
+            if self.name is not None:
+                name = self.name
+            else:
+                name = self.__class__.__name__
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
+
+        for i in range(2):
+            if not hasattr(coords[i], 'unit'):
+                coords[i] = coords[i] * self.unit[i]
+        return tuple(coords)
