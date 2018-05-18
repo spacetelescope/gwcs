@@ -13,7 +13,7 @@ from .. import wcs
 from ..wcstools import *
 from .. import coordinate_frames as cf
 from .. import utils
-from ..utils import CoordinateFrameError, DimensionalityError
+from ..utils import CoordinateFrameError
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -29,6 +29,7 @@ pipe = [(detector, m1),
         (focal, m2),
         (icrs, None)
         ]
+
 
 # Test initializing a WCS
 
@@ -167,8 +168,10 @@ def test_from_fiducial_composite():
     sky = coord.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
     tan = models.Pix2Sky_TAN()
     spec = cf.SpectralFrame(unit=(u.micron,), axes_order=(0,))
-    celestial = cf.CelestialFrame(reference_frame=sky.frame, unit=(sky.spherical.lon.unit,
-                                  sky.spherical.lat.unit), axes_order=(1, 2))
+    celestial = cf.CelestialFrame(
+        reference_frame=sky.frame,
+        unit=(sky.spherical.lon.unit, sky.spherical.lat.unit),
+        axes_order=(1, 2))
     coord_frame = cf.CompositeFrame([spec, celestial], name='cube_frame')
     w = wcs_from_fiducial([.5, sky], coord_frame, projection=tan)
     assert isinstance(w.cube_frame.frames[1].reference_frame, coord.FK5)
@@ -188,6 +191,11 @@ def test_from_fiducial_composite():
 
     coord_result = w(1, 1, 1, output='numericals_plus')
     assert_allclose(coord_result[0], u.Quantity(11.5 * u.micron))
+
+    # https://github.com/spacetelescope/gwcs/issues/135
+    # 2.1 - trans not quantities, inputs are quantities
+    with pytest.raises(u.UnitsError):
+        w(1 * u.pix, 1 * u.pix, 1 * u.pix)
 
 
 def test_from_fiducial_frame2d():
@@ -293,7 +301,6 @@ def test_format_output():
 def test_available_frames():
     w = wcs.WCS(pipe)
     assert w.available_frames == ['detector', 'focal', 'icrs']
-
 
 
 class TestImaging(object):
