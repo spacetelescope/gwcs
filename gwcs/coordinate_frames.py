@@ -494,3 +494,9 @@ class Frame2D(CoordinateFrame):
         args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un for arg, un in zip(args, self.unit)])
         return coo
+
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == 1 and astutil.isiterable(coords[0]):
+            coords = coords[0]
+        coord = [c.to(unit) for c, unit in zip(coords, self.unit)]
+        return coord[0], coord[1]

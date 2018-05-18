@@ -81,34 +81,22 @@ def _toindex(value):
     return indx
 
 
-def _get_values(units, *args):
+def get_values(units=None, *args):
     """
-    Return the values of SkyCoord or Quantity objects.
+    Return the values of Quantity objects after optionally converting to units.
 
     Parameters
     ----------
-    units : str or `~astropy.units.Unit`
-        Units of the wcs object.
-        The input values are converted to ``units`` before the values are returned.
+    units : str or `~astropy.units.Unit` or None
+        Units to convert to. The input values are converted to ``units``
+        before the values are returned.
+    args : `~astropy.units.Quantity`
+        Quantity inputs.
     """
-    val = []
-    values = []
-    for arg in args:
-        if isinstance(arg, coords.SkyCoord):
-            try:
-                lon = arg.data.lon
-                lat = arg.data.lat
-            except AttributeError:
-                lon = arg.spherical.lon
-                lat = arg.spherical.lat
-            val.extend([lon, lat])
-        elif isinstance(arg, u.Quantity):
-            val.append(arg)
-        else:
-            raise TypeError("Unsupported coordinate type {}".format(arg))
-    for va, un in zip(val, units):
-        values.append(va.to(un).value)
-    return values
+    if units is not None:
+        return [a.to_value(unit) for a, unit in zip(args, units)]
+    else:
+        return [a.value for a in args]
 
 
 def _compute_lon_pole(skycoord, projection):
