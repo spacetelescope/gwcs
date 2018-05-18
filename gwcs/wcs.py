@@ -279,7 +279,6 @@ class WCS:
         if not utils.isnumerical(args[0]):
             args = self.output_frame.coordinate_to_quantity(*args)
             if not self.forward_transform.uses_quantity:
-                #args = [a.to_value(unit) for a, unit in zip(args, self.output_frame.unit)]
                 args = utils.get_values(self.output_frame.unit, *args)
 
         output = kwargs.pop('output', None)
@@ -334,7 +333,6 @@ class WCS:
             inp_frame = getattr(self, from_frame)
             args = inp_frame.coordinate_to_quantity(*args)
             if not transform.uses_quantity:
-                #args = [a.to_value(unit) for a, unit in zip(args, inp_frame.unit)]
                 args = utils.get_values(inp_frame.unit, *args)
 
         output = kwargs.pop("output", None)
