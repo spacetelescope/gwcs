@@ -202,3 +202,40 @@ def test_stokes_frame():
     assert sf.coordinates(0 * u.pix) == 'I'
     assert sf.coordinate_to_quantity('I') == 0 * u.pix
     assert sf.coordinate_to_quantity(0) == 0
+
+
+@pytest.mark.parametrize('inp', [
+    (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one),
+    (211 * u.AA, 0 * u.s, (0 * u.one, 0 * u.one)),
+    (211 * u.AA, 0 * u.s, (0, 0) * u.one),
+    (211 * u.AA, Time("2011-01-01T00:00:00"), (0, 0) * u.one)
+])
+def test_coordinate_to_quantity_frame2d_composite(inp):
+    wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
+    time_frame = cf.TemporalFrame(
+        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+
+    frame2d = cf.Frame2D(name="intermediate", axes_order=(2,3), unit=(u.one, u.one))
+
+    comp = cf.CompositeFrame([wave_frame, time_frame, frame2d])
+
+    coords = comp.coordinate_to_quantity(*inp)
+
+    expected = (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one)
+    for output, exp in zip(coords, expected):
+        assert_quantity_allclose(output, exp)
+
+
+def test_coordinate_to_quantity_frame_2d():
+    frame = cf.Frame2D(unit=(u.one, u.arcsec))
+    inp = (1, 2)
+    expected = (1 * u.one, 2 * u.arcsec)
+    result = frame.coordinate_to_quantity(*inp)
+    for output, exp in zip(result, expected):
+        assert_quantity_allclose(output, exp)
+
+    inp = (1 * u.one, 2)
+    expected = (1 * u.one, 2 * u.arcsec)
+    result = frame.coordinate_to_quantity(*inp)
+    for output, exp in zip(result, expected):
+        assert_quantity_allclose(output, exp)

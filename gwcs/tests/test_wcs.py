@@ -132,8 +132,9 @@ def test_return_coordinates():
     numerical_result = (26.8, -0.6)
     # Celestial frame
     num_plus_output = w(x, y, output='numericals_plus')
+    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(w(x, y), numerical_result)
-    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
     assert_allclose(w.invert(num_plus_output), (x, y))
     assert isinstance(num_plus_output, coord.SkyCoord)
     # Spectral frame
@@ -141,7 +142,8 @@ def test_return_coordinates():
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
     numerical_result = poly(y)
     num_plus_output = w(y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
+    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
+    assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
@@ -149,7 +151,8 @@ def test_return_coordinates():
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
     numerical_result = transform(x, y, y)
     num_plus_output = w(x, y, y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, *num_plus_output), numerical_result)
+    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
 
 
 def test_from_fiducial_sky():

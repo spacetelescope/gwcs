@@ -241,7 +241,13 @@ class CelestialFrame(CoordinateFrame):
         elif len(coords) == 1:
             arg = coords[0]
         else:
-            raise ValueError("Unexpected number of celestial coordinates in input {}".format(coords))
+            if self.name is not None:
+                name = self.name
+            else:
+                name = self.__class__.__name__
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
 
         if isinstance(arg, coord.SkyCoord):
             arg = arg.transform_to(self._reference_frame)
@@ -494,3 +500,23 @@ class Frame2D(CoordinateFrame):
         args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un for arg, un in zip(args, self.unit)])
         return coo
+
+    def coordinate_to_quantity(self, *coords):
+        # list or tuple
+        if len(coords) == 1 and astutil.isiterable(coords[0]):
+            coords = list(coords[0])
+        elif len(coords) == 2:
+            coords = list(coords)
+        else:
+            if self.name is not None:
+                name = self.name
+            else:
+                name = self.__class__.__name__
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
+
+        for i in range(2):
+            if not hasattr(coords[i], 'unit'):
+                coords[i] = coords[i] * self.unit[i]
+        return tuple(coords)
