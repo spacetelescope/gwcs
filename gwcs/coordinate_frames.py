@@ -496,7 +496,10 @@ class Frame2D(CoordinateFrame):
         return coo
 
     def coordinate_to_quantity(self, *coords):
+        # list or tuple
         if len(coords) == 1 and astutil.isiterable(coords[0]):
             coords = coords[0]
-        coord = [c.to(unit) for c, unit in zip(coords, self.unit)]
-        return coord[0], coord[1]
+        for i in range(2):
+            if not hasattr(coords[i], 'unit'):
+                coords[i] = coords[i] * self.unit[i]
+        return tuple(coords)
