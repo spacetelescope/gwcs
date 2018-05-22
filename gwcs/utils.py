@@ -146,7 +146,6 @@ def get_projcode(wcs_info):
     projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
         raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
-        #projcode = None
     return projcode
 
 
@@ -363,8 +362,6 @@ def fitswcs_linear(header):
         for i in sky_axes:
             crpix.append(wcs_info['CRPIX'][i])
             cdelt.append(wcs_info['CDELT'][i])
-        #crpix = wcs_info['CRPIX'][sky_axes]
-        #cdelt = wcs_info['CDELT'][sky_axes]
     else:
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
@@ -383,7 +380,7 @@ def fitswcs_linear(header):
 
     if not wcs_info['has_cd']:
         # Do not compute scaling since CDELT* = 1 if CD is present.
-        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1)) \
+        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1))
                           for i, scale in enumerate(cdelt)]
 
         scaling = functools.reduce(lambda x, y: x & y, scaling_models)

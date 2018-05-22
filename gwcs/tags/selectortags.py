@@ -10,7 +10,6 @@ from astropy.utils.misc import isiterable
 
 from asdf import yamlutil
 from asdf.tags.core.ndarray import NDArrayType
-#from astropy.io.misc.asdf.tags.transform.basic import TransformType
 from ..gwcs_types import GWCSTransformType
 
 

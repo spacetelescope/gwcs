@@ -55,7 +55,7 @@ def test_LabelMapperRange(tmpdir):
     for i in np.arange(9) * .1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
         m.append(Polynomial2D(2, c0_0=c0_0,
-                                     c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
+                              c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
     keys = np.array([[4.88, 5.64],
                      [5.75, 6.5],
                      [6.67, 7.47],
@@ -69,6 +69,6 @@ def test_LabelMapperRange(tmpdir):
     for k, v in zip(keys, m):
         rmapper[tuple(k)] = v
     sel = selector.LabelMapperRange(('x', 'y'), rmapper,
-                                   inputs_mapping=Mapping((0,), n_inputs=2))
+                                    inputs_mapping=Mapping((0,), n_inputs=2))
     tree = {'model': sel}
     helpers.assert_roundtrip_tree(tree, tmpdir, extensions=GWCSExtension())
