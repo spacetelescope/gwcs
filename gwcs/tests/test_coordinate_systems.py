@@ -248,7 +248,7 @@ def test_coordinate_to_quantity_frame2d_composite(inp):
     time_frame = cf.TemporalFrame(
         axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
 
-    frame2d = cf.Frame2D(name="intermediate", axes_order=(2,3), unit=(u.one, u.one))
+    frame2d = cf.Frame2D(name="intermediate", axes_order=(2, 3), unit=(u.one, u.one))
 
     comp = cf.CompositeFrame([wave_frame, time_frame, frame2d])
 
@@ -272,5 +272,3 @@ def test_coordinate_to_quantity_frame_2d():
     result = frame.coordinate_to_quantity(*inp)
     for output, exp in zip(result, expected):
         assert_quantity_allclose(output, exp)
-
-

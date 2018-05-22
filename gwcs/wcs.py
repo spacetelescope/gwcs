@@ -98,7 +98,8 @@ class WCS:
         try:
             from_ind = self._get_frame_index(from_frame)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_frame))
+            raise CoordinateFrameError("Frame {0} is not in the available "
+                                       "frames".format(from_frame))
         try:
             to_ind = self._get_frame_index(to_frame)
         except ValueError:
@@ -480,7 +481,6 @@ class WCS:
             try:
                 # Make sure the dimensions of the new bbox are correct.
                 mutils._BoundingBox.validate(transform_0, value)
-                #transform_0.bounding_box.validate(transform_0, value)
             except:
                 raise
             # get the sorted order of axes' indices

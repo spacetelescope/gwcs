@@ -88,7 +88,8 @@ class FrameType(GWCSType):
             kwargs['axes_names'] = node['axes_names']
 
         if 'reference_frame' in node:
-            kwargs['reference_frame'] = yamlutil.tagged_tree_to_custom_tree(node['reference_frame'], ctx)
+            kwargs['reference_frame'] = yamlutil.tagged_tree_to_custom_tree(
+                node['reference_frame'], ctx)
 
         if 'axes_order' in node:
             kwargs['axes_order'] = tuple(node['axes_order'])
@@ -118,7 +119,8 @@ class FrameType(GWCSType):
             node['axes_names'] = list(frame.axes_names)
 
         if frame.reference_frame is not None:
-            node['reference_frame'] = yamlutil.custom_tree_to_tagged_tree(frame.reference_frame, ctx)
+            node['reference_frame'] = yamlutil.custom_tree_to_tagged_tree(
+                frame.reference_frame, ctx)
 
         if frame.unit is not None:
             node['unit'] = yamlutil.custom_tree_to_tagged_tree(

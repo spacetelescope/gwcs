@@ -295,15 +295,9 @@ def test_available_frames():
     assert w.available_frames == ['detector', 'focal', 'icrs']
 
 
-
 class TestImaging(object):
-
-    #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
-    #                            module="astropy.wcs.wcs")
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
-        #warnings.filterwarnings("ignore", message="^The WCS transformation has more axes (2)",
-        #                        module="astropy.wcs.wcs")
         self.fitsw = astwcs.WCS(hdr)
         a_coeff = hdr['A_*']
         a_order = a_coeff.pop('A_ORDER')

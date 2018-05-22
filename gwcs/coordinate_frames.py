@@ -146,7 +146,6 @@ class CoordinateFrame:
         """ Reference Position. """
         return getattr(self, "_reference_position", None)
 
-
     @property
     def axes_type(self):
         """ Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'. """
@@ -231,10 +230,6 @@ class CelestialFrame(CoordinateFrame):
         elif len(coords) == 1:
             arg = coords[0]
         else:
-            #if self.name is not None:
-                #name = self.name
-            #else:
-                #name = self.__class__.__name__
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
                              "expected 2, got  {}".format(name, len(coords)))
@@ -499,10 +494,6 @@ class Frame2D(CoordinateFrame):
         elif len(coords) == 2:
             coords = list(coords)
         else:
-            #if self.name is not None:
-                #name = self.name
-            #else:
-                #name = self.__class__.__name__
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
                              "expected 2, got  {}".format(name, len(coords)))

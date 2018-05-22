@@ -47,7 +47,7 @@ def polygon1(shape=(9, 9)):
     ar[5][1:4] = 1
     ar[6][2:7] = 1
     ar[7][3:6] = 1
-    #ar[8][3:4] =1 ##need to include this in the future if padding top and left
+    # ar[8][3:4] =1 ##need to include this in the future if padding top and left
     return ar
 
 
@@ -102,7 +102,7 @@ def create_range_mapper():
         rmapper[tuple(k)] = v
 
     sel = selector.LabelMapperRange(('x', 'y'), rmapper,
-                                   inputs_mapping=models.Mapping((0,), n_inputs=2))
+                                    inputs_mapping=models.Mapping((0,), n_inputs=2))
     return sel
 
 
@@ -155,10 +155,10 @@ def test_LabelMapper():
 
 
 def test_LabelMapperArray():
-    regions = np.arange(25).reshape(5,5)
+    regions = np.arange(25).reshape(5, 5)
     array_mapper = selector.LabelMapperArray(mapper=regions)
     with pytest.raises(selector.LabelMapperArrayIndexingError):
-        array_mapper(7,1)
+        array_mapper(7, 1)
 
     # test the first and last element
     utils.assert_equal(array_mapper(0, 0), 0)
@@ -169,13 +169,13 @@ def test_LabelMapperArray():
 def test_RegionsSelector():
     labels = np.zeros((10, 10))
     labels[1, 2] = 1
-    labels[2][2 : 4] = 1
-    labels[3][1 : 4] = 1
-    labels[4][ : 4] = 1
-    labels[5][1 : 4] = 1
-    labels[6][2 : 7] = 1
-    labels[7][3 : 6] = 1
-    labels[:, -2 :] = 2
+    labels[2][2: 4] = 1
+    labels[3][1: 4] = 1
+    labels[4][: 4] = 1
+    labels[5][1: 4] = 1
+    labels[6][2: 7] = 1
+    labels[7][3: 6] = 1
+    labels[:, -2:] = 2
 
     mapper = selector.LabelMapperArray(labels)
     sel = {1: models.Shift(1) & models.Scale(1),
@@ -188,7 +188,7 @@ def test_RegionsSelector():
                                  label_mapper=mapper,
                                  selector={0: models.Shift(1) & models.Scale(1),
                                            2: models.Shift(2) & models.Scale(2)
-           }
+                                           }
                                  )
 
     reg_selector = selector.RegionsSelector(inputs=('x', 'y'), outputs=('x', 'y'),
@@ -260,7 +260,7 @@ def test_unique_labels():
     result = selector.get_unique_regions(labels)
     utils.assert_equal(expected, result)
 
-    assert not 0 in result
+    assert 0 not in result
 
     labels = ["S100A1", "S200A2", "S400A1", "S1600", "S200B1", "", ] * 1000
     np.random.shuffle(labels)
