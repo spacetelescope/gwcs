@@ -79,6 +79,7 @@ __all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSe
 
 
 def get_unique_regions(regions):
+    regions = np.asarray(regions)
     if isinstance(regions, np.ndarray):
         unique_regions = np.unique(regions).tolist()
 

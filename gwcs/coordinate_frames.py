@@ -54,6 +54,7 @@ class CoordinateFrame:
             self._axes_type = (axes_type,)
         else:
             self._axes_type = tuple(axes_type)
+
         self._reference_frame = reference_frame
         if unit is not None:
             if astutil.isiterable(unit):
@@ -80,6 +81,11 @@ class CoordinateFrame:
             self._name = name
 
         self._reference_position = reference_position
+
+        if len(self._axes_type) != naxes:
+            raise ValueError("Length of axes_type does not match number of axes.")
+        if len(self._axes_order) != naxes:
+            raise ValueError("Length of axes_order does not match number of axes.")
 
         super(CoordinateFrame, self).__init__()
 
@@ -140,23 +146,6 @@ class CoordinateFrame:
         """ Reference Position. """
         return getattr(self, "_reference_position", None)
 
-    def input_axes(self, start_frame=None):
-        """
-        Computes which axes in `start_frame` contribute to each axis in the current frame.
-
-        Parameters
-        ----------
-        start_frame : ~gwcs.coordinate_frames.CoordinateFrame
-            A frame in the WCS pipeline
-            The transform between start_frame and the current frame is used to compute the
-            mapping inputs: outputs.
-        """
-
-        sep = self._separable(start_frame)
-        inputs = []
-        for ax in self.axes_order:
-            inputs.append(list(sep[ax].nonzero()[0]))
-        return inputs
 
     @property
     def axes_type(self):
@@ -200,16 +189,17 @@ class CelestialFrame(CoordinateFrame):
                  name=None):
         naxes = 2
         if reference_frame is not None:
-            if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
-                _axes_names = list(reference_frame.representation_component_names.values())
-                if 'distance' in _axes_names:
-                    _axes_names.remove('distance')
-                if axes_names is None:
-                    axes_names = _axes_names
-                naxes = len(_axes_names)
-                _unit = list(reference_frame.representation_component_units.values())
-                if unit is None and _unit:
-                    unit = _unit
+            if not isinstance(reference_frame, str):
+                if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
+                    _axes_names = list(reference_frame.representation_component_names.values())
+                    if 'distance' in _axes_names:
+                        _axes_names.remove('distance')
+                    if axes_names is None:
+                        axes_names = _axes_names
+                    naxes = len(_axes_names)
+                    _unit = list(reference_frame.representation_component_units.values())
+                    if unit is None and _unit:
+                        unit = _unit
 
         if axes_order is None:
             axes_order = tuple(range(naxes))
@@ -241,10 +231,10 @@ class CelestialFrame(CoordinateFrame):
         elif len(coords) == 1:
             arg = coords[0]
         else:
-            if self.name is not None:
-                name = self.name
-            else:
-                name = self.__class__.__name__
+            #if self.name is not None:
+                #name = self.name
+            #else:
+                #name = self.__class__.__name__
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
                              "expected 2, got  {}".format(name, len(coords)))
@@ -365,8 +355,8 @@ class TemporalFrame(CoordinateFrame):
         # Is already a quantity
         elif hasattr(coords[0], 'unit'):
             return coords[0]
-
-        raise ValueError("Can not convert {} to Quantity".format(coords[0]))
+        else:
+            raise ValueError("Can not convert {} to Quantity".format(coords[0]))
 
 
 class CompositeFrame(CoordinateFrame):
@@ -493,7 +483,8 @@ class Frame2D(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
                  name=None):
 
-        super(Frame2D, self).__init__(2, ["SPATIAL", "SPATIAL"], axes_order, name=name,
+        super(Frame2D, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+                                      axes_order=axes_order, name=name,
                                       axes_names=axes_names, unit=unit)
 
     def coordinates(self, *args):
@@ -508,10 +499,10 @@ class Frame2D(CoordinateFrame):
         elif len(coords) == 2:
             coords = list(coords)
         else:
-            if self.name is not None:
-                name = self.name
-            else:
-                name = self.__class__.__name__
+            #if self.name is not None:
+                #name = self.name
+            #else:
+                #name = self.__class__.__name__
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
                              "expected 2, got  {}".format(name, len(coords)))

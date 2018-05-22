@@ -83,3 +83,15 @@ def test_get_axes():
     assert cel == [0, 2]
     assert spec == [1]
     assert not other
+
+
+def test_isnumerical():
+    sky = coord.SkyCoord(1*u.deg, 2*u.deg)
+    assert not gwutils.isnumerical(sky)
+
+    assert not gwutils.isnumerical(2*u.m)
+
+    assert gwutils.isnumerical(np.float(0))
+    assert gwutils.isnumerical(np.array(0))
+
+    assert not gwutils.isnumerical(np.array(['s200', '234']))

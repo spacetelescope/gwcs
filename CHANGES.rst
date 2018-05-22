@@ -20,6 +20,13 @@ New Features
   a specific tag and schema for ``Frame2D`` [#150]
 
 
+API Changes
+^^^^^^^^^^^
+
+- The argument ``output="numerical_plus"`` was replaced by a bool
+  argument ``with_units``. [#156]
+
+
 Bug Fixes
 ^^^^^^^^^
 

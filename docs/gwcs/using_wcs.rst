@@ -57,7 +57,7 @@ Because the ``output_frame`` is a `~gwcs.coordinate_frames.CoordinateFrame` obje
 the result of the WCS transform as an `astropy.coordinates.SkyCoord` object and transform
 them to other standard coordinate frames supported by `astropy.coordinates`.
 
-  >>> skycoord = wcsobj(1, 2, output="numericals_plus")
+  >>> skycoord = wcsobj(1, 2, with_units=True)
   >>> print(skycoord) # doctest: +SKIP
   <SkyCoord (ICRS): (ra, dec) in deg
       (6.62759055, -68.75445668)>

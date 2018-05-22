@@ -213,22 +213,26 @@ class WCS:
         Executes the forward transform.
 
         args : float or array-like
-            Inputs in the input coordinate system, separate inputs for each dimension.
-        output : str, optional
-            One of [``numericals``, ``numericals_plus``]
-            If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object.
+            Inputs in the input coordinate system, separate inputs
+            for each dimension.
+        with_units : bool
+            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Quantity` object, by using the units of
+            the output cooridnate frame.
+            Optional, default=False.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of the inputs being
-             outside the bounding_box are set to ``fill_value``.
+             If True(default) values in the result which correspond to
+             any of the inputs being outside the bounding_box are set
+             to ``fill_value``.
         fill_value : float, optional
-            Output value for inputs outside the bounding_box (default is np.nan).
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
         """
         transform = self.forward_transform
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
-        output = kwargs.pop("output", "numericals")
+        with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -245,16 +249,12 @@ class WCS:
                 transform.bounding_box = self.bounding_box
         result = transform(*args, **kwargs)
 
-        if output not in ["numericals", "numericals_plus"]:
-            raise ValueError("'output' should be 'numericals' or "
-                             "'numericals_plus', not '{0}'.".format(output))
-        if output == 'numericals_plus':
+        if with_units:
             if self.output_frame.naxes == 1:
                 result = self.output_frame.coordinates(result)
             else:
                 result = self.output_frame.coordinates(*result)
-        elif output is not None and output != "numericals":
-            raise ValueError("Type of output unrecognized {0}".format(output))
+
         return result
 
     def invert(self, *args, **kwargs):
@@ -281,7 +281,7 @@ class WCS:
             if not self.forward_transform.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
 
-        output = kwargs.pop('output', None)
+        with_units = kwargs.pop('with_units', False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -292,7 +292,7 @@ class WCS:
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
 
-        if output == 'numericals_plus' and self.input_frame:
+        if with_units:
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
             else:
@@ -318,9 +318,8 @@ class WCS:
             Coordinate frame into which to transform.
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
-        output : str
-            One of [``numericals``, ``numericals_plus``]
-            If ``numericals_plus`` - returns a `~astropy.coordinates.SkyCoord` or
+        output_with_units : bool
+            If ``True`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.units.Quantity` object.
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to any of the inputs being
@@ -335,7 +334,7 @@ class WCS:
             if not transform.uses_quantity:
                 args = utils.get_values(inp_frame.unit, *args)
 
-        output = kwargs.pop("output", None)
+        with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -343,7 +342,7 @@ class WCS:
 
         result = transform(*args, **kwargs)
 
-        if output == "numericals_plus":
+        if with_units:
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
             if to_frame_obj is not None:
                 if to_frame_obj.naxes == 1:
@@ -353,8 +352,7 @@ class WCS:
             else:
                 raise TypeError("Coordinate objects could not be created because"
                                 "frame {0} is not defined.".format(to_frame_name))
-        elif output is not None and output != "numericals":
-            raise ValueError("Type of output unrecognized {0}".format(output))
+
         return result
 
     @property

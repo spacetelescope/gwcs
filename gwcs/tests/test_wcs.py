@@ -13,7 +13,7 @@ from .. import wcs
 from ..wcstools import *
 from .. import coordinate_frames as cf
 from .. import utils
-from ..utils import CoordinateFrameError, DimensionalityError
+from ..utils import CoordinateFrameError
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -131,7 +131,7 @@ def test_return_coordinates():
     y = 2.3
     numerical_result = (26.8, -0.6)
     # Celestial frame
-    num_plus_output = w(x, y, output='numericals_plus')
+    num_plus_output = w(x, y, with_units=True)
     output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(w(x, y), numerical_result)
     assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
@@ -141,7 +141,7 @@ def test_return_coordinates():
     poly = models.Polynomial1D(1, c0=1, c1=2)
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
     numerical_result = poly(y)
-    num_plus_output = w(y, output='numericals_plus')
+    num_plus_output = w(y, with_units=True)
     output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
@@ -150,7 +150,7 @@ def test_return_coordinates():
     transform = m1 & poly
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
     numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, output='numericals_plus')
+    num_plus_output = w(x, y, y, with_units=True)
     output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
     assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
 
@@ -174,7 +174,7 @@ def test_from_fiducial_composite():
     assert isinstance(w.cube_frame.frames[1].reference_frame, coord.FK5)
     assert_allclose(w(1, 1, 1), (1.5, 96.52373368309931, -71.37420187296995))
     # test returning coordinate objects with composite output_frame
-    res = w(1, 2, 2, output='numericals_plus')
+    res = w(1, 2, 2, with_units=True)
     assert_allclose(res[0], u.Quantity(1.5 * u.micron))
     assert isinstance(res[1], coord.SkyCoord)
     assert_allclose(res[1].ra.value, 99.329496642319)
@@ -186,7 +186,7 @@ def test_from_fiducial_composite():
     assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
     # test coordinate object output
 
-    coord_result = w(1, 1, 1, output='numericals_plus')
+    coord_result = w(1, 1, 1, with_units=True)
     assert_allclose(coord_result[0], u.Quantity(11.5 * u.micron))
 
 
@@ -329,7 +329,7 @@ class TestImaging(object):
 
         tan = models.Pix2Sky_TAN(name='tangent_projection')
         sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
-        det = cf.Frame2D('detector')
+        det = cf.Frame2D(name='detector')
         wcs_forward = wcslin | tan | n2c
         pipeline = [('detector', distortion),
                     ('focal', wcs_forward),
@@ -379,12 +379,12 @@ class TestImaging(object):
         assert_allclose(footprint, fits_footprint)
 
     def test_inverse(self):
-        sky_coord = self.wcs(1, 2, output="numericals_plus")
+        sky_coord = self.wcs(1, 2, with_units=True)
         with pytest.raises(NotImplementedError):
             self.wcs.invert(sky_coord)
 
     def test_back_coordinates(self):
-        sky_coord = self.wcs(1, 2, output="numericals_plus")
+        sky_coord = self.wcs(1, 2, with_units=True)
         res = self.wcs.transform('sky', 'focal', sky_coord)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 
