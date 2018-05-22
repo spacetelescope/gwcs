@@ -97,6 +97,39 @@ def test_axes_type():
     assert(focal.axes_type == ('SPATIAL', 'SPATIAL'))
 
 
+def test_length_attributes():
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg),
+                           axes_type=("SPATIAL", "SPATIAL"),
+                           axes_order=(0, 1))
+
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg, u.deg),
+                           axes_type=("SPATIAL",),
+                           axes_order=(0, 1))
+
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg, u.deg),
+                           axes_type=("SPATIAL", "SPATIAL"),
+                           axes_order=(0,))
+
+
+def test_base_coordinate():
+    frame = cf.CoordinateFrame(naxes=2, axes_type=("SPATIAL", "SPATIAL"),
+                               axes_order=(0, 1))
+    assert frame.name == 'CoordinateFrame'
+    frame = cf.CoordinateFrame(name="CustomFrame", naxes=2,
+                               axes_type=("SPATIAL", "SPATIAL"),
+                               axes_order=(0, 1))
+    assert frame.name == 'CustomFrame'
+    frame.name = "DeLorean"
+    assert frame.name == 'DeLorean'
+
+    q1, q2 = frame.coordinate_to_quantity(12 * u.deg, 3 * u.arcsec)
+    assert_quantity_allclose(q1, 12 * u.deg)
+    assert_quantity_allclose(q2, 3 * u.arcsec)
+
+
 def test_temporal_relative():
     t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.coordinates(10) == Time("2018-01-01T00:00:00") + 10 * u.s
@@ -239,3 +272,5 @@ def test_coordinate_to_quantity_frame_2d():
     result = frame.coordinate_to_quantity(*inp)
     for output, exp in zip(result, expected):
         assert_quantity_allclose(output, exp)
+
+

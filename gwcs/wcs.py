@@ -213,21 +213,26 @@ class WCS:
         Executes the forward transform.
 
         args : float or array-like
-            Inputs in the input coordinate system, separate inputs for each dimension.
-        output_with_units : bool
+            Inputs in the input coordinate system, separate inputs
+            for each dimension.
+        with_units : bool
             If ``True`` returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object.
+            `~astropy.units.Quantity` object, by using the units of
+            the output cooridnate frame.
+            Optional, default=False.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of the inputs being
-             outside the bounding_box are set to ``fill_value``.
+             If True(default) values in the result which correspond to
+             any of the inputs being outside the bounding_box are set
+             to ``fill_value``.
         fill_value : float, optional
-            Output value for inputs outside the bounding_box (default is np.nan).
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
         """
         transform = self.forward_transform
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
-        output_with_units = kwargs.pop("output_with_units")
+        with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -244,7 +249,7 @@ class WCS:
                 transform.bounding_box = self.bounding_box
         result = transform(*args, **kwargs)
 
-        if output_with_units:
+        if with_units:
             if self.output_frame.naxes == 1:
                 result = self.output_frame.coordinates(result)
             else:
@@ -276,7 +281,7 @@ class WCS:
             if not self.forward_transform.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
 
-        output_with_units = kwargs.pop('output_with_units')
+        with_units = kwargs.pop('with_units', False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -287,7 +292,7 @@ class WCS:
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
 
-        if output_with_units:
+        if with_units:
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
             else:
@@ -329,7 +334,7 @@ class WCS:
             if not transform.uses_quantity:
                 args = utils.get_values(inp_frame.unit, *args)
 
-        output_with_units = kwargs.pop("output_with_units")
+        with_units = kwargs.pop("with_units", False)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:
@@ -337,7 +342,7 @@ class WCS:
 
         result = transform(*args, **kwargs)
 
-        if output_with_units:
+        if with_units:
             to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
             if to_frame_obj is not None:
                 if to_frame_obj.naxes == 1:

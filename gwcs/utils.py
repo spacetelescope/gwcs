@@ -7,13 +7,10 @@ import re
 import functools
 import numpy as np
 from astropy.modeling import models as astmodels
-from astropy.modeling.models import Mapping
 from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
-
-from astropy.utils.decorators import deprecated
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -38,12 +35,6 @@ class UnsupportedProjectionError(Exception):
     def __init__(self, code):
         message = "Unsupported projection: {0}".format(code)
         super(UnsupportedProjectionError, self).__init__(message)
-
-
-class DimensionalityError(Exception):
-
-    def __init__(self, message):
-        super(DimensionalityError, self).__init__(message)
 
 
 class RegionError(Exception):
