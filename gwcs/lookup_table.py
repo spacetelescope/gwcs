@@ -13,7 +13,8 @@ class LookupTable(Model):
     supports non-numeric values in the lookup table.
 
     .. note::
-        Any units on the input value are ignored.
+        Any units on the input value are ignored. Input values are rounded to
+        integers using `~numpy.round`.
 
     Parameters
     ----------
