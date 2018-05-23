@@ -35,7 +35,6 @@ Bug Fixes
 - Fixed a bug in ``grid_from_bounding_box`` which caused the grid to be larger than
   the image in cases when the bounding box is on the edges of an image. [#121]
 
-
 0.8.0 (2017-11-02)
 ------------------
 
