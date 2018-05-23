@@ -2,17 +2,16 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 import numpy as np
+
+import astropy.time
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
-import six
 
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame']
+           'CoordinateFrame', 'TemporalFrame']
 
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
@@ -22,10 +21,9 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
                                "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
 
 
-class CoordinateFrame(object):
-
+class CoordinateFrame:
     """
-    Base class for CoordinateFrames.
+    Base class for Coordinate Frames.
 
     Parameters
     ----------
@@ -52,10 +50,11 @@ class CoordinateFrame(object):
                  name=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
-        if isinstance(axes_type, six.string_types):
+        if isinstance(axes_type, str):
             self._axes_type = (axes_type,)
         else:
             self._axes_type = tuple(axes_type)
+
         self._reference_frame = reference_frame
         if unit is not None:
             if astutil.isiterable(unit):
@@ -67,7 +66,7 @@ class CoordinateFrame(object):
             else:
                 self._unit = tuple([u.Unit(au) for au in unit])
         if axes_names is not None:
-            if isinstance(axes_names, six.string_types):
+            if isinstance(axes_names, str):
                 axes_names = (axes_names,)
             else:
                 axes_names = tuple(axes_names)
@@ -81,10 +80,12 @@ class CoordinateFrame(object):
         else:
             self._name = name
 
-        if reference_position is not None:
-            self._reference_position = reference_position
-        else:
-            self._reference_position = None
+        self._reference_position = reference_position
+
+        if len(self._axes_type) != naxes:
+            raise ValueError("Length of axes_type does not match number of axes.")
+        if len(self._axes_order) != naxes:
+            raise ValueError("Length of axes_order does not match number of axes.")
 
         super(CoordinateFrame, self).__init__()
 
@@ -117,7 +118,7 @@ class CoordinateFrame(object):
 
     @property
     def naxes(self):
-        """ The number of axes intheis frame."""
+        """ The number of axes in this frame."""
         return self._naxes
 
     @property
@@ -137,32 +138,13 @@ class CoordinateFrame(object):
 
     @property
     def reference_frame(self):
+        """ Reference frame, used to convert to world coordinate objects. """
         return self._reference_frame
 
     @property
     def reference_position(self):
-        try:
-            return self._reference_position
-        except AttributeError:
-            return None
-
-    def input_axes(self, start_frame=None):
-        """
-        Computes which axes in `start_frame` contribute to each axis in the current frame.
-
-        Parameters
-        ----------
-        start_frame : ~gwcs.coordinate_frames.CoordinateFrame
-            A frame in the WCS pipeline
-            The transform between start_frame and the current frame is used to compute the
-            mapping inputs: outputs.
-        """
-
-        sep = self._separable(start_frame)
-        inputs = []
-        for ax in self.axes_order:
-            inputs.append(list(sep[ax].nonzero()[0]))
-        return inputs
+        """ Reference Position. """
+        return getattr(self, "_reference_position", None)
 
     @property
     def axes_type(self):
@@ -173,9 +155,15 @@ class CoordinateFrame(object):
         """ Create world coordinates object"""
         raise NotImplementedError("Subclasses may implement this")
 
+    def coordinate_to_quantity(self, *coords):
+        """
+        Given a rich coordinate object return an astropy quantity object.
+        """
+        # NoOp leaves it to the model to handle
+        return coords
+
 
 class CelestialFrame(CoordinateFrame):
-
     """
     Celestial Frame Representation
 
@@ -200,21 +188,22 @@ class CelestialFrame(CoordinateFrame):
                  name=None):
         naxes = 2
         if reference_frame is not None:
-            if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
-                _axes_names = list(reference_frame.representation_component_names.values())
-                if 'distance' in _axes_names:
-                    _axes_names.remove('distance')
-                if axes_names is None:
-                    axes_names = _axes_names
-                naxes = len(_axes_names)
-                _unit = list(reference_frame.representation_component_units.values())
-                if unit is None and _unit:
-                    unit = _unit
+            if not isinstance(reference_frame, str):
+                if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
+                    _axes_names = list(reference_frame.representation_component_names.values())
+                    if 'distance' in _axes_names:
+                        _axes_names.remove('distance')
+                    if axes_names is None:
+                        axes_names = _axes_names
+                    naxes = len(_axes_names)
+                    _unit = list(reference_frame.representation_component_units.values())
+                    if unit is None and _unit:
+                        unit = _unit
 
         if axes_order is None:
             axes_order = tuple(range(naxes))
         if unit is None:
-            unit = tuple([u.degree]  * naxes)
+            unit = tuple([u.degree] * naxes)
         axes_type = ['SPATIAL'] * naxes
         super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
                                              axes_order=axes_order,
@@ -232,11 +221,35 @@ class CelestialFrame(CoordinateFrame):
         args : float
             inputs to wcs.input_frame
         """
-        # Reorder axes if necesary.
-        try:
-            return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
-        except:
-            raise
+        # Reorder axes if necessary.
+        return coord.SkyCoord(*args, unit=self.unit, frame=self._reference_frame)
+
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == 2:
+            arg = coords
+        elif len(coords) == 1:
+            arg = coords[0]
+        else:
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
+
+        if isinstance(arg, coord.SkyCoord):
+            arg = arg.transform_to(self._reference_frame)
+            try:
+                lon = arg.data.lon
+                lat = arg.data.lat
+            except AttributeError:
+                lon = arg.spherical.lon
+                lat = arg.spherical.lat
+
+            return lon, lat
+
+        elif all(isinstance(a, u.Quantity) for a in arg):
+            return tuple(arg)
+
+        else:
+            raise ValueError("Could not convert input {} to lon and lat quantities.".format(arg))
 
 
 class SpectralFrame(CoordinateFrame):
@@ -265,21 +278,90 @@ class SpectralFrame(CoordinateFrame):
                                             reference_position=reference_position)
 
     def coordinates(self, *args):
+        if hasattr(args[0], 'unit'):
+            return args[0]
         if np.isscalar(args):
             return args * self.unit[0]
         else:
             return args[0] * self.unit[0]
 
+    def coordinate_to_quantity(self, *coords):
+        if hasattr(coords[0], 'unit'):
+            return coords[0]
+        else:
+            return coords[0] * self.unit[0]
+
+
+class TemporalFrame(CoordinateFrame):
+    """
+    A coordinate frame for time axes.
+
+    Parameters
+    ----------
+    axes_order : tuple or int
+        A dimension in the input data that corresponds to this axis.
+    reference_frame : `object`
+        The object to instantiate to represent the time coordinate. Defaults to
+        `astropy.time.Time`. Use partial functions to customise the
+        `~astropy.time.Time` instance.
+    reference_time : `astropy.time.Time` or `None`
+        Reference time, the time of the 0th coordinate. If none the values of
+        the axis are assumed to be valid times.
+    unit : str or units.Unit instance
+        Spectral unit.
+    axes_names : str
+        Spectral axis name.
+    name : str
+        Name for this frame.
+    """
+
+    def __init__(self, axes_order=(0,), reference_time=None,
+                 reference_frame=astropy.time.Time, unit=None,
+                 axes_names=None, name=None):
+
+        super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
+                         axes_names=axes_names, reference_frame=reference_frame,
+                         unit=unit, name=name,
+                         reference_position=reference_time)
+
+    def coordinates(self, *args):
+        if np.isscalar(args):
+            dt = args
+        else:
+            dt = args[0]
+
+        if self.reference_position:
+            if not hasattr(dt, 'unit'):
+                dt = dt * self.unit[0]
+
+            return self.reference_position + dt
+
+        else:
+            return self.reference_frame(dt)
+
+    def coordinate_to_quantity(self, *coords):
+        if isinstance(coords[0], astropy.time.Time):
+            if self.reference_position:
+                return (coords[0] - self.reference_position).to(self.unit[0])
+            else:
+                # If we can't convert to a quantity just drop the object out
+                # and hope the transform can cope.
+                return coords[0]
+        # Is already a quantity
+        elif hasattr(coords[0], 'unit'):
+            return coords[0]
+        else:
+            raise ValueError("Can not convert {} to Quantity".format(coords[0]))
+
 
 class CompositeFrame(CoordinateFrame):
-
     """
     Represents one or more frames.
 
     Parameters
     ----------
     frames : list
-        List of frames (TimeFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
+        List of frames (TemporalFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
     name : str
         Name for this frame.
 
@@ -317,15 +399,67 @@ class CompositeFrame(CoordinateFrame):
         return repr(self.frames)
 
     def coordinates(self, *args):
-        coo  = []
+        coo = []
         for frame in self.frames:
             fargs = [args[i] for i in frame.axes_order]
             coo.append(frame.coordinates(*fargs))
         return coo
 
+    def coordinate_to_quantity(self, *coords):
+        if len(coords) == len(self.frames):
+            args = coords
+        elif len(coords) == self.naxes:
+            args = []
+            for _frame in self.frames:
+                if _frame.naxes > 1:
+                    # Collect the arguments for this frame based on axes_order
+                    args.append([coords[i] for i in _frame.axes_order])
+                else:
+                    args.append(coords[_frame.axes_order[0]])
+        else:
+            raise ValueError("Incorrect number of arguments")
+
+        qs = []
+        for _frame, arg in zip(self.frames, args):
+            ret = _frame.coordinate_to_quantity(arg)
+            if isinstance(ret, tuple):
+                qs += list(ret)
+            else:
+                qs.append(ret)
+        return qs
+
+
+class StokesFrame(CoordinateFrame):
+    """
+    A coordinate frame for representing stokes polarisation states
+
+    Parameters
+    ----------
+    name : str
+        Name of this frame.
+    """
+
+    def __init__(self, axes_order=(0,), name=None):
+        self._stokes_components = ['I', 'Q', 'U', 'V']
+        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
+                                          axes_names=("stokes",), unit=u.one)
+
+    def coordinates(self, *args):
+        if hasattr(args[0], 'value'):
+            arg = args[0].value
+        else:
+            arg = args[0]
+        return self._stokes_components[int(arg)]
+
+    def coordinate_to_quantity(self, *coords):
+        if isinstance(coords[0], str):
+            if coords[0] in self._stokes_components:
+                return self._stokes_components.index(coords[0]) * u.pix
+        else:
+            return coords[0]
+
 
 class Frame2D(CoordinateFrame):
-
     """
     A 2D coordinate frame.
 
@@ -344,10 +478,27 @@ class Frame2D(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
                  name=None):
 
-        super(Frame2D, self).__init__(2, ["SPATIAL", "SPATIAL"], axes_order, name=name,
+        super(Frame2D, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+                                      axes_order=axes_order, name=name,
                                       axes_names=axes_names, unit=unit)
 
     def coordinates(self, *args):
         args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un for arg, un in zip(args, self.unit)])
         return coo
+
+    def coordinate_to_quantity(self, *coords):
+        # list or tuple
+        if len(coords) == 1 and astutil.isiterable(coords[0]):
+            coords = list(coords[0])
+        elif len(coords) == 2:
+            coords = list(coords)
+        else:
+            raise ValueError("Unexpected number of coordinates in "
+                             "input to frame {} : "
+                             "expected 2, got  {}".format(name, len(coords)))
+
+        for i in range(2):
+            if not hasattr(coords[i], 'unit'):
+                coords[i] = coords[i] * self.unit[i]
+        return tuple(coords)

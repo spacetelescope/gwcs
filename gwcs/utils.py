@@ -3,19 +3,14 @@
 Utility function for WCS
 
 """
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 import re
 import functools
 import numpy as np
 from astropy.modeling import models as astmodels
-from astropy.modeling.models import Mapping
 from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
-
-from astropy.utils.decorators import deprecated
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -42,12 +37,6 @@ class UnsupportedProjectionError(Exception):
         super(UnsupportedProjectionError, self).__init__(message)
 
 
-class DimensionalityError(Exception):
-
-    def __init__(self, message):
-        super(DimensionalityError, self).__init__(message)
-
-
 class RegionError(Exception):
 
     def __init__(self, message):
@@ -59,12 +48,6 @@ class CoordinateFrameError(Exception):
     def __init__(self, message):
         super(CoordinateFrameError, self).__init__(message)
 
-
-def _domain_to_bounding_box(domain):
-    bb = tuple([(item['lower'], item['upper']) for item in domain])
-    if len(bb) == 1:
-        bb = bb[0]
-    return bb
 
 def _toindex(value):
     """
@@ -89,74 +72,22 @@ def _toindex(value):
     return indx
 
 
-@deprecated("0.8", message="_domain has been deprecated in 0.8 and will be"
-            "removed in the next version", alternative="bounding_box")
-def _domain_to_bounds(domain):
-    def _get_bounds(axis_domain):
-        step = axis_domain.get('step', 1)
-        x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
-            else axis_domain['lower'] + step
-        y = axis_domain['upper'] - 1 if not axis_domain.get('includes_upper', False) \
-            else axis_domain['upper']
-        return (x, y)
-
-    bounds = [_get_bounds(d) for d in domain]
-    return bounds
-
-
-def _get_slice(axis_domain):
-    """ TODO: Remove when domain is removed"""
-    step = axis_domain.get('step', 1)
-    x = axis_domain['lower'] if axis_domain.get('includes_lower', True) \
-        else axis_domain['lower'] + step
-    y = axis_domain['upper'] if not axis_domain.get('includes_upper', False) \
-        else axis_domain['upper'] + step
-    return slice(x, y, step)
-
-
-def axis_domain_to_slice(axis_domain, step):
+def get_values(units=None, *args):
     """
-    Return a slice from the bounding_box for an axis.
+    Return the values of Quantity objects after optionally converting to units.
 
     Parameters
     ----------
-    axis_domain : tuple
-        The range of acceptable input values for an axis, usually from bounding_box.
-    step : int
-        A step to use in the slice.
+    units : str or `~astropy.units.Unit` or None
+        Units to convert to. The input values are converted to ``units``
+        before the values are returned.
+    args : `~astropy.units.Quantity`
+        Quantity inputs.
     """
-    x, y = axis_domain
-    return slice(x, y, step)
-
-
-def _get_values(units, *args):
-    """
-    Return the values of SkyCoord or Quantity objects.
-
-    Parameters
-    ----------
-    units : str or `~astropy.units.Unit`
-        Units of the wcs object.
-        The input values are converted to ``units`` before the values are returned.
-    """
-    val = []
-    values = []
-    for arg in args:
-        if isinstance(arg, coords.SkyCoord):
-            try:
-                lon = arg.data.lon
-                lat = arg.data.lat
-            except AttributeError:
-                lon = arg.spherical.lon
-                lat = arg.spherical.lat
-            val.extend([lon, lat])
-        elif isinstance(arg, u.Quantity):
-            val.append(arg)
-        else:
-            raise TypeError("Unsupported coordinate type {}".format(arg))
-    for va, un in zip(val, units):
-        values.append(va.to(un).value)
-    return values
+    if units is not None:
+        return [a.to_value(unit) for a, unit in zip(args, units)]
+    else:
+        return [a.value for a in args]
 
 
 def _compute_lon_pole(skycoord, projection):
@@ -215,7 +146,6 @@ def get_projcode(wcs_info):
     projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
         raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
-        #projcode = None
     return projcode
 
 
@@ -277,14 +207,14 @@ def read_wcs_from_header(header):
         for j in range(1, wcsaxes + 1):
             try:
                 if wcs_info['has_cd']:
-                    pc[i-1, j-1] = header['CD{0}_{1}'.format(i, j)]
+                    pc[i - 1, j - 1] = header['CD{0}_{1}'.format(i, j)]
                 else:
-                    pc[i-1, j-1] = header['PC{0}_{1}'.format(i, j)]
+                    pc[i - 1, j - 1] = header['PC{0}_{1}'.format(i, j)]
             except KeyError:
                 if i == j:
-                    pc[i-1, j-1] = 1.
+                    pc[i - 1, j - 1] = 1.
                 else:
-                    pc[i-1, j-1] = 0.
+                    pc[i - 1, j - 1] = 0.
     wcs_info['CTYPE'] = ctype
     wcs_info['CUNIT'] = cunit
     wcs_info['CRPIX'] = crpix
@@ -432,8 +362,6 @@ def fitswcs_linear(header):
         for i in sky_axes:
             crpix.append(wcs_info['CRPIX'][i])
             cdelt.append(wcs_info['CDELT'][i])
-        #crpix = wcs_info['CRPIX'][sky_axes]
-        #cdelt = wcs_info['CDELT'][sky_axes]
     else:
         cdelt = wcs_info['CDELT']
         crpix = wcs_info['CRPIX']
@@ -452,7 +380,7 @@ def fitswcs_linear(header):
 
     if not wcs_info['has_cd']:
         # Do not compute scaling since CDELT* = 1 if CD is present.
-        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1)) \
+        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1))
                           for i, scale in enumerate(cdelt)]
 
         scaling = functools.reduce(lambda x, y: x & y, scaling_models)
@@ -540,229 +468,6 @@ def isnumerical(val):
     return isnum
 
 
-# ######### axis separability #########
-# Functions to determine axis separability
-# The interface will change most likely
-
-
-def _compute_n_outputs(left, right):
-    """
-    Compute the number of outputs of two models.
-
-    The two models are the left and right model to an operation in
-    the expression tree of a compound model.
-
-    Parameters
-    ----------
-    left, right : `astropy.modeling.Model` or ndarray
-        If input is of an array, it is the output of `coord_matrix`.
-
-    """
-    if isinstance(left, core.Model):
-        lnout = left.n_outputs
-    else:
-        lnout = left.shape[0]
-    if isinstance(right, core.Model):
-        rnout = right.n_outputs
-    else:
-        rnout = right.shape[0]
-    noutp = lnout + rnout
-    return noutp
-
-
-def _arith_oper(left, right):
-    """
-    Function corresponding to one of the arithmetic operators ['+', '-'. '*', '/', '**'].
-
-    This always returns a nonseparable outputs.
-
-
-    Parameters
-    ----------
-    left, right : `astropy.modeling.Model` or ndarray
-        If input is of an array, it is the output of `coord_matrix`.
-
-    Returns
-    -------
-    result : ndarray
-        Result from this operation.
-    """
-    # models have the same number of outputs
-    if isinstance(left, core.Model):
-        noutp = left.n_outputs
-    else:
-        noutp = left.shape[0]
-    if isinstance(left, core.Model):
-        ninp = left.n_inputs
-    else:
-        ninp = left.shape[1]
-    result = np.ones((noutp, ninp))
-    return result
-
-
-def _coord_matrix(model, pos, noutp):
-    """
-    Create an array representing inputs and outputs of a simple model.
-
-    The array has a shape (noutp, model.n_inputs).
-
-    Parameters
-    ----------
-    model : `astropy.modeling.Model`
-        model
-    pos : str
-        Position of this model in the expression tree.
-        One of ['left', 'right'].
-    noutp : int
-        Number of outputs of the compound model of which the input model
-        is a left or right child.
-
-    Examples
-    --------
-    >>> _coord_matrix(Shift(1), 'left', 2)
-        array([[ 1.],
-        [ 0.]])
-    >>> _coord_matrix(Shift(1), 'right', 2)
-        array([[ 0.],
-               [ 1.]])
-    >>> _coord_matrix(Rotation2D, 'right', 4)
-        array([[ 0.,  0.],
-            [ 0.,  0.],
-            [ 1.,  1.],
-            [ 1.,  1.]])
-    """
-    if isinstance(model, Mapping):
-        axes = []
-        for i in model.mapping:
-            axis = np.zeros((model.n_inputs,))
-            axis[i] = 1
-            axes.append(axis)
-        m = np.vstack(axes)
-        mat = np.zeros((noutp, model.n_inputs))
-        if pos == 'left':
-            mat[: model.n_outputs, :model.n_inputs] = m
-        else:
-            mat[-model.n_outputs:, -model.n_inputs:] = m
-        return mat
-    if not model.separable:
-        # this does not work for more than 2 coordinates
-        mat = np.zeros((noutp, model.n_inputs))
-        if pos == 'left':
-            mat[:model.n_outputs, : model.n_inputs] = 1
-        else:
-            mat[-model.n_outputs:, -model.n_inputs:] = 1
-    else:
-        mat = np.zeros((noutp, model.n_inputs))
-
-        for i in range(model.n_inputs):
-            mat[i, i] = 1
-        if pos == 'right':
-            mat = np.roll(mat, (noutp - model.n_outputs))
-    return mat
-
-
-def _cstack(left, right):
-    """
-    Function corresponding to '&' operation.
-
-    Parameters
-    ----------
-    left, right : `astropy.modeling.Model` or ndarray
-        If input is of an array, it is the output of `coord_matrix`.
-
-    Returns
-    -------
-    result : ndarray
-        Result from this operation.
-
-    """
-    noutp = _compute_n_outputs(left, right)
-
-    if isinstance(left, core.Model):
-        cleft = _coord_matrix(left, 'left', noutp)
-    else:
-        cleft = np.zeros((noutp, left.shape[1]))
-        cleft[: left.shape[0], :left.shape[1]] = left
-    if isinstance(right, core.Model):
-        cright = _coord_matrix(right, 'right', noutp)
-    else:
-        cright = np.zeros((noutp, right.shape[1]))
-        cright[-right.shape[0]:, -right.shape[1]:] = 1
-
-    return np.hstack([cleft, cright])
-
-
-def _cdot(left, right):
-    """
-    Function corresponding to "|" operation.
-
-    Parameters
-    ----------
-    left, right : `astropy.modeling.Model` or ndarray
-        If input is of an array, it is the output of `coord_matrix`.
-
-    Returns
-    -------
-    result : ndarray
-        Result from this operation.
-    """
-    left, right = right, left
-    if isinstance(right, core.Model):
-        cright = _coord_matrix(right, 'right', right.n_outputs)
-    else:
-        cright = right
-    if isinstance(left, core.Model):
-        cleft = _coord_matrix(left, 'left', left.n_outputs)
-    else:
-        cleft = left
-    result = np.dot(cleft, cright)
-    return result
-
-
-def _separable(transform):
-    """
-    Calculate the separability of outputs.
-
-    Parameters
-    ----------
-    transform : `astropy.modeling.Model`
-        A transform (usually a compound model).
-
-    Returns
-    -------
-    is_separable : ndarray of dtype np.bool
-        An array of shape (transform.n_outputs,) of boolean type
-        Each element represents the separablity of the corresponding output.
-
-    Examples
-    --------
-    >>> separable(Shift(1) & Shift(2) | Scale(1) & Scale(2))
-        array([ True,  True], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Rotation2D(2))
-        array([False, False], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]) | Polynomial2D(1) & Polynomial2D(2))
-        array([False, False], dtype=bool)
-    >>> separable(Shift(1) & Shift(2) | Mapping([0, 1, 0, 1]))
-        array([ True,  True,  True,  True], dtype=bool)
-
-    """
-    if isinstance(transform, core._CompoundModel):
-        is_separable = transform._tree.evaluate(_operators)
-    elif isinstance(transform, core.Model):
-        is_separable = _coord_matrix(transform, 'left', transform.n_outputs)
-    return is_separable
-
-
-def is_separable(transform):
-    if transform.n_inputs == 1 and transform.n_outputs > 1:
-        is_separable = np.array([False] * transform.n_outputs)
-        return is_separable
-    separable_matrix = _separable(transform)
-    is_separable = separable_matrix.sum(1)
-    is_separable = np.where(is_separable != 1, False, True)
-    return is_separable
-
-
 def separable_axes(wcsobj, start_frame=None, end_frame=None):
         """
         Computes the separability of axes in ``end_frame``.
@@ -808,7 +513,3 @@ def separable_axes(wcsobj, start_frame=None, end_frame=None):
 
         sep = is_separable(transform)
         return [sep[ax] for ax in end_frame.axes_order]
-
-
-_operators = {'&': _cstack, '|': _cdot, '+': _arith_oper, '-': _arith_oper,
-              '*': _arith_oper, '/': _arith_oper, '**': _arith_oper}

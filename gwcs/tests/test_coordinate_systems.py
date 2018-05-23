@@ -1,16 +1,20 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, unicode_literals, print_function
+from functools import partial
 
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from astropy import units as u
+
+import astropy.units as u
+from astropy.time import Time
 from astropy import coordinates as coord
-import pytest
+from astropy.tests.helper import assert_quantity_allclose
 
 from .. import coordinate_frames as cf
 
 
 coord_frames = coord.builtin_frames.__all__[:]
+
 # Need to write a better test, using a dict {coord_frame: input_parameters}
 # For now remove OffsetFrame, issue #55
 try:
@@ -74,10 +78,197 @@ def test_coordinates_composite(inputs):
 
 
 @pytest.mark.parametrize(('frame'), coord_frames)
-def test_attributes(frame):
+def test_celestial_attributes_length(frame):
     """
-    Test getting default values for  CoordinateFrame attributes from reference_frame.
+    Test getting default values for
+    CelestialFrame attributes from reference_frame.
     """
-    cel = cf.CelestialFrame(reference_frame=getattr(coord, frame)())
-    assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
-           len(cel.axes_order) == cel.naxes)
+    fr = getattr(coord, frame)
+    if issubclass(fr, coord.BaseCoordinateFrame):
+        cel = cf.CelestialFrame(reference_frame=fr())
+        assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
+               len(cel.axes_order) == cel.naxes)
+
+
+def test_axes_type():
+    assert(icrs.axes_type == ('SPATIAL', 'SPATIAL'))
+    assert(spec1.axes_type == ('SPECTRAL',))
+    assert(detector.axes_type == ('SPATIAL', 'SPATIAL'))
+    assert(focal.axes_type == ('SPATIAL', 'SPATIAL'))
+
+
+def test_length_attributes():
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg),
+                           axes_type=("SPATIAL", "SPATIAL"),
+                           axes_order=(0, 1))
+
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg, u.deg),
+                           axes_type=("SPATIAL",),
+                           axes_order=(0, 1))
+
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(naxes=2, unit=(u.deg, u.deg),
+                           axes_type=("SPATIAL", "SPATIAL"),
+                           axes_order=(0,))
+
+
+def test_base_coordinate():
+    frame = cf.CoordinateFrame(naxes=2, axes_type=("SPATIAL", "SPATIAL"),
+                               axes_order=(0, 1))
+    assert frame.name == 'CoordinateFrame'
+    frame = cf.CoordinateFrame(name="CustomFrame", naxes=2,
+                               axes_type=("SPATIAL", "SPATIAL"),
+                               axes_order=(0, 1))
+    assert frame.name == 'CustomFrame'
+    frame.name = "DeLorean"
+    assert frame.name == 'DeLorean'
+
+    q1, q2 = frame.coordinate_to_quantity(12 * u.deg, 3 * u.arcsec)
+    assert_quantity_allclose(q1, 12 * u.deg)
+    assert_quantity_allclose(q2, 3 * u.arcsec)
+
+
+def test_temporal_relative():
+    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
+    assert t.coordinates(10) == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
+
+    a = t.coordinates((10, 20))
+    assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
+
+    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"))
+    assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
+
+    a = t.coordinates((10, 20) * u.s)
+    assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
+
+
+def test_temporal_absolute():
+    t = cf.TemporalFrame()
+    assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00")
+
+    a = t.coordinates(("2018-01-01T00:00:00", "2018-01-01T00:10:00"))
+    assert a[0] == Time("2018-01-01T00:00:00")
+    assert a[1] == Time("2018-01-01T00:10:00")
+
+    t = cf.TemporalFrame(reference_frame=partial(Time, scale='tai'))
+    assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00", scale='tai')
+
+
+@pytest.mark.parametrize('inp', [
+    (10 * u.deg, 20 * u.deg),
+    ((10 * u.deg, 20 * u.deg),),
+    (u.Quantity([10, 20], u.deg),),
+    (coord.SkyCoord(10 * u.deg, 20 * u.deg, frame=coord.ICRS),),
+    # This is the same as 10,20 in ICRS
+    (coord.SkyCoord(119.26936774, -42.79039286, unit=u.deg, frame='galactic'),)
+])
+def test_coordinate_to_quantity_celestial(inp):
+    cel = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))
+
+    lon, lat = cel.coordinate_to_quantity(*inp)
+    assert_quantity_allclose(lon, 10 * u.deg)
+    assert_quantity_allclose(lat, 20 * u.deg)
+
+
+@pytest.mark.parametrize('inp', [
+    (100,),
+    (100 * u.nm,),
+    (0.1 * u.um,),
+])
+def test_coordinate_to_quantity_spectral(inp):
+    spec = cf.SpectralFrame(unit=u.nm, axes_order=(1, ))
+    wav = spec.coordinate_to_quantity(*inp)
+    assert_quantity_allclose(wav, 100 * u.nm)
+
+
+@pytest.mark.parametrize('inp', [
+    (Time("2011-01-01T00:00:10"),),
+    (10 * u.s,)
+])
+def test_coordinate_to_quantity_temporal(inp):
+    temp = cf.TemporalFrame(reference_time=Time("2011-01-01T00:00:00"), unit=u.s)
+
+    t = temp.coordinate_to_quantity(*inp)
+
+    assert_quantity_allclose(t, 10 * u.s)
+
+    temp2 = cf.TemporalFrame(unit=u.s)
+
+    tt = Time("2011-01-01T00:00:00")
+    t = temp2.coordinate_to_quantity(tt)
+
+    assert t is tt
+
+
+@pytest.mark.parametrize('inp', [
+    (211 * u.AA, 0 * u.s, 0 * u.arcsec, 0 * u.arcsec),
+    (211 * u.AA, 0 * u.s, (0 * u.arcsec, 0 * u.arcsec)),
+    (211 * u.AA, 0 * u.s, (0, 0) * u.arcsec),
+    (211 * u.AA, Time("2011-01-01T00:00:00"), (0, 0) * u.arcsec),
+    (211 * u.AA, Time("2011-01-01T00:00:00"), coord.SkyCoord(0, 0, unit=u.arcsec)),
+])
+def test_coordinate_to_quantity_composite(inp):
+    # Composite
+    wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
+    time_frame = cf.TemporalFrame(
+        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+    sky_frame = cf.CelestialFrame(axes_order=(2, 3), reference_frame=coord.ICRS())
+
+    comp = cf.CompositeFrame([wave_frame, time_frame, sky_frame])
+
+    coords = comp.coordinate_to_quantity(*inp)
+
+    expected = (211 * u.AA, 0 * u.s, 0 * u.arcsec, 0 * u.arcsec)
+    for output, exp in zip(coords, expected):
+        assert_quantity_allclose(output, exp)
+
+
+def test_stokes_frame():
+    sf = cf.StokesFrame()
+
+    assert sf.coordinates(0) == 'I'
+    assert sf.coordinates(0 * u.pix) == 'I'
+    assert sf.coordinate_to_quantity('I') == 0 * u.pix
+    assert sf.coordinate_to_quantity(0) == 0
+
+
+@pytest.mark.parametrize('inp', [
+    (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one),
+    (211 * u.AA, 0 * u.s, (0 * u.one, 0 * u.one)),
+    (211 * u.AA, 0 * u.s, (0, 0) * u.one),
+    (211 * u.AA, Time("2011-01-01T00:00:00"), (0, 0) * u.one)
+])
+def test_coordinate_to_quantity_frame2d_composite(inp):
+    wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
+    time_frame = cf.TemporalFrame(
+        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+
+    frame2d = cf.Frame2D(name="intermediate", axes_order=(2, 3), unit=(u.one, u.one))
+
+    comp = cf.CompositeFrame([wave_frame, time_frame, frame2d])
+
+    coords = comp.coordinate_to_quantity(*inp)
+
+    expected = (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one)
+    for output, exp in zip(coords, expected):
+        assert_quantity_allclose(output, exp)
+
+
+def test_coordinate_to_quantity_frame_2d():
+    frame = cf.Frame2D(unit=(u.one, u.arcsec))
+    inp = (1, 2)
+    expected = (1 * u.one, 2 * u.arcsec)
+    result = frame.coordinate_to_quantity(*inp)
+    for output, exp in zip(result, expected):
+        assert_quantity_allclose(output, exp)
+
+    inp = (1 * u.one, 2)
+    expected = (1 * u.one, 2 * u.arcsec)
+    result = frame.coordinate_to_quantity(*inp)
+    for output, exp in zip(result, expected):
+        assert_quantity_allclose(output, exp)

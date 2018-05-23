@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.modeling import models
@@ -15,7 +13,7 @@ from .. import wcs
 from ..wcstools import *
 from .. import coordinate_frames as cf
 from .. import utils
-from ..utils import CoordinateFrameError, DimensionalityError
+from ..utils import CoordinateFrameError
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -114,9 +112,16 @@ def test_backward_transform():
     Test backward transform raises an error when an analytical
     inverse is not available.
     """
-    w = wcs.WCS(forward_transform=models.Polynomial1D(1) & models.Scale(2), output_frame='sky')
+    # Test that an error is raised when one of the models has not inverse.
+    poly = models.Polynomial1D(1, c0=4)
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame='sky')
     with pytest.raises(NotImplementedError):
         w.backward_transform
+
+    # test backward transform
+    poly.inverse = models.Shift(-4)
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame='sky')
+    assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
 def test_return_coordinates():
@@ -126,25 +131,28 @@ def test_return_coordinates():
     y = 2.3
     numerical_result = (26.8, -0.6)
     # Celestial frame
-    num_plus_output = w(x, y, output='numericals_plus')
+    num_plus_output = w(x, y, with_units=True)
+    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(w(x, y), numerical_result)
-    assert_allclose(utils._get_values(w.unit, num_plus_output), numerical_result)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
     assert_allclose(w.invert(num_plus_output), (x, y))
     assert isinstance(num_plus_output, coord.SkyCoord)
     # Spectral frame
     poly = models.Polynomial1D(1, c0=1, c1=2)
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
     numerical_result = poly(y)
-    num_plus_output = w(y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, num_plus_output),  numerical_result)
+    num_plus_output = w(y, with_units=True)
+    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
+    assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
     transform = m1 & poly
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
     numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, output='numericals_plus')
-    assert_allclose(utils._get_values(w.unit, *num_plus_output), numerical_result)
+    num_plus_output = w(x, y, y, with_units=True)
+    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
 
 
 def test_from_fiducial_sky():
@@ -162,22 +170,23 @@ def test_from_fiducial_composite():
     celestial = cf.CelestialFrame(reference_frame=sky.frame, unit=(sky.spherical.lon.unit,
                                   sky.spherical.lat.unit), axes_order=(1, 2))
     coord_frame = cf.CompositeFrame([spec, celestial], name='cube_frame')
-    w = wcs_from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan)
+    w = wcs_from_fiducial([.5, sky], coord_frame, projection=tan)
     assert isinstance(w.cube_frame.frames[1].reference_frame, coord.FK5)
     assert_allclose(w(1, 1, 1), (1.5, 96.52373368309931, -71.37420187296995))
     # test returning coordinate objects with composite output_frame
-    res = w(1, 2, 2, output='numericals_plus')
+    res = w(1, 2, 2, with_units=True)
     assert_allclose(res[0], u.Quantity(1.5 * u.micron))
     assert isinstance(res[1], coord.SkyCoord)
     assert_allclose(res[1].ra.value, 99.329496642319)
     assert_allclose(res[1].dec.value, -70.30322020351122)
 
     trans = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    w = wcs_from_fiducial([.5 * u.micron, sky], coord_frame, projection=tan,
+    w = wcs_from_fiducial([.5, sky], coord_frame, projection=tan,
                           transform=trans)
     assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
     # test coordinate object output
-    coord_result = w(1, 1, 1, output='numericals_plus')
+
+    coord_result = w(1, 1, 1, with_units=True)
     assert_allclose(coord_result[0], u.Quantity(11.5 * u.micron))
 
 
@@ -188,18 +197,25 @@ def test_from_fiducial_frame2d():
     assert_allclose(w(1, 1), (35.5, 13.3))
 
 
-def test_domain():
+def test_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
     pipeline = [('detector', trans3), ('sky', None)]
     w = wcs.WCS(pipeline)
     bb = ((-1, 10), (6, 15))
-    with pytest.raises(DimensionalityError):
+    with pytest.raises(ValueError):
         w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
     assert w.bounding_box == w.forward_transform.bounding_box[::-1]
+
+    pipeline = [("detector", models.Shift(2)), ("sky", None)]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = (1, 5)
+    assert w.bounding_box == w.forward_transform.bounding_box
+    with pytest.raises(ValueError):
+        w.bounding_box = ((1, 5), (2, 6))
 
 
 def test_grid_from_bounding_box():
@@ -209,6 +225,35 @@ def test_grid_from_bounding_box():
     assert_allclose(x[:, -1], 9.9)
     assert_allclose(y[0], 6.5)
     assert_allclose(y[-1], 15)
+
+
+def test_grid_from_bounding_box_1d():
+    # Test 1D case
+    x = grid_from_bounding_box((-.5, 4.5))
+    assert_allclose(x, [0., 1., 2., 3., 4.])
+
+
+def test_grid_from_bounding_box_step():
+    bb = ((-0.5, 5.5), (-0.5, 4.5))
+    x, y = grid_from_bounding_box(bb)
+    x1, y1 = grid_from_bounding_box(bb, step=(1, 1))
+    assert_allclose(x, x1)
+    assert_allclose(y, y1)
+
+    with pytest.raises(ValueError):
+        grid_from_bounding_box(bb, step=(1, 2, 1))
+
+
+def test_grid_from_bounding_box_2():
+    bb = ((-0.5, 5.5), (-0.5, 4.5))
+    x, y = grid_from_bounding_box(bb)
+    assert_allclose(x, np.repeat([np.arange(6)], 5, axis=0))
+    assert_allclose(y, np.repeat(np.array([np.arange(5)]), 6, 0).T)
+
+    bb = ((-0.5, 5.5), (-0.5, 4.6))
+    x, y = grid_from_bounding_box(bb, center=True)
+    assert_allclose(x, np.repeat([np.arange(6)], 6, axis=0))
+    assert_allclose(y, np.repeat(np.array([np.arange(6)]), 6, 0).T)
 
 
 def test_bounding_box_eval():
@@ -233,7 +278,7 @@ def test_bounding_box_eval():
     # test ``transform`` method
     assert_allclose(w.transform('detector', 'sky', 1, 7, 3), [np.nan, np.nan, np.nan])
 
-    
+
 def test_format_output():
     points = np.arange(5)
     values = np.array([1.5, 3.4, 6.7, 7, 32])
@@ -245,8 +290,12 @@ def test_format_output():
     assert np.isscalar(w(1))
 
 
-class TestImaging(object):
+def test_available_frames():
+    w = wcs.WCS(pipe)
+    assert w.available_frames == ['detector', 'focal', 'icrs']
 
+
+class TestImaging(object):
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
         self.fitsw = astwcs.WCS(hdr)
@@ -274,21 +323,22 @@ class TestImaging(object):
 
         tan = models.Pix2Sky_TAN(name='tangent_projection')
         sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
-        det = cf.Frame2D('detector')
+        det = cf.Frame2D(name='detector')
         wcs_forward = wcslin | tan | n2c
         pipeline = [('detector', distortion),
                     ('focal', wcs_forward),
                     (sky_cs, None)
                     ]
 
-        self.wcs = wcs.WCS(input_frame = det,
-                           output_frame = sky_cs,
-                           forward_transform = pipeline)
+        self.wcs = wcs.WCS(input_frame=det,
+                           output_frame=sky_cs,
+                           forward_transform=pipeline)
         nx, ny = (5, 2)
         x = np.linspace(0, 1, nx)
         y = np.linspace(0, 1, ny)
         self.xv, self.yv = np.meshgrid(x, y)
 
+    @pytest.mark.filterwarnings('ignore')
     def test_distortion(self):
         sipx, sipy = self.fitsw.sip_pix2foc(self.xv, self.yv, 1)
         sipx = np.array(sipx) + 2048
@@ -323,13 +373,12 @@ class TestImaging(object):
         assert_allclose(footprint, fits_footprint)
 
     def test_inverse(self):
-        sky_coord = self.wcs(1, 2, output="numericals_plus")
+        sky_coord = self.wcs(1, 2, with_units=True)
         with pytest.raises(NotImplementedError):
             self.wcs.invert(sky_coord)
 
     def test_back_coordinates(self):
-        sky_coord = self.wcs(1, 2, output="numericals_plus")
-        sky2foc = self.wcs.get_transform('sky', 'focal')
+        sky_coord = self.wcs(1, 2, with_units=True)
         res = self.wcs.transform('sky', 'focal', sky_coord)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 

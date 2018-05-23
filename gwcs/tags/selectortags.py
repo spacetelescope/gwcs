@@ -1,8 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, division, unicode_literals, print_function
-
 from collections import OrderedDict
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -11,8 +9,9 @@ from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
 
 from asdf import yamlutil
-from asdf.tags.transform.basic import TransformType
 from asdf.tags.core.ndarray import NDArrayType
+from ..gwcs_types import GWCSTransformType
+
 
 from ..selector import *
 
@@ -20,9 +19,10 @@ from ..selector import *
 __all__ = ['LabelMapperType', 'RegionsSelectorType']
 
 
-class LabelMapperType(TransformType):
-    name = "transform/label_mapper"
+class LabelMapperType(GWCSTransformType):
+    name = "label_mapper"
     types = [LabelMapperArray, LabelMapperDict, LabelMapperRange, LabelMapper]
+    version = "1.0.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -96,7 +96,7 @@ class LabelMapperType(TransformType):
             assert(a.mapper.__class__ == b.mapper.__class__)
             assert(all(np.in1d(list(a.mapper), list(b.mapper))))
             for k in a.mapper:
-                assert (a.mapper[k].__class__  == b.mapper[k].__class__)
+                assert (a.mapper[k].__class__ == b.mapper[k].__class__)
                 assert(all(a.mapper[k].parameters == b.mapper[k].parameters))
             assert (a.inputs == b.inputs)
             assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping)
@@ -104,9 +104,10 @@ class LabelMapperType(TransformType):
             assert_array_equal(a.mapper, b.mapper)
 
 
-class RegionsSelectorType(TransformType):
-    name = "transform/regions_selector"
+class RegionsSelectorType(GWCSTransformType):
+    name = "regions_selector"
     types = [RegionsSelector]
+    version = "1.0.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -129,10 +130,10 @@ class RegionsSelectorType(TransformType):
             values.append(model.selector[l])
         selector['labels'] = labels
         selector['transforms'] = values
-        node['inputs']= list(model.inputs)
+        node['inputs'] = list(model.inputs)
         node['outputs'] = list(model.outputs)
         node['selector'] = selector
-        node['label_mapper'] =  model.label_mapper
+        node['label_mapper'] = model.label_mapper
         node['undefined_transform_value'] = model.undefined_transform_value
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
 

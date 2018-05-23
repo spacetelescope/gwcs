@@ -1,13 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import absolute_import, division, unicode_literals, print_function
 import abc
 from collections import OrderedDict
 import numpy as np
-import six
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Region(object):
+class Region(metaclass=abc.ABCMeta):
 
     """
     Base class for regions.
@@ -127,7 +124,7 @@ class Polygon(Region):
         """
         Create a list of Edge objects from vertices
         """
-        return [Edge(name='E{}'.format(i-1), start=self._vertices[i-1], stop=self._vertices[i])
+        return [Edge(name='E{}'.format(i - 1), start=self._vertices[i - 1], stop=self._vertices[i])
                 for i in range(1, len(self._vertices))
                 ]
 
@@ -169,7 +166,7 @@ class Polygon(Region):
             x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
             xnew = np.asarray(np.sort(x), dtype=np.int)
             for i, j in zip(xnew[::2], xnew[1::2]):
-                data[y][i:j+1] = self._rid
+                data[y][i:j + 1] = self._rid
             y = y + 1
         return data
 
@@ -200,7 +197,7 @@ class Polygon(Region):
             px[1] >= self._bbox[1] and px[1] <= self._bbox[1] + self._bbox[3]
 
 
-class Edge(object):
+class Edge:
 
     """
     Edge representation.

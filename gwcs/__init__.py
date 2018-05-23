@@ -4,7 +4,10 @@
 This is an Astropy affiliated package.
 """
 
-from __future__ import absolute_import, division, unicode_literals, print_function
+import sys
+if sys.version_info < (3, 5):
+    raise ImportError("GWCS does not support Python 2.x, 3.0, 3.1, 3.2, 3.3 or 3.4."
+                      "Beginning with GWCS 0.9, Python 3.5 and above is required.")
 
 
 # Affiliated packages may add whatever they like to this file, but

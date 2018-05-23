@@ -1,5 +1,42 @@
+0.9.0 (2018-05-23)
+------------------
+
+New Features
+^^^^^^^^^^^^
+
+- Added a ``TemporalFrame`` to represent relative or absolute time axes. [#125]
+
+- Removed deprecated ``grid_from_domain`` function and ``WCS.domain`` property. [#119]
+
+- Support for Python 2.x, 3.0, 3.1, 3.2, 3.3 and 3.4 was removed. [#119]
+
+- Add a ``coordinate_to_quantity`` method to ``CoordinateFrame`` which handles
+  converting rich coordinate input to numerical values. It is an inverse of the
+  ``coordinates`` method. [#133]
+
+- Add a ``StokesFrame`` which converts from 'I', 'Q', 'U', 'V' to 0-3. [#133]
+
+- Support serialising the base ``CoordinateFrame`` class to asdf, by making
+  a specific tag and schema for ``Frame2D`` [#150]
+
+
+API Changes
+^^^^^^^^^^^
+
+- The argument ``output="numerical_plus"`` was replaced by a bool
+  argument ``with_units``. [#156]
+
+
+Bug Fixes
+^^^^^^^^^
+
+- Fixed a bug in ``bounding_box`` definition when the WCS has only one axis. [#117]
+
+- Fixed a bug in ``grid_from_bounding_box`` which caused the grid to be larger than
+  the image in cases when the bounding box is on the edges of an image. [#121]
+
 0.8.0 (2017-11-02)
-----------------
+------------------
 
 - ``LabelMapperRange`` now returns ``LabelMapperRange._no_label`` when the key is
   not within any range. [#71]

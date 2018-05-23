@@ -38,7 +38,7 @@ are here (imaging) and here  the ref: spectral_example.
 
   >>> transforms = {}
   >>> for i in range(1, 7):
-          transforms[i] = Mapping([0, 0, 1]) | Shift(i * 0.1) & Shift(i * 0.2) & Scale(i * 0.1)
+  ...     transforms[i] = Mapping([0, 0, 1]) | Shift(i * 0.1) & Shift(i * 0.2) & Scale(i * 0.1)
 
 One way to initialize `~gwcs.selector.LabelMapperArray` is to pass it the shape of the array and the vertices
 of each slit on the detector {label: vertices} see :meth: `~gwcs.selector.LabelMapperArray.from_vertices`.
@@ -52,6 +52,8 @@ The image above shows the projection of the 6 slits on the detector. Pixels, wit
 not belong to any slit. Assuming the array is stored in
 `ASDF <https://asdf-standard.readthedocs.io/en/latest>`__ format, create the mask:
 
+.. doctest-skip-all
+
   >>> from asdf import AsdfFile
   >>> f = AsdfFile.open('mask.asdf')
   >>> data = f.tree['mask']
@@ -63,10 +65,10 @@ see `asdf <https://asdf.readthedocs.io/en/latest/>`__
 Create the pixel to world transform for the entire IFU:
 
   >>> regions_transform = selector.RegionsSelector(inputs=['x','y'],
-                                                   outputs=['ra', 'dec', 'lam'],
-                                                   selector=transforms,
-                                                   label_mapper=mask,
-                                                   undefined_transform_value=np.nan)
+  ...                                              outputs=['ra', 'dec', 'lam'],
+  ...                                              selector=transforms,
+  ...                                              label_mapper=mask,
+  ...                                              undefined_transform_value=np.nan)
 
 The WCS object now can evaluate simultaneously the transforms of all slices
 

@@ -1,5 +1,6 @@
 numpy
 Cython
+scipy > 0.18
 astropy_helpers
 astropy
 asdf

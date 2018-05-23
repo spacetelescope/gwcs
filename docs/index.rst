@@ -8,8 +8,14 @@ Introduction
 ------------
 
 
-`GWCS <https://github.com/spacetelescope/gwcs>`__ takes a general approach to WCS.
-It supports a data model which includes the entire transformation pipeline from
+`GWCS <https://github.com/spacetelescope/gwcs>`__ takes a general approach to
+the problem of expressing transformations between pixel and world coordinates.
+The term "World Coordinate System" encapsulates this transformation, although
+that term is sometimes misunderstood to mean "the FITS implementation of WCS"
+(See `the discussion in APE14 <https://github.com/astropy/astropy-APEs/blob/master/APE14.rst#backgroundterminology>`_
+for more on this topic).
+
+GWCS supports a data model which includes the entire transformation pipeline from
 input coordinates (detector by default)  to world coordinates.
 Transformations can be chained, joined or combined with arithmetic operators
 using the flexible framework of compound models in `~astropy.modeling`.
@@ -62,7 +68,7 @@ The following imports are generally useful:
 
   >>> import numpy as np
   >>> from astropy.modeling.models import (Shift, Scale, Rotation2D,
-      Pix2Sky_TAN, RotateNative2Celestial, Mapping, Polynomial2D)
+  ...        Pix2Sky_TAN, RotateNative2Celestial, Mapping, Polynomial2D)
   >>> from astropy import coordinates as coord
   >>> from astropy import units as u
   >>> from gwcs import wcs
@@ -75,8 +81,8 @@ acceptable too).
 Create a transform to convert detector coordinates to ICRS.
 
   >>> det2sky = (Shift(-10.5) & Shift(-13.2) | Rotation2D(0.0023) | \
-      Scale(.01) & Scale(.04) | Pix2Sky_TAN() | \
-      RotateNative2Celestial(5.6, -72.05, 180)).rename("detector2sky")
+  ...    Scale(.01) & Scale(.04) | Pix2Sky_TAN() | \
+  ...    RotateNative2Celestial(5.6, -72.05, 180)).rename("detector2sky")
 
 Create a coordinate frame associated with the detector and a celestial frame.
 
@@ -87,9 +93,9 @@ Initialize the WCS:
 
   >>> wcsobj = wcs.WCS(forward_transform=det2sky, input_frame=detector_frame, output_frame=sky_frame)
   >>> print(wcsobj)
-      From        Transform
-      ----------- ----------
-      detector     detector2sky
+    From   Transform
+  -------- ------------
+  detector detector2sky
       icrs         None
 
 To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a function:
@@ -101,8 +107,8 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
-  >>> wcsobj.invert(*sky)
-      (1.000, 2.000)
+  >>> wcsobj.invert(*sky)    # doctest: +FLOAT_CMP
+      (1.0, 2.0)
 
 
 Using `gwcs`
