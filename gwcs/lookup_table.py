@@ -18,12 +18,17 @@ class LookupTable(Model):
     Parameters
     ----------
     lookup_table : `~astropy.units.Quantity` or `numpy.ndarray`
+        The lookup table.
+    index_unit : `~astropy.units.Unit`, optional
+        The unit of the index of the lookup table, used for the reverse
+        lookups. Defaults to `astropy.units.pixel`
 
     """
 
     linear = False
     fittable = False
     standard_broadcasting = False
+    separable = True
 
     inputs = ('x',)
     outputs = ('y',)
@@ -35,8 +40,9 @@ class LookupTable(Model):
         else:
             return None
 
-    def __init__(self, lookup_table):
-        super().__init__()
+    def __init__(self, lookup_table, index_unit=u.pix, name=None):
+        super().__init__(name=name)
+        self.index_unit = index_unit
 
         if not isinstance(lookup_table, u.Quantity):
             lookup_table = np.asarray(lookup_table)
@@ -44,15 +50,15 @@ class LookupTable(Model):
         self.lookup_table = lookup_table
 
     def evaluate(self, point):
-        ind = int(np.asarray(np.round(point)))
+        ind = np.asarray(np.round(point), dtype=int)
         return self.lookup_table[ind]
 
     @property
     def inverse(self):
-        return _ReverseLookupTable(self.lookup_table)
+        return ReverseLookupTable(self.lookup_table, self.index_unit)
 
 
-class _ReverseLookupTable(LookupTable):
+class ReverseLookupTable(LookupTable):
     """
     The inverse lookup table.
 
@@ -65,6 +71,7 @@ class _ReverseLookupTable(LookupTable):
     linear = False
     fittable = False
     standard_broadcasting = False
+    separable = True
 
     inputs = ('x',)
     outputs = ('y',)
@@ -108,6 +115,6 @@ class _ReverseLookupTable(LookupTable):
         # There is some strange interaction between inverse and return units,
         # where this needs to be done here and not with return units.
         if hasattr(self.lookup_table, 'unit'):
-            inds = u.Quantity(inds, u.pix)
+            inds = u.Quantity(inds, self.index_unit)
 
         return inds

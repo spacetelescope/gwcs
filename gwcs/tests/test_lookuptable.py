@@ -3,7 +3,7 @@ import numpy as np
 import astropy.units as u
 from astropy.tests.helper import assert_quantity_allclose
 
-from gwcs.lookup_table import LookupTable, _ReverseLookupTable
+from gwcs.lookup_table import LookupTable, ReverseLookupTable
 
 
 def test_lut_init():
@@ -38,17 +38,17 @@ def test_evaluate(lut):
                           LookupTable(['a', 'b', 'c'])))
 def test_lut_inverse(lutm):
     inv = lutm.inverse
-    assert isinstance(inv, _ReverseLookupTable)
+    assert isinstance(inv, ReverseLookupTable)
     assert inv.return_units is None
 
 
 @pytest.mark.parametrize('lut', ([1, 2, 3], [1, 2, 3] * u.m, ['a', 'b', 'c']))
 def test_inverse_evaluate(lut):
-    lutm = LookupTable(lut)
+    lutm = LookupTable(lut, u.arcsec)
     inv = lutm.inverse
     ret = inv(lut[0])
     if isinstance(lutm.lookup_table, u.Quantity):
-        assert_quantity_allclose(ret, 0 * u.pix)
+        assert_quantity_allclose(ret, 0 * u.arcsec)
     else:
         assert ret == 0
 
