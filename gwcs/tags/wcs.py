@@ -1,11 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-import astropy.time
+from __future__ import absolute_import, division, unicode_literals, print_function
+
+import six
 
 from asdf import yamlutil
-from ..gwcs_types import GWCSType
-from ..coordinate_frames import (Frame2D, CoordinateFrame, CelestialFrame,
-                                 SpectralFrame, TemporalFrame, CompositeFrame)
+from asdf.tests import helpers
+from ..gwcs_types import GWCSTransformType, GWCSType
+from ..coordinate_frames import *
 from ..wcs import WCS
 
 
@@ -13,7 +15,7 @@ _REQUIRES = ['astropy']
 
 
 __all__ = ["WCSType", "CelestialFrameType", "CompositeFrameType", "FrameType",
-           "SpectralFrameType", "StepType", "TemporalFrameType"]
+           "SpectralFrameType", "StepType"]
 
 
 class WCSType(GWCSType):
@@ -54,7 +56,6 @@ class WCSType(GWCSType):
 
     @classmethod
     def assert_equal(cls, old, new):
-        from asdf.tests import helpers
         assert old.name == new.name
         assert len(old.available_frames) == len(new.available_frames)
         for (old_frame, old_transform), (new_frame, new_transform) in zip(
@@ -71,25 +72,89 @@ class StepType(dict, GWCSType):
 
 class FrameType(GWCSType):
     name = "frame"
-    requires = _REQUIRES
     types = [CoordinateFrame]
     version = '1.0.0'
+
+    @classmethod
+    def _get_reference_frame_mapping(cls):
+        if hasattr(cls, '_reference_frame_mapping'):
+            return cls._reference_frame_mapping
+
+        from astropy.coordinates import builtin_frames
+
+        cls._reference_frame_mapping = {
+            'ICRS': builtin_frames.ICRS,
+            'FK5': builtin_frames.FK5,
+            'FK4': builtin_frames.FK4,
+            'FK4_noeterms': builtin_frames.FK4NoETerms,
+            'galactic': builtin_frames.Galactic,
+            'galactocentric': builtin_frames.Galactocentric,
+            'GCRS': builtin_frames.GCRS,
+            'CIRS': builtin_frames.CIRS,
+            'ITRS': builtin_frames.ITRS,
+            'precessed_geocentric': builtin_frames.PrecessedGeocentric
+        }
+
+        return cls._reference_frame_mapping
+
+    @classmethod
+    def _get_inverse_reference_frame_mapping(cls):
+        if hasattr(cls, '_inverse_reference_frame_mapping'):
+            return cls._inverse_reference_frame_mapping
+
+        reference_frame_mapping = cls._get_reference_frame_mapping()
+
+        cls._inverse_reference_frame_mapping = {}
+        for key, val in six.iteritems(reference_frame_mapping):
+            cls._inverse_reference_frame_mapping[val] = key
+
+        return cls._inverse_reference_frame_mapping
+
+    @classmethod
+    def _reference_frame_from_tree(cls, node, ctx):
+        from astropy.units import Quantity
+        from astropy.io.misc.asdf.tags.unit.quantity import QuantityType
+        from astropy.coordinates import ICRS, CartesianRepresentation
+
+        version = cls.version
+        reference_frame = node['reference_frame']
+        reference_frame_name = reference_frame['type']
+
+        frame_cls = cls._get_reference_frame_mapping()[reference_frame_name]
+
+        frame_kwargs = {}
+        for name in frame_cls.get_frame_attr_names().keys():
+            val = reference_frame.get(name)
+            if val is not None:
+                if name in ['obsgeoloc', 'obsgeovel']:
+                    x = QuantityType.from_tree(val[0], ctx)
+                    y = QuantityType.from_tree(val[1], ctx)
+                    z = QuantityType.from_tree(val[2], ctx)
+                    val = CartesianRepresentation(x, y, z)
+                elif name == 'galcen_v_sun':
+                    from astropy.coordinates import CartesianDifferential
+                    d_x = QuantityType.from_tree(val[0], ctx)
+                    d_y = QuantityType.from_tree(val[1], ctx)
+                    d_z = QuantityType.from_tree(val[2], ctx)
+                    val = CartesianDifferential(d_x, d_y, d_z)
+                else:
+                    val = yamlutil.tagged_tree_to_custom_tree(val, ctx)
+                frame_kwargs[name] = val
+        has_ra_and_dec = reference_frame.get('galcen_dec') and \
+            reference_frame.get('galcen_ra')
+
+        return frame_cls(**frame_kwargs)
 
     @classmethod
     def _from_tree(cls, node, ctx):
         kwargs = {'name': node['name']}
 
-        if 'axes_type' in node and 'naxes' in node:
-            kwargs.update({
-                'axes_type': node['axes_type'],
-                'naxes': node['naxes']})
-
         if 'axes_names' in node:
             kwargs['axes_names'] = node['axes_names']
 
         if 'reference_frame' in node:
-            kwargs['reference_frame'] = yamlutil.tagged_tree_to_custom_tree(
-                node['reference_frame'], ctx)
+            kwargs['reference_frame'] = \
+                cls._reference_frame_from_tree(node, ctx)
 
         if 'axes_order' in node:
             kwargs['axes_order'] = tuple(node['axes_order'])
@@ -102,15 +167,14 @@ class FrameType(GWCSType):
 
     @classmethod
     def _to_tree(cls, frame, ctx):
+        import numpy as np
+        from astropy.coordinates import CartesianDifferential
+        from astropy.coordinates import CartesianRepresentation
+        from astropy.io.misc.asdf.tags.unit.quantity import QuantityType
 
         node = {}
 
         node['name'] = frame.name
-
-        # We want to check that it is exactly this type and not a subclass
-        if type(frame) is CoordinateFrame:
-            node['axes_type'] = frame.axes_type
-            node['naxes'] = frame.naxes
 
         if frame.axes_order != (0, 1):
             node['axes_order'] = list(frame.axes_order)
@@ -119,22 +183,36 @@ class FrameType(GWCSType):
             node['axes_names'] = list(frame.axes_names)
 
         if frame.reference_frame is not None:
-            node['reference_frame'] = yamlutil.custom_tree_to_tagged_tree(
-                frame.reference_frame, ctx)
+            reference_frame = {}
+            reference_frame['type'] = cls._get_inverse_reference_frame_mapping()[
+                type(frame.reference_frame)]
+
+            for name in frame.reference_frame.get_frame_attr_names().keys():
+                frameval = getattr(frame.reference_frame, name)
+                # CartesianRepresentation becomes a flat list of x,y,z
+                # coordinates with associated units
+                if isinstance(frameval, CartesianRepresentation):
+                    value = [frameval.x, frameval.y, frameval.z]
+                    frameval = value
+                elif isinstance(frameval, CartesianDifferential):
+                    value = [frameval.d_x, frameval.d_y, frameval.d_z]
+                    frameval = value
+                yamlval = yamlutil.custom_tree_to_tagged_tree(frameval, ctx)
+                reference_frame[name] = yamlval
+
+            node['reference_frame'] = reference_frame
 
         if frame.unit is not None:
             node['unit'] = yamlutil.custom_tree_to_tagged_tree(
                 list(frame.unit), ctx)
-
         return node
 
     @classmethod
     def _assert_equal(cls, old, new):
-        from asdf.tests import helpers
         assert old.name == new.name
         assert old.axes_order == new.axes_order
         assert old.axes_names == new.axes_names
-        assert type(old.reference_frame) is type(new.reference_frame)
+        assert type(old.reference_frame) == type(new.reference_frame)
         assert old.unit == new.unit
 
         if old.reference_frame is not None:
@@ -150,12 +228,11 @@ class FrameType(GWCSType):
     @classmethod
     def from_tree(cls, node, ctx):
         node = cls._from_tree(node, ctx)
-        return CoordinateFrame(**node)
+        return Frame2D(**node)
 
     @classmethod
     def to_tree(cls, frame, ctx):
         return cls._to_tree(frame, ctx)
-
 
 class Frame2DType(FrameType):
     name = "frame2d"
@@ -170,6 +247,7 @@ class Frame2DType(FrameType):
 class CelestialFrameType(FrameType):
     name = "celestial_frame"
     types = [CelestialFrame]
+    supported_versions = "1.0.0"
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -190,7 +268,6 @@ class CelestialFrameType(FrameType):
 class SpectralFrameType(FrameType):
     name = "spectral_frame"
     types = [SpectralFrame]
-    version = "1.0.0"
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -214,6 +291,7 @@ class SpectralFrameType(FrameType):
 class CompositeFrameType(FrameType):
     name = "composite_frame"
     types = [CompositeFrame]
+    version = '1.0.0'
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -234,54 +312,6 @@ class CompositeFrameType(FrameType):
 
     @classmethod
     def assert_equal(cls, old, new):
-        from asdf.tests import helpers
         assert old.name == new.name
         for old_frame, new_frame in zip(old.frames, new.frames):
             helpers.assert_tree_match(old_frame, new_frame)
-
-
-class TemporalFrameType(GWCSType):
-    name = "temporal_frame"
-    requires = _REQUIRES
-    types = [TemporalFrame]
-    version = '1.0.0'
-
-    @classmethod
-    def to_tree(cls, frame, ctx):
-        import astropy.time
-
-        node = {}
-
-        node['name'] = frame.name
-
-        node['axes_order'] = list(frame.axes_order)
-
-        if frame.axes_names is not None:
-            node['axes_names'] = list(frame.axes_names)
-
-        if frame.reference_frame is not None:
-            if frame.reference_frame is not astropy.time.Time:
-                raise ValueError("Can not save reference_frame unless it's Time")
-
-        if frame.reference_position is not None:
-            node['reference_time'] = yamlutil.custom_tree_to_tagged_tree(
-                frame.reference_position, ctx)
-
-        if frame.unit is not None:
-            node['unit'] = yamlutil.custom_tree_to_tagged_tree(
-                list(frame.unit), ctx)
-
-        return node
-
-    @classmethod
-    def from_tree(cls, node, ctx):
-
-        name = node['name']
-        axes_order = node.get('axes_order', None)
-        axes_names = node.get('axes_names', None)
-        reference_frame = node.get('reference_frame', astropy.time.Time)
-        reference_time = node.get('reference_time', None)
-        unit = node.get('unit', None)
-
-        return TemporalFrame(axes_order, reference_time,
-                             reference_frame, unit, axes_names, name)
