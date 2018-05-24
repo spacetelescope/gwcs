@@ -22,11 +22,10 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - NUMPY_VERSION=stable
-        - ASTROPY_VERSION=development
+        - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
-        - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
-        - PIP_DEPENDENCIES="pytest-astropy $ASDF_GIT"
+        - PIP_DEPENDENCIES="pytest-astropy asdf"
         - ASTROPY_USE_SYSTEM_PYTEST=1
 
     matrix:
