@@ -25,7 +25,7 @@ env:
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
-        - PIP_DEPENDENCIES="pytest-astropy"
+        - PIP_DEPENDENCIES="pytest-astropy asdf"
         - ASTROPY_USE_SYSTEM_PYTEST=1
 
     matrix:
