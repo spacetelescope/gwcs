@@ -49,6 +49,17 @@ class CoordinateFrameError(Exception):
         super(CoordinateFrameError, self).__init__(message)
 
 
+def uses_quantity(transform):
+    """
+    True if this model has been created with `~astropy.units.Quantity`
+    objects or if there are no parameters.
+    This can be used to determine if this model should be evaluated with
+    `~astropy.units.Quantity` or regular floats.
+    """
+    pisq = [isinstance(p, u.Quantity) for p in transform._param_sets(units=True)]
+    return (len(pisq) == 0) or any(pisq)
+
+
 def _toindex(value):
     """
     Convert value to an int or an int array.
