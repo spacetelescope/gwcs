@@ -293,7 +293,7 @@ class WCS:
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
 
-        if with_units:
+        if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
             else:
