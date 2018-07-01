@@ -51,8 +51,6 @@ matrix:
 
         # Numpy
         - python: 3.6
-          env: NUMPY_VERSION=1.12 SETUP_CMD="test"
-        - python: 3.6
           env: NUMPY_VERSION=1.13 SETUP_CMD="test"
 
         # Do a PEP8 test with flake8
