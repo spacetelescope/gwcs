@@ -84,7 +84,7 @@ def test_celestial_attributes_length(frame):
     CelestialFrame attributes from reference_frame.
     """
     fr = getattr(coord, frame)
-    if issubclass(fr, coord.BaseCoordinateFrame):
+    if issubclass(fr.__class__, coord.BaseCoordinateFrame):
         cel = cf.CelestialFrame(reference_frame=fr())
         assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
                len(cel.axes_order) == cel.naxes)

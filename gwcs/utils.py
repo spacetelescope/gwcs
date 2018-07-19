@@ -168,7 +168,7 @@ def read_wcs_from_header(header):
     try:
         wcs_info['WCSAXES'] = header['WCSAXES']
     except KeyError:
-        p = re.compile('ctype[\d]*', re.IGNORECASE)
+        p = re.compile(r'ctype[\d]*', re.IGNORECASE)
         ctypes = header['CTYPE*']
         keys = list(ctypes.keys())
         for key in keys[::-1]:

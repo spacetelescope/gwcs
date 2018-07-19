@@ -12,15 +12,12 @@ addons:
             - texlive-latex-extra
             - dvipng
 
-python:
-    - 3.5
-    - 3.6
-
 env:
     global:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
+        - PYTHON_VERSION=3.6
         - NUMPY_VERSION=stable
         - ASTROPY_VERSION=development
         - MAIN_CMD='python setup.py'
@@ -32,6 +29,9 @@ env:
     matrix:
         - SETUP_CMD='egg_info'
         - SETUP_CMD='test'
+        - PYTHON_VERSION=3.5 SETUP_CMD='test'
+        - PYTHON_VERSION=3.6 SETUP_CMD='test'
+        - PYTHON_VERSION=3.7 SETUP_CMD='test'
 
 matrix:
 
