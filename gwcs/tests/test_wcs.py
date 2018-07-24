@@ -317,12 +317,12 @@ def test_footprint():
                                           [15, 0, 12],
                                           [15, 2, 2],
                                           [15, 2, 12]]))
-    assert_equal(w.footprint(kind='spatial'), np.array([[ 11.,   0.],
-                                                        [ 11.,   2.],
-                                                        [ 15.,   2.],
-                                                        [ 15.,   0.]]))
+    assert_equal(w.footprint(axis_type='spatial'), np.array([[ 11.,   0.],
+                                                             [ 11.,   2.],
+                                                             [ 15.,   2.],
+                                                             [ 15.,   0.]]))
 
-    assert_equal(w.footprint(kind='spectral'), np.array([2, 12]))
+    assert_equal(w.footprint(axis_type='spectral'), np.array([2, 12]))
 
 
 class TestImaging(object):

@@ -26,8 +26,10 @@ New Features
 
 - Add a ``StokesFrame`` which converts from 'I', 'Q', 'U', 'V' to 0-3. [#133]
 
-- Support serialising the base ``CoordinateFrame`` class to asdf, by making
-  a specific tag and schema for ``Frame2D`` [#150]
+- Support serializing the base ``CoordinateFrame`` class to asdf, by making
+  a specific tag and schema for ``Frame2D``. [#150]
+
+- Generalized the footrpint calculation to all output axes. [#167]
 
 
 API Changes
@@ -36,6 +38,8 @@ API Changes
 - The argument ``output="numerical_plus"`` was replaced by a bool
   argument ``with_units``. [#156]
 
+- Added a new flag ``axis_type`` to the footprint method. It controls what
+  type of footprint to calculate. [#167]
 
 Bug Fixes
 ^^^^^^^^^

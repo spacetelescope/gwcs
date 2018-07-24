@@ -519,7 +519,7 @@ class WCS:
             self.output_frame, self.input_frame, self.forward_transform)
         return fmt
 
-    def footprint(self, bounding_box=None, center=False, kind="all"):
+    def footprint(self, bounding_box=None, center=False, axis_type="all"):
         """
         Return the footprint in world coordinates.
 
@@ -529,7 +529,7 @@ class WCS:
             `prop: bounding_box`
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
-        kind : str
+        axis_type : str
             A supported ``output_frame.axes_type`` or "all" (default).
             One of ['spatial', 'spectral', 'temporal'] or a custom type.
 
@@ -538,7 +538,7 @@ class WCS:
         coord : ndarray
             Array of coordinates in the output_frame mapping
             corners to the output frame. For spatial coordinates the order
-            is clockwise.
+            is clockwise, starting from the bottom left corner.
 
         """
         def _order_clockwise(v):
@@ -564,17 +564,17 @@ class WCS:
 
         result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
 
-        kind = kind.lower()
-        if kind == 'spatial' and all_spatial:
+        axis_type = axis_type.lower()
+        if axis_type == 'spatial' and all_spatial:
             return result.T
 
-        if kind != "all":
-            axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == kind
+        if axis_type != "all":
+            axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
             if not axtyp_ind.any():
-                raise ValueError('This WCS does not have axis of type "{}".'.format(kind))
+                raise ValueError('This WCS does not have axis of type "{}".'.format(axis_type))
             result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
-            if kind == "spatial":
+            if axis_type == "spatial":
                 result = _order_clockwise(result)
             else:
                 result.sort()
