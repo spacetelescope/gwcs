@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
-
+import itertools
 import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import utils as mutils
@@ -519,9 +519,9 @@ class WCS:
             self.output_frame, self.input_frame, self.forward_transform)
         return fmt
 
-    def footprint(self, bounding_box=None, center=False):
+    def footprint(self, bounding_box=None, center=False, kind="all"):
         """
-        Return the footprint of the observation in world coordinates.
+        Return the footprint in world coordinates.
 
         Parameters
         ----------
@@ -529,21 +529,55 @@ class WCS:
             `prop: bounding_box`
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
+        kind : str
+            A supported ``output_frame.axes_type`` or "all" (default).
+            One of ['spatial', 'spectral', 'temporal'] or a custom type.
 
         Returns
         -------
-        coord : array of coordinates in the output_frame.
-            The order is counter-clockwise starting with the bottom left corner.
+        coord : ndarray
+            Array of coordinates in the output_frame mapping
+            corners to the output frame. For spatial coordinates the order
+            is clockwise.
+
         """
+        def _order_clockwise(v):
+            return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
+                               [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
+
         if bounding_box is None:
             if self.bounding_box is None:
                 raise TypeError("Need a valid bounding_box to compute the footprint.")
             bb = self.bounding_box
         else:
             bb = bounding_box
-        vertices = np.asarray([[bb[0][0], bb[1][0]], [bb[0][0], bb[1][1]],
-                               [bb[0][1], bb[1][1]], [bb[0][1], bb[1][0]]]).T
+
+        all_spatial = all([t.lower() == "spatial" for t in self.output_frame.axes_type])
+
+        if all_spatial:
+            vertices = _order_clockwise(bb)
+        else:
+            vertices = np.array(list(itertools.product(*bb))).T
+
         if center:
             vertices = _toindex(vertices)
-        result = self.__call__(*vertices, **{'with_bounding_box': False})
-        return np.asarray(result)
+
+        result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
+
+        kind = kind.lower()
+        if kind == 'spatial' and all_spatial:
+            return result.T
+
+        if kind != "all":
+            axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == kind
+            if not axtyp_ind.any():
+                raise ValueError('This WCS does not have axis of type "{}".'.format(kind))
+            result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
+
+            if kind == "spatial":
+                result = _order_clockwise(result)
+            else:
+                result.sort()
+                result = np.squeeze(result)
+
+        return result.T
