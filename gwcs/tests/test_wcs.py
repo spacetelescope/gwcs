@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from astropy.modeling import models
 from astropy import coordinates as coord
 from astropy.io import fits
@@ -295,6 +295,36 @@ def test_available_frames():
     assert w.available_frames == ['detector', 'focal', 'icrs']
 
 
+def test_footprint():
+    icrs = cf.CelestialFrame(name='icrs', reference_frame=coord.ICRS(),
+                             axes_order=(0, 1))
+    spec = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
+    world = cf.CompositeFrame([icrs, spec])
+    transform = (models.Shift(10) & models.Shift(-1)) & models.Scale(2)
+    pipe = [('det', transform), (world, None)]
+    w = wcs.WCS(pipe)
+
+    with pytest.raises(TypeError):
+        w.footprint()
+
+    w.bounding_box = ((1,5), (1,3), (1, 6))
+
+    assert_equal(w.footprint(), np.array([[11, 0, 2],
+                                          [11, 0, 12],
+                                          [11, 2, 2],
+                                          [11, 2, 12],
+                                          [15, 0, 2],
+                                          [15, 0, 12],
+                                          [15, 2, 2],
+                                          [15, 2, 12]]))
+    assert_equal(w.footprint(axis_type='spatial'), np.array([[ 11.,   0.],
+                                                             [ 11.,   2.],
+                                                             [ 15.,   2.],
+                                                             [ 15.,   0.]]))
+
+    assert_equal(w.footprint(axis_type='spectral'), np.array([2, 12]))
+
+
 class TestImaging(object):
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
@@ -368,7 +398,7 @@ class TestImaging(object):
 
     def test_footprint(self):
         bb = ((1, 4096), (1, 2048))
-        footprint = (self.wcs.footprint(bb)).T
+        footprint = (self.wcs.footprint(bb))
         fits_footprint = self.fitsw.calc_footprint(axes=(4096, 2048))
         assert_allclose(footprint, fits_footprint)
 
