@@ -25,6 +25,7 @@ env:
         - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
         - PIP_DEPENDENCIES="pytest-astropy $ASDF_GIT"
         - ASTROPY_USE_SYSTEM_PYTEST=1
+        - PYTEST_VERSION=3.6
 
     matrix:
         - SETUP_CMD='egg_info'
