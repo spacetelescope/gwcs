@@ -41,6 +41,10 @@ class LookupTable(Model):
         else:
             return None
 
+    @property
+    def input_units(self):
+        return {inp: self.index_unit for inp in self.inputs}
+
     def __init__(self, lookup_table, index_unit=u.pix, name=None):
         super().__init__(name=name)
         self.index_unit = index_unit
@@ -82,6 +86,10 @@ class ReverseLookupTable(LookupTable):
     @property
     def return_units(self):
         return None
+
+    @property
+    def input_units(self):
+        return {inp: self.lookup_table.unit for inp in self.inputs}
 
     def prepare_inputs(self, *inputs, model_set_axis=None, equivalencies=None,
                        **kwargs):
