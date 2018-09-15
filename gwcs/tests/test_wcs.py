@@ -86,7 +86,7 @@ def test_insert_transform():
 
 def test_set_transform():
     """ Test setting a transform between two frames in the pipeline."""
-    w = wcs.WCS(input_frame=detector, output_frame=icrs, forward_transform=pipe)
+    w = wcs.WCS(forward_transform=pipe[:])
     w.set_transform('detector', 'focal', models.Identity(2))
     assert_allclose(w(1, 1), (2, -2))
     with pytest.raises(CoordinateFrameError):
@@ -97,7 +97,7 @@ def test_set_transform():
 
 def test_get_transform():
     """ Test getting a transform between two frames in the pipeline."""
-    w = wcs.WCS(pipe)
+    w = wcs.WCS(pipe[:])
     tr_forward = w.get_transform('detector', 'focal')
     tr_back = w.get_transform('icrs', 'detector')
     x, y = 1, 2
@@ -126,7 +126,7 @@ def test_backward_transform():
 
 def test_return_coordinates():
     """Test converting to coordinate objects or quantities."""
-    w = wcs.WCS(pipe)
+    w = wcs.WCS(pipe[:])
     x = 1
     y = 2.3
     numerical_result = (26.8, -0.6)

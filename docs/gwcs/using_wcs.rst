@@ -79,7 +79,7 @@ Transforms in the pipeline can be replaced by new transforms.
   >>> new_transform = Shift(1) & Shift(1.5) | distortion
   >>> wcsobj.set_transform('detector', 'focal_frame', new_transform)
   >>> wcsobj(1, 2)
-      (10.338562883899195, -42.33182878519405)
+      (10.338562883899195, -42.331828785194055)
 
 A transform can be inserted before or after a frame in the pipeline.
 
@@ -87,7 +87,7 @@ A transform can be inserted before or after a frame in the pipeline.
   >>> scale = Scale(2) & Scale(1)
   >>> wcsobj.insert_transform('icrs', scale, after=False)
   >>> wcsobj(1, 2)
-      (20.67712576779839, -42.33182878519405)
+      (20.67712576779839, -42.331828785194055)
 
 The WCS object has an attribute ``domain`` which describes the range of
 acceptable values for each input axis.
