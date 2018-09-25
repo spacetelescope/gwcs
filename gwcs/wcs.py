@@ -53,14 +53,15 @@ class WCS:
                 super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
                 super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
 
-                self._pipeline = [(_input_frame, forward_transform.copy()),
-                                  (_output_frame, None)]
+                self._pipeline = [(input_frame, forward_transform.copy()),
+                                  (output_frame, None)]
             elif isinstance(forward_transform, list):
                 for item in forward_transform:
                     name, frame_obj = self._get_frame_name(item[0])
                     super(WCS, self).__setattr__(name, frame_obj)
-                    self._pipeline.append((name, item[1]))
-
+                    #self._pipeline.append((name, item[1]))
+                    self._pipeline = forward_transform
+                    
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(
@@ -183,8 +184,9 @@ class WCS:
         """
         if isinstance(frame, coordinate_frames.CoordinateFrame):
             frame = frame.name
-        return np.asarray(self._pipeline)[:, 0].tolist().index(frame)
-
+        frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
+        return frame_names.index(frame)
+        
     def _get_frame_name(self, frame):
         """
         Return the name of the frame and a ``CoordinateFrame`` object.
@@ -367,7 +369,7 @@ class WCS:
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            return [frame[0] for frame in self._pipeline]
+            return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
         else:
             return None
 
@@ -401,7 +403,7 @@ class WCS:
         """The unit of the coordinates in the output coordinate system."""
         if self._pipeline:
             try:
-                return getattr(self, self._pipeline[-1][0]).unit
+                return getattr(self, self._pipeline[-1][0].name).unit
             except AttributeError:
                 return None
         else:
@@ -411,7 +413,10 @@ class WCS:
     def output_frame(self):
         """Return the output coordinate frame."""
         if self._pipeline:
-            return getattr(self, self._pipeline[-1][0])
+            frame = self._pipeline[-1][0]
+            if not isinstance(frame, str):
+                frame = frame.name
+            return getattr(self, frame)
         else:
             return None
 
@@ -419,7 +424,10 @@ class WCS:
     def input_frame(self):
         """Return the input coordinate frame."""
         if self._pipeline:
-            return getattr(self, self._pipeline[0][0])
+            frame = self._pipeline[0][0]
+            if not isinstance(frame, str):
+                frame = frame.name
+            return getattr(self, frame)
         else:
             return None
 

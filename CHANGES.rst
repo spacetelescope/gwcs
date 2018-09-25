@@ -4,6 +4,11 @@
 New Features
 ^^^^^^^^^^^^
 
+- Initializing a ``WCS`` object with a ``pipeline`` list now keeps
+  the complete ``CoordinateFrame`` objects in the ``WCS.pipeline``.
+  The effect is that a ``WCS`` object can now be initialized with
+  a ``pipeline`` from a different ``WCS`` object. [#174]
+
 Bug Fixes
 ^^^^^^^^^
 
