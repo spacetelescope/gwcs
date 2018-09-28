@@ -7,7 +7,7 @@ from astropy.modeling import models
 from astropy import coordinates as coord
 
 from .wcs import WCS
-from .coordinate_frames import *
+from .coordinate_frames import * # noqa
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
 
