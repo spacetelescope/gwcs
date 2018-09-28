@@ -13,13 +13,13 @@ if sys.version_info < (3, 5):
 # Affiliated packages may add whatever they like to this file, but
 # should keep this content at the top.
 # ----------------------------------------------------------------------------
-from ._astropy_init import *
+from ._astropy_init import * # noqa
 # ----------------------------------------------------------------------------
 
 
 # For egg_info test builds to pass, put package imports here.
 if not _ASTROPY_SETUP_:
-    from .wcs import *
-    from .wcstools import *
-    from .coordinate_frames import *
-    from .selector import *
+    from .wcs import *   # noqa
+    from .wcstools import *   # noqa
+    from .coordinate_frames import *  # noqa
+    from .selector import *   # noqa

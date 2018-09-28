@@ -232,7 +232,7 @@ class CelestialFrame(CoordinateFrame):
         else:
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
-                             "expected 2, got  {}".format(name, len(coords)))
+                             "expected 2, got  {}".format(self.name, len(coords)))
 
         if isinstance(arg, coord.SkyCoord):
             arg = arg.transform_to(self._reference_frame)
@@ -496,7 +496,7 @@ class Frame2D(CoordinateFrame):
         else:
             raise ValueError("Unexpected number of coordinates in "
                              "input to frame {} : "
-                             "expected 2, got  {}".format(name, len(coords)))
+                             "expected 2, got  {}".format(self.name, len(coords)))
 
         for i in range(2):
             if not hasattr(coords[i], 'unit'):
