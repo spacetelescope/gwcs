@@ -173,8 +173,6 @@ class CelestialFrame(CoordinateFrame):
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
         A reference frame.
-    reference_position : str
-        Reference position.
     unit : str or units.Unit instance or iterable of those
         Units on axes.
     axes_names : list
@@ -268,6 +266,9 @@ class SpectralFrame(CoordinateFrame):
         Spectral axis name.
     name : str
         Name for this frame.
+    reference_position : str
+        Reference position - one of `STANDARD_REFERENCE_POSITION`
+
     """
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
