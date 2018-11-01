@@ -19,7 +19,7 @@ coord_frames = coord.builtin_frames.__all__[:]
 # For now remove OffsetFrame, issue #55
 try:
     coord_frames.remove("SkyOffsetFrame")
-except ValueError as ve:
+except ValueError:
     pass
 
 
