@@ -54,8 +54,8 @@ not belong to any slit. Assuming the array is stored in
 
 .. doctest-skip-all
 
-  >>> from asdf import AsdfFile
-  >>> f = AsdfFile.open('mask.asdf')
+  >>> import asdf
+  >>> f = asdf.open('mask.asdf')
   >>> data = f.tree['mask']
   >>> mask = selector.LabelMapperArray(data)
 
