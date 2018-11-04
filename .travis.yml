@@ -38,9 +38,9 @@ matrix:
 
     # Don't wait for allowed failures
     fast_finish: true
-
+    
     include:
-
+ 
         # Do a coverage test.
         - python: 3.5
           env: SETUP_CMD='test --coverage --open-files --remote-data'
@@ -50,9 +50,8 @@ matrix:
         - python: 3.6
           env: SETUP_CMD='build_docs -w'
 
-        # Numpy
         - python: 3.6
-          env: NUMPY_VERSION=1.13 SETUP_CMD="test"
+          env: NUMPY_VERSION=1.14 SETUP_CMD="test"
 
         # Do a PEP8 test with flake8
         - python: 3.6
