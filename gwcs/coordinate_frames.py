@@ -153,7 +153,9 @@ class CoordinateFrame:
 
     def coordinates(self, *args):
         """ Create world coordinates object"""
-        raise NotImplementedError("Subclasses may implement this")
+        args = [args[i] for i in self.axes_order]
+        coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
+        return coo
 
     def coordinate_to_quantity(self, *coords):
         """
