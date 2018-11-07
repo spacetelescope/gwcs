@@ -267,8 +267,8 @@ def test_wcs_from_points():
 
     n = np.random.randn(ra.size)
     n.shape = ra.shape
-    nra = n*10**-3
-    ndec = n*10**-4
+    nra = n * 10 ** -3
+    ndec = n * 10 ** -3
     w = wcs_from_points(xy=(x+nra, y+ndec), radec=(ra, dec), fiducial=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra)
