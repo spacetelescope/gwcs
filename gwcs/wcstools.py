@@ -255,7 +255,7 @@ def wcs_from_points(xy, radec, fiducial, projection=projections.Sky2Pix_TAN(), d
     projection_x, projection_y = trans(ra, dec)
     poly2 = models.Polynomial2D(degree)
     fitter = fitting.LevMarLSQFitter()
-    with warnings.catch_warnings() as w:
+    with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         poly_x = fitter(poly2, x, y, projection_x)
         poly_y = fitter(poly2, x, y, projection_y)
