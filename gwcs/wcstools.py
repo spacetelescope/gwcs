@@ -11,6 +11,7 @@ from .coordinate_frames import * # noqa
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
 
+
 __all__ = ['wcs_from_fiducial', 'grid_from_bounding_box']
 
 
@@ -85,7 +86,7 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
         if len(bounding_box) != forward_transform.n_outputs:
             raise ValueError("Expected the number of items in 'bounding_box' to be equal to the "
                              "number of outputs of the forawrd transform.")
-        forward_transform.bounding_box = bonding_box[::-1]
+        forward_transform.bounding_box = bounding_box[::-1]
     return WCS(output_frame=coordinate_frame, forward_transform=forward_transform,
                name=name)
 

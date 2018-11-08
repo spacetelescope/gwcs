@@ -174,7 +174,13 @@ def test_coordinate_to_quantity_celestial(inp):
     assert_quantity_allclose(lon, 10 * u.deg)
     assert_quantity_allclose(lat, 20 * u.deg)
 
+    with pytest.raises(ValueError):
+        cel.coordinate_to_quantity(10*u.deg, 2*u.deg, 3*u.deg)
 
+    with pytest.raises(ValueError):
+        cel.coordinate_to_quantity((1, 2))
+
+        
 @pytest.mark.parametrize('inp', [
     (100,),
     (100 * u.nm,),
@@ -272,3 +278,70 @@ def test_coordinate_to_quantity_frame_2d():
     result = frame.coordinate_to_quantity(*inp)
     for output, exp in zip(result, expected):
         assert_quantity_allclose(output, exp)
+
+
+def test_coordinate_to_quantity_error():
+    frame = cf.Frame2D(unit=(u.one, u.arcsec))
+    with pytest.raises(ValueError):
+        frame.coordinate_to_quantity(1)
+
+    with pytest.raises(ValueError):
+        comp1.coordinate_to_quantity((1, 1), 2)
+
+    frame = cf.TemporalFrame(unit=u.s)
+    with pytest.raises(ValueError):
+        frame.coordinate_to_quantity(1)
+    
+
+def test_axis_physical_type():
+    assert icrs.axis_physical_types == ("pos.eq.ra", "pos.eq.dec")
+    assert spec1.axis_physical_types == ("em.freq",)
+    assert spec2.axis_physical_types == ("em.wl",)
+    assert comp1.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.freq")
+    assert comp2.axis_physical_types == ("custom:x", "custom:y", "em.wl")
+    assert comp.axis_physical_types == ('pos.eq.ra', 'pos.eq.dec', 'em.freq', 'em.wl')
+    
+    spec3 = cf.SpectralFrame(name='waven', axes_order=(1,),
+                             axis_physical_types='em.wavenumber')
+    assert spec3.axis_physical_types == ('em.wavenumber',)
+    
+    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
+    assert t.axis_physical_types == ('time',)
+
+    fr2d = cf.Frame2D(name='d', axes_names=("x", "y"))
+    assert fr2d.axis_physical_types == ('custom:x', 'custom:y')
+
+    fr2d = cf.Frame2D(name='d', axes_names=None)
+    assert fr2d.axis_physical_types == ('custom:SPATIAL', 'custom:SPATIAL')
+
+    fr2d = cf.Frame2D(name='d', axis_physical_types=("pos.x", "pos.y"))
+    assert fr2d.axis_physical_types == ('custom:pos.x', 'custom:pos.y')
+
+    with pytest.raises(ValueError):
+        cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("pos.eq.ra",) )
+
+    fr = cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("ra", "dec"))
+    assert fr.axis_physical_types == ("custom:ra", "custom:dec")
+    
+    fr = cf.CelestialFrame(reference_frame=coord.BarycentricTrueEcliptic())
+    assert fr.axis_physical_types == ('pos.ecliptic.lon', 'pos.ecliptic.lat')
+
+    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types="length", axes_names="x", naxes=1)
+    assert frame.axis_physical_types == ("custom:length",)
+    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types=("length",), axes_names="x", naxes=1)
+    assert frame.axis_physical_types == ("custom:length",)
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types=("length", "length"), naxes=1)
+
+        
+def test_base_frame():
+    with pytest.raises(ValueError):
+        cf.CoordinateFrame(name='custom_frame',
+                           axes_type=("SPATIAL",),
+                           naxes=1, axes_order=(0,),
+                           axes_names=("x", "y"))
+    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axes_names="x", naxes=1)
+    assert frame.naxes == 1
+    assert frame.axes_names == ("x",)
+
+    frame.coordinate_to_quantity(1, 2)
