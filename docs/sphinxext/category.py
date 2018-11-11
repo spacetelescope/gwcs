@@ -102,7 +102,8 @@ def setup(app):
     app.add_node(
         entry,
         html=(visit_entry_node_html, depart_entry_node_html),
-        latex=(visit_entry_node_latex, depart_entry_node_latex)
+        latex=(visit_entry_node_latex, depart_entry_node_latex),
+        override=True
     )
 
     app.add_role(
