@@ -91,6 +91,3 @@ Represents a spectral frame.
 
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <spectral_frame-1.0.0.yaml>`

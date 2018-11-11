@@ -76,6 +76,3 @@ Represents a celestial frame.
 
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <celestial_frame-1.0.0.yaml>`

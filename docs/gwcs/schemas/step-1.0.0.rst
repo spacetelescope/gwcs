@@ -99,6 +99,3 @@ Describes a single step of a WCS transform pipeline.
 
 :category:`Examples:`
 
-.. only:: html
-
-   :download:`Original schema in YAML <step-1.0.0.yaml>`

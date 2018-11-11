@@ -58,6 +58,3 @@ ASDF WCS is a way of specifying transformations (usually from detector space to 
 
     
 
-.. only:: html
-
-   :download:`Original schema in YAML <wcs-1.0.0.yaml>`

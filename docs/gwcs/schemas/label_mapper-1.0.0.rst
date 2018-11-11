@@ -338,6 +338,3 @@ Map a number within a range of numbers to transforms which return labels.::
       n_inputs: 2
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <label_mapper-1.0.0.yaml>`

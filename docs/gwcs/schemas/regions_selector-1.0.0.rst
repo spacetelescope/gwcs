@@ -232,6 +232,3 @@ Create a regions_selector schema for 2 regions, labeled "1" and "2".::
     undefined_transform_value: .nan
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <regions_selector-1.0.0.yaml>`

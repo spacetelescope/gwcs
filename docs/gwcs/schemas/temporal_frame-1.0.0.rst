@@ -89,6 +89,3 @@ Represents a temporal frame.
 
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <temporal_frame-1.0.0.yaml>`

@@ -87,6 +87,3 @@ A two dimensional spatial frame
     unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <frame2d-1.0.0.yaml>`

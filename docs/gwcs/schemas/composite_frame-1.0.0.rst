@@ -12,6 +12,3 @@ Represents a set of frames.
 
 
 
-.. only:: html
-
-   :download:`Original schema in YAML <composite_frame-1.0.0.yaml>`

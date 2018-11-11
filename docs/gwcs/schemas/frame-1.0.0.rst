@@ -195,6 +195,3 @@ A pixel frame in three dimensions
     unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
   
 
-.. only:: html
-
-   :download:`Original schema in YAML <frame-1.0.0.yaml>`
