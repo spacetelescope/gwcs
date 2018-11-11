@@ -34,7 +34,7 @@ Represents a temporal frame.
 
     :entry:`reference_time`
 
-    :soft:`Type:` :doc:`time-1.1.0 <tag:stsci.edu:asdf/time/time-1.1.0>`.
+    :soft:`Type:` `time-1.1.0 <tag:stsci.edu:asdf/time/time-1.1.0>`.
 
     
 

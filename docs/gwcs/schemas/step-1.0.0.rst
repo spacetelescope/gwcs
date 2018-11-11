@@ -59,7 +59,7 @@ Describes a single step of a WCS transform pipeline.
 
   :entry:`transform`
 
-  :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`or` null.
+  :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`or` null.
 
   
 
@@ -79,7 +79,7 @@ Describes a single step of a WCS transform pipeline.
 
     :entry:`—`
 
-    :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+    :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
     
 

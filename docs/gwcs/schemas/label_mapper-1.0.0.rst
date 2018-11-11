@@ -5,7 +5,7 @@
 label_mapper-1.0.0: Represents a mapping from a coordinate value to a label.
 ============================================================================
 
-:soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`and` object.
+:soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`and` object.
 
 Represents a mapping from a coordinate value to a label.
 
@@ -15,7 +15,7 @@ with
 [regions_selector](ref:http://stsci.edu/schemas/gwcs/regions_selector-1.0.0). The
 [label_mapper](ref:http://stsci.edu/schemas/gwcs/label_mapper-1.0.0)
 returns the label corresponding to given inputs. The
-[regions_selector](ref:http://stsci.edu/schemas/gwcsregions_selector-1.0.0)
+[regions_selector](ref:http://stsci.edu/schemas/gwcs/regions_selector-1.0.0)
 returns the transform corresponding to this label. This maps inputs
 (e.g. pixels on a detector) to transforms uniquely.
 
@@ -28,7 +28,7 @@ returns the transform corresponding to this label. This maps inputs
 
   :entry:`0`
 
-  :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+  :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
   
 
@@ -54,7 +54,7 @@ returns the transform corresponding to this label. This maps inputs
 
     :entry:`mapper`
 
-    :soft:`Type:` :doc:`ndarray-1.0.0 <tag:stsci.edu:asdf/core/ndarray-1.0.0>` :soft:`or` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`or` object. Required.
+    :soft:`Type:` `ndarray-1.0.0 <tag:stsci.edu:asdf/core/ndarray-1.0.0>` :soft:`or` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`or` object. Required.
 
     
 
@@ -76,7 +76,7 @@ returns the transform corresponding to this label. This maps inputs
 
       :entry:`—`
 
-      :soft:`Type:` :doc:`ndarray-1.0.0 <tag:stsci.edu:asdf/core/ndarray-1.0.0>`.
+      :soft:`Type:` `ndarray-1.0.0 <tag:stsci.edu:asdf/core/ndarray-1.0.0>`.
 
       
 
@@ -88,7 +88,7 @@ returns the transform corresponding to this label. This maps inputs
 
       :entry:`—`
 
-      :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+      :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
       
 
@@ -176,7 +176,7 @@ returns the transform corresponding to this label. This maps inputs
 
         :entry:`models`
 
-        :soft:`Type:` array :soft:`of` ( :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` ).
+        :soft:`Type:` array :soft:`of` ( `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` ).
 
         
 
@@ -188,7 +188,7 @@ returns the transform corresponding to this label. This maps inputs
 
           .. _http://stsci.edu/schemas/gwcs/label_mapper-1.0.0/allOf/1/properties/mapper/anyOf/2/properties/models/items:
 
-          :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+          :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
           
 
@@ -225,7 +225,7 @@ returns the transform corresponding to this label. This maps inputs
 
     :entry:`inputs_mapping`
 
-    :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+    :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
     
 

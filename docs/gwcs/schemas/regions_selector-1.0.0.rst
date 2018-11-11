@@ -5,7 +5,7 @@
 regions_selector-1.0.0: Represents a discontinuous transform.
 =============================================================
 
-:soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`and` object.
+:soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` :soft:`and` object.
 
 Represents a discontinuous transform.
 
@@ -21,7 +21,7 @@ Maps regions to transgorms and evaluates the transforms with the corresponding i
 
   :entry:`0`
 
-  :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+  :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
   
 
@@ -151,7 +151,7 @@ Maps regions to transgorms and evaluates the transforms with the corresponding i
 
       :entry:`transforms`
 
-      :soft:`Type:` array :soft:`of` ( :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` ).
+      :soft:`Type:` array :soft:`of` ( `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>` ).
 
       
 
@@ -164,7 +164,7 @@ Maps regions to transgorms and evaluates the transforms with the corresponding i
 
         .. _http://stsci.edu/schemas/gwcs/regions_selector-1.0.0/allOf/1/properties/selector/properties/transforms/items:
 
-        :soft:`Type:` :doc:`transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
+        :soft:`Type:` `transform-1.1.0 <tag:stsci.edu:asdf/transform/transform-1.1.0>`.
 
         
 

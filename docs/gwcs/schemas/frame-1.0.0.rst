@@ -111,7 +111,7 @@ transformation pipelines out of a number of low-level pieces.
 
   :entry:`reference_frame`
 
-  :soft:`Type:` :doc:`baseframe-1.0.0 <tag:astropy.org:astropy/coordinates/frames/baseframe-1.0.0>`.
+  :soft:`Type:` `baseframe-1.0.0 <tag:astropy.org:astropy/coordinates/frames/baseframe-1.0.0>`.
 
   
 
@@ -124,7 +124,7 @@ transformation pipelines out of a number of low-level pieces.
 
   :entry:`unit`
 
-  :soft:`Type:` array :soft:`of` ( :doc:`unit-1.0.0 <tag:stsci.edu:asdf/unit/unit-1.0.0>` ).
+  :soft:`Type:` array :soft:`of` ( `unit-1.0.0 <tag:stsci.edu:asdf/unit/unit-1.0.0>` ).
 
   
 
@@ -137,7 +137,34 @@ transformation pipelines out of a number of low-level pieces.
 
     .. _http://stsci.edu/schemas/gwcs/frame-1.0.0/properties/unit/items:
 
-    :soft:`Type:` :doc:`unit-1.0.0 <tag:stsci.edu:asdf/unit/unit-1.0.0>`.
+    :soft:`Type:` `unit-1.0.0 <tag:stsci.edu:asdf/unit/unit-1.0.0>`.
+
+    
+
+    
+
+
+
+  .. _http://stsci.edu/schemas/gwcs/frame-1.0.0/properties/axis_physical_types:
+
+  :entry:`axis_physical_types`
+
+  :soft:`Type:` array :soft:`of` ( string ).
+
+  
+
+  An iterable of strings describing the physical type for each world axis.
+  These should be names from the VO UCD1+ controlled Vocabulary
+  (http://www.ivoa.net/documents/latest/UCDlist.html).
+  
+
+  :category:`Items:`
+
+
+
+    .. _http://stsci.edu/schemas/gwcs/frame-1.0.0/properties/axis_physical_types/items:
+
+    :soft:`Type:` string.
 
     
 
