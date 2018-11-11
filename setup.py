@@ -114,8 +114,8 @@ package_info['package_data'][PACKAGENAME].extend(c_files)
 
 entry_points = dict(asdf_extensions='gwcs = gwcs.extension:GWCSExtension')
 
-import convert_schemas
-convert_schemas.main('gwcs/schemas/stsci.edu/gwcs', 'docs/gwcs/schemas')
+#import convert_schemas
+#convert_schemas.main('gwcs/schemas/stsci.edu/gwcs', 'docs/gwcs/schemas')
 
 setup(name=PACKAGENAME,
       version=VERSION,
@@ -124,7 +124,7 @@ setup(name=PACKAGENAME,
       entry_points=entry_points,
       requires=['astropy', 'asdf'],
       python_requires='>=3.5',
-      install_requires=['astropy', 'asdf', 'pyyaml'],
+      install_requires=['astropy', 'asdf'],
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
