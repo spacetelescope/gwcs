@@ -140,8 +140,8 @@ htmlhelp_basename = project + 'doc'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [('index', project + '.tex', project + u' Documentation',
-                    author, 'manual')]
+#latex_documents = [('index', project + '.tex', project + u' Documentation',
+#                    author, 'manual')]
 
 
 # -- Options for manual page output --------------------------------------------
@@ -169,5 +169,5 @@ if eval(setup_cfg.get('edit_on_github')):
 
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
-extensions += ['sphinxext.category']
+extensions += ['category']
 
