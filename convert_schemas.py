@@ -153,14 +153,11 @@ def format_type(schema, root):
         if ref.startswith('#/'):
             return ':ref:`{0} <{1}/{2}>`'.format(ref[2:], root, ref[2:])
         else:
-            basename = os.path.basename(ref)#schema['$ref'])
-            #part = schema['$ref']
-
+            basename = os.path.basename(ref)
             if "tag:stsci.edu:asdf" in ref or "tag:astropy.org:astropy" in ref:
-                print('\n\nref', ref, '\n')
-                return '`{0} <{1}>`'.format(basename, ref)#schema['$ref'])
+                return '`{0} <{1}>`'.format(basename, ref)
             else:
-                return ':doc:`{0} <{1}>`'.format(basename, ref)#schema['$ref'])
+                return ':doc:`{0} <{1}>`'.format(basename, ref)
 
     else:
         type = schema.get('type')
@@ -262,7 +259,6 @@ def recurse(o, name, schema, path, level, required=False):
         documented as such.
     """
     indent = '  ' * max(level, 0)
-    print('name', name)
     o.write('\n\n')
     o.write(indent)
     o.write('.. _{0}:\n\n'.format(os.path.join(*path)))
@@ -274,7 +270,6 @@ def recurse(o, name, schema, path, level, required=False):
             o.write(':entry:`{0}`\n\n'.format(name))
 
     o.write(indent)
-    print('schema', schema)
     if path[0].startswith("tag:stsci.edu:asdf"):
         o.write(format_type(schema, path[0]))
     else:
@@ -359,8 +354,8 @@ def convert_schema_to_rst(src, dst):
         name += ': ' + schema['title'].strip()
     recurse(o, name, schema, [id], 0)
 
-    o.write(".. only:: html\n\n   :download:`Original schema in YAML <{0}>`\n".format(
-        os.path.basename(src)))
+    #o.write(".. only:: html\n\n   :download:`Original schema in YAML <{0}>`\n".
+    #os.path.basename(src)))
 
     write_if_different(dst, yaml_content)
     write_if_different(dst[:-5] + ".rst", o.getvalue().encode('utf-8'))
