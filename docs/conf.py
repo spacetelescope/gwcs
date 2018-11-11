@@ -169,5 +169,5 @@ if eval(setup_cfg.get('edit_on_github')):
 
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
-extensions += ['sphinxext.category']
+extensions += ['category']
 
