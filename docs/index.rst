@@ -4,52 +4,54 @@ GWCS Documentation
 `GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for managing
 the World Coordinate System (WCS) of astronomical data.
 
-Introduction
-------------
+Introduction & Motivation for GWCS
+----------------------------------
 
-The mapping from ‘pixel’ coordinates to corresponding ‘real-world’ coordinates 
-(e.g. celestial coordinates, spectral wavelength) is crucial to relating astronomical 
-data to the phenomena they describe. Images and other types of data often come encoded 
-with information that describes this mapping – this is referred to as the 
-‘World Coordinate System’ or WCS. The term WCS is often used to refer specifically to the 
-most widely used “FITS implementation of WCS” (See the discussion in `APE14 <https://github.com/astropy/astropy-APEs/blob/master/APE14.rst#backgroundterminology>`__  
-for more on this topic), but here unless specified WCS refers to the broader concept of relating 
-pixel ⟷ world. 
+The mapping from ‘pixel’ coordinates to corresponding ‘real-world’ coordinates (e.g. celestial coordinates, 
+spectral wavelength) is crucial to relating astronomical data to the phenomena they describe. Images and 
+other types of data often come encoded with information that describes this mapping – this is referred 
+to as the ‘World Coordinate System’ or WCS. The term WCS is often used to refer specifically
+to the most widely used 'FITS implementation of WCS', but here unless specified WCS refers to 
+the broader concept of relating pixel ⟷ world. (See the discussion in `APE14 <https://github.com/astropy/astropy-APEs/blob/master/APE14.rst#backgroundterminology>`__ 
+for more on this topic). 
 
-The FITS WCS standard, currently the most widely used method of encoding WCS in data, 
-describes a set of required FITS header keywords and allowed values that describe how 
-pixel ⟷ world transformations should be done. This current paradigm of encoding data 
-with merely instructions on how to relate pixel to world has several limitations:
+The FITS WCS standard, currently the most widely used method of encoding WCS in data, describes a 
+set of required FITS header keywords and allowed values that describe how pixel ⟷ world transformations 
+should be done. This current paradigm of encoding data with only instructions on how to relate pixel to world, separate
+from the transformation machinery itself, has several limitations:
 
 * Limited flexibility. WCS keywords and their values are rigidly defined so that the instructions are unambiguous. 
   This places limitations on, for example, describing geometric distortion in images since only a handful of distortion models are defined 
-  in the FITS standard. 
+  in the FITS standard (and therefore can be encoded in FITS headers as WCS information). 
 * Separation of data from transformation pipelines. The machinery that transforms pixel ⟷ world 
-  does not exist along side the data – merely a roadmap for how one would do the transformation 
-  is encoded. External packages and libraries (e.g wcslib, or its Python interface astropy.wcs) 
-  must be written to interpret the instructions and execute the transformation. These libraries 
+  does not exist along side the data – there is merely a roadmap for how one *would* do the transformation.
+  External packages and libraries (e.g wcslib, or its Python interface astropy.wcs) must be 
+  written to interpret the instructions and execute the transformation. These libraries 
   don’t allow easy access to coordinate frames along the course of the full pixel to world 
-  transformation pipeline, they simply perform the full transformation. Additionally, since 
-  these libraries can only interpret FITS WCS information, any custom ‘WCS’ definitions 
-  outside of FITS require the user to write their own transformation pipelines. 
-* Incompatibility with varying file formats. New file formats (for example ASDF) that will be 
-  used in new missions like JWST and LSST also require a convention of encoding WCS information. 
-  It would be most useful if this convention was general enough to be compatible with FITS. 
+  transformation pipeline. Additionally, since these libraries can only interpret FITS WCS 
+  information, any custom ‘WCS’ definitions outside of FITS require the user to write their own transformation pipelines. 
+* Incompatibility with varying file formats. New file formats that are becoming more widely 
+  used in place of FITS to store astronomical data, like the ASDF format, also require a 
+  method of encoding WCS information. FITS WCS and the accompanying libraries are adapted for 
+  FITS only. A more flexible interface would be agnostic to file type, as long as the necessary
+  information is present. 
 
-These limitations, among others, make a case for a new, generalized framework for 
-encoding WCS information in astronomical data. `GWCS <https://github.com/spacetelescope/gwcs>`__ 
-takes a general approach to the problem of expressing transformations between pixel and world coordinates.
-GWCS supports a data model which includes the entire transformation pipeline 
-from input pixel coordinates to world coordinates (and vice versa), as well as 
-intermediate frames. Transformations can be chained, joined or combined with arithmetic 
-operators using the flexible framework of compound models in modeling. In the case of a 
-celestial output frame coordinates provides further transformations between standard 
-coordinate frames. Spectral output coordinates are instances of Quantity and are transformed 
-to other units with the tools in that package. The goal of the GWCS package is to provide 
-a flexible toolkit which is easily extendable by adding new transforms and frames.
+The `GWCS <https://github.com/spacetelescope/gwcs>`__ package and GWCS object is a generalized WCS 
+implementation that mitigates these limitations. The goal of the GWCS package is to provide a 
+flexible toolkit for expressing and evaluating transformations between pixel and world coordinates, 
+as well as intermediate frames along the course of this transformation.The GWCS object supports a 
+data model which includes the entire transformation pipeline from input pixel coordinates to 
+world coordinates (and vice versa). The basis of the GWCS object is astropy `modeling <https://docs.astropy.org/en/stable/modeling/>`__.
+Models that describe the pixel ⟷ world transformations can be chained, joined or combined with arithmetic operators 
+using the flexible framework of compound models in modeling. This approach allows for easy 
+access to intermediate frames. In the case of a celestial output frame `coordinates <http://docs.astropy.org/en/stable/coordinates/>`__. provides further transformations between 
+standard celestial coordinate frames. Spectral output coordinates are instances of Quantity 
+and can be transformed to other units with the tools in that package. `Time <http://docs.astropy.org/en/stable/api/astropy.time.Time.html#astropy.time.Time>`__ coordinates are 
+instances of `Time <http://docs.astropy.org/en/stable/api/astropy.time.Time.html#astropy.time.Time>`__. 
+GWCS supports transforms initialized with `Quantity <http://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity>`__ objects ensuring automatic 
+unit conversion. 
 
-
-Pixel conventions and definitions
+Pixel Conventions and Definitions
 ---------------------------------
 
 This API assumes that integer pixel values fall at the center of pixels (as
