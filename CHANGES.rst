@@ -12,6 +12,10 @@ New Features
 - Implement support for astropy APE 14
   (https://doi.org/10.5281/zenodo.1188875). [#146]
 
+- Added a ``wcs_from_[points`` function which creates a WCS object
+  two matching sets of points ``(x,y)`` and ``(ra, dec)``. [#42]
+  
+
 Bug Fixes
 ^^^^^^^^^
 

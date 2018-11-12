@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import warnings
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from astropy.modeling import models
@@ -248,6 +249,31 @@ def test_grid_from_bounding_box_step():
 
     with pytest.raises(ValueError):
         grid_from_bounding_box(bb, step=(1, 2, 1))
+
+
+def test_wcs_from_points():
+    np.random.seed(0)
+    hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+    with warnings.catch_warnings() as w:
+        warnings.simplefilter("ignore")
+        w = astwcs.WCS(hdr)
+    y, x = np.mgrid[:2046:20j, :4023:10j]
+    ra, dec = w.wcs_pix2world(x, y, 1)
+    fiducial = coord.SkyCoord(ra.mean()*u.deg, dec.mean()*u.deg, frame="icrs")
+    w = wcs_from_points(xy=(x, y), world_coordinates=(ra, dec), fiducial=fiducial)
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra)
+    assert_allclose(newdec, dec)
+
+    n = np.random.randn(ra.size)
+    n.shape = ra.shape
+    nra = n * 10 ** -2
+    ndec = n * 10 ** -2
+    w = wcs_from_points(xy=(x+nra, y+ndec), world_coordinates=(ra, dec), fiducial=fiducial)
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra, atol=10**-6)
+    assert_allclose(newdec, dec, atol=10**-6)
+    
 
 
 def test_grid_from_bounding_box_2():
