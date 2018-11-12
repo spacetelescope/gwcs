@@ -308,6 +308,7 @@ Using `gwcs`
   gwcs/pure_asdf.rst
   gwcs/wcs_validation.rst
   gwcs/schemas/index.rst
+  gwcs/points_to_wcs.rst
 
 
 See also
