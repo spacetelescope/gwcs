@@ -46,8 +46,7 @@ Models that describe the pixel ⟷ world transformations can be chained, joined 
 using the flexible framework of compound models in modeling. This approach allows for easy 
 access to intermediate frames. In the case of a celestial output frame `coordinates <http://docs.astropy.org/en/stable/coordinates/>`__. provides further transformations between 
 standard celestial coordinate frames. Spectral output coordinates are instances of Quantity 
-and can be transformed to other units with the tools in that package. `Time <http://docs.astropy.org/en/stable/api/astropy.time.Time.html#astropy.time.Time>`__ coordinates are 
-instances of `Time <http://docs.astropy.org/en/stable/api/astropy.time.Time.html#astropy.time.Time>`__. 
+and can be transformed to other units with the tools in that package. ``Time`` coordinates are instances of ``Time``. 
 GWCS supports transforms initialized with `Quantity <http://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity>`__ objects ensuring automatic 
 unit conversion. 
 
