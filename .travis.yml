@@ -19,11 +19,12 @@ env:
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.6
         - NUMPY_VERSION=stable
-        - ASTROPY_VERSION=development
+        #- ASTROPY_VERSION=development
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='scipy'
         - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
-        - PIP_DEPENDENCIES="pytest-astropy $ASDF_GIT"
+        - ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
+        - PIP_DEPENDENCIES="$ASTROPY_GIT pytest-astropy asdf"
         - ASTROPY_USE_SYSTEM_PYTEST=1
         - PYTEST_VERSION=3.6
 
@@ -61,6 +62,16 @@ matrix:
     allow_failures:
         - python: 3.5
           env: MAIN_CMD='flake8 gwcs --count' SETUP_CMD=''
+
+        - python: 3.6
+          env: NUMPY_VERSION=dev SETUP_CMD='test'
+
+        - python: 3.6
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
+
+        - python: 3.6
+          env: PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
+
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
