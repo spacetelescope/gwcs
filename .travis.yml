@@ -57,11 +57,23 @@ matrix:
         # Do a PEP8 test with flake8
         - python: 3.6
           env: MAIN_CMD='flake8 count --select=F, E101, E111, E112, E113, E401, E402, E711, E722 --max-line-length=110'
-               SETUP_CMD='gwcs'
+               SETUP_CMD='gwcs"
+
+        - python: 3.5
+          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+
+        - python: 3.6
+          env: NUMPY_VERSION=dev SETUP_CMD='test'
+
+        - python: 3.6
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
+
+        - python: 3.6
+          env: PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
 
     allow_failures:
         - python: 3.5
-          env: MAIN_CMD='flake8 gwcs --count' SETUP_CMD=''
+          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
 
         - python: 3.6
           env: NUMPY_VERSION=dev SETUP_CMD='test'
