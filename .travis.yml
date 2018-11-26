@@ -1,4 +1,4 @@
-language: python
+language: c
 
 # Setting sudo to false opts in to Travis-CI container-based builds.
 sudo: false
