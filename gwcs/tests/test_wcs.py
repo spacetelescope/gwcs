@@ -11,7 +11,7 @@ from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
 
 from .. import wcs
-from ..wcstools import *
+from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
@@ -39,6 +39,7 @@ xv, yv = np.meshgrid(x, y)
 
 # Test initializing a WCS
 
+
 def test_create_wcs():
     """
     Test initializing a WCS object.
@@ -52,7 +53,7 @@ def test_create_wcs():
     # use a pipeline to initialize
     pipe = [(detector, m1), (icrs, None)]
     gw4 = wcs.WCS(forward_transform=pipe)
-    assert(gw1.available_frames == gw2.available_frames ==
+    assert(gw1.available_frames == gw2.available_frames == \
            gw3.available_frames == gw4.available_frames == ['detector', 'icrs'])
     res = m(1, 2)
     assert_allclose(gw1(1, 2), res)
@@ -269,11 +270,12 @@ def test_wcs_from_points():
     n.shape = ra.shape
     nra = n * 10 ** -2
     ndec = n * 10 ** -2
-    w = wcs_from_points(xy=(x+nra, y+ndec), world_coordinates=(ra, dec), fiducial=fiducial)
+    w = wcs_from_points(xy=(x + nra, y + ndec),
+                        world_coordinates=(ra, dec),
+                        fiducial=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
-    assert_allclose(newdec, dec, atol=10**-6)
-    
+    assert_allclose(newdec, dec, atol=10**-6)    
 
 
 def test_grid_from_bounding_box_2():
@@ -349,14 +351,14 @@ def test_footprint():
                                           [15, 0, 12],
                                           [15, 2, 2],
                                           [15, 2, 12]]))
-    assert_equal(w.footprint(axis_type='spatial'), np.array([[ 11.,   0.],
-                                                             [ 11.,   2.],
-                                                             [ 15.,   2.],
-                                                             [ 15.,   0.]]))
+    assert_equal(w.footprint(axis_type='spatial'), np.array([[11., 0.],
+                                                             [11., 2.],
+                                                             [15., 2.],
+                                                             [15., 0.]]))
 
     assert_equal(w.footprint(axis_type='spectral'), np.array([2, 12]))
 
-    
+
 def test_high_level_api():
     """
     Test WCS high level API.
@@ -365,13 +367,13 @@ def test_high_level_api():
     transform = m1 & models.Scale(1.5)
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
 
-    r, d, l = w(xv, yv, xv)
+    r, d, lam = w(xv, yv, xv)
     world_coord = w.pixel_to_world(xv, yv, xv)
     assert isinstance(world_coord[0], coord.SkyCoord)
     assert isinstance(world_coord[1], u.Quantity)
     assert_allclose(world_coord[0].data.lon.value, r)
     assert_allclose(world_coord[0].data.lat.value, d)
-    assert_allclose(world_coord[1].value, l)
+    assert_allclose(world_coord[1].value, lam)
 
     x1, y1, z1 = w.world_to_pixel(*world_coord)
     assert_allclose(x1, xv)
@@ -468,7 +470,7 @@ class TestImaging(object):
 
     def test_get_transform(self):
         with pytest.raises(wcs.CoordinateFrameError):
-            assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names ==
+            assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names == \
                    self.wcs.forward_transform[1:].submodel_names)
 
     def test_pixel_to_world(self):

@@ -29,7 +29,7 @@ def test_fits_transform():
     hdr = fits.Header.fromfile(get_pkg_data_filename('data/simple_wcs2.hdr'))
     gw1 = gwutils.make_fitswcs_transform(hdr)
     w1 = fitswcs.WCS(hdr)
-    assert_allclose(gw1(1, 2), w1.wcs_pix2world(1, 2, 1), atol=10**-8)
+    assert_allclose(gw1(1, 2), w1.wcs_pix2world(1, 2, 1), atol=10 ** -8)
 
 
 def test_lon_pole():
@@ -86,10 +86,10 @@ def test_get_axes():
 
 
 def test_isnumerical():
-    sky = coord.SkyCoord(1*u.deg, 2*u.deg)
+    sky = coord.SkyCoord(1 * u.deg, 2 * u.deg)
     assert not gwutils.isnumerical(sky)
 
-    assert not gwutils.isnumerical(2*u.m)
+    assert not gwutils.isnumerical(2 * u.m)
 
     assert gwutils.isnumerical(np.float(0))
     assert gwutils.isnumerical(np.array(0))
