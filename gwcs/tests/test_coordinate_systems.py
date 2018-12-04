@@ -86,7 +86,7 @@ def test_celestial_attributes_length(frame):
     fr = getattr(coord, frame)
     if issubclass(fr.__class__, coord.BaseCoordinateFrame):
         cel = cf.CelestialFrame(reference_frame=fr())
-        assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) ==
+        assert(len(cel.axes_names) == len(cel.axes_type) == len(cel.unit) == \
                len(cel.axes_order) == cel.naxes)
 
 
@@ -175,7 +175,7 @@ def test_coordinate_to_quantity_celestial(inp):
     assert_quantity_allclose(lat, 20 * u.deg)
 
     with pytest.raises(ValueError):
-        cel.coordinate_to_quantity(10*u.deg, 2*u.deg, 3*u.deg)
+        cel.coordinate_to_quantity(10 * u.deg, 2 * u.deg, 3 * u.deg)
 
     with pytest.raises(ValueError):
         cel.coordinate_to_quantity((1, 2))
@@ -300,11 +300,11 @@ def test_axis_physical_type():
     assert comp1.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.freq")
     assert comp2.axis_physical_types == ("custom:x", "custom:y", "em.wl")
     assert comp.axis_physical_types == ('pos.eq.ra', 'pos.eq.dec', 'em.freq', 'em.wl')
-    
+
     spec3 = cf.SpectralFrame(name='waven', axes_order=(1,),
                              axis_physical_types='em.wavenumber')
     assert spec3.axis_physical_types == ('em.wavenumber',)
-    
+
     t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.axis_physical_types == ('time',)
 
@@ -318,7 +318,7 @@ def test_axis_physical_type():
     assert fr2d.axis_physical_types == ('custom:pos.x', 'custom:pos.y')
 
     with pytest.raises(ValueError):
-        cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("pos.eq.ra",) )
+        cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("pos.eq.ra",))
 
     fr = cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("ra", "dec"))
     assert fr.axis_physical_types == ("custom:ra", "custom:dec")
@@ -333,7 +333,7 @@ def test_axis_physical_type():
     with pytest.raises(ValueError):
         cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types=("length", "length"), naxes=1)
 
-        
+
 def test_base_frame():
     with pytest.raises(ValueError):
         cf.CoordinateFrame(name='custom_frame',

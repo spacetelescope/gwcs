@@ -9,7 +9,7 @@ All types are added automatically to ``_gwcs_types`` and the GWCSExtension.
 import six
 
 from astropy.io.misc.asdf.tags.transform.basic import TransformType
-from asdf.asdftypes import ExtensionTypeMeta, CustomType
+from asdf.types import ExtensionTypeMeta, CustomType
 from astropy.io.misc.asdf.types import AstropyTypeMeta
 
 
