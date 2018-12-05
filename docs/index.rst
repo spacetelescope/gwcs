@@ -4,10 +4,6 @@ GWCS Documentation
 `GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for managing
 the World Coordinate System (WCS) of astronomical data.
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 81bfa27... capitalized Pixel Conventions and Definitions since it is a main section heading
 Introduction & Motivation for GWCS
 ----------------------------------
 
