@@ -74,10 +74,10 @@ easily work in both pixel and sky space, and transform between frames.
 The GWCS object, which by default when called executes for forward transformation,
 can be used to convert coordinates from pixel to world.
 
-  >>> gwcs_obj(36.235,642.215)
+  >>> gwcs_obj(36.235,642.215)    # doctest: +FLOAT_CMP
   (246.72158004206716, 43.46075091731673)
   
 Or equivalently 
-  >>> gwcs_obj.forward_transform(36.235,642.215)
-  (246.72158004206716, 43.46075091731673) 
+  >>> gwcs_obj.forward_transform(36.235,642.215)  # doctest: +FLOAT_CMP
+  (246.72158004206716, 43.46075091731673)
 
