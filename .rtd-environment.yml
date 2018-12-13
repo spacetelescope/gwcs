@@ -3,7 +3,8 @@ dependencies:
   - python>=3
   - numpy
   - pip:
-    - git+https://github.com/astropy/astropy.git
+    - astropy
+    - sphinx_astropy
     - sphinx-automodapi
     - stsci_rtd_theme
     - asdf
