@@ -1,4 +1,4 @@
-0.10.0 (Unreleased)
+0.10.0 (12/20/2018)
 -------------------
 
 New Features
@@ -16,11 +16,7 @@ New Features
   two matching sets of points ``(x,y)`` and ``(ra, dec)``. [#42]
   
 
-Bug Fixes
-^^^^^^^^^
-
-
-0.9.0 (2017-05-23)
+0.9.0 (2018-05-23)
 ------------------
 
 New Features
