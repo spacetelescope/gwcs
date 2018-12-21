@@ -1,10 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
-
+import itertools
 import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import utils as mutils
 
+from .api import GWCSAPIMixin
 from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
@@ -14,7 +15,7 @@ from . import utils
 __all__ = ['WCS']
 
 
-class WCS:
+class WCS(GWCSAPIMixin):
     """
     Basic WCS class.
 
@@ -36,9 +37,11 @@ class WCS:
 
     def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
                  name=""):
+        #self.low_level_wcs = self
         self._available_frames = []
         self._pipeline = []
         self._name = name
+        self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
@@ -53,14 +56,14 @@ class WCS:
                 super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
                 super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
 
-                self._pipeline = [(_input_frame, forward_transform.copy()),
-                                  (_output_frame, None)]
+                self._pipeline = [(input_frame, forward_transform.copy()),
+                                  (output_frame, None)]
             elif isinstance(forward_transform, list):
                 for item in forward_transform:
                     name, frame_obj = self._get_frame_name(item[0])
                     super(WCS, self).__setattr__(name, frame_obj)
-                    self._pipeline.append((name, item[1]))
-
+                    #self._pipeline.append((name, item[1]))
+                    self._pipeline = forward_transform
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(
@@ -183,8 +186,9 @@ class WCS:
         """
         if isinstance(frame, coordinate_frames.CoordinateFrame):
             frame = frame.name
-        return np.asarray(self._pipeline)[:, 0].tolist().index(frame)
-
+        frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
+        return frame_names.index(frame)
+        
     def _get_frame_name(self, frame):
         """
         Return the name of the frame and a ``CoordinateFrame`` object.
@@ -293,7 +297,7 @@ class WCS:
         except (NotImplementedError, KeyError):
             result = self._invert(*args, **kwargs)
 
-        if with_units:
+        if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
                 return self.input_frame.coordinates(result)
             else:
@@ -367,7 +371,7 @@ class WCS:
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            return [frame[0] for frame in self._pipeline]
+            return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
         else:
             return None
 
@@ -401,7 +405,7 @@ class WCS:
         """The unit of the coordinates in the output coordinate system."""
         if self._pipeline:
             try:
-                return getattr(self, self._pipeline[-1][0]).unit
+                return getattr(self, self._pipeline[-1][0].name).unit
             except AttributeError:
                 return None
         else:
@@ -411,7 +415,10 @@ class WCS:
     def output_frame(self):
         """Return the output coordinate frame."""
         if self._pipeline:
-            return getattr(self, self._pipeline[-1][0])
+            frame = self._pipeline[-1][0]
+            if not isinstance(frame, str):
+                frame = frame.name
+            return getattr(self, frame)
         else:
             return None
 
@@ -419,7 +426,10 @@ class WCS:
     def input_frame(self):
         """Return the input coordinate frame."""
         if self._pipeline:
-            return getattr(self, self._pipeline[0][0])
+            frame = self._pipeline[0][0]
+            if not isinstance(frame, str):
+                frame = frame.name
+            return getattr(self, frame)
         else:
             return None
 
@@ -519,9 +529,9 @@ class WCS:
             self.output_frame, self.input_frame, self.forward_transform)
         return fmt
 
-    def footprint(self, bounding_box=None, center=False):
+    def footprint(self, bounding_box=None, center=False, axis_type="all"):
         """
-        Return the footprint of the observation in world coordinates.
+        Return the footprint in world coordinates.
 
         Parameters
         ----------
@@ -529,21 +539,55 @@ class WCS:
             `prop: bounding_box`
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
+        axis_type : str
+            A supported ``output_frame.axes_type`` or "all" (default).
+            One of ['spatial', 'spectral', 'temporal'] or a custom type.
 
         Returns
         -------
-        coord : array of coordinates in the output_frame.
-            The order is counter-clockwise starting with the bottom left corner.
+        coord : ndarray
+            Array of coordinates in the output_frame mapping
+            corners to the output frame. For spatial coordinates the order
+            is clockwise, starting from the bottom left corner.
+
         """
+        def _order_clockwise(v):
+            return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
+                               [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
+
         if bounding_box is None:
             if self.bounding_box is None:
                 raise TypeError("Need a valid bounding_box to compute the footprint.")
             bb = self.bounding_box
         else:
             bb = bounding_box
-        vertices = np.asarray([[bb[0][0], bb[1][0]], [bb[0][0], bb[1][1]],
-                               [bb[0][1], bb[1][1]], [bb[0][1], bb[1][0]]]).T
+
+        all_spatial = all([t.lower() == "spatial" for t in self.output_frame.axes_type])
+
+        if all_spatial:
+            vertices = _order_clockwise(bb)
+        else:
+            vertices = np.array(list(itertools.product(*bb))).T
+
         if center:
             vertices = _toindex(vertices)
-        result = self.__call__(*vertices, **{'with_bounding_box': False})
-        return np.asarray(result)
+
+        result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
+
+        axis_type = axis_type.lower()
+        if axis_type == 'spatial' and all_spatial:
+            return result.T
+
+        if axis_type != "all":
+            axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
+            if not axtyp_ind.any():
+                raise ValueError('This WCS does not have axis of type "{}".'.format(axis_type))
+            result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
+
+            if axis_type == "spatial":
+                result = _order_clockwise(result)
+            else:
+                result.sort()
+                result = np.squeeze(result)
+
+        return result.T

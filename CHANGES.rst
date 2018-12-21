@@ -1,3 +1,20 @@
+0.10.0 (12/20/2018)
+-------------------
+
+New Features
+^^^^^^^^^^^^
+
+- Initializing a ``WCS`` object with a ``pipeline`` list now keeps
+  the complete ``CoordinateFrame`` objects in the ``WCS.pipeline``.
+  The effect is that a ``WCS`` object can now be initialized with
+  a ``pipeline`` from a different ``WCS`` object. [#174]
+
+- Implement support for astropy APE 14
+  (https://doi.org/10.5281/zenodo.1188875). [#146]
+
+- Added a ``wcs_from_[points`` function which creates a WCS object
+  two matching sets of points ``(x,y)`` and ``(ra, dec)``. [#42]
+
 0.9.0 (2018-05-23)
 ------------------
 
@@ -16,8 +33,10 @@ New Features
 
 - Add a ``StokesFrame`` which converts from 'I', 'Q', 'U', 'V' to 0-3. [#133]
 
-- Support serialising the base ``CoordinateFrame`` class to asdf, by making
-  a specific tag and schema for ``Frame2D`` [#150]
+- Support serializing the base ``CoordinateFrame`` class to asdf, by making
+  a specific tag and schema for ``Frame2D``. [#150]
+
+- Generalized the footrpint calculation to all output axes. [#167]
 
 
 API Changes
@@ -26,6 +45,8 @@ API Changes
 - The argument ``output="numerical_plus"`` was replaced by a bool
   argument ``with_units``. [#156]
 
+- Added a new flag ``axis_type`` to the footprint method. It controls what
+  type of footprint to calculate. [#167]
 
 Bug Fixes
 ^^^^^^^^^

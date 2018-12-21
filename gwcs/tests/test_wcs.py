@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import warnings
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from astropy.modeling import models
 from astropy import coordinates as coord
 from astropy.io import fits
@@ -10,7 +11,7 @@ from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
 
 from .. import wcs
-from ..wcstools import *
+from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
@@ -30,7 +31,14 @@ pipe = [(detector, m1),
         (icrs, None)
         ]
 
+# Create some data.
+nx, ny = (5, 2)
+x = np.linspace(0, 1, nx)
+y = np.linspace(0, 1, ny)
+xv, yv = np.meshgrid(x, y)
+
 # Test initializing a WCS
+
 
 def test_create_wcs():
     """
@@ -45,7 +53,7 @@ def test_create_wcs():
     # use a pipeline to initialize
     pipe = [(detector, m1), (icrs, None)]
     gw4 = wcs.WCS(forward_transform=pipe)
-    assert(gw1.available_frames == gw2.available_frames ==
+    assert(gw1.available_frames == gw2.available_frames == \
            gw3.available_frames == gw4.available_frames == ['detector', 'icrs'])
     res = m(1, 2)
     assert_allclose(gw1(1, 2), res)
@@ -86,7 +94,7 @@ def test_insert_transform():
 
 def test_set_transform():
     """ Test setting a transform between two frames in the pipeline."""
-    w = wcs.WCS(input_frame=detector, output_frame=icrs, forward_transform=pipe)
+    w = wcs.WCS(forward_transform=pipe[:])
     w.set_transform('detector', 'focal', models.Identity(2))
     assert_allclose(w(1, 1), (2, -2))
     with pytest.raises(CoordinateFrameError):
@@ -97,7 +105,7 @@ def test_set_transform():
 
 def test_get_transform():
     """ Test getting a transform between two frames in the pipeline."""
-    w = wcs.WCS(pipe)
+    w = wcs.WCS(pipe[:])
     tr_forward = w.get_transform('detector', 'focal')
     tr_back = w.get_transform('icrs', 'detector')
     x, y = 1, 2
@@ -126,7 +134,7 @@ def test_backward_transform():
 
 def test_return_coordinates():
     """Test converting to coordinate objects or quantities."""
-    w = wcs.WCS(pipe)
+    w = wcs.WCS(pipe[:])
     x = 1
     y = 2.3
     numerical_result = (26.8, -0.6)
@@ -244,6 +252,32 @@ def test_grid_from_bounding_box_step():
         grid_from_bounding_box(bb, step=(1, 2, 1))
 
 
+def test_wcs_from_points():
+    np.random.seed(0)
+    hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+    with warnings.catch_warnings() as w:
+        warnings.simplefilter("ignore")
+        w = astwcs.WCS(hdr)
+    y, x = np.mgrid[:2046:20j, :4023:10j]
+    ra, dec = w.wcs_pix2world(x, y, 1)
+    fiducial = coord.SkyCoord(ra.mean()*u.deg, dec.mean()*u.deg, frame="icrs")
+    w = wcs_from_points(xy=(x, y), world_coordinates=(ra, dec), fiducial=fiducial)
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra)
+    assert_allclose(newdec, dec)
+
+    n = np.random.randn(ra.size)
+    n.shape = ra.shape
+    nra = n * 10 ** -2
+    ndec = n * 10 ** -2
+    w = wcs_from_points(xy=(x + nra, y + ndec),
+                        world_coordinates=(ra, dec),
+                        fiducial=fiducial)
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra, atol=10**-6)
+    assert_allclose(newdec, dec, atol=10**-6)    
+
+
 def test_grid_from_bounding_box_2():
     bb = ((-0.5, 5.5), (-0.5, 4.5))
     x, y = grid_from_bounding_box(bb)
@@ -295,6 +329,58 @@ def test_available_frames():
     assert w.available_frames == ['detector', 'focal', 'icrs']
 
 
+def test_footprint():
+    icrs = cf.CelestialFrame(name='icrs', reference_frame=coord.ICRS(),
+                             axes_order=(0, 1))
+    spec = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
+    world = cf.CompositeFrame([icrs, spec])
+    transform = (models.Shift(10) & models.Shift(-1)) & models.Scale(2)
+    pipe = [('det', transform), (world, None)]
+    w = wcs.WCS(pipe)
+
+    with pytest.raises(TypeError):
+        w.footprint()
+
+    w.bounding_box = ((1,5), (1,3), (1, 6))
+
+    assert_equal(w.footprint(), np.array([[11, 0, 2],
+                                          [11, 0, 12],
+                                          [11, 2, 2],
+                                          [11, 2, 12],
+                                          [15, 0, 2],
+                                          [15, 0, 12],
+                                          [15, 2, 2],
+                                          [15, 2, 12]]))
+    assert_equal(w.footprint(axis_type='spatial'), np.array([[11., 0.],
+                                                             [11., 2.],
+                                                             [15., 2.],
+                                                             [15., 0.]]))
+
+    assert_equal(w.footprint(axis_type='spectral'), np.array([2, 12]))
+
+
+def test_high_level_api():
+    """
+    Test WCS high level API.
+    """
+    output_frame = cf.CompositeFrame(frames=[icrs, spec])
+    transform = m1 & models.Scale(1.5)
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+
+    r, d, lam = w(xv, yv, xv)
+    world_coord = w.pixel_to_world(xv, yv, xv)
+    assert isinstance(world_coord[0], coord.SkyCoord)
+    assert isinstance(world_coord[1], u.Quantity)
+    assert_allclose(world_coord[0].data.lon.value, r)
+    assert_allclose(world_coord[0].data.lat.value, d)
+    assert_allclose(world_coord[1].value, lam)
+
+    x1, y1, z1 = w.world_to_pixel(*world_coord)
+    assert_allclose(x1, xv)
+    assert_allclose(y1, yv)
+    assert_allclose(z1, xv)
+
+
 class TestImaging(object):
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
@@ -333,10 +419,7 @@ class TestImaging(object):
         self.wcs = wcs.WCS(input_frame=det,
                            output_frame=sky_cs,
                            forward_transform=pipeline)
-        nx, ny = (5, 2)
-        x = np.linspace(0, 1, nx)
-        y = np.linspace(0, 1, ny)
-        self.xv, self.yv = np.meshgrid(x, y)
+        self.xv, self.yv = xv, yv
 
     @pytest.mark.filterwarnings('ignore')
     def test_distortion(self):
@@ -368,7 +451,7 @@ class TestImaging(object):
 
     def test_footprint(self):
         bb = ((1, 4096), (1, 2048))
-        footprint = (self.wcs.footprint(bb)).T
+        footprint = (self.wcs.footprint(bb))
         fits_footprint = self.fitsw.calc_footprint(axes=(4096, 2048))
         assert_allclose(footprint, fits_footprint)
 
@@ -387,5 +470,12 @@ class TestImaging(object):
 
     def test_get_transform(self):
         with pytest.raises(wcs.CoordinateFrameError):
-            assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names ==
+            assert(self.wcs.get_transform('x_translation', 'sky_rotation').submodel_names == \
                    self.wcs.forward_transform[1:].submodel_names)
+
+    def test_pixel_to_world(self):
+        sky_coord = self.wcs.pixel_to_world(self.xv, self.yv)
+        ra, dec = self.fitsw.all_pix2world(self.xv, self.yv, 1)
+        assert isinstance(sky_coord, coord.SkyCoord)
+        assert_allclose(sky_coord.data.lon.value, ra)
+        assert_allclose(sky_coord.data.lat.value, dec)

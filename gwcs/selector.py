@@ -189,7 +189,7 @@ class LabelMapperArray(_LabelMapper):
         super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
 
     def evaluate(self, *args):
-        args = [_toindex(a) for a in args]
+        args = tuple([_toindex(a) for a in args])
         try:
             result = self._mapper[args[::-1]]
         except IndexError as e:

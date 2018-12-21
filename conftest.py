@@ -4,11 +4,12 @@ import os
 # by importing them here in conftest.py they are discoverable by py.test
 # no matter how it is invoked within the source tree.
 
-from astropy.tests.pytest_plugins import *
+from astropy.tests.helper import enable_deprecations_as_exceptions
+from astropy.tests.plugins.display import PYTEST_HEADER_MODULES, TESTED_VERSIONS
 
 # Uncomment the following line to treat all DeprecationWarnings as
 # exceptions
-enable_deprecations_as_exceptions()
+#enable_deprecations_as_exceptions()
 
 try:
     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'

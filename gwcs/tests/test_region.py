@@ -1,3 +1,4 @@
+
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
 Test regions
@@ -37,7 +38,7 @@ def test_LabelMapperArray_from_vertices_string():
     assert(np.sort(labels) == np.sort(mask_labels)).all()
 
 
-#### These tests below check the scanning algorithm for two shapes ##########
+# These tests below check the scanning algorithm for two shapes
 def polygon1(shape=(9, 9)):
     ar = np.zeros(shape)
     ar[1, 2] = 1
