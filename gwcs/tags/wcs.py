@@ -5,7 +5,8 @@ import astropy.time
 from asdf import yamlutil
 from ..gwcs_types import GWCSType
 from ..coordinate_frames import (Frame2D, CoordinateFrame, CelestialFrame,
-                                 SpectralFrame, TemporalFrame, CompositeFrame)
+                                 SpectralFrame, TemporalFrame, CompositeFrame,
+                                 StokesFrame)
 from ..wcs import WCS
 
 
@@ -13,7 +14,7 @@ _REQUIRES = ['astropy']
 
 
 __all__ = ["WCSType", "CelestialFrameType", "CompositeFrameType", "FrameType",
-           "SpectralFrameType", "StepType", "TemporalFrameType"]
+           "SpectralFrameType", "StepType", "TemporalFrameType", "StokesFrameType"]
 
 
 class WCSType(GWCSType):
@@ -291,3 +292,30 @@ class TemporalFrameType(GWCSType):
 
         return TemporalFrame(axes_order, reference_time,
                              reference_frame, unit, axes_names, name)
+
+
+class StokesFrameType(FrameType):
+    name = "stokes_frame"
+    types = [StokesFrame]
+
+    @classmethod
+    def from_tree(cls, node, ctx):
+        node = cls._from_tree(node, ctx)
+        return StokesFrame(**node)
+
+    @classmethod
+    def _to_tree(cls, frame, ctx):
+
+        node = {}
+
+        node['name'] = frame.name
+        if frame.axes_order:
+            node['axes_order'] = list(frame.axes_order)
+
+        return node
+
+    @classmethod
+    def assert_equal(cls, old, new):
+        from asdf.tests import helpers
+        assert old.name == new.name
+        assert old.axes_order == new.axes_order
