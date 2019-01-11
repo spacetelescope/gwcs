@@ -135,6 +135,8 @@ class CoordinateFrame:
                 ph_type = ("em.freq",)
             elif self.unit[0].physical_type == "length":
                 ph_type = ("em.wl",)
+            elif self.unit[0].physical_type == "energy":
+                ph_type = ("em.energy",)
         elif isinstance(self, TemporalFrame):
             ph_type = ("time",)
         elif isinstance(self, Frame2D):

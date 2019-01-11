@@ -29,9 +29,11 @@ focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 
 spec1 = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
 spec2 = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
+spec3 = cf.SpectralFrame(name='energy', unit=[u.J, ], axes_order=(2, ))
 
 comp1 = cf.CompositeFrame([icrs, spec1])
 comp2 = cf.CompositeFrame([focal, spec2])
+comp3 = cf.CompositeFrame([icrs, spec3])
 comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
 xscalar = 1
@@ -47,6 +49,7 @@ inputs3 = [(xscalar, yscalar, xscalar), (xarr, yarr, xarr)]
 def test_units():
     assert(comp1.unit == (u.deg, u.deg, u.Hz))
     assert(comp2.unit == (u.m, u.m, u.m))
+    assert(comp3.unit == (u.deg, u.deg, u.J))
     assert(comp.unit == (u.deg, u.deg, u.Hz, u.m))
 
 
@@ -297,13 +300,15 @@ def test_axis_physical_type():
     assert icrs.axis_physical_types == ("pos.eq.ra", "pos.eq.dec")
     assert spec1.axis_physical_types == ("em.freq",)
     assert spec2.axis_physical_types == ("em.wl",)
+    assert spec3.axis_physical_types == ("em.energy",)
     assert comp1.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.freq")
     assert comp2.axis_physical_types == ("custom:x", "custom:y", "em.wl")
+    assert comp3.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.energy")
     assert comp.axis_physical_types == ('pos.eq.ra', 'pos.eq.dec', 'em.freq', 'em.wl')
 
-    spec3 = cf.SpectralFrame(name='waven', axes_order=(1,),
+    spec4 = cf.SpectralFrame(name='waven', axes_order=(1,),
                              axis_physical_types='em.wavenumber')
-    assert spec3.axis_physical_types == ('em.wavenumber',)
+    assert spec4.axis_physical_types == ('em.wavenumber',)
 
     t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.axis_physical_types == ('time',)
