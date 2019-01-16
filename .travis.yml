@@ -24,6 +24,7 @@ env:
         - CONDA_DEPENDENCIES='scipy'
         - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
         #- ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
+        - ASTROPY_GIT='git+https://github.com/astropy/astropy.git#egg=astropy'
         - PIP_DEPENDENCIES="astropy pytest-astropy asdf"
         - ASTROPY_USE_SYSTEM_PYTEST=1
         - PYTEST_VERSION=3.6
@@ -82,7 +83,7 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
         - python: 3.6
-          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
 
 
 install:
