@@ -60,9 +60,6 @@ matrix:
           env: MAIN_CMD='flake8 count --select=F, E101, E111, E112, E113, E401, E402, E711, E722 --max-line-length=110'
                SETUP_CMD='gwcs"
 
-        - python: 3.5
-          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
-
         - python: 3.6
           env: NUMPY_VERSION=dev SETUP_CMD='test'
                EVENT_TYPE='cron'
@@ -75,10 +72,12 @@ matrix:
           env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT pytest-astropy" SETUP_CMD='test'
                EVENT_TYPE='cron'
 
+        - python: 3.5
+          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+
     allow_failures:
         - python: 3.5
           env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
-               EVENT_TYPE='cron'
 
 
 install:
