@@ -308,7 +308,7 @@ def test_axis_physical_type():
     assert spec2.axis_physical_types == ("em.wl",)
     assert spec3.axis_physical_types == ("em.energy",)
     assert spec4.axis_physical_types == ("custom:unknown",)
-    assert spec5.axis_physical_types == ("phys.veloc",)
+    assert spec5.axis_physical_types == ("spect.dopplerVeloc",)
     assert comp1.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.freq")
     assert comp2.axis_physical_types == ("custom:x", "custom:y", "em.wl")
     assert comp3.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.energy")

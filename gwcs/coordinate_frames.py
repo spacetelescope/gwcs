@@ -138,7 +138,7 @@ class CoordinateFrame:
             elif self.unit[0].physical_type == "energy":
                 ph_type = ("em.energy",)
             elif self.unit[0].physical_type == "speed":
-                ph_type = ("phys.veloc",)
+                ph_type = ("spect.dopplerVeloc",)
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
         elif isinstance(self, TemporalFrame):
