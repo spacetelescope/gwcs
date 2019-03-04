@@ -31,11 +31,13 @@ spec1 = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
 spec2 = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
 spec3 = cf.SpectralFrame(name='energy', unit=[u.J, ], axes_order=(2, ))
 spec4 = cf.SpectralFrame(name='pixel', unit=[u.pix, ], axes_order=(2, ))
+spec5 = cf.SpectralFrame(name='speed', unit=[u.m/u.s, ], axes_order=(2, ))
 
 comp1 = cf.CompositeFrame([icrs, spec1])
 comp2 = cf.CompositeFrame([focal, spec2])
 comp3 = cf.CompositeFrame([icrs, spec3])
 comp4 = cf.CompositeFrame([icrs, spec4])
+comp5 = cf.CompositeFrame([icrs, spec5])
 comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
 xscalar = 1
@@ -52,6 +54,8 @@ def test_units():
     assert(comp1.unit == (u.deg, u.deg, u.Hz))
     assert(comp2.unit == (u.m, u.m, u.m))
     assert(comp3.unit == (u.deg, u.deg, u.J))
+    assert(comp4.unit == (u.deg, u.deg, u.pix))
+    assert(comp5.unit == (u.deg, u.deg, u.m/u.s))
     assert(comp.unit == (u.deg, u.deg, u.Hz, u.m))
 
 
@@ -185,7 +189,7 @@ def test_coordinate_to_quantity_celestial(inp):
     with pytest.raises(ValueError):
         cel.coordinate_to_quantity((1, 2))
 
-        
+
 @pytest.mark.parametrize('inp', [
     (100,),
     (100 * u.nm,),
@@ -296,7 +300,7 @@ def test_coordinate_to_quantity_error():
     frame = cf.TemporalFrame(unit=u.s)
     with pytest.raises(ValueError):
         frame.coordinate_to_quantity(1)
-    
+
 
 def test_axis_physical_type():
     assert icrs.axis_physical_types == ("pos.eq.ra", "pos.eq.dec")
@@ -304,14 +308,15 @@ def test_axis_physical_type():
     assert spec2.axis_physical_types == ("em.wl",)
     assert spec3.axis_physical_types == ("em.energy",)
     assert spec4.axis_physical_types == ("custom:unknown",)
+    assert spec5.axis_physical_types == ("phys.veloc",)
     assert comp1.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.freq")
     assert comp2.axis_physical_types == ("custom:x", "custom:y", "em.wl")
     assert comp3.axis_physical_types == ("pos.eq.ra", "pos.eq.dec", "em.energy")
     assert comp.axis_physical_types == ('pos.eq.ra', 'pos.eq.dec', 'em.freq', 'em.wl')
 
-    spec5 = cf.SpectralFrame(name='waven', axes_order=(1,),
+    spec6 = cf.SpectralFrame(name='waven', axes_order=(1,),
                              axis_physical_types='em.wavenumber')
-    assert spec5.axis_physical_types == ('em.wavenumber',)
+    assert spec6.axis_physical_types == ('em.wavenumber',)
 
     t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.axis_physical_types == ('time',)
@@ -330,7 +335,7 @@ def test_axis_physical_type():
 
     fr = cf.CelestialFrame(reference_frame=coord.ICRS(), axis_physical_types=("ra", "dec"))
     assert fr.axis_physical_types == ("custom:ra", "custom:dec")
-    
+
     fr = cf.CelestialFrame(reference_frame=coord.BarycentricTrueEcliptic())
     assert fr.axis_physical_types == ('pos.ecliptic.lon', 'pos.ecliptic.lat')
 
