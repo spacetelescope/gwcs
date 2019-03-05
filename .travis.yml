@@ -24,7 +24,6 @@ env:
         - CONDA_DEPENDENCIES='scipy'
         - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
         #- ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
-        - ASTROPY_GIT='git+https://github.com/astropy/astropy.git#egg=astropy'
         - PIP_DEPENDENCIES="astropy pytest-astropy asdf"
         - ASTROPY_USE_SYSTEM_PYTEST=1
         - PYTEST_VERSION=3.6
@@ -32,7 +31,6 @@ env:
     matrix:
         - SETUP_CMD='egg_info'
         - SETUP_CMD='test'
-        - PYTHON_VERSION=3.5 SETUP_CMD='test'
         - PYTHON_VERSION=3.6 SETUP_CMD='test'
         - PYTHON_VERSION=3.7 SETUP_CMD='test'
 
@@ -53,31 +51,40 @@ matrix:
           env: SETUP_CMD='build_docs -w'
 
         - python: 3.6
-          env: NUMPY_VERSION=1.14 SETUP_CMD="test"
+          env: NUMPY_VERSION=1.15 SETUP_CMD="test"
+
+        - python: 3.5
+          env: NUMPY_VERSION=1.15 SETUP_CMD="test"
 
         # Do a PEP8 test with flake8
         - python: 3.6
           env: MAIN_CMD='flake8 count --select=F, E101, E111, E112, E113, E401, E402, E711, E722 --max-line-length=110'
                SETUP_CMD='gwcs"
 
+        - python: 3.5
+          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+
         - python: 3.6
           env: NUMPY_VERSION=dev SETUP_CMD='test'
-               EVENT_TYPE='cron'
 
         - python: 3.6
           env: ASTROPY_VERSION=development SETUP_CMD='test'
-               EVENT_TYPE='cron'
 
         - python: 3.6
-          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT pytest-astropy" SETUP_CMD='test'
-               EVENT_TYPE='cron'
-
-        - python: 3.5
-          env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
 
     allow_failures:
         - python: 3.5
           env: MAIN_CMD='flake8 count --max-line-length=110' SETUP_CMD='gwcs'
+
+        - python: 3.6
+          env: NUMPY_VERSION=dev SETUP_CMD='test'
+
+        - python: 3.6
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
+
+        - python: 3.6
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
 
 
 install:
