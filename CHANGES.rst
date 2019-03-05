@@ -1,8 +1,10 @@
-0.10.1 (Unreleased)
+0.11.0 (Unreleased)
 -------------------
 
 New Features
 ^^^^^^^^^^^^
+
+- Add a schema and tag for the Stokes frame. [#164]
 
 Bug Fixes
 ^^^^^^^^^
@@ -24,7 +26,7 @@ New Features
 
 - Added a ``wcs_from_[points`` function which creates a WCS object
   two matching sets of points ``(x,y)`` and ``(ra, dec)``. [#42]
-  
+
 
 0.9.0 (2018-05-23)
 ------------------
