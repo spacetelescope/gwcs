@@ -2,6 +2,7 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
+import logging
 import numpy as np
 
 from astropy.utils.misc import isiterable
@@ -139,6 +140,10 @@ class CoordinateFrame:
                 ph_type = ("em.energy",)
             elif self.unit[0].physical_type == "speed":
                 ph_type = ("spect.dopplerVeloc",)
+                logging.warning("Physical type may be ambiguous. Consider "
+                                "setting the physical type explicitly as "
+                                "either 'spect.dopplerVeloc.optical' or "
+                                "'spect.dopplerVeloc.radio'.")
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
         elif isinstance(self, TemporalFrame):
