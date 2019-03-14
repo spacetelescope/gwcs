@@ -186,7 +186,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert pixel values to world coordinates.
         """
         call_kwargs = {}
-        if not self.forward_transform.uses_quantity:
+        if self.forward_transform.uses_quantity:
             call_kwargs['with_units'] = True
         return self(*pixel_arrays, **call_kwargs)
 
