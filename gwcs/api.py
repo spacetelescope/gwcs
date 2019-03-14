@@ -15,8 +15,8 @@ __all__ = ["GWCSAPIMixin"]
 class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
     """
     A mix-in class that is intended to be inherited by the
-    :class:`~gwcs.wcs.WCS` class and provides the low- and high-level 
-    WCS API described in the astropy APE 14 
+    :class:`~gwcs.wcs.WCS` class and provides the low- and high-level
+    WCS API described in the astropy APE 14
     (https://doi.org/10.5281/zenodo.1188875).
     """
 
@@ -100,8 +100,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         result = self.invert(*world_arrays, with_units=False)
         return result
-    
-    
+
+
     def world_to_array_index_values(self, *world_arrays):
         """
         Convert world coordinates to array indices.
@@ -132,7 +132,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
     @array_shape.setter
     def array_shape(self, value):
         self._array_shape = value
-        
+
     @property
     def pixel_bounds(self):
         """
@@ -185,9 +185,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert pixel values to world coordinates.
         """
+        call_kwargs = {}
         if not self.forward_transform.uses_quantity:
-            kwargs = {'with_units': True}
-        return self(*pixel_arrays, **kwargs)
+            call_kwargs['with_units'] = True
+        return self(*pixel_arrays, **call_kwargs)
 
     def array_index_to_world(self, *index_arrays):
         """
@@ -209,4 +210,3 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         result = self.invert(*world_objects, with_units=True)[::-1]
         return tuple([utils._toindex(r) for r in result])
-    
