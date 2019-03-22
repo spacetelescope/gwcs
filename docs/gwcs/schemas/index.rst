@@ -6,30 +6,28 @@ GWCS Schema Definitions
 WCS object
 ----------
 
-.. toctree::
-  :maxdepth: 1
+.. asdf-autoschemas::
 	     
-  wcs-1.0.0.rst 
-  step-1.0.0.rst
+  wcs-1.0.0
+  step-1.0.0
+
 
 Coordinate Frames
 -----------------
 
-.. toctree::
-  :maxdepth: 1
+.. asdf-autoschemas::
 	     
-  celestial_frame-1.0.0.rst
-  frame-1.0.0.rst
-  spectral_frame-1.0.0.rst
-  frame2d-1.0.0.rst
-  temporal_frame-1.0.0.rst
-  composite_frame-1.0.0.rst
+  celestial_frame-1.0.0
+  frame-1.0.0
+  spectral_frame-1.0.0
+  frame2d-1.0.0
+  temporal_frame-1.0.0
+  composite_frame-1.0.0
 
 Transforms
 ----------
 
-.. toctree::
-  :maxdepth: 1
+.. asdf-autoschemas::
 	     
-  label_mapper-1.0.0.rst
-  regions_selector-1.0.0.rst
+  label_mapper-1.0.0
+  regions_selector-1.0.0

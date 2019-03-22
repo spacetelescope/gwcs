@@ -63,6 +63,11 @@ exclude_patterns.append('_templates')
 rst_epilog += """
 """
 
+# Top-level directory containing ASDF schemas (relative to current directory)
+asdf_schema_path = '../gwcs/schemas'
+# This is the prefix common to all schema IDs in this repository
+asdf_schema_standard_prefix = 'stsci.edu/gwcs'
+
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
@@ -99,13 +104,13 @@ version = '.'.join(release.split('.')[:2])
 # name of a builtin theme or the name of a custom theme in html_theme_path.
 #html_theme = None
 
-
-# Please update these texts to match the name of your package.
+# See sphinx-bootstrap-theme for documentation of these options
+# https://github.com/ryan-roemer/sphinx-bootstrap-theme
 html_theme_options = {
     'logotext1': 'g',  # white,  semi-bold
     'logotext2': 'wcs',  # orange, light
     'logotext3': ':docs'   # white,  light
-    }
+}
 
 
 # Custom sidebar templates, maps document names to template names.
@@ -144,4 +149,4 @@ man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
-extensions += ['category']
+extensions += ['category', 'sphinx_asdf']
