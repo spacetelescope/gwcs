@@ -49,6 +49,7 @@ matrix:
         # may run for a long time
         - python: 3.6
           env: SETUP_CMD='build_docs -w'
+               PIP_DEPENDENCIES="astropy pytest-astropy asdf sphinx-asdf"
 
         - python: 3.6
           env: NUMPY_VERSION=1.15 SETUP_CMD="test"
