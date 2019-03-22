@@ -67,6 +67,10 @@ rst_epilog += """
 asdf_schema_path = '../gwcs/schemas'
 # This is the prefix common to all schema IDs in this repository
 asdf_schema_standard_prefix = 'stsci.edu/gwcs'
+asdf_schema_reference_mappings = [
+    ('tag:stsci.edu:asdf',
+     'http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/'),
+]
 
 # -- Project information ------------------------------------------------------
 
