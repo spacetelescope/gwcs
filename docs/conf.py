@@ -149,4 +149,4 @@ man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
-extensions += ['category', 'sphinx_asdf']
+extensions += ['sphinx.ext.autosectionlabel', 'category', 'sphinx_asdf']
