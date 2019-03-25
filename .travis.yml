@@ -91,6 +91,7 @@ matrix:
 install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
+    - pip install .
 
 script:
     - $MAIN_CMD $SETUP_CMD
