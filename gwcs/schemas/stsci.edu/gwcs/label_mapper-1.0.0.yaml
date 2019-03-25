@@ -115,7 +115,7 @@ allOf:
       inputs_mapping:
         $ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"
         description: |
-          [mapping](ref:http://stsci.edu/schemas/transform/remap_axes-1.1.0)
+          [mapping](https://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/transform/remap_axes-1.1.0.html)
       atol:
         type: number
         description: |
