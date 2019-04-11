@@ -246,7 +246,7 @@ def wcs_from_points(xy, world_coordinates, fiducial,
                                                                                           
     Returns                                                                               
     -------                                                                             
-    wcsobj : `~gwcs.wcs.WCS`
+    fit_wcs : `~gwcs.wcs.WCS`
         a WCS object for this observation.                                                       
     """
     supported_poly_types = {"polynomial": models.Polynomial2D,
@@ -270,11 +270,26 @@ def wcs_from_points(xy, world_coordinates, fiducial,
         warnings.simplefilter("ignore")
         poly_x = fitter(poly, x, y, projection_x)
         poly_y = fitter(poly, x, y, projection_y)
-    transform = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y | projection.inverse | skyrot.inverse
+        #fit inverse
+        poly_ra = fitter(poly, projection_x, projection_y, x)
+        poly_dec = fitter(poly, projection_x, projection_y, y)
+
+    transform_forward = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y | projection.inverse | skyrot.inverse
+    transform_backward = skyrot | projection | models.Mapping((0, 1, 0, 1)) | poly_ra & poly_dec 
     
     skyframe = CelestialFrame(reference_frame=fiducial.frame)
     detector = Frame2D(name="detector")
-    pipeline = [(detector, transform),
+    pipeline = [(detector, transform_forward),
                 (skyframe, None)
                 ]
-    return WCS(pipeline)
+    transform_inverse = [(skyframe, transform_backward),
+                (detector, None)
+                ]
+
+    fit_wcs = WCS(pipeline)
+
+    #set inverse transform. Have to set it in both places (.invert and .forward_transform.inverse) or errors occur.
+    fit_wcs.invert = WCS(transform_inverse)
+    fit_wcs.forward_transform.inverse = transform_backward 
+
+    return fit_wcs
