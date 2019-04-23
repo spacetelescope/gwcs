@@ -71,7 +71,7 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
         - python: 3.6
-          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
+          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
 
     allow_failures:
         - python: 3.5
@@ -84,7 +84,7 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
         - python: 3.6
-          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT" SETUP_CMD='test'
+          env: ASTROPY_VERSION=development PIP_DEPENDENCIES="$ASDF_GIT" SETUP_CMD='test'
 
 
 install:
