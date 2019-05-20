@@ -114,8 +114,13 @@ package_info['package_data'][PACKAGENAME].extend(c_files)
 
 entry_points = dict(asdf_extensions='gwcs = gwcs.extension:GWCSExtension')
 
-#import convert_schemas
-#convert_schemas.main('gwcs/schemas/stsci.edu/gwcs', 'docs/gwcs/schemas')
+TESTS_REQUIRE = [
+    #'ci-watson>=0.3.0',
+    'pytest',
+    #'pytest-doctestplus',
+    #'requests_mock',
+    'pytest-astropy',
+]
 
 setup(name=PACKAGENAME,
       version=VERSION,
@@ -125,6 +130,9 @@ setup(name=PACKAGENAME,
       requires=['astropy', 'asdf'],
       python_requires='>=3.5',
       install_requires=['astropy', 'asdf'],
+      extras_require={
+        'test': TESTS_REQUIRE,
+      },
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
