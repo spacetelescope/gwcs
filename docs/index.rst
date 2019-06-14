@@ -267,8 +267,8 @@ Reading a WCS object from a file
 ++++++++++++++++++++++++++++++++
 
 
-`ASDF <https://asdf.readthedocs.io/>`__ is used to read a WCS object from a
- pure ASDF file or from an ASDF extension in a FITS file.
+`ASDF <https://asdf.readthedocs.io/>`__ is used to read a WCS object
+from a pure ASDF file or from an ASDF extension in a FITS file.
 
 
 .. doctest-skip::
