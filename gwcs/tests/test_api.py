@@ -24,7 +24,6 @@ spec2 = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names
 comp1 = cf.CompositeFrame([sky_frame, spec1])
 
 # transforms
-
 m1 = models.Shift(1) & models.Shift(2)
 m2 = models.Scale(2)
 m = m1 & m2
@@ -35,6 +34,7 @@ pipe = [(detector, m1),
 
 example_wcs = wcs.WCS(pipe)
 
+
 def create_example_wcs():
     example_wcs = [wcs.WCS([(detector, m1),
                             (sky_frame, None)]),
@@ -42,7 +42,7 @@ def create_example_wcs():
                             (spec1, None)]),
                    wcs.WCS([(detector, m),
                             (comp1, None)])
-                  ]
+                   ]
 
     pixel_world_ndim = [(2, 2), (2, 1), (2, 3)]
     physical_types = [("pos.eq.ra", "pos.eq.dec"), ("em.freq",), ("pos.eq.ra", "pos.eq.dec", "em.freq")]
@@ -50,18 +50,21 @@ def create_example_wcs():
 
     return example_wcs, pixel_world_ndim, physical_types, world_units
 
+
 # x, y inputs - scalar and array
 x, y = 1, 2
 xarr, yarr = np.ones((3, 4)), np.ones((3, 4)) + 1
 
 # ra, dec inputs - scalar, arrays and SkyCoord objects
 ra, dec = 2, 4
-sky = coord.SkyCoord(ra * u.deg, dec*u.deg, frame = sky_frame.reference_frame)
+sky = coord.SkyCoord(ra * u.deg, dec * u.deg, frame=sky_frame.reference_frame)
 raarr = np.ones((3, 4)) * ra
 decarr = np.ones((3, 4)) * dec
-skyarr = coord.SkyCoord(raarr * u.deg, decarr*u.deg, frame = sky_frame.reference_frame)
+skyarr = coord.SkyCoord(raarr * u.deg, decarr * u.deg,
+                        frame=sky_frame.reference_frame)
 
 ex_wcs, dims, physical_types, world_units = create_example_wcs()
+
 
 @pytest.mark.parametrize(("wcsobj", "ndims"), zip(ex_wcs, dims))
 def test_pixel_n_dim(wcsobj, ndims):
@@ -143,7 +146,7 @@ def test_axis_correlation_matrix():
 
 def test_serialized_classes():
     wcsobj = example_wcs
-    assert wcsobj.serialized_classes() == False
+    assert not wcsobj.serialized_classes()
 
 
 def test_low_level_wcs():
@@ -164,7 +167,7 @@ def test_pixel_to_world():
 
 def test_array_index_to_world():
     wcsobj = example_wcs
-    comp =  wcsobj(x, y, with_units=True)
+    comp = wcsobj(x, y, with_units=True)
     comp = wcsobj.output_frame.coordinates(comp)
     result = wcsobj.array_index_to_world(y, x)
     assert isinstance(comp, coord.SkyCoord)
