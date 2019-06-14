@@ -214,7 +214,7 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
   >>> sky = wcsobj(1*u.pix, 2*u.pix, with_units=True)
   >>> print(sky)
   <SkyCoord (ICRS): (ra, dec) in deg
-    (5.52509838, -72.05190169)>
+    (5.52515954, -72.05190935)>
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
