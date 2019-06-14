@@ -44,11 +44,11 @@ data model which includes the entire transformation pipeline from input pixel co
 world coordinates (and vice versa). The basis of the GWCS object is astropy `modeling <https://docs.astropy.org/en/stable/modeling/>`__.
 Models that describe the pixel ⟷ world transformations can be chained, joined or combined with arithmetic operators
 using the flexible framework of compound models in modeling. This approach allows for easy
-access to intermediate frames. In the case of a celestial output frame `coordinates <http://docs.astropy.org/en/stable/coordinates/>`__. provides further transformations between
-standard celestial coordinate frames. Spectral output coordinates are instances of Quantity
-and can be transformed to other units with the tools in that package. ``Time`` coordinates are instances of ``Time``.
-GWCS supports transforms initialized with `Quantity <http://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity>`__ objects ensuring automatic
-unit conversion.
+access to intermediate frames. In the case of a celestial output frame `coordinates <http://docs.astropy.org/en/stable/coordinates/>`__ provides further transformations between
+standard celestial coordinate frames. Spectral output coordinates are instances of `~astropy.units.Quantity`
+and can be transformed to other units with the tools in that package. `~astropy.time.Time` coordinates are instances of `~astropy.time.Time`.
+GWCS supports transforms initialized with `~astropy.units.Quantity`
+objects ensuring automatic unit conversion.
 
 Pixel Conventions and Definitions
 ---------------------------------
