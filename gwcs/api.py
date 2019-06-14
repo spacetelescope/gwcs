@@ -201,7 +201,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert world coordinates to pixel values.
         """
-        return self.invert(*world_objects)
+        if not self.forward_transform.uses_quantity:
+            return self.invert(*world_objects)
+        else:
+            xpix, ypix = self.invert(*world_objects)
+            return xpix.value, ypix.value
 
     def world_to_array_index(self, *world_objects):
         """
