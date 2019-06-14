@@ -6,6 +6,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
+import astropy.units as u
 
 from . import utils
 
@@ -182,6 +183,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert pixel values to world coordinates.
         """
+        if self.forward_transform.uses_quantity:
+            pixel_arrays = pixel_arrays * u.pix  # *= only for newer astropy
         return self(*pixel_arrays, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
@@ -189,7 +192,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert array indices to world coordinates (represented by Astropy
         objects).
         """
-        return self(*(index_arrays[::-1]), with_units=True)
+        pixel_arrays = index_arrays[::-1]
+        if self.forward_transform.uses_quantity:
+            pixel_arrays = pixel_arrays * u.pix  # *= only for newer astropy
+        return self(*pixel_arrays, with_units=True)
 
     def world_to_pixel(self, *world_objects):
         """
