@@ -34,6 +34,28 @@ pipe = [(detector, m1),
 
 example_wcs = wcs.WCS(pipe)
 
+# transform without Quantity
+m1 = models.Shift(1) & models.Shift(2)
+m2 = models.Scale(5) & models.Scale(10)
+m3 = m1 | m2
+pipe = [(detector, m3), (sky_frame, None)]
+wcs_noquantity = wcs.WCS(pipe)
+
+# equivalent transform with Quantity
+m4 = models.Shift(1 * u.pix) & models.Shift(2 * u.pix)
+m5 = models.Scale(5 * u.deg)
+m6 = models.Scale(10 * u.deg)
+m5.input_units_equivalencies = {'x': u.pixel_scale(1*u.deg/u.pix)}
+m6.input_units_equivalencies = {'x': u.pixel_scale(1*u.deg/u.pix)}
+m5.inverse = models.Scale(1./5 * u.pix)
+m6.inverse = models.Scale(1./10 * u.pix)
+m5.inverse.input_units_equivalencies = {'x': u.pixel_scale(1*u.pix/u.deg)}
+m6.inverse.input_units_equivalencies = {'x': u.pixel_scale(1*u.pix/u.deg)}
+m7 = m5 & m6
+m8 = m4 | m7
+pipe2 = [(detector, m8), (sky_frame, None)]
+wcs_quantity = wcs.WCS(pipe2)
+
 
 def create_example_wcs():
     example_wcs = [wcs.WCS([(detector, m1),
@@ -184,3 +206,22 @@ def test_world_to_pixel():
 def test_world_to_array_index():
     wcsobj = example_wcs
     assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec, with_units=False)[::-1])
+
+
+def test_pixel_to_world_quantity():
+    result1 = wcs_noquantity.pixel_to_world(x, y)
+    result2 = wcs_quantity.pixel_to_world(x, y)
+    assert isinstance(result2, coord.SkyCoord)
+    assert_allclose(result1.data.lon, result2.data.lon)
+    assert_allclose(result1.data.lat, result2.data.lat)
+
+
+def test_array_index_to_world_quantity():
+    result0 = wcs_noquantity.pixel_to_world(x, y)
+    result1 = wcs_noquantity.array_index_to_world(y, x)
+    result2 = wcs_quantity.array_index_to_world(y, x)
+    assert isinstance(result2, coord.SkyCoord)
+    assert_allclose(result1.data.lon, result2.data.lon)
+    assert_allclose(result1.data.lat, result2.data.lat)
+    assert_allclose(result0.data.lon, result1.data.lon)
+    assert_allclose(result0.data.lat, result1.data.lat)
