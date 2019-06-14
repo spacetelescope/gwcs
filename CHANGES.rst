@@ -11,6 +11,9 @@ Bug Fixes
 
 - Update util.isnumerical(...) to recognize big-endian types as numeric. [#225]
 
+- Fixed issue in unified WCS API (APE14) for transforms that use
+  ``Quantity``. [#222]
+
 0.10.0 (12/20/2018)
 -------------------
 
