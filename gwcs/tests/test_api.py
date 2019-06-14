@@ -225,3 +225,21 @@ def test_array_index_to_world_quantity():
     assert_allclose(result1.data.lat, result2.data.lat)
     assert_allclose(result0.data.lon, result1.data.lon)
     assert_allclose(result0.data.lat, result1.data.lat)
+
+
+def test_world_to_pixel_quantity():
+    skycoord = wcs_noquantity.pixel_to_world(x, y)
+    result1 = wcs_noquantity.world_to_pixel(skycoord)
+    result2 = wcs_quantity.world_to_pixel(skycoord)
+    assert_allclose(result1, (x, y))
+    assert_allclose(result2, (x, y))
+
+
+def test_world_to_array_index_quantity():
+    skycoord = wcs_noquantity.pixel_to_world(x, y)
+    result0 = wcs_noquantity.world_to_pixel(skycoord)
+    result1 = wcs_noquantity.world_to_array_index(skycoord)
+    result2 = wcs_quantity.world_to_array_index(skycoord)
+    assert_allclose(result0, (x, y))
+    assert_allclose(result1, (y, x))
+    assert_allclose(result2, (y, x))
