@@ -165,9 +165,9 @@ acceptable as ``coordinate_frames`` it is recommended this is used only in testi
 Using the `~astropy.modeling` package create a combined model to transform
 detector coordinates to ICRS following the FITS WCS standard convention.
 
-First, create a transform which shifts the input  ``x`` and ``y`` coordinates by ``CRPIX``:
+First, create a transform which shifts the input  ``x`` and ``y`` coordinates by ``CRPIX``.  We subtract 1 from the CRPIX values because the first pixel is considered pixel ``1`` in FITS WCS:
 
-  >>> shift_by_crpix = models.Shift(-2048*u.pix) & models.Shift(-1024*u.pix)
+  >>> shift_by_crpix = models.Shift(-(2048 - 1)*u.pix) & models.Shift(-(1024 - 1)*u.pix)
 
 Create a transform which rotates the inputs using the ``PC matrix``.
 
