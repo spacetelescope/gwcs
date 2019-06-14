@@ -43,11 +43,11 @@ def create_example_wcs():
                    wcs.WCS([(detector, m),
                             (comp1, None)])
                   ]
-    
+
     pixel_world_ndim = [(2, 2), (2, 1), (2, 3)]
     physical_types = [("pos.eq.ra", "pos.eq.dec"), ("em.freq",), ("pos.eq.ra", "pos.eq.dec", "em.freq")]
     world_units = [("deg", "deg"), ("Hz",), ("deg", "deg", "Hz")]
-    
+
     return example_wcs, pixel_world_ndim, physical_types, world_units
 
 # x, y inputs - scalar and array
@@ -67,17 +67,17 @@ ex_wcs, dims, physical_types, world_units = create_example_wcs()
 def test_pixel_n_dim(wcsobj, ndims):
     assert wcsobj.pixel_n_dim == ndims[0]
 
-    
+
 @pytest.mark.parametrize(("wcsobj", "ndims"), zip(ex_wcs, dims))
 def test_world_n_dim(wcsobj, ndims):
     assert wcsobj.world_n_dim == ndims[1]
 
-    
+
 @pytest.mark.parametrize(("wcsobj", "physical_types"), zip(ex_wcs, physical_types))
 def test_world_axis_physical_types(wcsobj, physical_types):
     assert wcsobj.world_axis_physical_types == physical_types
 
-    
+
 @pytest.mark.parametrize(("wcsobj", "world_units"), zip(ex_wcs, world_units))
 def test_world_axis_units(wcsobj, world_units):
     assert wcsobj.world_axis_units == world_units
@@ -119,7 +119,7 @@ def test_world_axis_object_classes():
     with pytest.raises(NotImplementedError):
         wcsobj.world_axis_object_classes()
 
-        
+
 def test_array_shape():
     wcsobj = example_wcs
     assert wcsobj.array_shape is None
@@ -160,7 +160,7 @@ def test_pixel_to_world():
     assert isinstance(result, coord.SkyCoord)
     assert_allclose(comp.data.lon, result.data.lon)
     assert_allclose(comp.data.lat, result.data.lat)
-    
+
 
 def test_array_index_to_world():
     wcsobj = example_wcs
