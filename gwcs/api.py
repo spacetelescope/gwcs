@@ -172,7 +172,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         raise NotImplementedError()
 
     # High level APE 14 API
-
     def low_level_wcs(self):
         """
         Returns a reference to the underlying low-level WCS object.
