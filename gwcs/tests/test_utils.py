@@ -95,3 +95,6 @@ def test_isnumerical():
     assert gwutils.isnumerical(np.array(0))
 
     assert not gwutils.isnumerical(np.array(['s200', '234']))
+
+    assert gwutils.isnumerical(np.array(0, dtype='>f8'))
+    assert gwutils.isnumerical(np.array(0, dtype='>i4'))

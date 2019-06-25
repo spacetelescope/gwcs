@@ -456,13 +456,13 @@ def isnumerical(val):
     """
     Determine if a value is numerical (number or np.array of numbers).
     """
-    dtypes = ['uint64', 'float64', 'int8', 'int64', 'int16', 'uint16', 'uint8',
-              'float32', 'int32', 'uint32']
     isnum = True
     if isinstance(val, coords.SkyCoord):
         isnum = False
     elif isinstance(val, u.Quantity):
         isnum = False
-    elif isinstance(val, np.ndarray) and val.dtype not in dtypes:
+    elif (isinstance(val, np.ndarray)
+          and not np.issubdtype(val.dtype, np.floating)
+          and not np.issubdtype(val.dtype, np.integer)):
         isnum = False
     return isnum
