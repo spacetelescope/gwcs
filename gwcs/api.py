@@ -101,7 +101,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         result = self.invert(*world_arrays, with_units=False)
         return result
 
-
     def world_to_array_index_values(self, *world_arrays):
         """
         Convert world coordinates to array indices.
@@ -112,7 +111,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         returned as rounded integers.
         """
         result = self.invert(*world_arrays, with_units=False)[::-1]
-        return result # astype(int)
+        return result  # astype(int)
 
     @property
     def array_shape(self):
@@ -172,7 +171,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
     def world_axis_object_components(self):
         raise NotImplementedError()
 
-
     # High level APE 14 API
 
     def low_level_wcs(self):
@@ -185,10 +183,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert pixel values to world coordinates.
         """
-        kwargs = {}
-        if not self.forward_transform.uses_quantity:
-            kwargs = {'with_units': True}
-        return self(*pixel_arrays, **kwargs)
+        return self(*pixel_arrays, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
         """
@@ -210,4 +205,3 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         result = self.invert(*world_objects, with_units=True)[::-1]
         return tuple([utils._toindex(r) for r in result])
-
