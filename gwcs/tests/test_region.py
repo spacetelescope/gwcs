@@ -5,7 +5,7 @@ Test regions
 """
 import warnings
 import numpy as np
-from numpy.testing import utils
+from numpy.testing import assert_equal, assert_allclose
 from astropy.modeling import models
 import pytest
 from .. import region, selector
@@ -71,7 +71,7 @@ def test_polygon1():
     mask = np.zeros((9, 9), dtype=np.int)
     mask = pol.scan(mask)
     pol1 = polygon1()
-    utils.assert_equal(mask, pol1)
+    assert_equal(mask, pol1)
 
 
 def test_create_mask_two_polygons():
@@ -79,7 +79,7 @@ def test_create_mask_two_polygons():
                 2: [[10, 0], [30, 0], [30, 30], [10, 30], [10, 0]]}
     mask = selector.LabelMapperArray.from_vertices((301, 301), vertices)
     pol2 = two_polygons()
-    utils.assert_equal(mask.mapper, pol2)
+    assert_equal(mask.mapper, pol2)
 
 
 def create_range_mapper():
@@ -152,7 +152,7 @@ def test_LabelMapper():
     transform = models.Const1D(12.3)
     lm = selector.LabelMapper(inputs=('x', 'y'), mapper=transform, inputs_mapping=(1,))
     x = np.linspace(3, 11, 20)
-    utils.assert_allclose(lm(x, x), transform(x))
+    assert_allclose(lm(x, x), transform(x))
 
 
 def test_LabelMapperArray():
@@ -162,8 +162,8 @@ def test_LabelMapperArray():
         array_mapper(7, 1)
 
     # test the first and last element
-    utils.assert_equal(array_mapper(0, 0), 0)
-    utils.assert_equal(array_mapper(-1, -1), 24)
+    assert_equal(array_mapper(0, 0), 0)
+    assert_equal(array_mapper(-1, -1), 24)
 
 
 @pytest.mark.filterwarnings("ignore:The input positions are not")
@@ -200,33 +200,33 @@ def test_RegionsSelector():
         reg_selector.inverse
 
     mapper.inverse = mapper.copy()
-    utils.assert_allclose(reg_selector(2, 1), sel[1](2, 1))
-    utils.assert_allclose(reg_selector(8, 2), sel[2](8, 2))
+    assert_allclose(reg_selector(2, 1), sel[1](2, 1))
+    assert_allclose(reg_selector(8, 2), sel[2](8, 2))
 
     # test set_input
     with pytest.raises(gwutils.RegionError):
         reg_selector.set_input(3)
 
     transform = reg_selector.set_input(2)
-    utils.assert_equal(transform.parameters, [2, 2])
-    utils.assert_allclose(transform(1, 1), sel[2](1, 1))
+    assert_equal(transform.parameters, [2, 2])
+    assert_allclose(transform(1, 1), sel[2](1, 1))
 
     # test inverse
     rsinv = reg_selector.inverse
     # The label_mapper arays should be the same
-    utils.assert_equal(reg_selector.label_mapper.mapper, rsinv.label_mapper.mapper)
+    assert_equal(reg_selector.label_mapper.mapper, rsinv.label_mapper.mapper)
     # the transforms of the inverse ``RegionsSelector`` should be the inverse of the
     # transforms of the ``RegionsSelector`` model.
     x = np.linspace(-5, 5, 100)
-    utils.assert_allclose(reg_selector.selector[1].inverse(x, x),
+    assert_allclose(reg_selector.selector[1].inverse(x, x),
                           rsinv.selector[1](x, x))
-    utils.assert_allclose(reg_selector.selector[2].inverse(x, x),
+    assert_allclose(reg_selector.selector[2].inverse(x, x),
                           rsinv.selector[2](x, x))
 
     assert np.isnan(reg_selector(0, 0)).all()
     # Test setting ``undefined_transform_value`` to a non-default value.
     reg_selector.undefined_transform_value = -100
-    utils.assert_equal(reg_selector(0, 0), [-100, -100])
+    assert_equal(reg_selector(0, 0), [-100, -100])
 
 
 def test_overalpping_ranges():
@@ -259,7 +259,7 @@ def test_unique_labels():
     np.random.shuffle(labels)
     expected = np.arange(1, 10)
     result = selector.get_unique_regions(labels)
-    utils.assert_equal(expected, result)
+    assert_equal(expected, result)
 
     assert 0 not in result
 
@@ -268,4 +268,4 @@ def test_unique_labels():
 
     expected = ['S100A1', 'S1600', 'S200A2', 'S200B1', 'S400A1']
     result = selector.get_unique_regions(labels)
-    utils.assert_equal(expected, result)
+    assert_equal(expected, result)
