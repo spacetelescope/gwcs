@@ -52,7 +52,10 @@ matrix:
                SETUP_CMD='build_docs -w'
 
         - python: 3.6
-          env: NUMPY_VERSION=1.15 SETUP_CMD="test"
+          env: NUMPY_VERSION=1.16 SETUP_CMD="test"
+
+        - python: 3.7
+          env: NUMPY_VERSION=1.16 SETUP_CMD="test"
 
         - python: 3.5
           env: NUMPY_VERSION=1.15 SETUP_CMD="test"
