@@ -75,7 +75,7 @@ asdf_schema_reference_mappings = [
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg['package_name']
+project = setup_cfg['name']
 author = setup_cfg['author']
 copyright = '{0}, {1}'.format(
     datetime.datetime.now().year, setup_cfg['author'])
@@ -88,7 +88,6 @@ from pkg_resources import get_distribution
 release = get_distribution(project).version
 # for example take major/minor
 version = '.'.join(release.split('.')[:2])
-
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -151,6 +150,21 @@ htmlhelp_basename = project + 'doc'
 # (source start file, name, description, authors, manual section).
 man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
+
+## -- Options for the edit_on_github extension ----------------------------------------
+
+if eval(setup_cfg.get('edit_on_github')):
+    extensions += ['astropy.sphinx.ext.edit_on_github']
+
+    versionmod = __import__(setup_cfg['name'] + '.version')
+    edit_on_github_project = setup_cfg['github_project']
+    if versionmod.version.release:
+        edit_on_github_branch = "v" + versionmod.version.version
+    else:
+        edit_on_github_branch = "master"
+
+    edit_on_github_source_root = ""
+    edit_on_github_doc_root = "docs"
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
 extensions += ['sphinx_asdf']

@@ -9,6 +9,7 @@ New Features
 Bug Fixes
 ^^^^^^^^^
 
+- Update util.isnumerical(...) to recognize big-endian types as numeric. [#225]
 
 0.10.0 (12/20/2018)
 -------------------

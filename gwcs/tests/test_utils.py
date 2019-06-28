@@ -8,7 +8,7 @@ from astropy.modeling import models
 from astropy.utils.data import get_pkg_data_filename
 from astropy.tests.helper import assert_quantity_allclose
 import pytest
-from numpy.testing.utils import assert_allclose
+from numpy.testing import assert_allclose
 
 from .. import utils as gwutils
 from ..utils import UnsupportedProjectionError
@@ -95,3 +95,6 @@ def test_isnumerical():
     assert gwutils.isnumerical(np.array(0))
 
     assert not gwutils.isnumerical(np.array(['s200', '234']))
+
+    assert gwutils.isnumerical(np.array(0, dtype='>f8'))
+    assert gwutils.isnumerical(np.array(0, dtype='>i4'))

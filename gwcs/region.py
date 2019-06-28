@@ -76,8 +76,9 @@ class Polygon(Region):
     """
 
     def __init__(self, rid, vertices, coord_frame="detector"):
-        assert len(vertices) >= 4, ("Expected vertices to be "
-                                    "a list of minimum 4 tuples (x,y)")
+        if len(vertices) < 4:
+            raise ValueError("Expected vertices to be "
+                             "a list of minimum 4 tuples (x,y)")
         super(Polygon, self).__init__(rid, coord_frame)
 
         self._vertices = np.asarray(vertices)
