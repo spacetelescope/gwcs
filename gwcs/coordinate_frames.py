@@ -2,6 +2,7 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
+import logging
 import numpy as np
 
 from astropy.utils.misc import isiterable
@@ -80,7 +81,7 @@ class CoordinateFrame:
         else:
             axes_names = tuple([""] * naxes)
         self._axes_names = axes_names
-        
+
         if name is None:
             self._name = self.__class__.__name__
         else:
@@ -99,7 +100,7 @@ class CoordinateFrame:
     def _set_axis_physical_types(self, pht=None):
         """
         Set the physical type of the coordinate axes using VO UCD1+ v1.23 definitions.
-        
+
         """
         if pht is not None:
             if isinstance(pht, str):
@@ -116,7 +117,7 @@ class CoordinateFrame:
                     ph_type.append(axt)
             validate_physical_types(ph_type)
             return tuple(ph_type)
-        
+
         if isinstance(self, CelestialFrame):
             if isinstance(self.reference_frame, coord.Galactic):
                 ph_type = "pos.galactic.lon", "pos.galactic.lat"
@@ -137,6 +138,12 @@ class CoordinateFrame:
                 ph_type = ("em.wl",)
             elif self.unit[0].physical_type == "energy":
                 ph_type = ("em.energy",)
+            elif self.unit[0].physical_type == "speed":
+                ph_type = ("spect.dopplerVeloc",)
+                logging.warning("Physical type may be ambiguous. Consider "
+                                "setting the physical type explicitly as "
+                                "either 'spect.dopplerVeloc.optical' or "
+                                "'spect.dopplerVeloc.radio'.")
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
         elif isinstance(self, TemporalFrame):
@@ -352,7 +359,7 @@ class SpectralFrame(CoordinateFrame):
                                             unit=unit, name=name,
                                             reference_position=reference_position,
                                             axis_physical_types=axis_physical_types)
-        
+
     def coordinates(self, *args, equivalencies=[]):
         if hasattr(args[0], 'unit'):
             return args[0].to(self.unit[0], equivalencies=equivalencies)
@@ -470,7 +477,7 @@ class CompositeFrame(CoordinateFrame):
                                              unit=unit, axes_names=axes_names,
                                              name=name)
         self._axis_physical_types = tuple(ph_type)
-        
+
     @property
     def frames(self):
         return self._frames
