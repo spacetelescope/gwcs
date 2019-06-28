@@ -8,6 +8,7 @@ from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
 import astropy.units as u
 
+from . import coordinate_frames as cf
 from . import utils
 
 __all__ = ["GWCSAPIMixin"]
@@ -195,11 +196,23 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @property
     def world_axis_object_classes(self):
-        raise NotImplementedError()
+        out = {}
+        if isinstance(self.output_frame, cf.CompositeFrame):
+            for frame in self.output_frame.frames:
+                out.update(frame._world_axis_object_classes)
+        else:
+            out = self.output_frame._world_axis_object_classes
+        return out
 
     @property
     def world_axis_object_components(self):
-        raise NotImplementedError()
+        out = []
+        if isinstance(self.output_frame, cf.CompositeFrame):
+            for frame in self.output_frame.frames:
+                out.append(frame._world_axis_object_components)
+        else:
+            out = self.output_frame._world_axis_object_components
+        return out
 
     # High level APE 14 API
 
