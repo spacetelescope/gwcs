@@ -8,10 +8,10 @@ title: >
 description: |
   A label mapper instance maps inputs to a label.  It is used together
   with
-  [regions_selector](ref:http://stsci.edu/schemas/gwcs/regions_selector-1.0.0). The
-  [label_mapper](ref:http://stsci.edu/schemas/gwcs/label_mapper-1.0.0)
+  [regions_selector](ref:regions_selector-1.0.0). The
+  [label_mapper](ref:label_mapper-1.0.0)
   returns the label corresponding to given inputs. The
-  [regions_selector](ref:http://stsci.edu/schemas/gwcs/regions_selector-1.0.0)
+  [regions_selector](ref:regions_selector-1.0.0)
   returns the transform corresponding to this label. This maps inputs
   (e.g. pixels on a detector) to transforms uniquely.
 
@@ -115,7 +115,7 @@ allOf:
       inputs_mapping:
         $ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"
         description: |
-          [mapping](ref:http://stsci.edu/schemas/asdf/transform/remap-axes-1.1.0)
+          [mapping](https://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/transform/remap_axes-1.1.0.html)
       atol:
         type: number
         description: |

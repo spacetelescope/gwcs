@@ -9,4 +9,5 @@ dependencies:
     - stsci_rtd_theme
     - asdf
     - sphinx_rtd_theme
+    - sphinx-asdf
 

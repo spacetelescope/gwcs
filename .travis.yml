@@ -48,6 +48,7 @@ matrix:
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: 3.6
+
           env: PIP_DEPENDENCIES='.[docs]'
                SETUP_CMD='build_docs -w'
 
@@ -94,6 +95,7 @@ matrix:
 install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
+    - pip install .
 
 script:
     - $MAIN_CMD $SETUP_CMD

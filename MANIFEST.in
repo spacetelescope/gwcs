@@ -5,6 +5,7 @@ include ah_bootstrap.py
 include setup.cfg
 
 recursive-include docs *
+exclude docs/generated
 recursive-include licenses *
 recursive-include cextern *
 recursive-include scripts *
