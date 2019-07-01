@@ -85,8 +85,7 @@ def gwcs_2d_shift_scale_quantity():
     return wcs.WCS(pipe2)
 
 
-@pytest.fixture
-def gwcs_3d_spatial_wave_units():
+def gwcs_3d_identity_units():
     """
     A simple 1-1 gwcs that converts from pixels to arcseconds
     """
@@ -108,17 +107,16 @@ def gwcs_3d_spatial_wave_units():
     return wcs.WCS(forward_transform=identity, output_frame=frame, input_frame=detector_frame)
 
 
-@pytest.fixture
-def gwcs_4d_spatial_wave_time_units():
+def gwcs_4d_identity_units():
     """
     A simple 1-1 gwcs that converts from pixels to arcseconds
     """
     identity = (models.Multiply(1*u.arcsec/u.pixel) & models.Multiply(1*u.arcsec/u.pixel) &
-                models.Multiply(1*u.nm/u.pixel) & models.Multiply(1*u.s/u.pixel))
+                models.Multiply(1*u.nm/u.pixel) & models.Multiply(1*u.nm/u.pixel))
     sky_frame = cf.CelestialFrame(axes_order=(0, 1), name='icrs',
                                   reference_frame=coord.ICRS())
     wave_frame = cf.SpectralFrame(axes_order=(2, ), unit=u.nm)
-    time_frame = cf.TemporalFrame(axes_order=(3, ), unit=u.s, reference_time=Time("2019-01-01T00:00"))
+    time_frame = cf.TemporalFrame(axes_order=(3, ), unit=u.s)
 
     frame = cf.CompositeFrame([sky_frame, wave_frame, time_frame])
 

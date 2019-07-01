@@ -386,7 +386,7 @@ class SpectralFrame(CoordinateFrame):
         return {'spectral': (
             u.Quantity,
             (),
-            {})}
+            {'unit': self.unit[0]})}
 
     @property
     def _world_axis_object_components(self):
@@ -573,6 +573,7 @@ class StokesProfile(str):
     def __new__(cls, content):
         if content not in cls.profiles:
             raise ValueError(f"The profile name must be one of {cls.profiles} not {content}")
+        return str.__new__(cls, content)
 
     def value(self):
         return self.profiles.index(self)
