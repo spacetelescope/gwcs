@@ -6,7 +6,6 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
-import astropy.units as u
 
 from . import utils
 
@@ -184,7 +183,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert pixel values to world coordinates.
         """
         if self.forward_transform.uses_quantity:
-            pixel_arrays = pixel_arrays * u.pix  # *= only for newer astropy
+            pixel_arrays = [pixel * self.input_frame.unit[i]
+                            for i, pixel in enumerate(pixel_arrays)]
         return self(*pixel_arrays, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
@@ -194,18 +194,18 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         pixel_arrays = index_arrays[::-1]
         if self.forward_transform.uses_quantity:
-            pixel_arrays = pixel_arrays * u.pix  # *= only for newer astropy
+            pixel_arrays = [pixel * self.input_frame.unit[i]
+                            for i, pixel in enumerate(pixel_arrays)]
         return self(*pixel_arrays, with_units=True)
 
     def world_to_pixel(self, *world_objects):
         """
         Convert world coordinates to pixel values.
         """
-        if not self.forward_transform.uses_quantity:
-            return self.invert(*world_objects)
-        else:
-            xpix, ypix = self.invert(*world_objects)
-            return xpix.value, ypix.value
+        result = self.invert(*world_objects)
+        if self.forward_transform.uses_quantity:
+            result = [i.value for i in result]
+        return result
 
     def world_to_array_index(self, *world_objects):
         """
