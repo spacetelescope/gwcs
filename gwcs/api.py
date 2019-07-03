@@ -6,6 +6,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
+import astropy.units as u
 
 from . import utils
 
@@ -193,7 +194,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         objects).
         """
         pixel_arrays = index_arrays[::-1]
-        if self.forward_transform.uses_quantity:
+        if self.forward_transform.uses_quantity and not isinstance(pixel_arrays[0], u.Quantity):
             pixel_arrays = [pixel * self.input_frame.unit[i]
                             for i, pixel in enumerate(pixel_arrays)]
         return self(*pixel_arrays, with_units=True)
