@@ -183,9 +183,16 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert pixel values to world coordinates.
         """
-        if self.forward_transform.uses_quantity and not isinstance(pixel_arrays[0], u.Quantity):
+        if (self.forward_transform.uses_quantity and
+                not isinstance(pixel_arrays[0], u.Quantity)):
             pixel_arrays = [pixel * self.input_frame.unit[i]
                             for i, pixel in enumerate(pixel_arrays)]
+        if (not self.forward_transform.uses_quantity and
+                isinstance(pixel_arrays[0], u.Quantity)):
+            for pixel in pixel_arrays:
+                if pixel.unit != u.pixel:
+                    raise ValueError('inputs should have pixel units')
+            pixel_arrays = [pixel.value for pixel in pixel_arrays]
         return self(*pixel_arrays, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
@@ -194,9 +201,16 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         objects).
         """
         pixel_arrays = index_arrays[::-1]
-        if self.forward_transform.uses_quantity and not isinstance(pixel_arrays[0], u.Quantity):
+        if (self.forward_transform.uses_quantity and
+                not isinstance(pixel_arrays[0], u.Quantity)):
             pixel_arrays = [pixel * self.input_frame.unit[i]
                             for i, pixel in enumerate(pixel_arrays)]
+        if (not self.forward_transform.uses_quantity and
+                isinstance(pixel_arrays[0], u.Quantity)):
+            for pixel in pixel_arrays:
+                if pixel.unit != u.pixel:
+                    raise ValueError('inputs should have pixel units')
+            pixel_arrays = [pixel.value for pixel in pixel_arrays]
         return self(*pixel_arrays, with_units=True)
 
     def world_to_pixel(self, *world_objects):
