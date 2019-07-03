@@ -215,6 +215,17 @@ def test_pixel_to_world_quantity():
     assert_allclose(result1.data.lon, result2.data.lon)
     assert_allclose(result1.data.lat, result2.data.lat)
 
+    # test with Quantity pixel inputs
+    result1 = wcs_noquantity.pixel_to_world(x * u.pix, y * u.pix)
+    result2 = wcs_quantity.pixel_to_world(x * u.pix, y * u.pix)
+    assert isinstance(result2, coord.SkyCoord)
+    assert_allclose(result1.data.lon, result2.data.lon)
+    assert_allclose(result1.data.lat, result2.data.lat)
+
+    # test for pixel units
+    with pytest.raises(ValueError):
+        wcs_noquantity.pixel_to_world(x * u.Jy, y * u.Jy)
+
 
 def test_array_index_to_world_quantity():
     result0 = wcs_noquantity.pixel_to_world(x, y)
@@ -225,6 +236,20 @@ def test_array_index_to_world_quantity():
     assert_allclose(result1.data.lat, result2.data.lat)
     assert_allclose(result0.data.lon, result1.data.lon)
     assert_allclose(result0.data.lat, result1.data.lat)
+
+    # test with Quantity pixel inputs
+    result0 = wcs_noquantity.pixel_to_world(x * u.pix, y * u.pix)
+    result1 = wcs_noquantity.array_index_to_world(y * u.pix, x * u.pix)
+    result2 = wcs_quantity.array_index_to_world(y * u.pix, x * u.pix)
+    assert isinstance(result2, coord.SkyCoord)
+    assert_allclose(result1.data.lon, result2.data.lon)
+    assert_allclose(result1.data.lat, result2.data.lat)
+    assert_allclose(result0.data.lon, result1.data.lon)
+    assert_allclose(result0.data.lat, result1.data.lat)
+
+    # test for pixel units
+    with pytest.raises(ValueError):
+        wcs_noquantity.array_index_to_world(x * u.Jy, y * u.Jy)
 
 
 def test_world_to_pixel_quantity():
