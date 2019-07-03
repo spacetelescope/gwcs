@@ -182,7 +182,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert pixel values to world coordinates.
         """
-        if self.forward_transform.uses_quantity:
+        if self.forward_transform.uses_quantity and not isinstance(pixel_arrays[0], u.Quantity):
             pixel_arrays = [pixel * self.input_frame.unit[i]
                             for i, pixel in enumerate(pixel_arrays)]
         return self(*pixel_arrays, with_units=True)
