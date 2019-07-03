@@ -6,6 +6,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
+import astropy.units as u
 
 from . import utils
 
@@ -172,31 +173,54 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         raise NotImplementedError()
 
     # High level APE 14 API
-
     def low_level_wcs(self):
         """
         Returns a reference to the underlying low-level WCS object.
         """
         return self
 
+    def _sanitize_pixel_inputs(self, *pixel_arrays):
+        pixels = []
+        if self.forward_transform.uses_quantity:
+            for i, pixel in enumerate(pixel_arrays):
+                if not isinstance(pixel, u.Quantity):
+                    pixel = pixel * self.input_frame.unit[i]
+                pixels.append(pixel)
+        else:
+            for i, pixel in enumerate(pixel_arrays):
+                if isinstance(pixel, u.Quantity):
+                    if pixel.unit != self.input_frame.unit[i]:
+                        raise ValueError('Quantity input does not match the '
+                                         'input_frame unit.')
+                    pixel = pixel.value
+                pixels.append(pixel)
+
+        return pixels
+
     def pixel_to_world(self, *pixel_arrays):
         """
         Convert pixel values to world coordinates.
         """
-        return self(*pixel_arrays, with_units=True)
+        pixels = self._sanitize_pixel_inputs(*pixel_arrays)
+        return self(*pixels, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
         """
         Convert array indices to world coordinates (represented by Astropy
         objects).
         """
-        return self(*(index_arrays[::-1]), with_units=True)
+        pixel_arrays = index_arrays[::-1]
+        pixels = self._sanitize_pixel_inputs(*pixel_arrays)
+        return self(*pixels, with_units=True)
 
     def world_to_pixel(self, *world_objects):
         """
         Convert world coordinates to pixel values.
         """
-        return self.invert(*world_objects)
+        result = self.invert(*world_objects)
+        if self.forward_transform.uses_quantity:
+            result = [i.value for i in result]
+        return result
 
     def world_to_array_index(self, *world_objects):
         """
