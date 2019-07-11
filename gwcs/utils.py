@@ -87,7 +87,7 @@ def get_values(units=None, *args):
     if units is not None:
         result = [a.to_value(unit) for a, unit in zip(args, units)]
     else:
-        resutl = [a.value for a in args]
+        result = [a.value for a in args]
     return result
 
 
