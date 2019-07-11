@@ -188,7 +188,7 @@ class WCS(GWCSAPIMixin):
             frame = frame.name
         frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         return frame_names.index(frame)
-        
+
     def _get_frame_name(self, frame):
         """
         Return the name of the frame and a ``CoordinateFrame`` object.
@@ -283,7 +283,9 @@ class WCS(GWCSAPIMixin):
         """
         if not utils.isnumerical(args[0]):
             args = self.output_frame.coordinate_to_quantity(*args)
-            if not self.forward_transform.uses_quantity:
+            if self.output_frame.naxes == 1:
+                args = [args]
+            if not self.backward_transform.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
 
         with_units = kwargs.pop('with_units', False)

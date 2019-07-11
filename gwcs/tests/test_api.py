@@ -17,6 +17,8 @@ import pytest
 # frames
 sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))
 detector = cf.Frame2D(name='detector', axes_order=(0, 1))
+detector1d = cf.CoordinateFrame(naxes=1, axes_type=('SPECTRAL',), axes_order=(0,))
+spec_only = cf.SpectralFrame(unit=u.AA, axes_order=(0,))
 
 spec1 = cf.SpectralFrame(name='freq', unit=[u.Hz, ], axes_order=(2, ))
 spec2 = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
@@ -259,6 +261,12 @@ def test_world_to_pixel_quantity():
     assert_allclose(result1, (x, y))
     assert_allclose(result2, (x, y))
 
+    skycoord = wcs_noquantity.pixel_to_world(xarr, yarr)
+    result1 = wcs_noquantity.world_to_pixel(skycoord)
+    result2 = wcs_quantity.world_to_pixel(skycoord)
+    assert_allclose(result1, (xarr, yarr))
+    assert_allclose(result2, (xarr, yarr))
+
 
 def test_world_to_array_index_quantity():
     skycoord = wcs_noquantity.pixel_to_world(x, y)
@@ -268,3 +276,24 @@ def test_world_to_array_index_quantity():
     assert_allclose(result0, (x, y))
     assert_allclose(result1, (y, x))
     assert_allclose(result2, (y, x))
+
+
+def test_api_one_axis():
+    lt = np.arange(5) * u.AA
+    forward_transform = models.Tabular1D(lookup_table=lt, bounds_error=False)
+    forward_transform.inverse = models.Tabular1D(points=lt,
+                                                 lookup_table=np.arange(len(lt)),
+                                                 bounds_error=False)
+    w = wcs.WCS(forward_transform=forward_transform,
+                input_frame=detector1d,
+                output_frame=spec_only)
+
+    q = w.pixel_to_world(x)
+    x1 = w.world_to_pixel(q)
+    assert isinstance(q, u.Quantity)
+    assert_allclose(x, x1)
+
+    qq = w.pixel_to_world(xarr)
+    x1 = w.world_to_pixel(qq)
+    assert isinstance(qq, u.Quantity)
+    assert_allclose(x, x1)
