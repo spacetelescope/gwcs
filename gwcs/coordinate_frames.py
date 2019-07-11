@@ -303,7 +303,7 @@ class CelestialFrame(CoordinateFrame):
             return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
 
     def coordinate_to_quantity(self, *coords):
-        """ Convert a ``SkyCoord`` objetc to quantities."""
+        """ Convert a ``SkyCoord`` object to quantities."""
         if len(coords) == 2:
             arg = coords
         elif len(coords) == 1:

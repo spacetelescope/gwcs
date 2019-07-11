@@ -14,6 +14,9 @@ Bug Fixes
 - Fixed issue in unified WCS API (APE14) for transforms that use
   ``Quantity``. [#222]
 
+- Fixed WCS API issues when ``output_frame`` is 1D, e.g. ``Spectral`` only. [#232]
+
+
 0.10.0 (12/20/2018)
 -------------------
 
