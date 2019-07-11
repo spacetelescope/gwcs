@@ -339,12 +339,18 @@ def test_axis_physical_type():
     fr = cf.CelestialFrame(reference_frame=coord.BarycentricTrueEcliptic())
     assert fr.axis_physical_types == ('pos.ecliptic.lon', 'pos.ecliptic.lat')
 
-    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types="length", axes_names="x", naxes=1)
+    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",),
+                               axes_order=(0,), axis_physical_types="length",
+                               axes_names="x", naxes=1)
     assert frame.axis_physical_types == ("custom:length",)
-    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types=("length",), axes_names="x", naxes=1)
+    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",),
+                               axes_order=(0,), axis_physical_types=("length",),
+                               axes_names="x", naxes=1)
     assert frame.axis_physical_types == ("custom:length",)
     with pytest.raises(ValueError):
-        cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axis_physical_types=("length", "length"), naxes=1)
+        cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",),
+                           axes_order=(0,),
+                           axis_physical_types=("length", "length"), naxes=1)
 
 
 def test_base_frame():

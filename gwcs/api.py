@@ -184,7 +184,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         if self.forward_transform.uses_quantity:
             for i, pixel in enumerate(pixel_arrays):
                 if not isinstance(pixel, u.Quantity):
-                    pixel = pixel * self.input_frame.unit[i]
+                    pixel = u.Quantity(value=pixel, unit=self.input_frame.unit[i])
                 pixels.append(pixel)
         else:
             for i, pixel in enumerate(pixel_arrays):
@@ -217,10 +217,13 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert world coordinates to pixel values.
         """
-        result = self.invert(*world_objects)
-        if self.forward_transform.uses_quantity:
+        result = self.invert(*world_objects, with_units=True)
+        if not utils.isnumerical(result[0]):
             result = [i.value for i in result]
-        return result
+        if self.input_frame.naxes == 1:
+            return result[0]
+        else:
+            return result
 
     def world_to_array_index(self, *world_objects):
         """

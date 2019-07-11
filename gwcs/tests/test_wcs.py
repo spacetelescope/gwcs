@@ -145,6 +145,7 @@ def test_return_coordinates():
     assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
     assert_allclose(w.invert(num_plus_output), (x, y))
     assert isinstance(num_plus_output, coord.SkyCoord)
+
     # Spectral frame
     poly = models.Polynomial1D(1, c0=1, c1=2)
     w = wcs.WCS(forward_transform=poly, output_frame=spec)
@@ -153,6 +154,7 @@ def test_return_coordinates():
     output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
     assert isinstance(num_plus_output, u.Quantity)
+
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
     transform = m1 & poly
@@ -275,7 +277,7 @@ def test_wcs_from_points():
                         fiducial=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
-    assert_allclose(newdec, dec, atol=10**-6)    
+    assert_allclose(newdec, dec, atol=10**-6)
 
 
 def test_grid_from_bounding_box_2():
@@ -365,7 +367,10 @@ def test_high_level_api():
     """
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
     transform = m1 & models.Scale(1.5)
-    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+    det = cf.CoordinateFrame(naxes=3, unit=(u.pix, u.pix, u.pix),
+                             axes_order=(0, 1, 2),
+                             axes_type=('length', 'length', 'length'))
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame, input_frame=det)
 
     r, d, lam = w(xv, yv, xv)
     world_coord = w.pixel_to_world(xv, yv, xv)

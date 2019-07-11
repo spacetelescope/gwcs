@@ -72,7 +72,7 @@ def _toindex(value):
     return indx
 
 
-def get_values(units=None, *args):
+def get_values(units, *args):
     """
     Return the values of Quantity objects after optionally converting to units.
 
@@ -85,9 +85,10 @@ def get_values(units=None, *args):
         Quantity inputs.
     """
     if units is not None:
-        return [a.to_value(unit) for a, unit in zip(args, units)]
+        result = [a.to_value(unit) for a, unit in zip(args, units)]
     else:
-        return [a.value for a in args]
+        result = [a.value for a in args]
+    return result
 
 
 def _compute_lon_pole(skycoord, projection):

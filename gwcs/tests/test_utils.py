@@ -98,3 +98,13 @@ def test_isnumerical():
 
     assert gwutils.isnumerical(np.array(0, dtype='>f8'))
     assert gwutils.isnumerical(np.array(0, dtype='>i4'))
+
+
+def test_get_values():
+    args = 2 * u.cm
+    units=(u.m, )
+    res = gwutils.get_values(units, args)
+    assert res == [.02]
+
+    res = gwutils.get_values(None, args)
+    assert res == [2]
