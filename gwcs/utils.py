@@ -72,7 +72,7 @@ def _toindex(value):
     return indx
 
 
-def get_values(units=None, *args):
+def get_values(units, *args):
     """
     Return the values of Quantity objects after optionally converting to units.
 
