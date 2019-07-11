@@ -43,6 +43,7 @@ class WCS(GWCSAPIMixin):
         self._name = name
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
+        self._pixel_shape = None
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:

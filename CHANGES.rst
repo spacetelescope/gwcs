@@ -6,6 +6,9 @@ New Features
 
 - Add a schema and tag for the Stokes frame. [#164]
 
+- Added ``WCS.pixel_shape`` property. [#233]
+
+
 Bug Fixes
 ^^^^^^^^^
 

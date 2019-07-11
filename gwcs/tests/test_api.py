@@ -297,3 +297,11 @@ def test_api_one_axis():
     x1 = w.world_to_pixel(qq)
     assert isinstance(qq, u.Quantity)
     assert_allclose(x, x1)
+
+
+def test_pixel_shape():
+    assert example_wcs.pixel_shape is None
+    example_wcs.pixel_shape = (20, 30)
+    assert example_wcs.pixel_shape == (20, 30)
+    with pytest.raises(ValueError):
+        example_wcs.pixel_shape = (10, 2, 3)

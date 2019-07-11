@@ -147,6 +147,32 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         return self.bounding_box
 
     @property
+    def pixel_shape(self):
+        """
+        The shape of the data that the WCS applies to as a tuple of length
+        ``pixel_n_dim`` in ``(x, y)`` order (where for an image, ``x`` is
+        the horizontal coordinate and ``y`` is the vertical coordinate)
+        (optional).
+
+        If the WCS is valid in the context of a dataset with a particular
+        shape, then this property can be used to store the shape of the
+        data. This can be used for example if implementing slicing of WCS
+        objects. This is an optional property, and it should return `None`
+        if a shape is neither known nor relevant.
+        """
+        return self._pixel_shape
+
+    @pixel_shape.setter
+    def pixel_shape(self, value):
+        wcs_naxes = self.input_frame.naxes
+        if len(value) != wcs_naxes:
+            raise ValueError("The number of data axes, "
+                             "{}, does not equal the "
+                             "shape {}.".format(wcs_naxes, len(value)))
+
+        self._pixel_shape = tuple(value)
+
+    @property
     def axis_correlation_matrix(self):
         """
         Returns an (`~BaseLowLevelWCS.world_n_dim`,
