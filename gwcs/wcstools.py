@@ -7,11 +7,12 @@ from astropy.modeling import projections
 from astropy.modeling import models, fitting
 from astropy import coordinates as coord
 from astropy import units as u
+from astropy.utils import deprecated
 
 from .wcs import WCS
 from .coordinate_frames import * # noqa
-from .utils import UnsupportedTransformError, UnsupportedProjectionError
-from .utils import _compute_lon_pole
+from .utils import (UnsupportedTransformError, UnsupportedProjectionError,
+                    _compute_lon_pole, create_projection_transform)
 
 
 __all__ = ['wcs_from_fiducial', 'grid_from_bounding_box', 'wcs_from_points']
@@ -211,6 +212,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
         return grid
 
 
+@deprecated(since="0.11", alternative="fit_wcs_from_points")
 def wcs_from_points(xy, world_coordinates, fiducial,
                     projection=projections.Sky2Pix_TAN(),
                     degree=4, polynomial_type="polynomial"):
@@ -231,23 +233,23 @@ def wcs_from_points(xy, world_coordinates, fiducial,
     Parameters
     ----------
     xy : tuple of 2 ndarrays
-        Points in the input cooridnate frame - x, y inputs.                               
-    world_coordinates : tuple of 2 ndarrays                                                           
-        Points in the output coordinate frame.                                  
-        The order matches the order of ``xy``.                                            
-    fiducial_point : `~astropy.coordinates.SkyCoord`                                 
-        A fiducial point in the output coordinate frame.                                  
-    projection : `~astropy.modeling.projections.Projection`                               
+        Points in the input cooridnate frame - x, y inputs.
+    world_coordinates : tuple of 2 ndarrays
+        Points in the output coordinate frame.
+        The order matches the order of ``xy``.
+    fiducial_point : `~astropy.coordinates.SkyCoord`
+        A fiducial point in the output coordinate frame.
+    projection : `~astropy.modeling.projections.Projection`
         A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
     degree : int
         Degree of Polynpomial model to be fit to data.
     polynomial_type : str
         one of "polynomial", "chebyshev", "legendre"
-                                                                                          
-    Returns                                                                               
-    -------                                                                             
+
+    Returns
+    -------
     wcsobj : `~gwcs.wcs.WCS`
-        a WCS object for this observation.                                                       
+        a WCS object for this observation.
     """
     supported_poly_types = {"polynomial": models.Polynomial2D,
                             "chebyshev": models.Chebyshev2D,
@@ -271,8 +273,81 @@ def wcs_from_points(xy, world_coordinates, fiducial,
         poly_x = fitter(poly, x, y, projection_x)
         poly_y = fitter(poly, x, y, projection_y)
     transform = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y | projection.inverse | skyrot.inverse
-    
+
     skyframe = CelestialFrame(reference_frame=fiducial.frame)
+    detector = Frame2D(name="detector")
+    pipeline = [(detector, transform),
+                (skyframe, None)
+                ]
+    return WCS(pipeline)
+
+
+def fit_wcs_from_points(xy, world_coordinates, proj_point=None, projection=None,
+                        degree=4, distortion_type='polynomial'):
+    """
+    Given two matching sets of coordinates on detector and sky, fit a WCS.
+
+    Notes
+    -----
+    This function implements the following algorithm:
+    ``world_coordinates`` are transformed to a projection plane using the specified projection.
+    A polynomial fits ``xy`` and the projected coordinates.
+    The fitted polynomials and the projection transforms are combined into a tranform
+    from detector to sky.
+    The input coordinate frame is set to ``detector``.
+    The output coordinate frame is initialized based on the frame in the fiducial.
+
+
+    Parameters
+    ----------
+    xy : tuple of 2 ndarrays
+        Points in the input cooridnate frame - x, y inputs.
+    world_coordinates : `~astropy.coordinates.SkyCoord` or tuple of 2 ndarrays
+        Points in the output coordinate frame.
+        The order matches the order of ``xy``.
+        If a tuple, it is assumed the numbers represent location in the same frame as `proj_point`.
+    proj_point : `~astropy.coordinates.SkyCoord` or str
+        A fiducial point in the output coordinate frame.
+    projection : `~astropy.modeling.projections.Projection`
+        A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
+    degree : int
+        Degree of Polynpomial model to be fit to data.
+    distortion_type : str
+        one of "polynomial", "chebyshev", "legendre"
+
+    Returns
+    -------
+    wcsobj : `~gwcs.wcs.WCS`
+        a WCS object for this observation.
+    """
+    supported_distortion_types = {"polynomial": models.Polynomial2D,
+                            "chebyshev": models.Chebyshev2D,
+                            "legendre": models.Legendre2D
+                            }
+    x, y = xy
+    lon, lat = world_coordinates
+    if projection is None:
+        projection = projections.Sky2Pix_TAN()
+    elif isinstance(projection, str):
+        create_projection_transform(projection, direction='sky2pix')
+    elif not isinstance(projection, projections.Projection):
+        raise UnsupportedProjectionError("Unsupported projection code {0}".format(projection))
+    if distortion_type not in supported_distortion_types.keys():
+        raise ValueError("Unsupported distortion_type: {}. "
+                         "Only one of {} is supported.".format(distortion_type,
+                                                               supported_distortion_types.keys()))
+    skyrot = models.RotateCelestial2Native(proj_point.data.lon, proj_point.data.lat, 180*u.deg)
+    trans = (skyrot | projection)
+    projection_x, projection_y = trans(lon, lat)
+    dist = supported_distortion_types[distortion_type](degree)
+    fitter = fitting.LevMarLSQFitter()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        dist_x = fitter(dist, x, y, projection_x)
+        dist_y = fitter(dist, x, y, projection_y)
+    transform = models.Mapping((0, 1, 0, 1)) | dist_x & dist_y | projection.inverse | skyrot.inverse
+
+    skyframe = CelestialFrame(reference_frame=proj_point.frame)
     detector = Frame2D(name="detector")
     pipeline = [(detector, transform),
                 (skyframe, None)

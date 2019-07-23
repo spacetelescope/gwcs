@@ -11,7 +11,8 @@ from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
 
 from .. import wcs
-from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
+from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box,
+                        fit_wcs_from_points)
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
@@ -263,7 +264,7 @@ def test_wcs_from_points():
     y, x = np.mgrid[:2046:20j, :4023:10j]
     ra, dec = w.wcs_pix2world(x, y, 1)
     fiducial = coord.SkyCoord(ra.mean()*u.deg, dec.mean()*u.deg, frame="icrs")
-    w = wcs_from_points(xy=(x, y), world_coordinates=(ra, dec), fiducial=fiducial)
+    w = fit_wcs_from_points(xy=(x, y), world_coordinates=(ra, dec), proj_point=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra)
     assert_allclose(newdec, dec)
@@ -272,9 +273,9 @@ def test_wcs_from_points():
     n.shape = ra.shape
     nra = n * 10 ** -2
     ndec = n * 10 ** -2
-    w = wcs_from_points(xy=(x + nra, y + ndec),
-                        world_coordinates=(ra, dec),
-                        fiducial=fiducial)
+    xy = (x + nra, y + ndec)
+    w = fit_wcs_from_points(xy, world_coordinates=(ra, dec),
+                            proj_point=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
     assert_allclose(newdec, dec, atol=10**-6)

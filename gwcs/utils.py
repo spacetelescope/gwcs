@@ -428,7 +428,7 @@ def fitswcs_nonlinear(header):
         return None
 
 
-def create_projection_transform(projcode):
+def create_projection_transform(projcode, direction='pix2sky'):
     """
     Create the non-linear projection transform.
 
@@ -436,14 +436,22 @@ def create_projection_transform(projcode):
     ----------
     projcode : str
         FITS WCS projection code.
+    direction : str
+        One of ("pix2sky", "sky2pix").
 
     Returns
     -------
     transform : astropy.modeling.Model
         Projection transform.
     """
+    if direction.lower() == "pix2sky":
+        proj_prefix = "Pix2Sky_"
+    elif direction == "sky2pix":
+        proj_prefix = "Sky2Pix_"
+    else:
+        raise UnsupportedProjectionError(direction + projcode)
 
-    projklassname = 'Pix2Sky_' + projcode
+    projklassname = proj_prefix + projcode
     try:
         projklass = getattr(projections, projklassname)
     except AttributeError:
