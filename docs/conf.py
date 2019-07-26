@@ -30,16 +30,10 @@ import os
 import sys
 
 try:
-    import astropy_helpers
+    from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
-    # Building from inside the docs/ directory?
-    if os.path.basename(os.getcwd()) == 'docs':
-        a_h_path = os.path.abspath(os.path.join('..', 'astropy_helpers'))
-        if os.path.isdir(a_h_path):
-            sys.path.insert(1, a_h_path)
-
-# Load all of the global Astropy configuration
-from astropy_helpers.sphinx.conf import *
+    print('ERROR: the documentation requires the sphinx-astropy package to be installed')
+    sys.exit(1)
 
 # Get configuration information from setup.cfg
 try:
@@ -47,6 +41,7 @@ try:
 except ImportError:
     from configparser import ConfigParser
 conf = ConfigParser()
+
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 setup_cfg = dict(conf.items('metadata'))
 
@@ -68,10 +63,19 @@ exclude_patterns.append('_templates')
 rst_epilog += """
 """
 
+# Top-level directory containing ASDF schemas (relative to current directory)
+asdf_schema_path = '../gwcs/schemas'
+# This is the prefix common to all schema IDs in this repository
+asdf_schema_standard_prefix = 'stsci.edu/gwcs'
+asdf_schema_reference_mappings = [
+    ('tag:stsci.edu:asdf',
+     'http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/'),
+]
+
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg['package_name']
+project = setup_cfg['name']
 author = setup_cfg['author']
 copyright = '{0}, {1}'.format(
     datetime.datetime.now().year, setup_cfg['author'])
@@ -80,14 +84,10 @@ copyright = '{0}, {1}'.format(
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-__import__(setup_cfg['package_name'])
-package = sys.modules[setup_cfg['package_name']]
-
-# The short X.Y version.
-version = package.__version__.split('-', 1)[0]
-# The full version, including alpha/beta/rc tags.
-release = package.__version__
-
+from pkg_resources import get_distribution
+release = get_distribution(project).version
+# for example take major/minor
+version = '.'.join(release.split('.')[:2])
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -107,13 +107,13 @@ release = package.__version__
 # name of a builtin theme or the name of a custom theme in html_theme_path.
 #html_theme = None
 
-
-# Please update these texts to match the name of your package.
+# See sphinx-bootstrap-theme for documentation of these options
+# https://github.com/ryan-roemer/sphinx-bootstrap-theme
 html_theme_options = {
     'logotext1': 'g',  # white,  semi-bold
     'logotext2': 'wcs',  # orange, light
     'logotext3': ':docs'   # white,  light
-    }
+}
 
 
 # Custom sidebar templates, maps document names to template names.
@@ -151,13 +151,12 @@ htmlhelp_basename = project + 'doc'
 man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
-
 ## -- Options for the edit_on_github extension ----------------------------------------
 
 if eval(setup_cfg.get('edit_on_github')):
     extensions += ['astropy.sphinx.ext.edit_on_github']
 
-    versionmod = __import__(setup_cfg['package_name'] + '.version')
+    versionmod = __import__(setup_cfg['name'] + '.version')
     edit_on_github_project = setup_cfg['github_project']
     if versionmod.version.release:
         edit_on_github_branch = "v" + versionmod.version.version
@@ -167,7 +166,5 @@ if eval(setup_cfg.get('edit_on_github')):
     edit_on_github_source_root = ""
     edit_on_github_doc_root = "docs"
 
-
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
-extensions += ['category']
-
+extensions += ['sphinx_asdf']

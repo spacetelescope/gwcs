@@ -9,14 +9,9 @@ import builtins
 import ah_bootstrap
 from setuptools import setup
 
-if sys.version_info < (3, 4):
+if sys.version_info < (3, 5):
     error = """
-    GWCS 0.9+ does not support Python 2.x, 3.0, 3.1, 3.2, 3.3 or 3.4.
-    Beginning with GWCS 0.9, Python 3.5 and above is required.
-
-    This may be due to an out of date pip
-
-    Make sure you have pip >= 9.0.1.
+    GWCS supports Python versions 3.5 and above.
 
     """
     sys.exit(error)
@@ -37,7 +32,7 @@ conf = ConfigParser()
 conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
-PACKAGENAME = metadata.get('package_name', 'packagename')
+PACKAGENAME = metadata.get('name', 'packagename')
 DESCRIPTION = metadata.get('description', 'Astropy affiliated package')
 AUTHOR = metadata.get('author', '')
 AUTHOR_EMAIL = metadata.get('author_email', '')
@@ -53,8 +48,8 @@ LONG_DESCRIPTION = package.__doc__
 # to get from other parts of the setup infrastructure
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
-# VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.10.0'
+# VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0440)
+VERSION = '0.11.0'
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
@@ -114,8 +109,21 @@ package_info['package_data'][PACKAGENAME].extend(c_files)
 
 entry_points = dict(asdf_extensions='gwcs = gwcs.extension:GWCSExtension')
 
-#import convert_schemas
-#convert_schemas.main('gwcs/schemas/stsci.edu/gwcs', 'docs/gwcs/schemas')
+DOCS_REQUIRE = [
+    'matplotlib',
+    'sphinx',
+    'sphinx-automodapi',
+    'sphinx-rtd-theme',
+    'stsci-rtd-theme',
+    'sphinx-astropy',
+    'sphinx-asdf',
+]
+
+TESTS_REQUIRE = [
+    #'pytest-doctestplus',
+    #'requests_mock',
+    'pytest-astropy',
+]
 
 setup(name=PACKAGENAME,
       version=VERSION,
@@ -125,6 +133,10 @@ setup(name=PACKAGENAME,
       requires=['astropy', 'asdf'],
       python_requires='>=3.5',
       install_requires=['astropy', 'asdf'],
+      extras_require={
+        'test': TESTS_REQUIRE,
+        'docs': DOCS_REQUIRE,
+      },
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,

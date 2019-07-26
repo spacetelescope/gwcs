@@ -20,6 +20,7 @@ MANIFEST
 # Sphinx
 docs/api
 docs/_build
+docs/generated
 
 # Eclipse editor project files
 .project
@@ -28,6 +29,7 @@ docs/_build
 
 # Packages/installer info
 *.egg
+*.eggs
 *.egg-info
 dist
 build

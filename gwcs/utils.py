@@ -72,7 +72,7 @@ def _toindex(value):
     return indx
 
 
-def get_values(units=None, *args):
+def get_values(units, *args):
     """
     Return the values of Quantity objects after optionally converting to units.
 
@@ -85,9 +85,10 @@ def get_values(units=None, *args):
         Quantity inputs.
     """
     if units is not None:
-        return [a.to_value(unit) for a, unit in zip(args, units)]
+        result = [a.to_value(unit) for a, unit in zip(args, units)]
     else:
-        return [a.value for a in args]
+        result = [a.value for a in args]
+    return result
 
 
 def _compute_lon_pole(skycoord, projection):
@@ -456,13 +457,13 @@ def isnumerical(val):
     """
     Determine if a value is numerical (number or np.array of numbers).
     """
-    dtypes = ['uint64', 'float64', 'int8', 'int64', 'int16', 'uint16', 'uint8',
-              'float32', 'int32', 'uint32']
     isnum = True
     if isinstance(val, coords.SkyCoord):
         isnum = False
     elif isinstance(val, u.Quantity):
         isnum = False
-    elif isinstance(val, np.ndarray) and val.dtype not in dtypes:
+    elif (isinstance(val, np.ndarray)
+          and not np.issubdtype(val.dtype, np.floating)
+          and not np.issubdtype(val.dtype, np.integer)):
         isnum = False
     return isnum

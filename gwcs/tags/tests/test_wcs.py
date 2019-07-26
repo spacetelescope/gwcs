@@ -113,7 +113,9 @@ def create_test_frames():
             reference_frame=coord.PrecessedGeocentric(
                 obstime=time.Time('2010-01-01'),
                 obsgeoloc=[1, 3, 2000] * u.pc,
-                obsgeovel=[2, 1, 8] * (u.m / u.s)))
+                obsgeovel=[2, 1, 8] * (u.m / u.s))),
+
+        cf.StokesFrame()
     ]
 
     return frames

@@ -1,3 +1,24 @@
+0.11.0 (2019/07/26)
+-------------------
+
+New Features
+^^^^^^^^^^^^
+
+- Add a schema and tag for the Stokes frame. [#164]
+
+- Added ``WCS.pixel_shape`` property. [#233]
+
+
+Bug Fixes
+^^^^^^^^^
+
+- Update util.isnumerical(...) to recognize big-endian types as numeric. [#225]
+
+- Fixed issue in unified WCS API (APE14) for transforms that use
+  ``Quantity``. [#222]
+
+- Fixed WCS API issues when ``output_frame`` is 1D, e.g. ``Spectral`` only. [#232]
+
 0.10.0 (12/20/2018)
 -------------------
 
