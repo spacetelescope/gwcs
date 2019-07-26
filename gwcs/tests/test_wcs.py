@@ -295,6 +295,10 @@ def test_fit_wcs_inputs():
     with pytest.raises(UnsupportedProjectionError):
         fit_wcs_from_points(xy=(x, y), world_coordinates=(1,2),
                             proj_point=coord.SkyCoord(3*u.deg, 4*u.deg), projection="TANG")
+    with pytest.raises(TypeError):
+        fit_wcs_from_points(xy=(x, y), world_coordinates=(1,2),
+                            proj_point=coord.SkyCoord(3*u.deg, 4*u.deg),
+                            distortion_type="chebyshev")
 
 
 def test_grid_from_bounding_box_2():
