@@ -1,12 +1,12 @@
 import os
 import pkg_resources
 
-entry_points = []
-for entry_point in pkg_resources.iter_entry_points('pytest11'):
-    entry_points.append(entry_point.name)
+#entry_points = []
+#for entry_point in pkg_resources.iter_entry_points('pytest11'):
+    #entry_points.append(entry_point.name)
 
-if "asdf_schema_tester" not in entry_points:
-    pytest_plugins = ['asdf.tests.schema_tester']
+#if "asdf_schema_tester" not in entry_points:
+    #pytest_plugins = ['asdf.tests.schema_tester']
 
 # this contains imports plugins that configure py.test for astropy tests.
 # by importing them here in conftest.py they are discoverable by py.test
@@ -36,3 +36,5 @@ try:
     TESTED_VERSIONS[packagename] = version.version
 except NameError:   # Needed to support Astropy <= 1.0.0
     pass
+
+pytest_plugins = ['asdf.tests.schema_tester']
