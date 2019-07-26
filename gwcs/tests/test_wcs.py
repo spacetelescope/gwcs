@@ -15,7 +15,7 @@ from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box,
                         fit_wcs_from_points)
 from .. import coordinate_frames as cf
 from .. import utils
-from ..utils import CoordinateFrameError
+from ..utils import CoordinateFrameError, UnsupportedProjectionError
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -279,6 +279,22 @@ def test_wcs_from_points():
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
     assert_allclose(newdec, dec, atol=10**-6)
+
+    wcoord = coord.SkyCoord(ra*u.deg, dec*u.deg, frame='icrs')
+    w = fit_wcs_from_points(xy=(x, y), world_coordinates=wcoord, proj_point=fiducial)
+    newra, newdec = w(x, y, with_units=False)
+    assert_allclose(newra, ra, atol=10**-6)
+    assert_allclose(newdec, dec, atol=10**-6)
+
+
+def test_fit_wcs_inputs():
+    with pytest.raises(TypeError):
+        fit_wcs_from_points(xy=(x, y), world_coordinates=1)
+    with pytest.raises(TypeError):
+        fit_wcs_from_points(xy=(x, y), world_coordinates=(1, 2), proj_point=(3,4))
+    with pytest.raises(UnsupportedProjectionError):
+        fit_wcs_from_points(xy=(x, y), world_coordinates=(1,2),
+                            proj_point=coord.SkyCoord(3*u.deg, 4*u.deg), projection="TANG")
 
 
 def test_grid_from_bounding_box_2():

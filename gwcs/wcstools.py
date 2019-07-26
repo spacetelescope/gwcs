@@ -7,7 +7,7 @@ from astropy.modeling import projections
 from astropy.modeling import models, fitting
 from astropy import coordinates as coord
 from astropy import units as u
-from astropy.utils import deprecated
+from astropy.utils import deprecated, isiterable
 
 from .wcs import WCS
 from .coordinate_frames import * # noqa
@@ -282,7 +282,7 @@ def wcs_from_points(xy, world_coordinates, fiducial,
     return WCS(pipeline)
 
 
-def fit_wcs_from_points(xy, world_coordinates, proj_point=None, projection=None,
+def fit_wcs_from_points(xy, world_coordinates, proj_point, projection=projections.Sky2Pix_TAN(),
                         degree=4, distortion_type='polynomial'):
     """
     Given two matching sets of coordinates on detector and sky, fit a WCS.
@@ -306,10 +306,11 @@ def fit_wcs_from_points(xy, world_coordinates, proj_point=None, projection=None,
         Points in the output coordinate frame.
         The order matches the order of ``xy``.
         If a tuple, it is assumed the numbers represent location in the same frame as `proj_point`.
-    proj_point : `~astropy.coordinates.SkyCoord` or str
+    proj_point : `~astropy.coordinates.SkyCoord`
         A fiducial point in the output coordinate frame.
-    projection : `~astropy.modeling.projections.Projection`
+    projection : `~astropy.modeling.projections.Projection` or str
         A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
+        Default is ``TAN`` projection.
     degree : int
         Degree of Polynpomial model to be fit to data.
     distortion_type : str
@@ -321,21 +322,31 @@ def fit_wcs_from_points(xy, world_coordinates, proj_point=None, projection=None,
         a WCS object for this observation.
     """
     supported_distortion_types = {"polynomial": models.Polynomial2D,
-                            "chebyshev": models.Chebyshev2D,
-                            "legendre": models.Legendre2D
-                            }
+                                  "chebyshev": models.Chebyshev2D,
+                                  "legendre": models.Legendre2D
+                                  }
     x, y = xy
-    lon, lat = world_coordinates
-    if projection is None:
-        projection = projections.Sky2Pix_TAN()
-    elif isinstance(projection, str):
+
+    if isinstance(world_coordinates, coord.SkyCoord):
+        lon, lat = world_coordinates.data.lon, world_coordinates.data.lat
+    elif isiterable(world_coordinates) and len(world_coordinates) == 2:
+        lon, lat = world_coordinates
+    else:
+        raise TypeError('Expected "world_coordinates" to be either a SkyCoord object'
+                         'or a tuple of numerical values of size 2.')
+    if not isinstance(proj_point, coord.SkyCoord):
+        raise TypeError('Expected "proj_coord" to be a SkyCoord object.')
+
+    if isinstance(projection, str):
         create_projection_transform(projection, direction='sky2pix')
     elif not isinstance(projection, projections.Projection):
         raise UnsupportedProjectionError("Unsupported projection code {0}".format(projection))
+
     if distortion_type not in supported_distortion_types.keys():
         raise ValueError("Unsupported distortion_type: {}. "
                          "Only one of {} is supported.".format(distortion_type,
                                                                supported_distortion_types.keys()))
+
     skyrot = models.RotateCelestial2Native(proj_point.data.lon, proj_point.data.lat, 180*u.deg)
     trans = (skyrot | projection)
     projection_x, projection_y = trans(lon, lat)

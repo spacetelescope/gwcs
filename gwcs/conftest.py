@@ -27,7 +27,3 @@ try:
     TESTED_VERSIONS[packagename] = version.version
 except NameError:   # Needed to support Astropy <= 1.0.0
     pass
-
-pytest_plugins = [
-    'asdf.tests.schema_tester'
-]
