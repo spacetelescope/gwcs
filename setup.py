@@ -38,11 +38,11 @@ AUTHOR = metadata.get('author', '')
 AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'http://astropy.org')
-
+LONG_DESCRIPTION = metadata.get('long_description')
 # Get the long description from the package's docstring
 __import__(PACKAGENAME)
 package = sys.modules[PACKAGENAME]
-LONG_DESCRIPTION = package.__doc__
+#LONG_DESCRIPTION = package.__doc__
 
 # Store the package name in a built-in variable so it's easy
 # to get from other parts of the setup infrastructure
