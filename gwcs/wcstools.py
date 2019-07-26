@@ -283,7 +283,7 @@ def wcs_from_points(xy, world_coordinates, fiducial,
 
 
 def fit_wcs_from_points(xy, world_coordinates, proj_point, projection=projections.Sky2Pix_TAN(),
-                        degree=4, distortion_type='polynomial'):
+                        degree=None, distortion_type='polynomial'):
     """
     Given two matching sets of coordinates on detector and sky, fit a WCS.
 
@@ -311,8 +311,9 @@ def fit_wcs_from_points(xy, world_coordinates, proj_point, projection=projection
     projection : `~astropy.modeling.projections.Projection` or str
         A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
         Default is ``TAN`` projection.
-    degree : int
+    degree : int, None
         Degree of Polynpomial model to be fit to data.
+        An int degree is required for polynomials.
     distortion_type : str
         one of "polynomial", "chebyshev", "legendre"
 
@@ -325,6 +326,8 @@ def fit_wcs_from_points(xy, world_coordinates, proj_point, projection=projection
                                   "chebyshev": models.Chebyshev2D,
                                   "legendre": models.Legendre2D
                                   }
+    polynomials = ["polynomial", "chebyshev", "legendre"]
+
     x, y = xy
 
     if isinstance(world_coordinates, coord.SkyCoord):
@@ -346,11 +349,14 @@ def fit_wcs_from_points(xy, world_coordinates, proj_point, projection=projection
         raise ValueError("Unsupported distortion_type: {}. "
                          "Only one of {} is supported.".format(distortion_type,
                                                                supported_distortion_types.keys()))
+    elif distortion_type in polynomials and degree is None:
+        raise TypeError("Expected an integer degree, got ``None``.")
 
     skyrot = models.RotateCelestial2Native(proj_point.data.lon, proj_point.data.lat, 180*u.deg)
     trans = (skyrot | projection)
     projection_x, projection_y = trans(lon, lat)
     dist = supported_distortion_types[distortion_type](degree)
+
     fitter = fitting.LevMarLSQFitter()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
