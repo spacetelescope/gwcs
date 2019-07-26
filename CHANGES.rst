@@ -19,7 +19,6 @@ Bug Fixes
 
 - Fixed WCS API issues when ``output_frame`` is 1D, e.g. ``Spectral`` only. [#232]
 
-
 0.10.0 (12/20/2018)
 -------------------
 
@@ -36,7 +35,6 @@ New Features
 
 - Added a ``wcs_from_[points`` function which creates a WCS object
   two matching sets of points ``(x,y)`` and ``(ra, dec)``. [#42]
-
 
 0.9.0 (2018-05-23)
 ------------------
@@ -78,7 +76,6 @@ Bug Fixes
 
 - Fixed a bug in ``grid_from_bounding_box`` which caused the grid to be larger than
   the image in cases when the bounding box is on the edges of an image. [#121]
-
 
 0.8.0 (2017-11-02)
 ------------------
