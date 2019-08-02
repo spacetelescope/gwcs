@@ -12,6 +12,8 @@ from astropy.tests.helper import assert_quantity_allclose
 
 from .. import coordinate_frames as cf
 
+import astropy
+astropy_version = astropy.__version__
 
 coord_frames = coord.builtin_frames.__all__[:]
 
@@ -140,7 +142,7 @@ def test_base_coordinate():
 
 
 def test_temporal_relative():
-    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
+    t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.coordinates(10) == Time("2018-01-01T00:00:00") + 10 * u.s
     assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
 
@@ -148,7 +150,7 @@ def test_temporal_relative():
     assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
     assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
 
-    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"))
+    t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"))
     assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
 
     a = t.coordinates((10, 20) * u.s)
@@ -156,15 +158,16 @@ def test_temporal_relative():
     assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
 
 
+@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher")
 def test_temporal_absolute():
-    t = cf.TemporalFrame()
+    t = cf.TemporalFrame(reference_frame=Time([], format='isot'))
     assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00")
 
     a = t.coordinates(("2018-01-01T00:00:00", "2018-01-01T00:10:00"))
     assert a[0] == Time("2018-01-01T00:00:00")
     assert a[1] == Time("2018-01-01T00:10:00")
 
-    t = cf.TemporalFrame(reference_frame=partial(Time, scale='tai'))
+    t = cf.TemporalFrame(reference_frame=Time([], scale='tai', format='isot'))
     assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00", scale='tai')
 
 
@@ -205,14 +208,15 @@ def test_coordinate_to_quantity_spectral(inp):
     (Time("2011-01-01T00:00:10"),),
     (10 * u.s,)
 ])
+@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher.")
 def test_coordinate_to_quantity_temporal(inp):
-    temp = cf.TemporalFrame(reference_time=Time("2011-01-01T00:00:00"), unit=u.s)
+    temp = cf.TemporalFrame(reference_frame=Time("2011-01-01T00:00:00"), unit=u.s)
 
     t = temp.coordinate_to_quantity(*inp)
 
     assert_quantity_allclose(t, 10 * u.s)
 
-    temp2 = cf.TemporalFrame(unit=u.s)
+    temp2 = cf.TemporalFrame(reference_frame=Time([], format='isot'), unit=u.s)
 
     tt = Time("2011-01-01T00:00:00")
     t = temp2.coordinate_to_quantity(tt)
@@ -231,7 +235,7 @@ def test_coordinate_to_quantity_composite(inp):
     # Composite
     wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
     time_frame = cf.TemporalFrame(
-        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+        axes_order=(1, ), unit=u.s, reference_frame=Time("2011-01-01T00:00:00"))
     sky_frame = cf.CelestialFrame(axes_order=(2, 3), reference_frame=coord.ICRS())
 
     comp = cf.CompositeFrame([wave_frame, time_frame, sky_frame])
@@ -261,7 +265,7 @@ def test_stokes_frame():
 def test_coordinate_to_quantity_frame2d_composite(inp):
     wave_frame = cf.SpectralFrame(axes_order=(0, ), unit=u.AA)
     time_frame = cf.TemporalFrame(
-        axes_order=(1, ), unit=u.s, reference_time=Time("2011-01-01T00:00:00"))
+        axes_order=(1, ), unit=u.s, reference_frame=Time("2011-01-01T00:00:00"))
 
     frame2d = cf.Frame2D(name="intermediate", axes_order=(2, 3), unit=(u.one, u.one))
 
@@ -289,6 +293,7 @@ def test_coordinate_to_quantity_frame_2d():
         assert_quantity_allclose(output, exp)
 
 
+@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher.")
 def test_coordinate_to_quantity_error():
     frame = cf.Frame2D(unit=(u.one, u.arcsec))
     with pytest.raises(ValueError):
@@ -297,7 +302,7 @@ def test_coordinate_to_quantity_error():
     with pytest.raises(ValueError):
         comp1.coordinate_to_quantity((1, 1), 2)
 
-    frame = cf.TemporalFrame(unit=u.s)
+    frame = cf.TemporalFrame(reference_frame=Time([], format='isot'), unit=u.s)
     with pytest.raises(ValueError):
         frame.coordinate_to_quantity(1)
 
@@ -318,7 +323,7 @@ def test_axis_physical_type():
                              axis_physical_types='em.wavenumber')
     assert spec6.axis_physical_types == ('em.wavenumber',)
 
-    t = cf.TemporalFrame(reference_time=Time("2018-01-01T00:00:00"), unit=u.s)
+    t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"), unit=u.s)
     assert t.axis_physical_types == ('time',)
 
     fr2d = cf.Frame2D(name='d', axes_names=("x", "y"))
