@@ -385,7 +385,8 @@ class TemporalFrame(CoordinateFrame):
     reference_frame : `~astropy.time.Time`
         A Time object which holds the time scale and format.
         If data is provided, it is the time zero point.
-        For relative times `data` should be an empty list.
+        To not set a zero point for the frame initialize `reference_frame`
+        with an empty list.
     unit : str or `~astropy.units.Unit`
         Time unit.
     axes_names : str
@@ -399,7 +400,9 @@ class TemporalFrame(CoordinateFrame):
     def __init__(self, reference_frame, unit=None, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
 
-        axes_names = "{}({}; {}".format(reference_frame.format, reference_frame.scale, reference_frame.location)
+        axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
+                                                      reference_frame.scale,
+                                                      reference_frame.location)
 
         super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,

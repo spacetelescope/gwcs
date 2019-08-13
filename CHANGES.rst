@@ -1,5 +1,16 @@
 0.12.0 (Unreleased)
 -------------------
+New Features
+^^^^^^^^^^^^
+
+API Changes
+^^^^^^^^^^^
+
+- Changed the initialization of ``TemporalFrame`` to be consistent with other
+   coordinate frames. [#242]
+
+Bug Fixes
+^^^^^^^^^
 
 0.11.0 (2019/07/26)
 -------------------
