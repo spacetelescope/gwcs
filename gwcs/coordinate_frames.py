@@ -6,7 +6,7 @@ import logging
 import numpy as np
 
 from astropy.utils.misc import isiterable
-import astropy.time
+from astropy import time
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
@@ -382,31 +382,37 @@ class TemporalFrame(CoordinateFrame):
 
     Parameters
     ----------
-    axes_order : tuple or int
-        A dimension in the input data that corresponds to this axis.
-    reference_frame : `object`
-        The object to instantiate to represent the time coordinate. Defaults to
-        `astropy.time.Time`. Use partial functions to customise the
-        `~astropy.time.Time` instance.
-    reference_time : `astropy.time.Time` or `None`
-        Reference time, the time of the 0th coordinate. If none the values of
-        the axis are assumed to be valid times.
-    unit : str or units.Unit instance
-        Spectral unit.
+    reference_frame : `~astropy.time.Time`
+        A Time object which holds the time scale and format.
+        If data is provided, it is the time zero point.
+        To not set a zero point for the frame initialize `reference_frame`
+        with an empty list.
+    unit : str or `~astropy.units.Unit`
+        Time unit.
     axes_names : str
-        Spectral axis name.
+        Time axis name.
+    axes_order : tuple or int
+        A dimension in the data that corresponds to this axis.
     name : str
         Name for this frame.
     """
 
-    def __init__(self, axes_order=(0,), reference_time=None,
-                 reference_frame=astropy.time.Time, unit=None,
+    def __init__(self, reference_frame, unit=None, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
+
+        axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
+                                                      reference_frame.scale,
+                                                      reference_frame.location)
 
         super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,
-                         unit=unit, name=name,
-                         reference_position=reference_time, axis_physical_types=axis_physical_types)
+                         unit=unit, name=name, axis_physical_types=axis_physical_types)
+        self._attrs = {}
+        for a in self.reference_frame.info._represent_as_dict_extra_attrs:
+            try:
+                self._attrs[a] = getattr(self.reference_frame, a)
+            except AttributeError:
+                pass
 
     def coordinates(self, *args):
         if np.isscalar(args):
@@ -414,19 +420,18 @@ class TemporalFrame(CoordinateFrame):
         else:
             dt = args[0]
 
-        if self.reference_position:
+        if self.reference_frame.value:
             if not hasattr(dt, 'unit'):
                 dt = dt * self.unit[0]
-
-            return self.reference_position + dt
+            return self.reference_frame + dt
 
         else:
-            return self.reference_frame(dt)
+            return time.Time(dt, **self._attrs)
 
     def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], astropy.time.Time):
-            if self.reference_position:
-                return (coords[0] - self.reference_position).to(self.unit[0])
+        if isinstance(coords[0], time.Time):
+            if self.reference_frame.value:
+                return (coords[0] - self.reference_frame).to(self.unit[0])
             else:
                 # If we can't convert to a quantity just drop the object out
                 # and hope the transform can cope.
