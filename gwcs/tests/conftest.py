@@ -85,6 +85,7 @@ def gwcs_2d_shift_scale_quantity():
     return wcs.WCS(pipe2)
 
 
+@pytest.fixture
 def gwcs_3d_identity_units():
     """
     A simple 1-1 gwcs that converts from pixels to arcseconds
@@ -107,6 +108,7 @@ def gwcs_3d_identity_units():
     return wcs.WCS(forward_transform=identity, output_frame=frame, input_frame=detector_frame)
 
 
+@pytest.fixture
 def gwcs_4d_identity_units():
     """
     A simple 1-1 gwcs that converts from pixels to arcseconds
