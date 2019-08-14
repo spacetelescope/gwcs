@@ -7,6 +7,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 import astropy.units as u
+from astropy import time
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
 
@@ -98,6 +99,14 @@ def test_world_axis_object_components_1d(gwcs_1d_freq):
     assert waoc == [('spectral', 0, 'value')]
 
 
+def test_world_axis_object_components_4d(gwcs_4d_identity_units):
+    waoc = gwcs_4d_identity_units.world_axis_object_components
+    assert waoc == [('celestial', 0, 'spherical.lon.degree'),
+                    ('celestial', 1, 'spherical.lat.degree'),
+                    ('spectral', 0, 'value'),
+                    ('temporal', 0, 'value')]
+
+
 def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     waoc = gwcs_2d_spatial_shift.world_axis_object_classes
     assert waoc['celestial'][0] is coord.SkyCoord
@@ -107,6 +116,21 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
     assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
 
+
+def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
+    waoc = gwcs_4d_identity_units.world_axis_object_classes
+    assert waoc['celestial'][0] is coord.SkyCoord
+    assert waoc['celestial'][1] == tuple()
+    assert 'frame' in waoc['celestial'][2]
+    assert 'unit' in waoc['celestial'][2]
+    assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
+    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+
+    temporal = waoc['temporal']
+    assert temporal[0] is time.Time
+    assert temporal[1] == tuple()
+    assert temporal[2] == {'format': 'isot', 'scale': 'utc', 'precision': 3,
+                           'in_subfmt': '*', 'out_subfmt': '*', 'location': None}
 
 def _compare_frame_output(wc1, wc2):
     if isinstance(wc1, coord.SkyCoord):

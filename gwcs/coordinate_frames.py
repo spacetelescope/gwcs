@@ -449,7 +449,7 @@ class TemporalFrame(CoordinateFrame):
         return {'temporal': (
             time.Time,
             (),
-            self.reference_frame)}
+            self._attrs)}
 
     @property
     def _world_axis_object_components(self):

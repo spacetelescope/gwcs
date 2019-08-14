@@ -118,7 +118,8 @@ def gwcs_4d_identity_units():
     sky_frame = cf.CelestialFrame(axes_order=(0, 1), name='icrs',
                                   reference_frame=coord.ICRS())
     wave_frame = cf.SpectralFrame(axes_order=(2, ), unit=u.nm)
-    time_frame = cf.TemporalFrame(axes_order=(3, ), unit=u.s)
+    time_frame = cf.TemporalFrame(axes_order=(3, ), unit=u.s,
+                                  reference_frame=Time("2000-01-01T00:00:00"))
 
     frame = cf.CompositeFrame([sky_frame, wave_frame, time_frame])
 
