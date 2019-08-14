@@ -196,23 +196,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @property
     def world_axis_object_classes(self):
-        out = {}
-        if isinstance(self.output_frame, cf.CompositeFrame):
-            for frame in self.output_frame.frames:
-                out.update(frame._world_axis_object_classes)
-        else:
-            out = self.output_frame._world_axis_object_classes
-        return out
+        return self.output_frame._world_axis_object_classes
 
     @property
     def world_axis_object_components(self):
-        out = []
-        if isinstance(self.output_frame, cf.CompositeFrame):
-            for frame in self.output_frame.frames:
-                out.append(frame._world_axis_object_components)
-        else:
-            out = self.output_frame._world_axis_object_components
-        return out
+        return self.output_frame._world_axis_object_components
 
     # High level APE 14 API
 

@@ -566,6 +566,20 @@ class CompositeFrame(CoordinateFrame):
                 qs.append(ret)
         return qs
 
+    @property
+    def _world_axis_object_components(self):
+        out = []
+        for frame in self.frames:
+            out += frame._world_axis_object_components
+        return out
+
+    @property
+    def _world_axis_object_classes(self):
+        out = {}
+        for frame in self.frames:
+            out.update(frame._world_axis_object_classes)
+        return out
+
 
 class StokesProfile(str):
     profiles = ['I', 'Q', 'U', 'V']
