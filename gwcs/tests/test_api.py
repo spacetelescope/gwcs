@@ -25,7 +25,7 @@ def wcs_ndim_types_units(request):
     Generate a wcs and the expected ndim, types, and units.
     """
     ndim = {'gwcs_2d_spatial_shift': (2, 2),
-            'gwcs_1d_freq': (2, 1),
+            'gwcs_1d_freq': (1, 1),
             'gwcs_3d_spatial_wave': (3, 3)}
     types = {'gwcs_2d_spatial_shift': ("pos.eq.ra", "pos.eq.dec"),
              'gwcs_1d_freq': ("em.freq",),

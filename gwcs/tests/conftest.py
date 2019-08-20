@@ -12,22 +12,17 @@ from .. import coordinate_frames as cf
 from .. import wcs
 
 # frames
+detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
 detector_2d = cf.Frame2D(name='detector', axes_order=(0, 1))
 icrs_sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
                                    axes_order=(0, 1))
 
-freq_frame = cf.SpectralFrame(name='freq', unit=[
-    u.Hz,
-], axes_order=(2, ))
-wave_frame = cf.SpectralFrame(name='wave',
-                              unit=[
-                                  u.m,
-                              ],
-                              axes_order=(2, ),
+freq_frame = cf.SpectralFrame(name='freq', unit=[u.Hz], axes_order=(2, ))
+wave_frame = cf.SpectralFrame(name='wave', unit=[u.m], axes_order=(2, ),
                               axes_names=('lambda', ))
 
 # transforms
-model_3d_shift = models.Shift(1) & models.Shift(2)
+model_2d_shift = models.Shift(1) & models.Shift(2)
 model_1d_scale = models.Scale(2)
 
 
@@ -36,20 +31,20 @@ def gwcs_2d_spatial_shift():
     """
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
-    pipe = [(detector_2d, model_3d_shift), (icrs_sky_frame, None)]
+    pipe = [(detector_2d, model_2d_shift), (icrs_sky_frame, None)]
 
     return wcs.WCS(pipe)
 
 
 @pytest.fixture
 def gwcs_1d_freq():
-    return wcs.WCS([(detector_2d, model_1d_scale), (freq_frame, None)])
+    return wcs.WCS([(detector_1d, model_1d_scale), (freq_frame, None)])
 
 
 @pytest.fixture
 def gwcs_3d_spatial_wave():
     comp1 = cf.CompositeFrame([icrs_sky_frame, wave_frame])
-    m = model_3d_shift & model_1d_scale
+    m = model_2d_shift & model_1d_scale
 
     detector_frame = cf.CoordinateFrame(name="detector", naxes=3,
                                         axes_order=(0, 1, 2),
