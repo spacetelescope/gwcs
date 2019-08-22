@@ -185,6 +185,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
         return separable.separability_matrix(self.forward_transform)
 
+    @property
     def serialized_classes(self):
         """
         Indicates whether Python objects are given in serialized form or as
@@ -192,13 +193,17 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         return False
 
+    @property
     def world_axis_object_classes(self):
         raise NotImplementedError()
 
+    @property
     def world_axis_object_components(self):
         raise NotImplementedError()
 
     # High level APE 14 API
+
+    @property
     def low_level_wcs(self):
         """
         Returns a reference to the underlying low-level WCS object.
