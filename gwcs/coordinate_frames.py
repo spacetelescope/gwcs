@@ -582,15 +582,44 @@ class CompositeFrame(CoordinateFrame):
 
 
 class StokesProfile(str):
-    profiles = ['I', 'Q', 'U', 'V']
+    # This list of profiles in Table 7 in Greisen & Calabretta (2002)
+    # modified to be 0 indexed
+    profiles = {
+        'I': 0,
+        'Q': 1,
+        'U': 2,
+        'V': 3,
+        'RR': -1,
+        'LL': -2,
+        'RL': -3,
+        'LR': -4,
+        'XX': -5,
+        'YY': -6,
+        'XY': -7,
+        'YX': -8,
+    }
+
+    @classmethod
+    def index_profiles(cls):
+        """
+        An index to profile mapping.
+        """
+        return {v: k for k, v in cls.profiles.items()}
+
+    @classmethod
+    def from_index(cls, index):
+        if index not in cls.profiles.values():
+            raise ValueError(f"The profile index must be one of {cls.profiles.values()} not {index}")
+
+        return cls(cls.index_profiles()[index])
 
     def __new__(cls, content):
-        if content not in cls.profiles:
-            raise ValueError(f"The profile name must be one of {cls.profiles} not {content}")
+        if content not in cls.profiles.keys():
+            raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
         return str.__new__(cls, content)
 
     def value(self):
-        return self.profiles.index(self)
+        return self.profiles[self]
 
 
 class StokesFrame(CoordinateFrame):
@@ -604,7 +633,6 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), name=None):
-        self._stokes_components = StokesProfile.profiles
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
                                           axes_names=("stokes",), unit=u.one)
 
@@ -624,12 +652,12 @@ class StokesFrame(CoordinateFrame):
             arg = args[0].value
         else:
             arg = args[0]
-        return StokesProfile(self._stokes_components[int(arg)])
+        return StokesProfile.from_index(int(arg))
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], str):
-            if coords[0] in self._stokes_components:
-                return self._stokes_components.index(coords[0]) * u.pix
+            if coords[0] in StokesProfile.profiles.keys():
+                return StokesProfile.profiles[coords[0]] * u.pix
         else:
             return coords[0]
 
