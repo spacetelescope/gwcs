@@ -8,7 +8,6 @@ from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
 import astropy.units as u
 
-from . import coordinate_frames as cf
 from . import utils
 
 __all__ = ["GWCSAPIMixin"]
