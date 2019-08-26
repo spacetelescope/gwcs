@@ -195,11 +195,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @property
     def world_axis_object_classes(self):
-        raise NotImplementedError()
+        return self.output_frame._world_axis_object_classes
 
     @property
     def world_axis_object_components(self):
-        raise NotImplementedError()
+        return self.output_frame._world_axis_object_components
 
     # High level APE 14 API
 

@@ -159,7 +159,6 @@ class CoordinateFrame:
         validate_physical_types(ph_type)
         return ph_type
 
-
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
             self.__class__.__name__, self.name,
@@ -239,6 +238,14 @@ class CoordinateFrame:
     def axis_physical_types(self):
         return self._axis_physical_types
 
+    @property
+    def _world_axis_object_components(self):
+        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+
+    @property
+    def _world_axis_object_classes(self):
+        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+
 
 class CelestialFrame(CoordinateFrame):
     """
@@ -286,7 +293,20 @@ class CelestialFrame(CoordinateFrame):
                                              reference_frame=reference_frame,
                                              unit=unit,
                                              axes_names=axes_names,
-                                             name=name, axis_physical_types = axis_physical_types)
+                                             name=name, axis_physical_types=axis_physical_types)
+
+    @property
+    def _world_axis_object_classes(self):
+        return {'celestial': (
+            coord.SkyCoord,
+            (),
+            {'frame': self.reference_frame,
+             'unit': self.unit})}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('celestial', 0, 'spherical.lon.degree'),
+                ('celestial', 1, 'spherical.lat.degree')]
 
     def coordinates(self, *args):
         """
@@ -361,6 +381,17 @@ class SpectralFrame(CoordinateFrame):
                                             reference_position=reference_position,
                                             axis_physical_types=axis_physical_types)
 
+    @property
+    def _world_axis_object_classes(self):
+        return {'spectral': (
+            u.Quantity,
+            (),
+            {'unit': self.unit[0]})}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('spectral', 0, 'value')]
+
     def coordinates(self, *args, equivalencies=[]):
         if hasattr(args[0], 'unit'):
             return args[0].to(self.unit[0], equivalencies=equivalencies)
@@ -399,7 +430,6 @@ class TemporalFrame(CoordinateFrame):
 
     def __init__(self, reference_frame, unit=None, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
-
         axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
                                                       reference_frame.scale,
                                                       reference_frame.location)
@@ -413,6 +443,17 @@ class TemporalFrame(CoordinateFrame):
                 self._attrs[a] = getattr(self.reference_frame, a)
             except AttributeError:
                 pass
+
+    @property
+    def _world_axis_object_classes(self):
+        return {'temporal': (
+            time.Time,
+            (),
+            self._attrs)}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('temporal', 0, 'value')]
 
     def coordinates(self, *args):
         if np.isscalar(args):
@@ -525,6 +566,61 @@ class CompositeFrame(CoordinateFrame):
                 qs.append(ret)
         return qs
 
+    @property
+    def _world_axis_object_components(self):
+        out = []
+        for frame in self.frames:
+            out += frame._world_axis_object_components
+        return out
+
+    @property
+    def _world_axis_object_classes(self):
+        out = {}
+        for frame in self.frames:
+            out.update(frame._world_axis_object_classes)
+        return out
+
+
+class StokesProfile(str):
+    # This list of profiles in Table 7 in Greisen & Calabretta (2002)
+    # modified to be 0 indexed
+    profiles = {
+        'I': 0,
+        'Q': 1,
+        'U': 2,
+        'V': 3,
+        'RR': -1,
+        'LL': -2,
+        'RL': -3,
+        'LR': -4,
+        'XX': -5,
+        'YY': -6,
+        'XY': -7,
+        'YX': -8,
+    }
+
+    @classmethod
+    def index_profiles(cls):
+        """
+        An index to profile mapping.
+        """
+        return {v: k for k, v in cls.profiles.items()}
+
+    @classmethod
+    def from_index(cls, index):
+        if index not in cls.profiles.values():
+            raise ValueError(f"The profile index must be one of {cls.profiles.values()} not {index}")
+
+        return cls(cls.index_profiles()[index])
+
+    def __new__(cls, content):
+        if content not in cls.profiles.keys():
+            raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
+        return str.__new__(cls, content)
+
+    def value(self):
+        return self.profiles[self]
+
 
 class StokesFrame(CoordinateFrame):
     """
@@ -537,21 +633,31 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), name=None):
-        self._stokes_components = ['I', 'Q', 'U', 'V']
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
                                           axes_names=("stokes",), unit=u.one)
+
+    @property
+    def _world_axis_object_classes(self):
+        return {'stokes': (
+            StokesProfile,
+            (),
+            {})}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('stokes', 0, 'value')]
 
     def coordinates(self, *args):
         if hasattr(args[0], 'value'):
             arg = args[0].value
         else:
             arg = args[0]
-        return self._stokes_components[int(arg)]
+        return StokesProfile.from_index(int(arg))
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], str):
-            if coords[0] in self._stokes_components:
-                return self._stokes_components.index(coords[0]) * u.pix
+            if coords[0] in StokesProfile.profiles.keys():
+                return StokesProfile.profiles[coords[0]] * u.pix
         else:
             return coords[0]
 

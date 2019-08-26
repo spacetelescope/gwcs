@@ -4,10 +4,12 @@ Tests the API defined in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875)
 """
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 import astropy.units as u
+from astropy import time
 from astropy import coordinates as coord
+from astropy.wcs.wcsapi import HighLevelWCSWrapper
 
 
 # Shorthand the name of the 2d gwcs fixture
@@ -46,7 +48,7 @@ xarr, yarr = np.ones((3, 4)), np.ones((3, 4)) + 1
 
 fixture_names = ['gwcs_2d_spatial_shift', 'gwcs_1d_freq', 'gwcs_3d_spatial_wave']
 fixture_wcs_ndim_types_units = pytest.mark.parametrize("wcs_ndim_types_units", fixture_names, indirect=True)
-all_wcses_names = fixture_names + ['gwcs_3d_spatial_wave_units', 'gwcs_4d_spatial_wave_time_units']
+all_wcses_names = fixture_names + ['gwcs_3d_identity_units']
 fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=True)
 
 
@@ -84,6 +86,107 @@ def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
 def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
     assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x, with_units=False))
+
+
+def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
+    waoc = gwcs_2d_spatial_shift.world_axis_object_components
+    assert waoc == [('celestial', 0, 'spherical.lon.degree'),
+                    ('celestial', 1, 'spherical.lat.degree')]
+
+
+def test_world_axis_object_components_1d(gwcs_1d_freq):
+    waoc = gwcs_1d_freq.world_axis_object_components
+    assert waoc == [('spectral', 0, 'value')]
+
+
+def test_world_axis_object_components_4d(gwcs_4d_identity_units):
+    waoc = gwcs_4d_identity_units.world_axis_object_components
+    assert waoc == [('celestial', 0, 'spherical.lon.degree'),
+                    ('celestial', 1, 'spherical.lat.degree'),
+                    ('spectral', 0, 'value'),
+                    ('temporal', 0, 'value')]
+
+
+def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
+    waoc = gwcs_2d_spatial_shift.world_axis_object_classes
+    assert waoc['celestial'][0] is coord.SkyCoord
+    assert waoc['celestial'][1] == tuple()
+    assert 'frame' in waoc['celestial'][2]
+    assert 'unit' in waoc['celestial'][2]
+    assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
+    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+
+
+def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
+    waoc = gwcs_4d_identity_units.world_axis_object_classes
+    assert waoc['celestial'][0] is coord.SkyCoord
+    assert waoc['celestial'][1] == tuple()
+    assert 'frame' in waoc['celestial'][2]
+    assert 'unit' in waoc['celestial'][2]
+    assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
+    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+
+    temporal = waoc['temporal']
+    assert temporal[0] is time.Time
+    assert temporal[1] == tuple()
+    assert temporal[2] == {'format': 'isot', 'scale': 'utc', 'precision': 3,
+                           'in_subfmt': '*', 'out_subfmt': '*', 'location': None}
+
+def _compare_frame_output(wc1, wc2):
+    if isinstance(wc1, coord.SkyCoord):
+        assert isinstance(wc1.frame, type(wc2.frame))
+        assert u.allclose(wc1.spherical.lon, wc2.spherical.lon)
+        assert u.allclose(wc1.spherical.lat, wc2.spherical.lat)
+        assert u.allclose(wc1.spherical.distance, wc2.spherical.distance)
+
+    elif isinstance(wc1, u.Quantity):
+        assert u.allclose(wc1, wc2)
+
+    else:
+        assert False, f"Can't Compare {type(wc1)}"
+
+
+@fixture_all_wcses
+def test_high_level_wrapper(wcsobj):
+    hlvl = HighLevelWCSWrapper(wcsobj)
+
+    pixel_input = [10] * wcsobj.pixel_n_dim
+
+    # If the model expects units we have to pass in units
+    if wcsobj.forward_transform.uses_quantity:
+        pixel_input *= u.pix
+
+    wc1 = hlvl.pixel_to_world(*pixel_input)
+    wc2 = wcsobj(*pixel_input, with_units=True)
+
+    assert type(wc1) is type(wc2)
+
+    if isinstance(wc1, (list, tuple)):
+        for w1, w2 in zip(wc1, wc2):
+            _compare_frame_output(w1, w2)
+    else:
+        _compare_frame_output(wc1, wc2)
+
+
+@wcs_objs
+def test_array_shape(wcsobj):
+    assert wcsobj.array_shape is None
+
+    wcsobj.array_shape = (2040, 1020)
+    assert_array_equal(wcsobj.array_shape, (2040, 1020))
+
+
+@wcs_objs
+def test_pixel_bounds(wcsobj):
+    assert wcsobj.pixel_bounds is None
+
+    wcsobj.bounding_box = ((-0.5, 2039.5), (-0.5, 1019.5))
+    assert_array_equal(wcsobj.pixel_bounds, wcsobj.bounding_box)
+
+
+@wcs_objs
+def test_axis_correlation_matrix(wcsobj):
+    assert_array_equal(wcsobj.axis_correlation_matrix, np.identity(2))
 
 
 @wcs_objs
