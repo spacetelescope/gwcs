@@ -3,6 +3,10 @@
 New Features
 ^^^^^^^^^^^^
 
+- ``gwcs.WCS`` now supports the ``world_axis_object_components`` and
+  ``world_axis_object_classes`` methods of the low level WCS API as specified by
+  APE 14.
+
 API Changes
 ^^^^^^^^^^^
 
