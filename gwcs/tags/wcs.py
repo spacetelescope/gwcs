@@ -132,7 +132,7 @@ class FrameType(GWCSType):
 
         if frame.axis_physical_types is not None:
             node['axis_physical_types'] = list(frame.axis_physical_types)
-                                                 
+
         return node
 
     @classmethod
@@ -247,51 +247,30 @@ class CompositeFrameType(FrameType):
             helpers.assert_tree_match(old_frame, new_frame)
 
 
-class TemporalFrameType(GWCSType):
+class TemporalFrameType(FrameType):
     name = "temporal_frame"
     requires = _REQUIRES
     types = [TemporalFrame]
     version = '1.0.0'
 
-    @classmethod
-    def to_tree(cls, frame, ctx):
-        import astropy.time
-
-        node = {}
-
-        node['name'] = frame.name
-
-        node['axes_order'] = list(frame.axes_order)
-
-        if frame.axes_names is not None:
-            node['axes_names'] = list(frame.axes_names)
-
-        if frame.reference_frame is not None:
-            if frame.reference_frame is not astropy.time.Time:
-                raise ValueError("Can not save reference_frame unless it's Time")
-
-        if frame.reference_position is not None:
-            node['reference_time'] = yamlutil.custom_tree_to_tagged_tree(
-                frame.reference_position, ctx)
-
-        if frame.unit is not None:
-            node['unit'] = yamlutil.custom_tree_to_tagged_tree(
-                list(frame.unit), ctx)
-
-        return node
 
     @classmethod
     def from_tree(cls, node, ctx):
+        node = cls._from_tree(node, ctx)
+        return TemporalFrame(**node)
 
-        name = node['name']
-        axes_order = node.get('axes_order', None)
-        axes_names = node.get('axes_names', None)
-        reference_frame = node.get('reference_frame', astropy.time.Time)
-        reference_time = node.get('reference_time', None)
-        unit = node.get('unit', None)
+    @classmethod
+    def to_tree(cls, frame, ctx):
+        return cls._to_tree(frame, ctx)
 
-        return TemporalFrame(axes_order, reference_time,
-                             reference_frame, unit, axes_names, name)
+    @classmethod
+    def assert_equal(cls, old, new):
+        assert old.name == new.name
+        assert old.axes_order == new.axes_order
+        assert old.axes_names == new.axes_names
+        assert old.unit == new.unit
+
+        assert old.reference_frame == new.reference_frame
 
 
 class StokesFrameType(FrameType):

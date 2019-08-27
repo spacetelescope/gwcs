@@ -115,7 +115,9 @@ def create_test_frames():
                 obsgeoloc=[1, 3, 2000] * u.pc,
                 obsgeovel=[2, 1, 8] * (u.m / u.s))),
 
-        cf.StokesFrame()
+        cf.StokesFrame(),
+
+        cf.TemporalFrame(time.Time("2011-01-01"))
     ]
 
     return frames
