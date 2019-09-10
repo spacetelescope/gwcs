@@ -113,7 +113,7 @@ class ReverseLookupTable(LookupTable):
             else:
                 isclose = np.isclose
 
-            inds = np.where(isclose(self.lookup_table, point, rtol=1e-15))[0]
+            inds = np.where(isclose(self.lookup_table[:,None], point, rtol=1e-15))[0]
 
         else:
             inds = np.where(self.lookup_table == point)[0]
