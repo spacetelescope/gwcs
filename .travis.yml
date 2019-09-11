@@ -37,6 +37,11 @@ matrix:
 
     include:
 
+        # Do a security check
+        - env:
+            - TEST_COMMAND="bandit -r gwcs -c .bandit.yaml"
+            - PIP_DEPENDENCIES="bandit"
+
         # Do a coverage test.
         - python: 3.6
           env:

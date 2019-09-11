@@ -56,8 +56,8 @@ class WCSType(GWCSType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert len(old.available_frames) == len(new.available_frames)
+        assert old.name == new.name # nosec
+        assert len(old.available_frames) == len(new.available_frames) # nosec
         for (old_frame, old_transform), (new_frame, new_transform) in zip(
                 old.pipeline, new.pipeline):
             helpers.assert_tree_match(old_frame, new_frame)
@@ -138,11 +138,11 @@ class FrameType(GWCSType):
     @classmethod
     def _assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert old.axes_order == new.axes_order
-        assert old.axes_names == new.axes_names
-        assert type(old.reference_frame) is type(new.reference_frame)
-        assert old.unit == new.unit
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec
+        assert old.axes_names == new.axes_names   # nosec
+        assert type(old.reference_frame) is type(new.reference_frame)  # nosec
+        assert old.unit == new.unit  # nosec
 
         if old.reference_frame is not None:
             for name in old.reference_frame.get_frame_attr_names().keys():
@@ -191,7 +191,7 @@ class CelestialFrameType(FrameType):
     def assert_equal(cls, old, new):
         cls._assert_equal(old, new)
 
-        assert old.reference_position == new.reference_position
+        assert old.reference_position == new.reference_position  # nosec
 
 
 class SpectralFrameType(FrameType):
@@ -242,7 +242,7 @@ class CompositeFrameType(FrameType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
+        assert old.name == new.name  # nosec
         for old_frame, new_frame in zip(old.frames, new.frames):
             helpers.assert_tree_match(old_frame, new_frame)
 
@@ -265,12 +265,12 @@ class TemporalFrameType(FrameType):
 
     @classmethod
     def assert_equal(cls, old, new):
-        assert old.name == new.name
-        assert old.axes_order == new.axes_order
-        assert old.axes_names == new.axes_names
-        assert old.unit == new.unit
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec
+        assert old.axes_names == new.axes_names  # nosec
+        assert old.unit == new.unit  # nosec
 
-        assert old.reference_frame == new.reference_frame
+        assert old.reference_frame == new.reference_frame  # nosec
 
 
 class StokesFrameType(FrameType):
@@ -296,5 +296,5 @@ class StokesFrameType(FrameType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert old.axes_order == new.axes_order
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec

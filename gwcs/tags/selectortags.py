@@ -91,15 +91,15 @@ class LabelMapperType(GWCSTransformType):
     @classmethod
     def assert_equal(cls, a, b):
         # TODO: If models become comparable themselves, remove this.
-        assert (a.__class__ == b.__class__)
+        assert (a.__class__ == b.__class__) # nosec
         if isinstance(a.mapper, dict):
-            assert(a.mapper.__class__ == b.mapper.__class__)
-            assert(all(np.in1d(list(a.mapper), list(b.mapper))))
+            assert(a.mapper.__class__ == b.mapper.__class__) # nosec
+            assert(all(np.in1d(list(a.mapper), list(b.mapper)))) # nosec
             for k in a.mapper:
-                assert (a.mapper[k].__class__ == b.mapper[k].__class__)
-                assert(all(a.mapper[k].parameters == b.mapper[k].parameters))
-            assert (a.inputs == b.inputs)
-            assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping)
+                assert (a.mapper[k].__class__ == b.mapper[k].__class__) # nosec
+                assert(all(a.mapper[k].parameters == b.mapper[k].parameters))  # nosec
+            assert (a.inputs == b.inputs) # nosec
+            assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping) # nosec
         else:
             assert_array_equal(a.mapper, b.mapper)
 
@@ -140,7 +140,7 @@ class RegionsSelectorType(GWCSTransformType):
     @classmethod
     def assert_equal(cls, a, b):
         # TODO: If models become comparable themselves, remove this.
-        assert (a.__class__ == b.__class__)
+        assert (a.__class__ == b.__class__) # nosec
         LabelMapperType.assert_equal(a.label_mapper, b.label_mapper)
         assert_array_equal(a.inputs, b.inputs)
         assert_array_equal(a.outputs, b.outputs)
