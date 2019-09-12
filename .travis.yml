@@ -101,6 +101,6 @@ after_success:
     # If coveralls.io is set up for this package, uncomment the line
     # below and replace "packagename" with the name of your package.
     # The coveragerc file may be customized as needed for your package.
-    - if [[ $TEST_COMMANS == *--cov* ]]; then
+    - if [[ $TEST_COMMAND == *--cov* ]]; then
           coveralls --rcfile='gwcs/tests/coveragerc';
       fi
