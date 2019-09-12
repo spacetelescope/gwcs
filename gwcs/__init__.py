@@ -59,15 +59,15 @@ information about contributing is in the github repository.
 
 import sys
 if sys.version_info < (3, 6):
-    raise ImportError("GWCS supports Python versions 3.6 and above.")
+    raise ImportError("GWCS supports Python versions 3.6 and above.")  # pragma: no cover
 
 from pkg_resources import get_distribution, DistributionNotFound
 
 try:
     __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+except DistributionNotFound:  # pragma: no cover
     # package is not installed
-    pass
+    pass  # pragma: no cover
 
 
 from .wcs import *   # noqa
