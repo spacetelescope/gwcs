@@ -61,6 +61,7 @@ DOCS_REQUIRE = [
     'sphinx-asdf',
 ]
 
+TESTS_REQUIRE = [
     'pytest',
     'pytest-doctestplus',
     'pytest-astropy',
@@ -71,6 +72,7 @@ setup(name=PACKAGENAME,
       use_scm_version=True,
       setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
+      long_description=LONG_DESCRIPTION,
       requires=['astropy', 'asdf'],
       install_requires=['astropy', 'numpy', 'asdf'],
       packages=find_packages(),
