@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from functools import partial
-
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose

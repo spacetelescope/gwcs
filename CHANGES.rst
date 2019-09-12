@@ -7,6 +7,8 @@ New Features
   ``world_axis_object_classes`` methods of the low level WCS API as specified by
   APE 14.
 
+- Removed astropy-helpers from package. [#249]
+
 API Changes
 ^^^^^^^^^^^
 
