@@ -27,11 +27,6 @@ AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'http://astropy.org')
 
-# Get the long description from the package's docstring
-__import__(PACKAGENAME)
-package = sys.modules[PACKAGENAME]
-LONG_DESCRIPTION = package.__doc__
-
 def get_package_data():
     # Installs the schema files
     schemas = []
@@ -72,7 +67,6 @@ setup(name=PACKAGENAME,
       use_scm_version=True,
       setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION,
       requires=['astropy', 'asdf'],
       install_requires=['astropy', 'numpy', 'asdf'],
       packages=find_packages(),
