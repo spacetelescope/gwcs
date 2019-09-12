@@ -29,7 +29,6 @@ env:
         #- ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
         - ASTROPY_GIT='git+https://github.com/astropy/astropy.git#egg=astropy
         - PIP_DEPENDENCIES=".[all]"
-        - PYTEST_VERSION=3.6
 
 matrix:
 
