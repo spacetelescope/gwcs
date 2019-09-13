@@ -63,9 +63,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
     def _remove_quantity_output(self, result, frame):
         if self.forward_transform.uses_quantity:
             if self.output_frame.naxes == 1:
-                return result.to_value(self.output_frame.unit)
-            else:
-                return [r.to_value(unit) for r, unit in zip(result, frame.unit)]
+                result = [result]
+
+            return [r.to_value(unit) for r, unit in zip(result, frame.unit)]
 
         return result
 
