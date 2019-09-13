@@ -67,6 +67,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
             else:
                 return [r.to_value(unit) for r, unit in zip(result, frame.unit)]
 
+        return result
+
     def _add_units_input(self, arrays, transform, frame):
         if transform.uses_quantity:
             return [u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit)]
