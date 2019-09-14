@@ -16,6 +16,9 @@ API Changes
 Bug Fixes
 ^^^^^^^^^
 
+- Ensure that ``world_to_pixel_values`` and ``pixel_to_world_values`` always
+  accept and return floats, even if the underlying transform uses units. [#248]
+
 0.11.0 (2019/07/26)
 -------------------
 
