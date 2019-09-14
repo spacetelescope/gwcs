@@ -85,20 +85,32 @@ def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
 def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     wcsobj = gwcs_2d_shift_scale_quantity
-    call_output = wcsobj(x*u.pix, y*u.pix, with_units=False)
-    api_output = wcsobj.pixel_to_world_values(x, y)
+
+    call_pixel = x*u.pix, y*u.pix
+    api_pixel = x, y
+
+    call_world = wcsobj(*call_pixel, with_units=False)
+    api_world = wcsobj.pixel_to_world_values(*api_pixel)
 
     # Check that call returns quantities and api dosen't
-    assert all(list(isinstance(a, u.Quantity) for a in call_output))
-    assert all(list(not isinstance(a, u.Quantity) for a in api_output))
+    assert all(list(isinstance(a, u.Quantity) for a in call_world))
+    assert all(list(not isinstance(a, u.Quantity) for a in api_world))
 
     # Check that they are the same (and implicitly in the same units)
-    assert_allclose(u.Quantity(call_output).value, api_output)
+    assert_allclose(u.Quantity(call_world).value, api_world)
+
+
+    new_call_pixel = wcsobj.invert(*call_world, with_units=False)
+    [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel)]
+
+    new_api_pixel = wcsobj.world_to_pixel_values(*api_world)
+    [assert_allclose(n, p) for n, p in zip(new_api_pixel, api_pixel)]
 
 
 @pytest.mark.parametrize(("x"), (x, xarr))
 def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     wcsobj = gwcs_1d_freq_quantity
+
     call_pixel = x * u.pix
     api_pixel = x
 
