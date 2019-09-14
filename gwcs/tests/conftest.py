@@ -17,8 +17,8 @@ detector_2d = cf.Frame2D(name='detector', axes_order=(0, 1))
 icrs_sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
                                    axes_order=(0, 1))
 
-freq_frame = cf.SpectralFrame(name='freq', unit=[u.Hz], axes_order=(2, ))
-wave_frame = cf.SpectralFrame(name='wave', unit=[u.m], axes_order=(2, ),
+freq_frame = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(2, ))
+wave_frame = cf.SpectralFrame(name='wave', unit=u.m, axes_order=(2, ),
                               axes_names=('lambda', ))
 
 # transforms
@@ -62,6 +62,14 @@ def gwcs_2d_shift_scale():
     m3 = m1 | m2
     pipe = [(detector_2d, m3), (icrs_sky_frame, None)]
     return wcs.WCS(pipe)
+
+
+@pytest.fixture
+def gwcs_1d_freq_quantity():
+
+    detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, unit=u.pix, axes_type="detector")
+    return wcs.WCS([(detector_1d, models.Multiply(1 * u.Hz / u.pix)), (freq_frame, None)])
+
 
 
 @pytest.fixture

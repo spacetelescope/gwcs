@@ -99,8 +99,8 @@ class FrameType(GWCSType):
             kwargs['unit'] = tuple(
                 yamlutil.tagged_tree_to_custom_tree(node['unit'], ctx))
 
-        if 'axis_physical_type' in node:
-            kwargs['axis_physical_type'] = tuple(node['axis_physical_type'])
+        if 'axis_physical_types' in node:
+            kwargs['axis_physical_types'] = tuple(node['axis_physical_types'])
 
         return kwargs
 

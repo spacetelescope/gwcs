@@ -60,6 +60,22 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         return tuple(unit.to_string(format='vounit') for unit in self.output_frame.unit)
 
+    def _remove_quantity_output(self, result, frame):
+        if self.forward_transform.uses_quantity:
+            if self.output_frame.naxes == 1:
+                result = [result]
+
+            return [r.to_value(unit) for r, unit in zip(result, frame.unit)]
+
+        return result
+
+    def _add_units_input(self, arrays, transform, frame):
+        if transform.uses_quantity:
+            return [u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit)]
+
+        return arrays
+
+
     def pixel_to_world_values(self, *pixel_arrays):
         """
         Convert pixel coordinates to world coordinates.
@@ -73,8 +89,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         order, where for an image, ``x`` is the horizontal coordinate and ``y``
         is the vertical coordinate.
         """
+        pixel_arrays = self._add_units_input(pixel_arrays, self.forward_transform, self.input_frame)
         result = self(*pixel_arrays, with_units=False)
-        return result
+
+        return self._remove_quantity_output(result, self.output_frame)
 
     def array_index_to_world_values(self, *index_arrays):
         """
@@ -84,8 +102,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         ``i`` is the row and ``j`` is the column (i.e. the opposite order to
         `~BaseLowLevelWCS.pixel_to_world_values`).
         """
-        result = self(*index_arrays[::-1], with_units=False)
-        return result
+        index_arrays = self._add_units_input(index_arrays[::-1], self.forward_transform, self.input_frame)
+
+        result = self(*index_arrays, with_units=False)
+
+        return self._remove_quantity_output(result, self.output_frame)
 
     def world_to_pixel_values(self, *world_arrays):
         """
@@ -99,8 +120,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
+        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
+
         result = self.invert(*world_arrays, with_units=False)
-        return result
+
+        return self._remove_quantity_output(result, self.input_frame)
 
     def world_to_array_index_values(self, *world_arrays):
         """
@@ -111,8 +135,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         `~BaseLowLevelWCS.pixel_to_world_values`). The indices should be
         returned as rounded integers.
         """
+        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
         result = self.invert(*world_arrays, with_units=False)[::-1]
-        return result  # astype(int)
+
+        return self._remove_quantity_output(result, self.input_frame)
 
     @property
     def array_shape(self):
