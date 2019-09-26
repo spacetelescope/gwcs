@@ -407,6 +407,16 @@ class SpectralFrame(CoordinateFrame):
             return coords[0] * self.unit[0]
 
 
+class RelativeTime:
+    """
+    A `astropy.time.Time` wrapper to initialize with a time delta.
+    """
+    def __new__(cls, time_delta, *, reference_time, unit):
+        if not hasattr(time_delta, 'unit'):
+            time_delta = time_delta * unit
+        return reference_time + time_delta
+
+
 class TemporalFrame(CoordinateFrame):
     """
     A coordinate frame for time axes.
@@ -446,10 +456,18 @@ class TemporalFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_classes(self):
-        return {'temporal': (
-            time.Time,
-            (),
-            self._attrs)}
+        if self.reference_frame.value:
+            comp = (RelativeTime,
+                    (),
+                    {'reference_time': self.reference_frame,
+                     'unit': self.unit[0]})
+        else:
+            comp = (
+                time.Time,
+                (),
+                self._attrs)
+
+        return {'temporal': comp}
 
     @property
     def _world_axis_object_components(self):
