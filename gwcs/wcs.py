@@ -2,7 +2,7 @@
 import functools
 import itertools
 import numpy as np
-from astropy.modeling.core import Model
+from astropy.modeling.core import Model, fix_inputs
 from astropy.modeling import utils as mutils
 
 from .api import GWCSAPIMixin
@@ -594,3 +594,33 @@ class WCS(GWCSAPIMixin):
                 result = np.squeeze(result)
 
         return result.T
+
+    def fix_inputs(self, fixed):
+        """
+        Return a new unique WCS by fixing inputs to constant values.
+
+        Parameters
+        ----------
+        fixed : dict
+            Keyword arguments with fixed values corresponding to `self.selector`.
+
+        Returns
+        -------
+        new_wcs : `WCS`
+            A new unique WCS corresponding to the values in `fixed`.
+
+        Examples
+        --------
+        >>> w = WCS(pipeline, selector=("spectral_order", inputs=("x", "y", "spectral_order"))
+        >>> new_wcs = w.set_inputs(spectral_order=2)
+        >>> new_wcs.inputs
+            ("x", "y")
+
+        """
+        keys = fixed.keys()
+        new_pipeline = []
+        step0 = self.pipeline[0]
+        new_transform = fix_inputs(step0[1], fixed)
+        new_pipeline.append((step0[0], new_transform))
+        new_pipeline.extend(self.pipeline[1:])
+        return self.__class__(new_pipeline)

@@ -461,7 +461,7 @@ class TemporalFrame(CoordinateFrame):
         else:
             dt = args[0]
 
-        if self.reference_frame.value:
+        if not isinstance(self.reference_frame.value, np.ndarray):
             if not hasattr(dt, 'unit'):
                 dt = dt * self.unit[0]
             return self.reference_frame + dt
@@ -471,7 +471,8 @@ class TemporalFrame(CoordinateFrame):
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):
-            if self.reference_frame.value:
+            ref_value = self.reference_frame.value
+            if not isinstance(ref_value, np.ndarray):
                 return (coords[0] - self.reference_frame).to(self.unit[0])
             else:
                 # If we can't convert to a quantity just drop the object out
