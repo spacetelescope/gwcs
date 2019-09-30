@@ -2,7 +2,7 @@
 import functools
 import itertools
 import numpy as np
-from astropy.modeling.core import Model, fix_inputs
+from astropy.modeling.core import Model # , fix_inputs
 from astropy.modeling import utils as mutils
 
 from .api import GWCSAPIMixin
@@ -10,6 +10,14 @@ from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
+
+
+HAS_FIX_INPUTS = True
+
+try:
+    from astropy.modeling.core import fix_inputs
+except ImportError:
+    HAS_FIX_INPUTS = False
 
 
 __all__ = ['WCS']
@@ -617,6 +625,8 @@ class WCS(GWCSAPIMixin):
             ("x", "y")
 
         """
+        if not HAS_FIX_INPUTS:
+            raise ImportError('"fix_inputs" needs astropy version >= 4.0.')
         keys = fixed.keys()
         new_pipeline = []
         step0 = self.pipeline[0]
