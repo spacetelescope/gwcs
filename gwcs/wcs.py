@@ -622,13 +622,12 @@ class WCS(GWCSAPIMixin):
         >>> w = WCS(pipeline, selector={"spectral_order": [1, 2]}) # doctest: +SKIP
         >>> new_wcs = w.set_inputs(spectral_order=2) # doctest: +SKIP
         >>> new_wcs.inputs # doctest: +SKIP
-
             ("x", "y")
 
         """
         if not HAS_FIX_INPUTS:
             raise ImportError('"fix_inputs" needs astropy version >= 4.0.')
-        keys = fixed.keys()
+
         new_pipeline = []
         step0 = self.pipeline[0]
         new_transform = fix_inputs(step0[1], fixed)
