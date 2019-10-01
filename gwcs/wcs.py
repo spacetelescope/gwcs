@@ -619,9 +619,10 @@ class WCS(GWCSAPIMixin):
 
         Examples
         --------
-        >>> w = WCS(pipeline, selector=("spectral_order", inputs=("x", "y", "spectral_order"))
-        >>> new_wcs = w.set_inputs(spectral_order=2)
-        >>> new_wcs.inputs
+        >>> w = WCS(pipeline, selector={"spectral_order": [1, 2]}) # doctest: +SKIP
+        >>> new_wcs = w.set_inputs(spectral_order=2) # doctest: +SKIP
+        >>> new_wcs.inputs # doctest: +SKIP
+
             ("x", "y")
 
         """
