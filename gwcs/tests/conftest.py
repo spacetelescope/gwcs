@@ -3,6 +3,8 @@ This file contains a set of pytest fixtures which are different gwcses for testi
 """
 import pytest
 
+import numpy as np
+
 import astropy.units as u
 from astropy import coordinates as coord
 from astropy.modeling import models
@@ -137,3 +139,45 @@ def gwcs_4d_identity_units():
                                         axes_names=("x", "y", "z", "s"), unit=(u.pix, u.pix, u.pix, u.pix))
 
     return wcs.WCS(forward_transform=identity, output_frame=frame, input_frame=detector_frame)
+
+
+@pytest.fixture
+def gwcs_simple_imaging_units():
+    shift_by_crpix = models.Shift(-2048*u.pix) & models.Shift(-1024*u.pix)
+    matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
+                       [5.0226382102765E-06 , -1.2644844123757E-05]])
+    rotation = models.AffineTransformation2D(matrix * u.deg,
+                                             translation=[0, 0] * u.deg)
+    rotation.input_units_equivalencies = {"x": u.pixel_scale(1*u.deg/u.pix),
+                                          "y": u.pixel_scale(1*u.deg/u.pix)}
+    rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix) * u.pix,
+                                                     translation=[0, 0] * u.pix)
+    rotation.inverse.input_units_equivalencies = {"x": u.pixel_scale(1*u.pix/u.deg),
+                                                  "y": u.pixel_scale(1*u.pix/u.deg)}
+    tan = models.Pix2Sky_TAN()
+    celestial_rotation =  models.RotateNative2Celestial(5.63056810618*u.deg,
+                                                        -72.05457184279*u.deg,
+                                                        180*u.deg)
+    det2sky = shift_by_crpix | rotation | tan | celestial_rotation
+    det2sky.name = "linear_transform"
+
+    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
+                                unit=(u.pix, u.pix))
+    sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs',
+                                  unit=(u.deg, u.deg))
+    pipeline = [(detector_frame, det2sky),
+                (sky_frame, None)
+                ]
+    return wcs.WCS(pipeline)
+
+
+@pytest.fixture
+def gwcs_3spectral_orders():
+    comp1 = cf.CompositeFrame([icrs_sky_frame, wave_frame])
+    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
+                                unit=(u.pix, u.pix))
+    m = model_2d_shift & model_1d_scale
+
+
+    return wcs.WCS([(detector_frame, m),
+                    (comp1, None)])

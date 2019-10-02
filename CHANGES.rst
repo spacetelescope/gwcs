@@ -9,6 +9,9 @@ New Features
 
 - Removed astropy-helpers from package. [#249]
 
+- Added a method ``fix_inputs`` which rturns an unique WCS from a compound
+  WCS by fixing inputs. [#254]
+
 API Changes
 ^^^^^^^^^^^
 
