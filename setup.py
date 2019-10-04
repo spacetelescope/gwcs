@@ -41,7 +41,7 @@ def get_package_data():
     return schemas
 
 schemas = get_package_data()
-PACKAGE_DATA ={'jwst':schemas}
+PACKAGE_DATA ={'gwcs':schemas}
 
 entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',
                  'bandit.formatters': 'bson = bandit_bson:formatter'}
