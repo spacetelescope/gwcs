@@ -12,6 +12,8 @@ New Features
 - Added a method ``fix_inputs`` which rturns an unique WCS from a compound
   WCS by fixing inputs. [#254]
 
+- Added two new transforms - ``ToDirectionCosines`` and ``FromDirectionCosines``. [#256]
+
 API Changes
 ^^^^^^^^^^^
 

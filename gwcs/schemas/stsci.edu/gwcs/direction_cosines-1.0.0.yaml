@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/direction_cosines-1.0.0"
+tag: "tag:stsci.edu:gwcs/direction_cosines-1.0.0"
+
+title: >
+  Convert coordinates between vector and direction cosine form.
+
+description: |
+  This schema is for transforms which convert to and from direction cosines.
+
+examples:
+  -
+    - Convert direction cosines to vectors.
+
+    - |
+
+        !<tag:stsci.edu:gwcs/direction_cosines-1.0.0>
+          transform_type: from_direction_cosines
+
+  -
+    - Convert vectors to directional cosines.
+
+    - |
+        !<tag:stsci.edu:gwcs/direction_cosines-1.0.0>
+          transform_type: to_direction_cosines
+
+allOf:
+  - $ref:  "tag:stsci.edu:asdf/transform/transform-1.1.0"
+  - object:
+    properties:
+      transform_type:
+        description: |
+          The type of transform/class to initialize.
+        type: string
+        enum: [to_direction_cosines, from_direction_cosines]
+    required: [transform_type]

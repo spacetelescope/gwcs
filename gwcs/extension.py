@@ -4,6 +4,7 @@ from asdf import util
 from asdf.extension import BuiltinExtension
 from .tags.wcs import *  # noqa
 from .tags.selectortags import *  # noqa
+from .tags.spectroscopy_models import * # noqa
 
 # Make sure that all tag implementations are imported by the time we create
 # the extension class so that _gwcs_types is populated correctly.
