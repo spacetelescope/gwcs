@@ -1,0 +1,23 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/snell3d-1.0.0"
+tag: "tag:stsci.edu:gwcs/snell3d-1.0.0"
+title: Snell Law in 3D space
+
+description: |
+  Snell Law in 3D - inputs and outputs are direction cosines.
+
+allOf:
+  - $ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"
+  - type: object
+    properties:
+      refraction_index:
+        description: |
+          The refraction index of the prism.
+        type: number
+    required: [refraction_index]
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 55a3ad1... add Snell3D and Sellmeier equations
