@@ -44,7 +44,7 @@ schemas = get_package_data()
 PACKAGE_DATA ={'gwcs':schemas}
 
 entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',
-                 'bandit.formatters': 'bson = bandit_bson:formatter'}
+                'bandit.formatters': 'bson = bandit_bson:formatter'}
 
 DOCS_REQUIRE = [
     #'matplotlib',
@@ -59,8 +59,8 @@ DOCS_REQUIRE = [
 TESTS_REQUIRE = [
     'pytest',
     'pytest-doctestplus',
-    'pytest-astropy',
-    'scipy'
+    #'pytest-astropy<=0.7',
+    'scipy',
 ]
 
 setup(name=PACKAGENAME,
