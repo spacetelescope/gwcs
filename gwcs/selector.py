@@ -174,8 +174,11 @@ class LabelMapperArray(_LabelMapper):
 
     """
 
-    inputs = ('x', 'y')
-    outputs = ('label',)
+    #inputs = ('x', 'y')
+    #outputs = ('label',)
+
+    n_inputs = 2
+    n_outputs = 1
 
     linear = False
     fittable = False
@@ -187,6 +190,8 @@ class LabelMapperArray(_LabelMapper):
         else:
             _no_label = ""
         super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
+        self.inputs = ('x', 'y')
+        self.outputs = ('label',)
 
     def evaluate(self, *args):
         args = tuple([_toindex(a) for a in args])
@@ -268,28 +273,42 @@ class LabelMapperDict(_LabelMapper):
         The name of this transform.
     """
     standard_broadcasting = False
-    outputs = ('labels',)
 
     linear = False
     fittable = False
+
+    n_outputs = 1
 
     def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
         self._atol = atol
         _no_label = 0
         self._inputs = inputs
+        self._n_inputs = len(inputs)
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping,
                                               name=name, **kwargs)
+        self.outputs = ('labels',)
 
+    @property
+    def n_inputs(self):
+        return self._n_inputs
+        
     @property
     def inputs(self):
         """
         The name(s) of the input variable(s) on which a model is evaluated.
         """
         return self._inputs
+
+    @inputs.setter
+    def inputs(self, val):
+        """
+        The name(s) of the input variable(s) on which a model is evaluated.
+        """
+        self._inputs = val
 
     @property
     def atol(self):
@@ -352,8 +371,9 @@ class LabelMapperRange(_LabelMapper):
         The name of this transform.
     """
     standard_broadcasting = False
-    outputs = ('labels',)
 
+    n_outputs = 1
+    
     linear = False
     fittable = False
 
@@ -361,6 +381,7 @@ class LabelMapperRange(_LabelMapper):
         if self._has_overlapping(np.array(list(mapper.keys()))):
             raise ValueError("Overlapping ranges of values are not supported.")
         self._inputs = inputs
+        self._n_inputs = len(inputs)
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
             raise TypeError("All transforms in mapper must have one output.")
@@ -368,6 +389,11 @@ class LabelMapperRange(_LabelMapper):
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping,
                                                name=name, **kwargs)
+        self.outputs = ('labels',)
+
+    @property
+    def n_inputs(self):
+        return self._n_inputs
 
     @property
     def inputs(self):
@@ -375,6 +401,13 @@ class LabelMapperRange(_LabelMapper):
         The name(s) of the input variable(s) on which a model is evaluated.
         """
         return self._inputs
+
+    @inputs.setter
+    def inputs(self, val):
+        """
+        The name(s) of the input variable(s) on which a model is evaluated.
+        """
+        self._inputs = val
 
     @staticmethod
     def _has_overlapping(ranges):
@@ -491,6 +524,8 @@ class RegionsSelector(Model):
                  name=None, **kwargs):
         self._inputs = inputs
         self._outputs = outputs
+        self._n_inputs = len(inputs)
+        self._n_outputs = len(outputs)
         self.label_mapper = label_mapper
         self._undefined_transform_value = undefined_transform_value
         self._selector = selector  # copy.deepcopy(selector)
@@ -587,7 +622,28 @@ class RegionsSelector(Model):
         """
         return self._inputs
 
+    @inputs.setter
+    def inputs(self, val):
+        """
+        The name(s) of the input variable(s) on which a model is evaluated.
+        """
+        self._inputs = val
 
+    @outputs.setter
+    def outputs(self, val):
+        """
+        The name(s) of the output variable(s).
+        """
+        self._outputs = val
+
+    @property
+    def n_inputs(self):
+        return self._n_inputs
+
+    @property
+    def n_outputs(self):
+        return self._n_outputs
+    
 class LabelMapper(_LabelMapper):
     """
     Maps inputs to regions. Returns the region labels corresponding to the inputs.
@@ -610,12 +666,13 @@ class LabelMapper(_LabelMapper):
         The name of this transform.
     """
 
-    outputs = ('label',)
+    n_outputs = 1
 
     def __init__(self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs):
         self._no_label = no_label
         self._inputs = inputs
-        self.outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
+        self._n_inputs = len(inputs)
+        self._outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
         if isinstance(inputs_mapping, tuple):
             inputs_mapping = astmodels.Mapping(inputs_mapping)
         elif inputs_mapping is not None and not isinstance(inputs_mapping, astmodels.Mapping):
@@ -626,13 +683,25 @@ class LabelMapper(_LabelMapper):
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(_LabelMapper, self).__init__(name=name, **kwargs)
-
+        outputs = ('label',)
+        
     @property
     def inputs(self):
         """
         The name(s) of the input variable(s) on which a model is evaluated.
         """
         return self._inputs
+
+    @inputs.setter
+    def inputs(self, val):
+        """
+        The name(s) of the input variable(s) on which a model is evaluated.
+        """
+        self._inputs = val
+
+    @property
+    def n_inputs(self):
+        return self._n_inputs
 
     @property
     def mapper(self):
