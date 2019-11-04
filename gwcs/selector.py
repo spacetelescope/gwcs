@@ -680,7 +680,7 @@ class LabelMapper(_LabelMapper):
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(_LabelMapper, self).__init__(name=name, **kwargs)
-        outputs = ('label',)
+        self.outputs = ('label',)
         
     @property
     def inputs(self):
