@@ -174,9 +174,6 @@ class LabelMapperArray(_LabelMapper):
 
     """
 
-    #inputs = ('x', 'y')
-    #outputs = ('label',)
-
     n_inputs = 2
     n_outputs = 1
 
