@@ -407,16 +407,6 @@ class SpectralFrame(CoordinateFrame):
             return coords[0] * self.unit[0]
 
 
-class RelativeTime:
-    """
-    A `astropy.time.Time` wrapper to initialize with a time delta.
-    """
-    def __new__(cls, time_delta, *, reference_time, unit):
-        if not hasattr(time_delta, 'unit'):
-            time_delta = time_delta * unit
-        return reference_time + time_delta
-
-
 class TemporalFrame(CoordinateFrame):
     """
     A coordinate frame for time axes.
@@ -456,16 +446,11 @@ class TemporalFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_classes(self):
-        if self.reference_frame.value:
-            comp = (RelativeTime,
-                    (),
-                    {'reference_time': self.reference_frame,
-                     'unit': self.unit[0]})
-        else:
-            comp = (
-                time.Time,
-                (),
-                self._attrs)
+        comp = (
+            time.Time,
+            (),
+            {'unit': self.unit[0], **self._attrs},
+            self._convert_to_time)
 
         return {'temporal': comp}
 
@@ -479,13 +464,17 @@ class TemporalFrame(CoordinateFrame):
         else:
             dt = args[0]
 
+        return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
+
+    def _convert_to_time(self, dt, *, unit, **kwargs):
         if not isinstance(self.reference_frame.value, np.ndarray):
             if not hasattr(dt, 'unit'):
-                dt = dt * self.unit[0]
+                dt = dt * unit
             return self.reference_frame + dt
 
         else:
-            return time.Time(dt, **self._attrs)
+            return time.Time(dt, **kwargs)
+
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):
