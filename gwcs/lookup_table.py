@@ -28,11 +28,9 @@ class LookupTable(Model):
 
     linear = False
     fittable = False
-    standard_broadcasting = False
-    separable = True
 
-    inputs = ('x',)
-    outputs = ('y',)
+    n_inputs = 1
+    n_outputs = 1
 
     @property
     def return_units(self):
@@ -75,11 +73,9 @@ class ReverseLookupTable(LookupTable):
 
     linear = False
     fittable = False
-    standard_broadcasting = False
-    separable = True
 
-    inputs = ('x',)
-    outputs = ('y',)
+    n_inputs = 1
+    n_outputs = 1
 
     _inverse = None
 
@@ -89,7 +85,8 @@ class ReverseLookupTable(LookupTable):
 
     @property
     def input_units(self):
-        return {inp: self.lookup_table.unit for inp in self.inputs}
+        if isinstance(self.lookup_table, u.Quantity):
+            return {inp: self.lookup_table.unit for inp in self.inputs}
 
     def prepare_inputs(self, *inputs, model_set_axis=None, equivalencies=None,
                        **kwargs):
