@@ -615,11 +615,28 @@ class StokesProfile(str):
         return {v: k for k, v in cls.profiles.items()}
 
     @classmethod
-    def from_index(cls, index):
-        if index not in cls.profiles.values():
-            raise ValueError(f"The profile index must be one of {cls.profiles.values()} not {index}")
+    def from_index(cls, *indexes):
+        out = []
 
-        return cls(cls.index_profiles()[index])
+        if len(indexes) == 1 and isiterable(indexes[0]):
+            indexes = indexes[0]
+
+        for index in indexes:
+            if np.isnan(index):
+                out.append(index)
+                continue
+
+            index = int(index)
+
+            if index not in cls.profiles.values():
+                raise ValueError(f"The profile index must be one of {cls.profiles.values()} not {index}")
+
+            out.append(cls(cls.index_profiles()[index]))
+
+        if len(out) == 1:
+            return out[0]
+        else:
+            return out
 
     def __new__(cls, content):
         if content not in cls.profiles.keys():
@@ -649,7 +666,8 @@ class StokesFrame(CoordinateFrame):
         return {'stokes': (
             StokesProfile,
             (),
-            {})}
+            {},
+            StokesProfile.from_index)}
 
     @property
     def _world_axis_object_components(self):
@@ -660,7 +678,8 @@ class StokesFrame(CoordinateFrame):
             arg = args[0].value
         else:
             arg = args[0]
-        return StokesProfile.from_index(int(arg))
+
+        return StokesProfile.from_index(arg)
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], str):
