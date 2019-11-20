@@ -256,14 +256,36 @@ def test_stokes_wrapper(gwcs_stokes_lookup):
 
     out = hlvl.pixel_to_world(pixel_input*u.pix)
 
-    assert out == ['I', 'Q', 'U', 'V']
+    assert list(out) == ['I', 'Q', 'U', 'V']
 
+
+    pixel_input = [[0, 1, 2, 3],
+                   [0, 1, 2, 3],
+                   [0, 1, 2, 3],
+                   [0, 1, 2, 3],]
+
+    out = hlvl.pixel_to_world(pixel_input*u.pix)
+
+    expected = np.array([['I', 'Q', 'U', 'V'],
+                         ['I', 'Q', 'U', 'V'],
+                         ['I', 'Q', 'U', 'V'],
+                         ['I', 'Q', 'U', 'V']], dtype=object)
+
+    assert (out == expected).all()
 
     pixel_input = [-1, 4]
 
     out = hlvl.pixel_to_world(pixel_input*u.pix)
 
     assert np.isnan(out).all()
+
+    pixel_input = [[-1, 4],
+                   [1, 2]]
+
+    out = hlvl.pixel_to_world(pixel_input*u.pix)
+
+    assert np.isnan(np.array(out[0], dtype=float)).all()
+    assert (out[1] == np.array(['Q', 'U'], dtype=object)).all()
 
 
     out = hlvl.pixel_to_world(1*u.pix)
