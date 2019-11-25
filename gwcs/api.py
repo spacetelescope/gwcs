@@ -316,3 +316,23 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         result = self.invert(*world_objects, with_units=True)[::-1]
         return tuple([utils._toindex(r) for r in result])
+
+    @property
+    def pixel_axis_names(self):
+        """
+        An iterable of strings describing the name for each pixel axis.
+        """
+        if self.input_frame is not None:
+            return self.input_frame.axes_names
+        else:
+            return tuple([''] * self.pixel_n_dim)
+
+    @property
+    def world_axis_names(self):
+        """
+        An iterable of strings describing the name for each world axis.
+        """
+        if self.output_frame is not None:
+            return self.output_frame.axes_names
+        else:
+            return tuple([''] * self.world_n_dim)
