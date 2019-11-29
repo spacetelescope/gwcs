@@ -115,10 +115,8 @@ class CoordinateFrame:
                     ph_type.append("custom:{}".format(axt))
                 else:
                     ph_type.append(axt)
-            validate_physical_types(ph_type)
-            return tuple(ph_type)
 
-        if isinstance(self, CelestialFrame):
+        elif isinstance(self, CelestialFrame):
             if isinstance(self.reference_frame, coord.Galactic):
                 ph_type = "pos.galactic.lon", "pos.galactic.lat"
             elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
@@ -131,6 +129,7 @@ class CoordinateFrame:
                 ph_type = "pos.ecliptic.lon", "pos.ecliptic.lat"
             else:
                 ph_type = tuple("custom:{}".format(t) for t in self.axes_names)
+
         elif isinstance(self, SpectralFrame):
             if self.unit[0].physical_type == "frequency":
                 ph_type = ("em.freq",)
@@ -146,8 +145,10 @@ class CoordinateFrame:
                                 "'spect.dopplerVeloc.radio'.")
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
+
         elif isinstance(self, TemporalFrame):
             ph_type = ("time",)
+
         elif isinstance(self, Frame2D):
             if all(self.axes_names):
                 ph_type = self.axes_names
@@ -156,8 +157,9 @@ class CoordinateFrame:
             ph_type = tuple("custom:{}".format(t) for t in ph_type)
         else:
             ph_type = tuple("custom:{}".format(t) for t in self.axes_type)
+
         validate_physical_types(ph_type)
-        return ph_type
+        return tuple(ph_type)
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
@@ -663,7 +665,8 @@ class StokesFrame(CoordinateFrame):
 
     def __init__(self, axes_order=(0,), name=None):
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=("stokes",), unit=u.one)
+                                          axes_names=("stokes",), unit=u.one,
+                                          axis_physical_types="phys.polarization.stokes")
 
     @property
     def _world_axis_object_classes(self):
