@@ -28,13 +28,16 @@ def wcs_ndim_types_units(request):
     """
     ndim = {'gwcs_2d_spatial_shift': (2, 2),
             'gwcs_1d_freq': (1, 1),
-            'gwcs_3d_spatial_wave': (3, 3)}
+            'gwcs_3d_spatial_wave': (3, 3),
+            'gwcs_4d_identity_units': (4, 4)}
     types = {'gwcs_2d_spatial_shift': ("pos.eq.ra", "pos.eq.dec"),
              'gwcs_1d_freq': ("em.freq",),
-             'gwcs_3d_spatial_wave': ("pos.eq.ra", "pos.eq.dec", "em.wl")}
+             'gwcs_3d_spatial_wave': ("pos.eq.ra", "pos.eq.dec", "em.wl"),
+             'gwcs_4d_identity_units': ("pos.eq.ra", "pos.eq.dec", "em.wl", "time")}
     units = {'gwcs_2d_spatial_shift': ("deg", "deg"),
              'gwcs_1d_freq': ("Hz",),
-             'gwcs_3d_spatial_wave': ("deg", "deg", "m")}
+             'gwcs_3d_spatial_wave': ("deg", "deg", "m"),
+             'gwcs_4d_identity_units': ("deg", "deg", "nm", "s")}
 
     return (request.getfixturevalue(request.param),
             ndim[request.param],
@@ -46,7 +49,7 @@ def wcs_ndim_types_units(request):
 x, y = 1, 2
 xarr, yarr = np.ones((3, 4)), np.ones((3, 4)) + 1
 
-fixture_names = ['gwcs_2d_spatial_shift', 'gwcs_1d_freq', 'gwcs_3d_spatial_wave']
+fixture_names = ['gwcs_2d_spatial_shift', 'gwcs_1d_freq', 'gwcs_3d_spatial_wave', 'gwcs_4d_identity_units']
 fixture_wcs_ndim_types_units = pytest.mark.parametrize("wcs_ndim_types_units", fixture_names, indirect=True)
 all_wcses_names = fixture_names + ['gwcs_3d_identity_units']
 fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=True)
@@ -179,7 +182,8 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     temporal = waoc['temporal']
     assert temporal[0] is time.Time
     assert temporal[1] == tuple()
-    assert temporal[2] == {'format': 'isot', 'scale': 'utc', 'precision': 3,
+    assert temporal[2] == {'unit': u.s,
+                           'format': 'isot', 'scale': 'utc', 'precision': 3,
                            'in_subfmt': '*', 'out_subfmt': '*', 'location': None}
 
 def _compare_frame_output(wc1, wc2):
@@ -191,6 +195,9 @@ def _compare_frame_output(wc1, wc2):
 
     elif isinstance(wc1, u.Quantity):
         assert u.allclose(wc1, wc2)
+
+    elif isinstance(wc1, time.Time):
+        assert u.allclose((wc1 - wc2).to(u.s), 0*u.s)
 
     else:
         assert False, f"Can't Compare {type(wc1)}"

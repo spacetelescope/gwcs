@@ -446,10 +446,13 @@ class TemporalFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_classes(self):
-        return {'temporal': (
+        comp = (
             time.Time,
             (),
-            self._attrs)}
+            {'unit': self.unit[0], **self._attrs},
+            self._convert_to_time)
+
+        return {'temporal': comp}
 
     @property
     def _world_axis_object_components(self):
@@ -461,13 +464,17 @@ class TemporalFrame(CoordinateFrame):
         else:
             dt = args[0]
 
+        return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
+
+    def _convert_to_time(self, dt, *, unit, **kwargs):
         if not isinstance(self.reference_frame.value, np.ndarray):
             if not hasattr(dt, 'unit'):
-                dt = dt * self.unit[0]
+                dt = dt * unit
             return self.reference_frame + dt
 
         else:
-            return time.Time(dt, **self._attrs)
+            return time.Time(dt, **kwargs)
+
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):

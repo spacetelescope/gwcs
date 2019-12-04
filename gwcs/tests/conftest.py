@@ -124,7 +124,7 @@ def gwcs_4d_identity_units():
     A simple 1-1 gwcs that converts from pixels to arcseconds
     """
     identity = (models.Multiply(1*u.arcsec/u.pixel) & models.Multiply(1*u.arcsec/u.pixel) &
-                models.Multiply(1*u.nm/u.pixel) & models.Multiply(1*u.nm/u.pixel))
+                models.Multiply(1*u.nm/u.pixel) & models.Multiply(1*u.s/u.pixel))
     sky_frame = cf.CelestialFrame(axes_order=(0, 1), name='icrs',
                                   reference_frame=coord.ICRS())
     wave_frame = cf.SpectralFrame(axes_order=(2, ), unit=u.nm)
