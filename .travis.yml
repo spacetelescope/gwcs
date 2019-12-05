@@ -17,7 +17,7 @@ addons:
 python:
   - 3.6
   - 3.7
-  
+
 env:
     global:
         # The following versions are the 'default' for tests, unless
@@ -52,7 +52,7 @@ matrix:
         # may run for a long time
         - python: 3.6
 
-          env: PIP_DEPENDENCIES='.[docs]'
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[docs]"
                TEST_COMMAND="make --directory=docs html"
 
         - python: 3.6
@@ -71,7 +71,7 @@ matrix:
         - python: 3.6
           env:
             - TEST_COMMAND="flake8 gwcs --count --select=F, E101, E111, E112, E113, E401, E402, E711, E722, E30 --max-line-length=110"
-            - PIP_DEPENDENCIES="flake8" 
+            - PIP_DEPENDENCIES="flake8"
 
         - python: 3.6
           env:
