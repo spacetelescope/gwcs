@@ -178,6 +178,14 @@ def gwcs_3spectral_orders():
                                 unit=(u.pix, u.pix))
     m = model_2d_shift & model_1d_scale
 
-
     return wcs.WCS([(detector_frame, m),
                     (comp1, None)])
+
+
+@pytest.fixture
+def gwcs_with_frames_strings():
+    transform = models.Shift(1) & models.Shift(1) & models.Polynomial2D(1)
+    pipe = [('detector', transform),
+            ('world', None)
+           ]
+    return wcs.WCS(pipe)

@@ -381,3 +381,9 @@ def test_world_to_array_index_values(gwcs_2d_spatial_shift, sky_ra_dec):
 
     assert_allclose(wcsobj.world_to_array_index_values(sky),
                     wcsobj.invert(ra, dec, with_units=False)[::-1])
+
+
+def test_ndim_str_frames(gwcs_with_frames_strings):
+    wcsobj = gwcs_with_frames_strings
+    assert wcsobj.pixel_n_dim == 4
+    assert wcsobj.world_n_dim == 3
