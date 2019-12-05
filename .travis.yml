@@ -52,7 +52,8 @@ matrix:
         # may run for a long time
         - python: 3.6
 
-          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[docs]"
+          env: PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT sphinx sphinx-automodapi sphinx-rtd-theme stsci-rtd-theme sphinx-astropy -sphinx-asdf"
+               # PIP_DEPENDENCIES=".[docs]""
                TEST_COMMAND="make --directory=docs html"
 
         - python: 3.6
