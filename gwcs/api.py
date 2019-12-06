@@ -27,6 +27,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         The number of axes in the pixel coordinate system.
         """
+        if self.input_frame is None:
+            return self.forward_transform.n_inputs
         return self.input_frame.naxes
 
     @property
@@ -34,6 +36,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         The number of axes in the world coordinate system.
         """
+        if self.output_frame is None:
+            return self.forward_transform.n_outputs
         return self.output_frame.naxes
 
     @property
