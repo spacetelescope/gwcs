@@ -610,13 +610,6 @@ class StokesProfile(str):
     }
 
     @classmethod
-    def index_profiles(cls):
-        """
-        An index to profile mapping.
-        """
-        return {v: k for k, v in cls.profiles.items()}
-
-    @classmethod
     def from_index(cls, indexes):
         """
         Construct a StokesProfile object from a numerical index.
@@ -637,7 +630,7 @@ class StokesProfile(str):
             out[indexes == index] = profile
 
         if out.size == 1 and not nans:
-            return StokesProfile(out)
+            return StokesProfile(out.item())
         elif nans.all():
             return np.array(out, dtype=float)
         else:

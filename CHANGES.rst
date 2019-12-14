@@ -19,6 +19,9 @@ New Features
 - ``gwcs.WCS`` now supports the new ``world_axis_names`` and
   ``pixel_axis_names`` properties on ``LowLevelWCS`` objects. [#260]
 
+- Update the ``StokesFrame`` to work for arrays of coordinates and integrate
+  with APE 14. [#258]
+
 API Changes
 ^^^^^^^^^^^
 

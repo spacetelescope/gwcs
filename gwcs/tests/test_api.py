@@ -226,7 +226,7 @@ def _compare_frame_output(wc1, wc2):
 
 @fixture_all_wcses
 def test_high_level_wrapper(wcsobj, request):
-    if request.node.callspec.params['wcsobj'] == 'gwcs_4d_identity_units':
+    if request.node.callspec.params['wcsobj'] in ('gwcs_4d_identity_units', 'gwcs_stokes_lookup'):
         pytest.importorskip("astropy", minversion="4.0dev0")
 
     hlvl = HighLevelWCSWrapper(wcsobj)
@@ -250,6 +250,8 @@ def test_high_level_wrapper(wcsobj, request):
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
+    pytest.importorskip("astropy", minversion="4.0dev0")
+
     hlvl = HighLevelWCSWrapper(gwcs_stokes_lookup)
 
     pixel_input = [0, 1, 2, 3]
