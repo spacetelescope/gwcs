@@ -14,6 +14,8 @@ New Features
 
 - Added two new transforms - ``ToDirectionCosines`` and ``FromDirectionCosines``. [#256]
 
+- Added new transforms ``WavelengthFromGratingEquation``, ``AnglesFromGratingEquation3D``. [#259]
+
 API Changes
 ^^^^^^^^^^^
 
