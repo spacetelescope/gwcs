@@ -46,7 +46,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         arbitrary string.  Alternatively, if the physical type is
         unknown/undefined, an element can be `None`.
         """
-        return list(self.output_frame.axis_physical_types)
+        return self.output_frame.axis_physical_types
 
     @property
     def world_axis_units(self):
@@ -58,7 +58,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         specification document, units that do not follow this standard are still
         allowed, but just not recommended).
         """
-        return [unit.to_string(format='vounit') for unit in self.output_frame.unit]
+        return tuple(unit.to_string(format='vounit') for unit in self.output_frame.unit)
 
     def _remove_quantity_output(self, result, frame):
         if self.forward_transform.uses_quantity:
