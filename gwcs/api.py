@@ -69,13 +69,16 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
             if self.output_frame.naxes == 1:
                 result = [result]
 
-            return [r.to_value(unit) for r, unit in zip(result, frame.unit)]
+            result = tuple(r.to_value(unit) for r, unit in zip(result, frame.unit))
 
+        # If we only have one output axes, we shouldn't return a tuple.
+        if self.output_frame.naxes == 1 and isinstance(result, tuple):
+            return result[0]
         return result
 
     def _add_units_input(self, arrays, transform, frame):
         if transform.uses_quantity:
-            return [u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit)]
+            return tuple(u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit))
 
         return arrays
 
@@ -140,7 +143,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         returned as rounded integers.
         """
         world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
-        result = self.invert(*world_arrays, with_units=False)[::-1]
+        result = self.invert(*world_arrays, with_units=False)
+        if self.pixel_n_dim != 1:
+            result = result[::-1]
 
         return self._remove_quantity_output(result, self.input_frame)
 
@@ -174,7 +179,25 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         WCS that includes fitted distortions. This is an optional property,
         and it should return `None` if a shape is not known or relevant.
         """
-        return self.bounding_box
+        bounding_box = self.bounding_box
+        if bounding_box is None:
+            return bounding_box
+
+        if self.pixel_n_dim == 1 and len(bounding_box) == 2:
+            bounding_box = (bounding_box,)
+
+        # Iterate over the bounding box and convert from quantity if required.
+        bounding_box = list(bounding_box)
+        for i, bb_axes in enumerate(bounding_box):
+            bb = []
+            for lim in bb_axes:
+                if isinstance(lim, u.Quantity):
+                    lim = lim.value
+                bb.append(lim)
+
+            bounding_box[i] = tuple(bb)
+
+        return tuple(bounding_box)
 
     @property
     def pixel_shape(self):

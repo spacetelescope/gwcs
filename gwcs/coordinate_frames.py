@@ -305,8 +305,8 @@ class CelestialFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_components(self):
-        return [('celestial', 0, 'spherical.lon.degree'),
-                ('celestial', 1, 'spherical.lat.degree')]
+        return [('celestial', 0, 'spherical.lon'),
+                ('celestial', 1, 'spherical.lat')]
 
     def coordinates(self, *args):
         """

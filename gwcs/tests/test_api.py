@@ -55,6 +55,18 @@ all_wcses_names = fixture_names + ['gwcs_3d_identity_units']
 fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=True)
 
 
+@fixture_all_wcses
+def test_lowlevel_types(wcsobj):
+    pytest.importorskip("typeguard")
+    try:
+        # Skip this on older versions of astropy where it dosen't exist.
+        from astropy.wcs.wcsapi.tests.utils import validate_low_level_wcs_types
+    except ImportError:
+        return
+
+    validate_low_level_wcs_types(wcsobj)
+
+
 @fixture_wcs_ndim_types_units
 def test_pixel_n_dim(wcs_ndim_types_units):
     wcsobj, ndims, *_ = wcs_ndim_types_units
@@ -125,13 +137,13 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     assert not isinstance(api_world, u.Quantity)
 
     # Check that they are the same (and implicitly in the same units)
-    assert_allclose(u.Quantity(call_world).value, api_world[0])
+    assert_allclose(u.Quantity(call_world).value, api_world)
 
 
     new_call_pixel = wcsobj.invert(call_world, with_units=False)
     assert_allclose(new_call_pixel, call_pixel)
 
-    new_api_pixel = wcsobj.world_to_pixel_values(*api_world)[0]
+    new_api_pixel = wcsobj.world_to_pixel_values(api_world)
     assert_allclose(new_api_pixel, api_pixel)
 
 
@@ -143,8 +155,8 @@ def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
 
 def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
     waoc = gwcs_2d_spatial_shift.world_axis_object_components
-    assert waoc == [('celestial', 0, 'spherical.lon.degree'),
-                    ('celestial', 1, 'spherical.lat.degree')]
+    assert waoc == [('celestial', 0, 'spherical.lon'),
+                    ('celestial', 1, 'spherical.lat')]
 
 
 def test_world_axis_object_components_1d(gwcs_1d_freq):
@@ -154,8 +166,8 @@ def test_world_axis_object_components_1d(gwcs_1d_freq):
 
 def test_world_axis_object_components_4d(gwcs_4d_identity_units):
     waoc = gwcs_4d_identity_units.world_axis_object_components
-    assert waoc == [('celestial', 0, 'spherical.lon.degree'),
-                    ('celestial', 1, 'spherical.lat.degree'),
+    assert waoc == [('celestial', 0, 'spherical.lon'),
+                    ('celestial', 1, 'spherical.lat'),
                     ('spectral', 0, 'value'),
                     ('temporal', 0, 'value')]
 
