@@ -16,6 +16,9 @@ New Features
 
 - Added new transforms ``WavelengthFromGratingEquation``, ``AnglesFromGratingEquation3D``. [#259]
 
+- ``gwcs.WCS`` now supports the new ``world_axis_names`` and
+  ``pixel_axis_names`` properties on ``LowLevelWCS`` objects. [#260]
+
 API Changes
 ^^^^^^^^^^^
 
