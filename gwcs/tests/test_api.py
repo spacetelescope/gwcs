@@ -67,6 +67,12 @@ def test_lowlevel_types(wcsobj):
     validate_low_level_wcs_types(wcsobj)
 
 
+@fixture_all_wcses
+def test_names(wcsobj):
+    assert wcsobj.world_axis_names == wcsobj.output_frame.axes_names
+    assert wcsobj.pixel_axis_names == wcsobj.input_frame.axes_names
+
+
 @fixture_wcs_ndim_types_units
 def test_pixel_n_dim(wcs_ndim_types_units):
     wcsobj, ndims, *_ = wcs_ndim_types_units
