@@ -15,8 +15,8 @@ addons:
             - dvipng
 
 python:
-  - 3.6
   - 3.7
+  - 3.8
 
 env:
     global:
@@ -43,14 +43,14 @@ matrix:
             - PIP_DEPENDENCIES="bandit"
 
         # Do a coverage test.
-        - python: 3.6
+        - python: 3.7
           env:
             - TEST_COMMAND='pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs'
             - PIP_DEPENDENCIES='.[test] coveralls pytest-cov'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
-        - python: 3.6
+        - python: 3.7
 
           env: #PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT sphinx sphinx-automodapi sphinx-rtd-theme stsci-rtd-theme sphinx-astropy -sphinx-asdf"
                PIP_DEPENDENCIES=".[docs]"
@@ -63,6 +63,12 @@ matrix:
             - TEST_COMMAND="pytest"
 
         - python: 3.7
+          env:
+            - NUMPY_VERSION=1.17
+            - PIP_DEPENDENCIES='.[test]'
+            - TEST_COMMAND="pytest"
+
+        - python: 3.8
           env:
             - NUMPY_VERSION=1.17
             - PIP_DEPENDENCIES='.[test]'
