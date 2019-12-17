@@ -70,7 +70,7 @@ matrix:
 
         - python: 3.8
           env:
-            - NUMPY_VERSION=1.18
+            - NUMPY_VERSION=1.17
             - PIP_DEPENDENCIES='.[test]'
             - TEST_COMMAND="pytest"
 
