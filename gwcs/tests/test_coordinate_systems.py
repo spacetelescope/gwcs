@@ -250,7 +250,7 @@ def test_stokes_frame():
 
     assert sf.coordinates(0) == 'I'
     assert sf.coordinates(0 * u.pix) == 'I'
-    assert sf.coordinate_to_quantity('I') == 0 * u.pix
+    assert sf.coordinate_to_quantity('I') == 0 * u.one
     assert sf.coordinate_to_quantity(0) == 0
 
 

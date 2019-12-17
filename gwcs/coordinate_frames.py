@@ -115,10 +115,8 @@ class CoordinateFrame:
                     ph_type.append("custom:{}".format(axt))
                 else:
                     ph_type.append(axt)
-            validate_physical_types(ph_type)
-            return tuple(ph_type)
 
-        if isinstance(self, CelestialFrame):
+        elif isinstance(self, CelestialFrame):
             if isinstance(self.reference_frame, coord.Galactic):
                 ph_type = "pos.galactic.lon", "pos.galactic.lat"
             elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
@@ -131,6 +129,7 @@ class CoordinateFrame:
                 ph_type = "pos.ecliptic.lon", "pos.ecliptic.lat"
             else:
                 ph_type = tuple("custom:{}".format(t) for t in self.axes_names)
+
         elif isinstance(self, SpectralFrame):
             if self.unit[0].physical_type == "frequency":
                 ph_type = ("em.freq",)
@@ -146,8 +145,10 @@ class CoordinateFrame:
                                 "'spect.dopplerVeloc.radio'.")
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
+
         elif isinstance(self, TemporalFrame):
             ph_type = ("time",)
+
         elif isinstance(self, Frame2D):
             if all(self.axes_names):
                 ph_type = self.axes_names
@@ -156,8 +157,9 @@ class CoordinateFrame:
             ph_type = tuple("custom:{}".format(t) for t in ph_type)
         else:
             ph_type = tuple("custom:{}".format(t) for t in self.axes_type)
+
         validate_physical_types(ph_type)
-        return ph_type
+        return tuple(ph_type)
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
@@ -608,20 +610,34 @@ class StokesProfile(str):
     }
 
     @classmethod
-    def index_profiles(cls):
+    def from_index(cls, indexes):
         """
-        An index to profile mapping.
+        Construct a StokesProfile object from a numerical index.
+
+        Parameters
+        ----------
+        indexes : `int`, `numpy.ndarray`
+            An index or array of indices to construct StokesProfile objects from.
         """
-        return {v: k for k, v in cls.profiles.items()}
 
-    @classmethod
-    def from_index(cls, index):
-        if index not in cls.profiles.values():
-            raise ValueError(f"The profile index must be one of {cls.profiles.values()} not {index}")
+        nans = np.isnan(indexes)
+        indexes = np.asanyarray(indexes, dtype=int)
+        out = np.empty_like(indexes, dtype=object)
 
-        return cls(cls.index_profiles()[index])
+        out[nans] = np.nan
+
+        for profile, index in cls.profiles.items():
+            out[indexes == index] = profile
+
+        if out.size == 1 and not nans:
+            return StokesProfile(out.item())
+        elif nans.all():
+            return np.array(out, dtype=float)
+        else:
+            return out
 
     def __new__(cls, content):
+        content = str(content)
         if content not in cls.profiles.keys():
             raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
         return str.__new__(cls, content)
@@ -642,30 +658,33 @@ class StokesFrame(CoordinateFrame):
 
     def __init__(self, axes_order=(0,), name=None):
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=("stokes",), unit=u.one)
+                                          axes_names=("stokes",), unit=u.one,
+                                          axis_physical_types="phys.polarization.stokes")
 
     @property
     def _world_axis_object_classes(self):
         return {'stokes': (
             StokesProfile,
             (),
-            {})}
+            {},
+            StokesProfile.from_index)}
 
     @property
     def _world_axis_object_components(self):
         return [('stokes', 0, 'value')]
 
     def coordinates(self, *args):
-        if hasattr(args[0], 'value'):
+        if isinstance(args[0], u.Quantity):
             arg = args[0].value
         else:
             arg = args[0]
-        return StokesProfile.from_index(int(arg))
+
+        return StokesProfile.from_index(arg)
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], str):
             if coords[0] in StokesProfile.profiles.keys():
-                return StokesProfile.profiles[coords[0]] * u.pix
+                return StokesProfile.profiles[coords[0]] * u.one
         else:
             return coords[0]
 

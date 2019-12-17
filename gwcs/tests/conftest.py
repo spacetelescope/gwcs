@@ -172,6 +172,20 @@ def gwcs_simple_imaging_units():
 
 
 @pytest.fixture
+def gwcs_stokes_lookup():
+    transform = models.Tabular1D([0, 1, 2, 3] * u.pix, [0, 1, 2, 3] * u.one,
+                                 method="nearest", fill_value=np.nan, bounds_error=False)
+    frame = cf.StokesFrame()
+
+    detector_frame = cf.CoordinateFrame(name="detector", naxes=1,
+                                        axes_order=(0,),
+                                        axes_type=("pixel",),
+                                        axes_names=("x",), unit=(u.pix,))
+
+    return wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=detector_frame)
+
+
+@pytest.fixture
 def gwcs_3spectral_orders():
     comp1 = cf.CompositeFrame([icrs_sky_frame, wave_frame])
     detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
