@@ -20,7 +20,7 @@ detector_2d = cf.Frame2D(name='detector', axes_order=(0, 1))
 icrs_sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
                                    axes_order=(0, 1))
 
-freq_frame = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(2, ))
+freq_frame = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(0, ))
 wave_frame = cf.SpectralFrame(name='wave', unit=u.m, axes_order=(2, ),
                               axes_names=('lambda', ))
 
@@ -37,6 +37,16 @@ def gwcs_2d_spatial_shift():
     pipe = [(detector_2d, model_2d_shift), (icrs_sky_frame, None)]
 
     return wcs.WCS(pipe)
+
+
+@pytest.fixture
+def gwcs_2d_spatial_reordered():
+    """
+    A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
+    """
+    out_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
+                                   axes_order=(1, 0))
+    return wcs.WCS(model_2d_shift | models.Mapping((1, 0)), input_frame=detector_2d, output_frame=out_frame)
 
 
 @pytest.fixture
@@ -222,3 +232,39 @@ def sellmeier_zemax():
     return sp.SellmeierZemax(65, 35, 0, 0, B_coef = B_coef,
                              C_coef=C_coef, D_coef=D_coef,
                              E_coef=E_coef)
+
+
+def gwcs_3d_galactic_spectral():
+    """
+    This fixture has the axes ordered as lat, spectral, lon.
+    """
+
+    crpix1, crpix2, crpix3 = 30, 40, 45
+    crval1, crval2, crval3 = 10, 20, 25
+    cdelt1, cdelt2, cdelt3 = -0.1, 0.5, 0.1
+    # pc = smap.rotation_matrix
+    # rotu = AffineTransformation2D(pcu, translation=(0, 0)*u.arcsec)
+
+    # Setup the spatial models
+    shift = models.Shift(-crpix1) & models.Shift(-crpix3)
+    scale = models.Multiply(cdelt1) & models.Multiply(cdelt3)
+    tan = models.Pix2Sky_CAR()
+    skyrot = models.RotateNative2Celestial(crval1, crval3, 180)
+    trans = shift | scale | tan | skyrot
+
+    wave_model = models.Shift(crpix2) | models.Multiply(cdelt2) | models.Shift(crval2)
+
+    transform = models.Mapping((1, 0, 2)) | trans & wave_model | models.Mapping((1, 0, 2))
+
+    sky_frame = cf.CelestialFrame(axes_order=(2, 0),
+                                  reference_frame=coord.Galactic())
+    wave_frame = cf.SpectralFrame(axes_order=(1, ), unit=u.Hz)
+
+    frame = cf.CompositeFrame([sky_frame, wave_frame])
+
+    detector_frame = cf.CoordinateFrame(name="detector", naxes=3,
+                                        axes_order=(0, 1, 2),
+                                        axes_type=("pixel", "pixel", "pixel"),
+                                        axes_names=("x", "y", "z"), unit=(u.pix, u.pix, u.pix))
+
+    return wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=detector_frame)

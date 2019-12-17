@@ -155,6 +155,7 @@ class CoordinateFrame:
             else:
                 ph_type = self.axes_type
             ph_type = tuple("custom:{}".format(t) for t in ph_type)
+
         else:
             ph_type = tuple("custom:{}".format(t) for t in self.axes_type)
 
@@ -578,9 +579,16 @@ class CompositeFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_components(self):
-        out = []
+        """
+        We need to generate the components respecting the axes_order.
+        """
+        out = [None] * self.naxes
         for frame in self.frames:
-            out += frame._world_axis_object_components
+            for i, ao in enumerate(frame.axes_order):
+                out[ao] = frame._world_axis_object_components[i]
+
+        if any([o is None for o in out]):
+            raise ValueError("axes_order leads to incomplete world_axis_object_components")
         return out
 
     @property

@@ -27,14 +27,17 @@ def wcs_ndim_types_units(request):
     Generate a wcs and the expected ndim, types, and units.
     """
     ndim = {'gwcs_2d_spatial_shift': (2, 2),
+            'gwcs_2d_spatial_reordered': (2, 2),
             'gwcs_1d_freq': (1, 1),
             'gwcs_3d_spatial_wave': (3, 3),
             'gwcs_4d_identity_units': (4, 4)}
     types = {'gwcs_2d_spatial_shift': ("pos.eq.ra", "pos.eq.dec"),
+             'gwcs_2d_spatial_reordered': ("pos.eq.dec", "pos.eq.ra"),
              'gwcs_1d_freq': ("em.freq",),
              'gwcs_3d_spatial_wave': ("pos.eq.ra", "pos.eq.dec", "em.wl"),
              'gwcs_4d_identity_units': ("pos.eq.ra", "pos.eq.dec", "em.wl", "time")}
     units = {'gwcs_2d_spatial_shift': ("deg", "deg"),
+             'gwcs_2d_spatial_reordered': ("deg", "deg"),
              'gwcs_1d_freq': ("Hz",),
              'gwcs_3d_spatial_wave': ("deg", "deg", "m"),
              'gwcs_4d_identity_units': ("deg", "deg", "nm", "s")}
@@ -49,9 +52,9 @@ def wcs_ndim_types_units(request):
 x, y = 1, 2
 xarr, yarr = np.ones((3, 4)), np.ones((3, 4)) + 1
 
-fixture_names = ['gwcs_2d_spatial_shift', 'gwcs_1d_freq', 'gwcs_3d_spatial_wave', 'gwcs_4d_identity_units']
+fixture_names = ['gwcs_2d_spatial_shift', 'gwcs_2d_spatial_reordered', 'gwcs_1d_freq', 'gwcs_3d_spatial_wave', 'gwcs_4d_identity_units']
 fixture_wcs_ndim_types_units = pytest.mark.parametrize("wcs_ndim_types_units", fixture_names, indirect=True)
-all_wcses_names = fixture_names + ['gwcs_3d_identity_units', 'gwcs_stokes_lookup']
+all_wcses_names = fixture_names + ['gwcs_3d_identity_units', 'gwcs_stokes_lookup', 'gwcs_3d_galactic_spectral']
 fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=True)
 
 
