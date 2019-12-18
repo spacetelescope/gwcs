@@ -5,7 +5,7 @@ Spectroscopy related models.
 
 import numpy as np
 from astropy.modeling.core import Model
-from astropy.modeling.parameters import Parameter, InputParameterError
+from astropy.modeling.parameters import Parameter
 import astropy.units as u
 
 

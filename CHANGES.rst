@@ -22,6 +22,8 @@ New Features
 - Update the ``StokesFrame`` to work for arrays of coordinates and integrate
   with APE 14. [#258]
 
+- Added ``Snell3D``, ``SellmeierGlass`` and ``SellmeierZemax`` transforms. [#269]
+
 API Changes
 ^^^^^^^^^^^
 
