@@ -12,8 +12,8 @@ allOf:
   - $ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"
   - type: object
     properties:
-      refraction_index:
+      refractive_index:
         description: |
-          The refraction index of the prism.
+          Index of refraction.
         type: number
-    required: [refraction_index]
+    required: [refractive_index]
