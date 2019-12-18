@@ -17,7 +17,3 @@ allOf:
           The refraction index of the prism.
         type: number
     required: [refraction_index]
-<<<<<<< HEAD
-=======
-    
->>>>>>> 55a3ad1... add Snell3D and Sellmeier equations

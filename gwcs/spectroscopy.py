@@ -5,11 +5,7 @@ Spectroscopy related models.
 
 import numpy as np
 from astropy.modeling.core import Model
-<<<<<<< HEAD
-from astropy.modeling.parameters import Parameter
-=======
 from astropy.modeling.parameters import Parameter, InputParameterError
->>>>>>> 9137125... add grating equation models
 import astropy.units as u
 
 
@@ -18,12 +14,9 @@ __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'Snell3D', 'SellmeierGlass', 'SellmeierZemax']
 
 
-<<<<<<< HEAD
 __doctest_skip__ = ['AnglesFromGratingEquation3D', 'WavelengthFromGratingEquation']
 
 
-=======
->>>>>>> 9137125... add grating equation models
 class ToDirectionCosines(Model):
     """
     Transform a vector to direction cosines.
