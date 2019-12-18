@@ -14,7 +14,7 @@ __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'Snell3D', 'SellmeierGlass', 'SellmeierZemax']
 
 
-__doctest_skip__ = ['AnglesFromGratingEquation3D', 'WavelengthFromGratingEquation']
+#__doctest_skip__ = ['AnglesFromGratingEquation3D', 'WavelengthFromGratingEquation']
 
 
 class ToDirectionCosines(Model):
