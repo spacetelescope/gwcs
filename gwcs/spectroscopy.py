@@ -223,7 +223,7 @@ class Snell3D(Model):
         # eq 5.3.3 II in Nirspec docs
         alpha_out = alpha_in / n
         beta_out = beta_in / n
-        gamma_out = np.sqrt(1.0 - xout**2 - yout**2)
+        gamma_out = np.sqrt(1.0 - alpha_out**2 - beta_out**2)
         return alpha_out, beta_out, gamma_out
 
 
