@@ -89,9 +89,9 @@ class Snell3DType(GWCSTransformType):
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
-        return Snell3D(node['refraction_index'])
+        return Snell3D(node['refractive_index'])
 
     @classmethod
     def to_tree_transform(cls, model, ctx):
-        node = {'refraction_index': _parameter_to_value(model.n)}
+        node = {'refractive_index': _parameter_to_value(model.n)}
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)
