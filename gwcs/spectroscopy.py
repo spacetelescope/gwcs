@@ -207,7 +207,7 @@ class Snell3D(Model):
     Parameters
     ----------
     n : float
-        Refraction index of the material.
+        Refractive index of the material.
 
     Returns
     -------
@@ -252,7 +252,7 @@ class SellmeierGlass(Model):
     Returns
     -------
     n : float
-        Refraction index.
+        Refractive index.
 
     Examples
     --------
@@ -346,7 +346,7 @@ class SellmeierZemax(Model):
     Returns
     -------
     n : float
-        Refraction index.
+        Refractive index.
 
     """
     _separable = False
