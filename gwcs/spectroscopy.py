@@ -14,9 +14,6 @@ __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'Snell3D', 'SellmeierGlass', 'SellmeierZemax']
 
 
-#__doctest_skip__ = ['AnglesFromGratingEquation3D', 'WavelengthFromGratingEquation']
-
-
 class ToDirectionCosines(Model):
     """
     Transform a vector to direction cosines.
@@ -72,7 +69,7 @@ class WavelengthFromGratingEquation(Model):
       With paraxial systems the inputs are ``sin`` of the angles and it
       transforms to
 
-      :math:`(\sin(alpha_in) + \sin(alpha_out)) / (m * d)`.
+      :math:`(\sin(alpha_in) + \sin(alpha_out)) / (groove_density * spectral_order)`.
 
       With oblique angles the inputs are the direction cosines
       of the angles.
@@ -204,11 +201,6 @@ class Snell3D(Model):
 
     Inputs are direction cosines.
 
-    Parameters
-    ----------
-    n : float
-        Refractive index of the material.
-
     Returns
     -------
     alpha_out, beta_out, gamma_out : float
@@ -217,18 +209,16 @@ class Snell3D(Model):
     _separable = False
     linear = False
 
-    n_inputs = 3
+    n_inputs = 4
     n_outputs = 3
 
-    n = Parameter(default=1)
-
-    def __init__(self, n=n, **kwargs):
-        super().__init__(n=n, **kwargs)
-        self.inputs = ('alpha_in', 'beta_in', 'gamma_in')
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.inputs = ('n', 'alpha_in', 'beta_in', 'gamma_in')
         self.outputs = ('alpha_out', 'beta_out', 'gamma_out')
 
     @staticmethod
-    def evaluate(alpha_in, beta_in, gamma_in, n):
+    def evaluate(n, alpha_in, beta_in, gamma_in):
         # Apply Snell's law through front surface,
         # eq 5.3.3 II in Nirspec docs
         xout = alpha_in / n

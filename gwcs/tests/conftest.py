@@ -11,6 +11,7 @@ from astropy.modeling import models
 from astropy.time import Time
 
 from .. import coordinate_frames as cf
+from .. import spectroscopy as sp
 from .. import wcs
 
 # frames
@@ -203,3 +204,21 @@ def gwcs_with_frames_strings():
             ('world', None)
            ]
     return wcs.WCS(pipe)
+
+
+@pytest.fixture
+def sellmeier_glass():
+    B_coef =  [0.58339748, 0.46085267, 3.8915394]
+    C_coef = [0.00252643, 0.010078333, 1200.556]
+    return sp.SellmeierGlass(B_coef, C_coef)
+
+
+@pytest.fixture
+def sellmeier_zemax():
+    B_coef =  [0.58339748, 0.46085267, 3.8915394]
+    C_coef = [0.00252643, 0.010078333, 1200.556]
+    D_coef = [-2.66e-05, 0.0, 0.0]
+    E_coef = [0., 0., 0.]
+    return sp.SellmeierZemax(65, 35, 0, 0, B_coef = B_coef,
+                             C_coef=C_coef, D_coef=D_coef,
+                             E_coef=E_coef)

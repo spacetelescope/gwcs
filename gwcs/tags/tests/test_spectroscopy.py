@@ -3,17 +3,28 @@
 import pytest
 
 import numpy as np
+
+from astropy.modeling.models import Identity
 from asdf.tests import helpers
 
 from ... import spectroscopy
 
-transforms = [spectroscopy.ToDirectionCosines(),
-              spectroscopy.FromDirectionCosines(),
-              spectroscopy.Snell3D(1.45),
-              spectroscopy.SellmeierGlass(B_coef=[0.58339748, 0.46085267, 3.8915394],
-                                          C_coef=[0.00252643, 0.010078333, 1200.556]),
-              spectroscopy.SellmeierZemax(65, 35, 0, 0, [0.58339748, 0.46085267, 3.8915394],
-                                          [0.00252643, 0.010078333, 1200.556], [-2.66e-05, 0.0, 0.0]),
+
+sell_glass = spectroscopy.SellmeierGlass(B_coef=[0.58339748, 0.46085267, 3.8915394],
+                                         C_coef=[0.00252643, 0.010078333, 1200.556])
+sell_zemax = spectroscopy.SellmeierZemax(65, 35, 0, 0, [0.58339748, 0.46085267, 3.8915394],
+                                         [0.00252643, 0.010078333, 1200.556], [-2.66e-05, 0.0, 0.0])
+snell = spectroscopy.Snell3D()
+todircos = spectroscopy.ToDirectionCosines()
+fromdircos = spectroscopy.FromDirectionCosines()
+
+transforms = [todircos,
+              fromdircos,
+              snell,
+              sell_glass,
+              sell_zemax,
+              sell_zemax & todircos| snell & Identity(1) | fromdircos,
+              sell_glass & todircos | snell & Identity(1) | fromdircos,
               ]
 
 

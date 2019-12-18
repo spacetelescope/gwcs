@@ -1,5 +1,6 @@
 import pytest
 import astropy.units as u
+from astropy.modeling.models import Identity
 import numpy as np
 from numpy.testing import assert_allclose
 from .. import spectroscopy as sp# noqa
@@ -55,35 +56,33 @@ def test_wavelength_grating_equation_units():
                           (2, 1.42575377),
                           (5, 1.40061966)
                           ])
-def test_SellmeierGlass(wavelength, n):
+def test_SellmeierGlass(wavelength, n, sellmeier_glass):
     """ Test from Nirspec team.
 
     Wavelength is in microns.
     """
-
-    B_coef =  [0.58339748, 0.46085267, 3.8915394]
-    C_coef = [0.00252643, 0.010078333, 1200.556]
-    model = sp.SellmeierGlass(B_coef, C_coef)
-    n_result = model(wavelength)
+    n_result = sellmeier_glass(wavelength)
     assert_allclose(n_result, n)
 
 
-def test_SellmeierZemax():
+def test_SellmeierZemax(sellmeier_zemax):
     """ The data for this test come from Nirspec."""
-    kcoef = [0.58339748, 0.46085267, 3.8915394]
-    lcoef = [0.00252643, 0.010078333, 1200.556]
-    D_coef = [-2.66e-05, 0.0, 0.0]
-    E_coef = [0., 0., 0.]
-    model = sp.SellmeierZemax(65, 35, 0, 0, B_coef = kcoef,
-                              C_coef=lcoef, D_coef=D_coef,
-                              E_coef=E_coef)
     n = 1.4254647475849418
-    assert_allclose(model(2), n)
+    assert_allclose(sellmeier_zemax(2), n)
 
 
-def test_Snell3D():
+def test_Snell3D(sellmeier_glass):
     """ Test from Nirspec."""
-    n = 1.4254647475849418
-    model = sp.Snell3D(n)
     expected = (0.07015255913513296, 0.07015255913513296, 0.9950664484814988)
-    assert_allclose(model(.1, .1, .1), expected)
+    model = sp.Snell3D()
+    n = 1.4254647475849418
+    assert_allclose(model(n, .1, .1, .9), expected)
+
+
+def test_snell_sellmeier_comboned(sellmeier_glass):
+    fromdircos = sp.FromDirectionCosines()
+    todircos = sp.ToDirectionCosines()
+    model = sellmeier_glass & todircos | sp.Snell3D() & Identity(1) | fromdircos
+
+    expected = (0.07013833805527926, 0.07013833805527926, 1.0050677723764139)
+    assert_allclose(model(2, .1, .1, .9), expected)
