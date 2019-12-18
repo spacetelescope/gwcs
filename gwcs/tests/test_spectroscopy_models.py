@@ -1,4 +1,6 @@
+import pytest
 import astropy.units as u
+from astropy.modeling.models import Identity
 import numpy as np
 from numpy.testing import assert_allclose
 from .. import spectroscopy as sp# noqa
@@ -47,3 +49,40 @@ def test_wavelength_grating_equation_units():
 
     result = model(-u.Quantity(alpha_in), -u.Quantity(alpha_in))
     assert_allclose(result, wave)
+
+
+@pytest.mark.parametrize(('wavelength', 'n'),
+                         [(1, 1.43079543),
+                          (2, 1.42575377),
+                          (5, 1.40061966)
+                          ])
+def test_SellmeierGlass(wavelength, n, sellmeier_glass):
+    """ Test from Nirspec team.
+
+    Wavelength is in microns.
+    """
+    n_result = sellmeier_glass(wavelength)
+    assert_allclose(n_result, n)
+
+
+def test_SellmeierZemax(sellmeier_zemax):
+    """ The data for this test come from Nirspec."""
+    n = 1.4254647475849418
+    assert_allclose(sellmeier_zemax(2), n)
+
+
+def test_Snell3D(sellmeier_glass):
+    """ Test from Nirspec."""
+    expected = (0.07015255913513296, 0.07015255913513296, 0.9950664484814988)
+    model = sp.Snell3D()
+    n = 1.4254647475849418
+    assert_allclose(model(n, .1, .1, .9), expected)
+
+
+def test_snell_sellmeier_comboned(sellmeier_glass):
+    fromdircos = sp.FromDirectionCosines()
+    todircos = sp.ToDirectionCosines()
+    model = sellmeier_glass & todircos | sp.Snell3D() & Identity(1) | fromdircos
+
+    expected = (0.07013833805527926, 0.07013833805527926, 1.0050677723764139)
+    assert_allclose(model(2, .1, .1, .9), expected)

@@ -1,0 +1,13 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/snell3d-1.0.0"
+tag: "tag:stsci.edu:gwcs/snell3d-1.0.0"
+title: Snell Law in 3D space
+
+description: |
+  Snell Law in 3D.
+  Inputs are index of refraction and direction cosines.
+  Outputs are direction cosines.
+
+$ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"

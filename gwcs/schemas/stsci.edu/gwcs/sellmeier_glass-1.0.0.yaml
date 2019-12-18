@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/sellmeier_glass-1.0.0"
+tag: "tag:stsci.edu:gwcs/sellmeier_glass-1.0.0"
+title: Sellmeier equation for glass
+
+description: |
+  Sellmeier equation for glass.
+
+  $$ n(\\lambda)^2 = 1 + \\frac{(B1 * \\lambda^2 )}{(\\lambda^2 - C1)} +
+     \\frac{(B2 * \\lambda^2 )}{(\\lambda^2 - C2)} +
+     \\frac{(B3 * \\lambda^2 )}{(\\lambda^2 - C3)} $$
+
+allOf:
+  - $ref: "tag:stsci.edu:asdf/transform/transform-1.1.0"
+  - type: object
+    properties:
+      B_coef:
+        description: |
+          B coefficients in Sellmeier equation.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
+      C_coef:
+        description: |
+          C coefficients in Sellmeier equation.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
