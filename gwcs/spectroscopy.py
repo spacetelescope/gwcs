@@ -199,7 +199,7 @@ class Snell3D(Model):
     """
     Snell model in 3D form.
 
-    Inputs are direction cosines.
+    Inputs are index of refraction and direction cosines.
 
     Returns
     -------
@@ -221,10 +221,10 @@ class Snell3D(Model):
     def evaluate(n, alpha_in, beta_in, gamma_in):
         # Apply Snell's law through front surface,
         # eq 5.3.3 II in Nirspec docs
-        xout = alpha_in / n
-        yout = beta_in / n
-        zout = np.sqrt(1.0 - xout**2 - yout**2)
-        return xout, yout, zout
+        alpha_out = alpha_in / n
+        beta_out = beta_in / n
+        gamma_out = np.sqrt(1.0 - xout**2 - yout**2)
+        return alpha_out, beta_out, gamma_out
 
 
 class SellmeierGlass(Model):
