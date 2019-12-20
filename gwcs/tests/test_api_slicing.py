@@ -1,8 +1,7 @@
 import astropy.units as u
 from astropy.coordinates import Galactic, SkyCoord
 from astropy.units import Quantity
-from astropy.wcs.wcsapi.sliced_low_level_wcs import (SlicedLowLevelWCS,
-                                                     sanitize_slices)
+from astropy.wcs.wcsapi.sliced_low_level_wcs import SlicedLowLevelWCS
 from numpy.testing import assert_allclose, assert_equal
 
 EXPECTED_ELLIPSIS_REPR = """

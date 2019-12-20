@@ -4,7 +4,6 @@ This module contains a mixin class which exposes the WCS API defined
 in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
-import numpy as np
 
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
