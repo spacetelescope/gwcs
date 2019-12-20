@@ -234,37 +234,43 @@ def sellmeier_zemax():
                              E_coef=E_coef)
 
 
+@pytest.fixture
 def gwcs_3d_galactic_spectral():
     """
     This fixture has the axes ordered as lat, spectral, lon.
     """
-
-    crpix1, crpix2, crpix3 = 30, 40, 45
+    #                       lat,  w, lon
+    crpix1, crpix2, crpix3 = 29, 39, 44
     crval1, crval2, crval3 = 10, 20, 25
     cdelt1, cdelt2, cdelt3 = -0.1, 0.5, 0.1
     # pc = smap.rotation_matrix
     # rotu = AffineTransformation2D(pcu, translation=(0, 0)*u.arcsec)
 
     # Setup the spatial models
-    shift = models.Shift(-crpix1) & models.Shift(-crpix3)
-    scale = models.Multiply(cdelt1) & models.Multiply(cdelt3)
+    shift = models.Shift(-crpix3) & models.Shift(-crpix1)
+    scale = models.Multiply(cdelt3) & models.Multiply(cdelt1)
     tan = models.Pix2Sky_CAR()
-    skyrot = models.RotateNative2Celestial(crval1, crval3, 180)
-    trans = shift | scale | tan | skyrot
+    skyrot = models.RotateNative2Celestial(crval3, 90 + crval1, 180)
+    celestial = shift | scale | tan | skyrot
 
-    wave_model = models.Shift(crpix2) | models.Multiply(cdelt2) | models.Shift(crval2)
+    wave_model = models.Shift(-crpix2) | models.Multiply(cdelt2) | models.Shift(crval2)
 
-    transform = models.Mapping((1, 0, 2)) | trans & wave_model | models.Mapping((1, 0, 2))
+    transform = models.Mapping((2, 0, 1)) | celestial & wave_model | models.Mapping((1, 2, 0))
+    transform.bounding_box = ((5, 50), (-2, 45), (-1, 35))
 
     sky_frame = cf.CelestialFrame(axes_order=(2, 0),
-                                  reference_frame=coord.Galactic())
-    wave_frame = cf.SpectralFrame(axes_order=(1, ), unit=u.Hz)
+                                  reference_frame=coord.Galactic(), axes_names=("Longitude", "Latitude"))
+    wave_frame = cf.SpectralFrame(axes_order=(1, ), unit=u.Hz, axes_names=("Frequency",))
 
     frame = cf.CompositeFrame([sky_frame, wave_frame])
 
     detector_frame = cf.CoordinateFrame(name="detector", naxes=3,
                                         axes_order=(0, 1, 2),
                                         axes_type=("pixel", "pixel", "pixel"),
-                                        axes_names=("x", "y", "z"), unit=(u.pix, u.pix, u.pix))
+                                        unit=(u.pix, u.pix, u.pix))
 
-    return wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=detector_frame)
+    owcs = wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=detector_frame)
+    owcs.array_shape = (30, 20, 10)
+    owcs.pixel_shape = (10, 20, 30)
+
+    return owcs

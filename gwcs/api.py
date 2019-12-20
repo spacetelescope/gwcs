@@ -245,8 +245,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         any further information. For completely independent axes, the diagonal
         would be `True` and all other entries `False`.
         """
-        ordering = np.s_[None, self.output_frame.axes_order]
-        return separable.separability_matrix(self.forward_transform)[ordering][0]
+        return separable.separability_matrix(self.forward_transform)
 
     @property
     def serialized_classes(self):
