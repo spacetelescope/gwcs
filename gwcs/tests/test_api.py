@@ -232,6 +232,10 @@ def test_high_level_wrapper(wcsobj, request):
     if request.node.callspec.params['wcsobj'] in ('gwcs_4d_identity_units', 'gwcs_stokes_lookup'):
         pytest.importorskip("astropy", minversion="4.0dev0")
 
+    # Remove the bounding box because the type test is a little broken with the
+    # bounding box.
+    del wcsobj._pipeline[0][1].bounding_box
+
     hlvl = HighLevelWCSWrapper(wcsobj)
 
     pixel_input = [3] * wcsobj.pixel_n_dim
