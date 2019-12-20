@@ -4,11 +4,13 @@ This module contains a mixin class which exposes the WCS API defined
 in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
+
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
 import astropy.units as u
 
 from . import utils
+from . import coordinate_frames as cf
 
 __all__ = ["GWCSAPIMixin"]
 
@@ -50,7 +52,14 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         arbitrary string.  Alternatively, if the physical type is
         unknown/undefined, an element can be `None`.
         """
-        return self.output_frame.axis_physical_types
+        # A CompositeFrame orders the output correctly based on axes_order.
+        if isinstance(self.output_frame, cf.CompositeFrame):
+            return self.output_frame.axis_physical_types
+
+        # If we don't have a CompositeFrame, where this is taken care of for us,
+        # we need to make sure we re-order the output to match the transform.
+        # The underlying frames don't reorder themselves because axes_order is global.
+        return tuple(self.output_frame.axis_physical_types[i] for i in self.output_frame.axes_order)
 
     @property
     def world_axis_units(self):
@@ -217,6 +226,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @pixel_shape.setter
     def pixel_shape(self, value):
+        if value is None:
+            self._pixel_shape = None
+            return
         wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
             raise ValueError("The number of data axes, "
@@ -235,7 +247,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         any further information. For completely independent axes, the diagonal
         would be `True` and all other entries `False`.
         """
-
         return separable.separability_matrix(self.forward_transform)
 
     @property
