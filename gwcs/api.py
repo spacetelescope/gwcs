@@ -227,6 +227,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @pixel_shape.setter
     def pixel_shape(self, value):
+        if value is None:
+            self._pixel_shape = None
+            return
         wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
             raise ValueError("The number of data axes, "
