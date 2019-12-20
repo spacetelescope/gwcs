@@ -239,19 +239,16 @@ def gwcs_3d_galactic_spectral():
     """
     This fixture has the axes ordered as lat, spectral, lon.
     """
-    #                       lat,  w, lon
+    #                       lat,wav,lon
     crpix1, crpix2, crpix3 = 29, 39, 44
     crval1, crval2, crval3 = 10, 20, 25
     cdelt1, cdelt2, cdelt3 = -0.1, 0.5, 0.1
-    # pc = smap.rotation_matrix
-    # rotu = AffineTransformation2D(pcu, translation=(0, 0)*u.arcsec)
 
-    # Setup the spatial models
     shift = models.Shift(-crpix3) & models.Shift(-crpix1)
     scale = models.Multiply(cdelt3) & models.Multiply(cdelt1)
-    tan = models.Pix2Sky_CAR()
+    proj = models.Pix2Sky_CAR()
     skyrot = models.RotateNative2Celestial(crval3, 90 + crval1, 180)
-    celestial = shift | scale | tan | skyrot
+    celestial = shift | scale | proj | skyrot
 
     wave_model = models.Shift(-crpix2) | models.Multiply(cdelt2) | models.Shift(crval2)
 
