@@ -317,8 +317,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
             result = [i.value for i in result]
         if self.input_frame.naxes == 1:
             return result[0]
-        else:
-            return result
+        return result
 
     def world_to_array_index(self, *world_objects):
         """
@@ -335,8 +334,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         if self.input_frame is not None:
             return self.input_frame.axes_names
-        else:
-            return tuple([''] * self.pixel_n_dim)
+        return tuple([''] * self.pixel_n_dim)
 
     @property
     def world_axis_names(self):
@@ -345,5 +343,4 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         if self.output_frame is not None:
             return self.output_frame.axes_names
-        else:
-            return tuple([''] * self.world_n_dim)
+        return tuple([''] * self.world_n_dim)

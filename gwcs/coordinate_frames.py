@@ -176,8 +176,7 @@ class CoordinateFrame:
     def __str__(self):
         if self._name is not None:
             return self._name
-        else:
-            return self.__class__.__name__
+        return self.__class__.__name__
 
     @property
     def name(self):
@@ -322,8 +321,7 @@ class CelestialFrame(CoordinateFrame):
         """
         if isinstance(args[0], coord.SkyCoord):
             return args[0].transform_to(self.reference_frame)
-        else:
-            return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
+        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
 
     def coordinate_to_quantity(self, *coords):
         """ Convert a ``SkyCoord`` object to quantities."""
@@ -406,8 +404,7 @@ class SpectralFrame(CoordinateFrame):
     def coordinate_to_quantity(self, *coords):
         if hasattr(coords[0], 'unit'):
             return coords[0]
-        else:
-            return coords[0] * self.unit[0]
+        return coords[0] * self.unit[0]
 
 
 class TemporalFrame(CoordinateFrame):
@@ -641,8 +638,7 @@ class StokesProfile(str):
             return StokesProfile(out.item())
         elif nans.all():
             return np.array(out, dtype=float)
-        else:
-            return out
+        return out
 
     def __new__(cls, content):
         content = str(content)
