@@ -131,7 +131,7 @@ def _frame2D_transform(fiducial, **kwargs):
 frame2transform = {CelestialFrame: _sky_transform,
                    SpectralFrame: _spectral_transform,
                    Frame2D: _frame2D_transform
-                   }
+                  }
 
 
 def grid_from_bounding_box(bounding_box, step=1, center=True):
@@ -207,8 +207,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     grid = np.mgrid[slices[::-1]][::-1]
     if nd == 1:
         return grid[0]
-    else:
-        return grid
+    return grid
 
 
 def wcs_from_points(xy, world_coordinates, fiducial,
@@ -231,28 +230,28 @@ def wcs_from_points(xy, world_coordinates, fiducial,
     Parameters
     ----------
     xy : tuple of 2 ndarrays
-        Points in the input cooridnate frame - x, y inputs.                               
-    world_coordinates : tuple of 2 ndarrays                                                           
-        Points in the output coordinate frame.                                  
-        The order matches the order of ``xy``.                                            
-    fiducial_point : `~astropy.coordinates.SkyCoord`                                 
-        A fiducial point in the output coordinate frame.                                  
-    projection : `~astropy.modeling.projections.Projection`                               
+        Points in the input cooridnate frame - x, y inputs.
+    world_coordinates : tuple of 2 ndarrays
+        Points in the output coordinate frame.
+        The order matches the order of ``xy``.
+    fiducial_point : `~astropy.coordinates.SkyCoord`
+        A fiducial point in the output coordinate frame.
+    projection : `~astropy.modeling.projections.Projection`
         A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
     degree : int
         Degree of Polynpomial model to be fit to data.
     polynomial_type : str
         one of "polynomial", "chebyshev", "legendre"
-                                                                                          
-    Returns                                                                               
-    -------                                                                             
+
+    Returns
+    -------
     wcsobj : `~gwcs.wcs.WCS`
-        a WCS object for this observation.                                                       
+        a WCS object for this observation.
     """
     supported_poly_types = {"polynomial": models.Polynomial2D,
                             "chebyshev": models.Chebyshev2D,
                             "legendre": models.Legendre2D
-                            }
+                           }
     x, y = xy
     lon, lat = world_coordinates
 
@@ -271,10 +270,10 @@ def wcs_from_points(xy, world_coordinates, fiducial,
         poly_x = fitter(poly, x, y, projection_x)
         poly_y = fitter(poly, x, y, projection_y)
     transform = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y | projection.inverse | skyrot.inverse
-    
+
     skyframe = CelestialFrame(reference_frame=fiducial.frame)
     detector = Frame2D(name="detector")
     pipeline = [(detector, transform),
                 (skyframe, None)
-                ]
+               ]
     return WCS(pipeline)

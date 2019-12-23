@@ -9,56 +9,8 @@ from astropy.modeling.parameters import Parameter
 import astropy.units as u
 
 
-__all__ = ['ToDirectionCosines', 'FromDirectionCosines',
-           'WavelengthFromGratingEquation', 'AnglesFromGratingEquation3D',
+__all__ = ['WavelengthFromGratingEquation', 'AnglesFromGratingEquation3D',
            'Snell3D', 'SellmeierGlass', 'SellmeierZemax']
-
-
-class ToDirectionCosines(Model):
-    """
-    Transform a vector to direction cosines.
-    """
-    _separable = False
-
-    n_inputs = 3
-    n_outputs = 4
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.inputs = ('x', 'y', 'z')
-        self.outputs = ('cosa', 'cosb', 'cosc', 'length')
-
-    def evaluate(self, x, y, z):
-        vabs = np.sqrt(1. + x**2 + y**2)
-        cosa = x / vabs
-        cosb = y / vabs
-        cosc = 1. / vabs
-        return cosa, cosb, cosc, vabs
-
-    def inverse(self):
-        return FromDirectionCosines()
-
-
-class FromDirectionCosines(Model):
-    """
-    Transform directional cosines to vector.
-    """
-    _separable = False
-
-    n_inputs = 4
-    n_outputs = 3
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.inputs = ('cosa', 'cosb', 'cosc', 'length')
-        self.outputs = ('x', 'y', 'z')
-
-    def evaluate(self, cosa, cosb, cosc, length):
-
-        return cosa * length, cosb * length, cosc * length
-
-    def inverse(self):
-        return ToDirectionCosines()
 
 
 class WavelengthFromGratingEquation(Model):
@@ -121,8 +73,7 @@ class WavelengthFromGratingEquation(Model):
     def return_units(self):
         if self.groove_density.unit is None:
             return None
-        else:
-            return {'wavelength': u.Unit(1 / self.groove_density.unit)}
+        return {'wavelength': u.Unit(1 / self.groove_density.unit)}
 
 
 class AnglesFromGratingEquation3D(Model):
@@ -189,10 +140,9 @@ class AnglesFromGratingEquation3D(Model):
     def input_units(self):
         if self.groove_density.unit is None:
             return None
-        else:
-            return {'wavelength': 1 / self.groove_density.unit,
-                    'alpha_in': u.Unit(1),
-                    'beta_in': u.Unit(1)}
+        return {'wavelength': 1 / self.groove_density.unit,
+                'alpha_in': u.Unit(1),
+                'beta_in': u.Unit(1)}
 
 
 class Snell3D(Model):
@@ -296,15 +246,14 @@ class SellmeierGlass(Model):
                     B1 * wavelength ** 2 / (wavelength ** 2 - C1) +
                     B2 * wavelength ** 2 / (wavelength ** 2 - C2) +
                     B3 * wavelength ** 2 / (wavelength ** 2 - C3)
-                    )
+                   )
         return n
 
     @property
     def input_units(self):
         if self.C_coef.unit is None:
             return None
-        else:
-            return {'wavelength': u.um}
+        return {'wavelength': u.um}
 
 
 class SellmeierZemax(Model):
@@ -363,7 +312,7 @@ class SellmeierZemax(Model):
                          ref_pressure=ref_pressure, pressure=pressure, B_coef=B_coef,
                          C_coef=C_coef, D_coef=D_coef, E_coef=E_coef, **kwargs)
         self.inputs = ('wavelength',)
-        self.outputs =('n',)
+        self.outputs = ('n',)
 
     def evaluate(self, wavelength, temp, ref_temp, ref_pressure,
                  pressure, B_coef, C_coef, D_coef, E_coef):
@@ -378,14 +327,12 @@ class SellmeierZemax(Model):
             temp -= KtoC
             ref_temp -= KtoC
         delt = temp - ref_temp
-        K1, K2, K3 = B_coef[0]
-        L1, L2, L3 = C_coef[0]
         D0, D1, D2 = D_coef[0]
         E0, E1, lam_tk = E_coef[0]
 
         nref = 1. + (6432.8 + 2949810. * wavelength ** 2 /
-                    (146.0 * wavelength ** 2 - 1.) + (5540.0 * wavelength ** 2) /
-                    (41.0 * wavelength ** 2 - 1.)) * 1e-8
+                     (146.0 * wavelength ** 2 - 1.) + (5540.0 * wavelength ** 2) /
+                     (41.0 * wavelength ** 2 - 1.)) * 1e-8
         # T should be in C, P should be in ATM
         nair_obs = 1.0 + ((nref - 1.0) * pressure) / (1.0 + (temp - 15.) * 3.4785e-3)
         nair_ref = 1.0 + ((nref - 1.0) * ref_pressure) / (1.0 + (ref_temp - 15) * 3.4785e-3)

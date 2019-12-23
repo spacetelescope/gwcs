@@ -292,7 +292,7 @@ class LabelMapperDict(_LabelMapper):
     @property
     def n_inputs(self):
         return self._n_inputs
-        
+
     @property
     def inputs(self):
         """
@@ -370,7 +370,7 @@ class LabelMapperRange(_LabelMapper):
     standard_broadcasting = False
 
     n_outputs = 1
-    
+
     linear = False
     fittable = False
 
@@ -640,7 +640,7 @@ class RegionsSelector(Model):
     @property
     def n_outputs(self):
         return self._n_outputs
-    
+
 class LabelMapper(_LabelMapper):
     """
     Maps inputs to regions. Returns the region labels corresponding to the inputs.
@@ -681,7 +681,7 @@ class LabelMapper(_LabelMapper):
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(_LabelMapper, self).__init__(name=name, **kwargs)
         self.outputs = ('label',)
-        
+
     @property
     def inputs(self):
         """

@@ -4,6 +4,7 @@ from astropy.modeling.models import Identity
 import numpy as np
 from numpy.testing import assert_allclose
 from .. import spectroscopy as sp# noqa
+from .. import geometry# noqa
 
 
 def test_angles_grating_equation():
@@ -79,9 +80,9 @@ def test_Snell3D(sellmeier_glass):
     assert_allclose(model(n, .1, .1, .9), expected)
 
 
-def test_snell_sellmeier_comboned(sellmeier_glass):
-    fromdircos = sp.FromDirectionCosines()
-    todircos = sp.ToDirectionCosines()
+def test_snell_sellmeier_combined(sellmeier_glass):
+    fromdircos = geometry.FromDirectionCosines()
+    todircos = geometry.ToDirectionCosines()
     model = sellmeier_glass & todircos | sp.Snell3D() & Identity(1) | fromdircos
 
     expected = (0.07013833805527926, 0.07013833805527926, 1.0050677723764139)

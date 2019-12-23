@@ -8,6 +8,7 @@ from astropy.modeling.models import Identity
 from asdf.tests import helpers
 
 from ... import spectroscopy
+from ... import geometry
 
 
 sell_glass = spectroscopy.SellmeierGlass(B_coef=[0.58339748, 0.46085267, 3.8915394],
@@ -15,8 +16,8 @@ sell_glass = spectroscopy.SellmeierGlass(B_coef=[0.58339748, 0.46085267, 3.89153
 sell_zemax = spectroscopy.SellmeierZemax(65, 35, 0, 0, [0.58339748, 0.46085267, 3.8915394],
                                          [0.00252643, 0.010078333, 1200.556], [-2.66e-05, 0.0, 0.0])
 snell = spectroscopy.Snell3D()
-todircos = spectroscopy.ToDirectionCosines()
-fromdircos = spectroscopy.FromDirectionCosines()
+todircos = geometry.ToDirectionCosines()
+fromdircos = geometry.FromDirectionCosines()
 
 transforms = [todircos,
               fromdircos,
