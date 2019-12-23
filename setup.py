@@ -47,7 +47,6 @@ entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',
                 'bandit.formatters': 'bson = bandit_bson:formatter'}
 
 DOCS_REQUIRE = [
-    #'matplotlib',
     'sphinx',
     'sphinx-automodapi',
     'sphinx-rtd-theme',
@@ -59,7 +58,6 @@ DOCS_REQUIRE = [
 TESTS_REQUIRE = [
     'pytest',
     'pytest-doctestplus',
-    #'pytest-astropy<=0.7',
     'scipy',
 ]
 
@@ -67,8 +65,10 @@ setup(name=PACKAGENAME,
       use_scm_version=True,
       setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
-      requires=['astropy>=4.0', 'asdf'],
-      install_requires=['astropy>=4.0', 'numpy', 'asdf'],
+      install_requires=[
+          'astropy>=4.0',
+          'numpy',
+          'asdf'],
       packages=find_packages(),
       extras_require={
         'test': TESTS_REQUIRE,
