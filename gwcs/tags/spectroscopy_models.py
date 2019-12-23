@@ -117,8 +117,8 @@ class GratingEquationType(GWCSTransformType):
     @classmethod
     def assert_equal(cls, a, b):
         if isinstance(a, AnglesFromGratingEquation3D):
-            assert isinstance(b, AnglesFromGratingEquation3D)
+            assert isinstance(b, AnglesFromGratingEquation3D) # nosec
         elif isinstance(a, WavelengthFromGratingEquation):
-            assert isinstance(b, WavelengthFromGratingEquation)
-        assert_quantity_allclose(a.groove_density, b.groove_density)
-        assert a.spectral_order.value == b.spectral_order.value
+            assert isinstance(b, WavelengthFromGratingEquation) # nosec
+        assert_quantity_allclose(a.groove_density, b.groove_density) # nosec
+        assert a.spectral_order.value == b.spectral_order.value # nosec
