@@ -58,21 +58,19 @@ information about contributing is in the github repository.
 """
 
 import sys
-if sys.version_info < (3, 5):
-    raise ImportError("GWCS does not support Python 2.x, 3.0, 3.1, 3.2, 3.3 or 3.4."
-                      "Beginning with GWCS 0.9, Python 3.5 and above is required.")
+if sys.version_info < (3, 6):
+    raise ImportError("GWCS supports Python versions 3.6 and above.")  # pragma: no cover
+
+from pkg_resources import get_distribution, DistributionNotFound
+
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:  # pragma: no cover
+    # package is not installed
+    pass  # pragma: no cover
 
 
-# Affiliated packages may add whatever they like to this file, but
-# should keep this content at the top.
-# ----------------------------------------------------------------------------
-from ._astropy_init import * # noqa
-# ----------------------------------------------------------------------------
-
-
-# For egg_info test builds to pass, put package imports here.
-if not _ASTROPY_SETUP_:
-    from .wcs import *   # noqa
-    from .wcstools import *   # noqa
-    from .coordinate_frames import *  # noqa
-    from .selector import *   # noqa
+from .wcs import *   # noqa
+from .wcstools import *   # noqa
+from .coordinate_frames import *  # noqa
+from .selector import *   # noqa

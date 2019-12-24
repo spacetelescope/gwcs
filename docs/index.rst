@@ -332,4 +332,4 @@ Reference/API
 .. automodapi:: gwcs.coordinate_frames
 .. automodapi:: gwcs.wcstools
 .. automodapi:: gwcs.selector
-
+.. automodapi:: gwcs.spectroscopy

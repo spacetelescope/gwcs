@@ -6,7 +6,7 @@ import logging
 import numpy as np
 
 from astropy.utils.misc import isiterable
-import astropy.time
+from astropy import time
 from astropy import units as u
 from astropy import utils as astutil
 from astropy import coordinates as coord
@@ -115,10 +115,8 @@ class CoordinateFrame:
                     ph_type.append("custom:{}".format(axt))
                 else:
                     ph_type.append(axt)
-            validate_physical_types(ph_type)
-            return tuple(ph_type)
 
-        if isinstance(self, CelestialFrame):
+        elif isinstance(self, CelestialFrame):
             if isinstance(self.reference_frame, coord.Galactic):
                 ph_type = "pos.galactic.lon", "pos.galactic.lat"
             elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
@@ -131,6 +129,7 @@ class CoordinateFrame:
                 ph_type = "pos.ecliptic.lon", "pos.ecliptic.lat"
             else:
                 ph_type = tuple("custom:{}".format(t) for t in self.axes_names)
+
         elif isinstance(self, SpectralFrame):
             if self.unit[0].physical_type == "frequency":
                 ph_type = ("em.freq",)
@@ -146,19 +145,22 @@ class CoordinateFrame:
                                 "'spect.dopplerVeloc.radio'.")
             else:
                 ph_type = ("custom:{}".format(self.unit[0].physical_type),)
+
         elif isinstance(self, TemporalFrame):
             ph_type = ("time",)
+
         elif isinstance(self, Frame2D):
             if all(self.axes_names):
                 ph_type = self.axes_names
             else:
                 ph_type = self.axes_type
             ph_type = tuple("custom:{}".format(t) for t in ph_type)
+
         else:
             ph_type = tuple("custom:{}".format(t) for t in self.axes_type)
-        validate_physical_types(ph_type)
-        return ph_type
 
+        validate_physical_types(ph_type)
+        return tuple(ph_type)
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
@@ -174,8 +176,7 @@ class CoordinateFrame:
     def __str__(self):
         if self._name is not None:
             return self._name
-        else:
-            return self.__class__.__name__
+        return self.__class__.__name__
 
     @property
     def name(self):
@@ -239,6 +240,14 @@ class CoordinateFrame:
     def axis_physical_types(self):
         return self._axis_physical_types
 
+    @property
+    def _world_axis_object_components(self):
+        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+
+    @property
+    def _world_axis_object_classes(self):
+        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+
 
 class CelestialFrame(CoordinateFrame):
     """
@@ -286,7 +295,20 @@ class CelestialFrame(CoordinateFrame):
                                              reference_frame=reference_frame,
                                              unit=unit,
                                              axes_names=axes_names,
-                                             name=name, axis_physical_types = axis_physical_types)
+                                             name=name, axis_physical_types=axis_physical_types)
+
+    @property
+    def _world_axis_object_classes(self):
+        return {'celestial': (
+            coord.SkyCoord,
+            (),
+            {'frame': self.reference_frame,
+             'unit': self.unit})}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('celestial', 0, 'spherical.lon'),
+                ('celestial', 1, 'spherical.lat')]
 
     def coordinates(self, *args):
         """
@@ -299,8 +321,7 @@ class CelestialFrame(CoordinateFrame):
         """
         if isinstance(args[0], coord.SkyCoord):
             return args[0].transform_to(self.reference_frame)
-        else:
-            return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
+        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
 
     def coordinate_to_quantity(self, *coords):
         """ Convert a ``SkyCoord`` object to quantities."""
@@ -361,6 +382,17 @@ class SpectralFrame(CoordinateFrame):
                                             reference_position=reference_position,
                                             axis_physical_types=axis_physical_types)
 
+    @property
+    def _world_axis_object_classes(self):
+        return {'spectral': (
+            u.Quantity,
+            (),
+            {'unit': self.unit[0]})}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('spectral', 0, 'value')]
+
     def coordinates(self, *args, equivalencies=[]):
         if hasattr(args[0], 'unit'):
             return args[0].to(self.unit[0], equivalencies=equivalencies)
@@ -372,8 +404,7 @@ class SpectralFrame(CoordinateFrame):
     def coordinate_to_quantity(self, *coords):
         if hasattr(coords[0], 'unit'):
             return coords[0]
-        else:
-            return coords[0] * self.unit[0]
+        return coords[0] * self.unit[0]
 
 
 class TemporalFrame(CoordinateFrame):
@@ -382,31 +413,50 @@ class TemporalFrame(CoordinateFrame):
 
     Parameters
     ----------
-    axes_order : tuple or int
-        A dimension in the input data that corresponds to this axis.
-    reference_frame : `object`
-        The object to instantiate to represent the time coordinate. Defaults to
-        `astropy.time.Time`. Use partial functions to customise the
-        `~astropy.time.Time` instance.
-    reference_time : `astropy.time.Time` or `None`
-        Reference time, the time of the 0th coordinate. If none the values of
-        the axis are assumed to be valid times.
-    unit : str or units.Unit instance
-        Spectral unit.
+    reference_frame : `~astropy.time.Time`
+        A Time object which holds the time scale and format.
+        If data is provided, it is the time zero point.
+        To not set a zero point for the frame initialize `reference_frame`
+        with an empty list.
+    unit : str or `~astropy.units.Unit`
+        Time unit.
     axes_names : str
-        Spectral axis name.
+        Time axis name.
+    axes_order : tuple or int
+        A dimension in the data that corresponds to this axis.
     name : str
         Name for this frame.
     """
 
-    def __init__(self, axes_order=(0,), reference_time=None,
-                 reference_frame=astropy.time.Time, unit=None,
+    def __init__(self, reference_frame, unit=None, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
+        axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
+                                                      reference_frame.scale,
+                                                      reference_frame.location)
 
         super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,
-                         unit=unit, name=name,
-                         reference_position=reference_time, axis_physical_types=axis_physical_types)
+                         unit=unit, name=name, axis_physical_types=axis_physical_types)
+        self._attrs = {}
+        for a in self.reference_frame.info._represent_as_dict_extra_attrs:
+            try:
+                self._attrs[a] = getattr(self.reference_frame, a)
+            except AttributeError:
+                pass
+
+    @property
+    def _world_axis_object_classes(self):
+        comp = (
+            time.Time,
+            (),
+            {'unit': self.unit[0], **self._attrs},
+            self._convert_to_time)
+
+        return {'temporal': comp}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('temporal', 0, 'value')]
 
     def coordinates(self, *args):
         if np.isscalar(args):
@@ -414,19 +464,23 @@ class TemporalFrame(CoordinateFrame):
         else:
             dt = args[0]
 
-        if self.reference_position:
-            if not hasattr(dt, 'unit'):
-                dt = dt * self.unit[0]
+        return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
 
-            return self.reference_position + dt
+    def _convert_to_time(self, dt, *, unit, **kwargs):
+        if not isinstance(self.reference_frame.value, np.ndarray):
+            if not hasattr(dt, 'unit'):
+                dt = dt * unit
+            return self.reference_frame + dt
 
         else:
-            return self.reference_frame(dt)
+            return time.Time(dt, **kwargs)
+
 
     def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], astropy.time.Time):
-            if self.reference_position:
-                return (coords[0] - self.reference_position).to(self.unit[0])
+        if isinstance(coords[0], time.Time):
+            ref_value = self.reference_frame.value
+            if not isinstance(ref_value, np.ndarray):
+                return (coords[0] - self.reference_frame).to(self.unit[0])
             else:
                 # If we can't convert to a quantity just drop the object out
                 # and hope the transform can cope.
@@ -520,6 +574,81 @@ class CompositeFrame(CoordinateFrame):
                 qs.append(ret)
         return qs
 
+    @property
+    def _world_axis_object_components(self):
+        """
+        We need to generate the components respecting the axes_order.
+        """
+        out = [None] * self.naxes
+        for frame in self.frames:
+            for i, ao in enumerate(frame.axes_order):
+                out[ao] = frame._world_axis_object_components[i]
+
+        if any([o is None for o in out]):
+            raise ValueError("axes_order leads to incomplete world_axis_object_components")
+        return out
+
+    @property
+    def _world_axis_object_classes(self):
+        out = {}
+        for frame in self.frames:
+            out.update(frame._world_axis_object_classes)
+        return out
+
+
+class StokesProfile(str):
+    # This list of profiles in Table 7 in Greisen & Calabretta (2002)
+    # modified to be 0 indexed
+    profiles = {
+        'I': 0,
+        'Q': 1,
+        'U': 2,
+        'V': 3,
+        'RR': -1,
+        'LL': -2,
+        'RL': -3,
+        'LR': -4,
+        'XX': -5,
+        'YY': -6,
+        'XY': -7,
+        'YX': -8,
+    }
+
+    @classmethod
+    def from_index(cls, indexes):
+        """
+        Construct a StokesProfile object from a numerical index.
+
+        Parameters
+        ----------
+        indexes : `int`, `numpy.ndarray`
+            An index or array of indices to construct StokesProfile objects from.
+        """
+
+        nans = np.isnan(indexes)
+        indexes = np.asanyarray(indexes, dtype=int)
+        out = np.empty_like(indexes, dtype=object)
+
+        out[nans] = np.nan
+
+        for profile, index in cls.profiles.items():
+            out[indexes == index] = profile
+
+        if out.size == 1 and not nans:
+            return StokesProfile(out.item())
+        elif nans.all():
+            return np.array(out, dtype=float)
+        return out
+
+    def __new__(cls, content):
+        content = str(content)
+        if content not in cls.profiles.keys():
+            raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
+        return str.__new__(cls, content)
+
+    def value(self):
+        return self.profiles[self]
+
 
 class StokesFrame(CoordinateFrame):
     """
@@ -532,21 +661,34 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), name=None):
-        self._stokes_components = ['I', 'Q', 'U', 'V']
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=("stokes",), unit=u.one)
+                                          axes_names=("stokes",), unit=u.one,
+                                          axis_physical_types="phys.polarization.stokes")
+
+    @property
+    def _world_axis_object_classes(self):
+        return {'stokes': (
+            StokesProfile,
+            (),
+            {},
+            StokesProfile.from_index)}
+
+    @property
+    def _world_axis_object_components(self):
+        return [('stokes', 0, 'value')]
 
     def coordinates(self, *args):
-        if hasattr(args[0], 'value'):
+        if isinstance(args[0], u.Quantity):
             arg = args[0].value
         else:
             arg = args[0]
-        return self._stokes_components[int(arg)]
+
+        return StokesProfile.from_index(arg)
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], str):
-            if coords[0] in self._stokes_components:
-                return self._stokes_components.index(coords[0]) * u.pix
+            if coords[0] in StokesProfile.profiles.keys():
+                return StokesProfile.profiles[coords[0]] * u.one
         else:
             return coords[0]
 

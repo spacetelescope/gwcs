@@ -56,8 +56,8 @@ class WCSType(GWCSType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert len(old.available_frames) == len(new.available_frames)
+        assert old.name == new.name # nosec
+        assert len(old.available_frames) == len(new.available_frames) # nosec
         for (old_frame, old_transform), (new_frame, new_transform) in zip(
                 old.pipeline, new.pipeline):
             helpers.assert_tree_match(old_frame, new_frame)
@@ -99,8 +99,8 @@ class FrameType(GWCSType):
             kwargs['unit'] = tuple(
                 yamlutil.tagged_tree_to_custom_tree(node['unit'], ctx))
 
-        if 'axis_physical_type' in node:
-            kwargs['axis_physical_type'] = tuple(node['axis_physical_type'])
+        if 'axis_physical_types' in node:
+            kwargs['axis_physical_types'] = tuple(node['axis_physical_types'])
 
         return kwargs
 
@@ -132,17 +132,17 @@ class FrameType(GWCSType):
 
         if frame.axis_physical_types is not None:
             node['axis_physical_types'] = list(frame.axis_physical_types)
-                                                 
+
         return node
 
     @classmethod
     def _assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert old.axes_order == new.axes_order
-        assert old.axes_names == new.axes_names
-        assert type(old.reference_frame) is type(new.reference_frame)
-        assert old.unit == new.unit
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec
+        assert old.axes_names == new.axes_names   # nosec
+        assert type(old.reference_frame) is type(new.reference_frame)  # nosec
+        assert old.unit == new.unit  # nosec
 
         if old.reference_frame is not None:
             for name in old.reference_frame.get_frame_attr_names().keys():
@@ -191,7 +191,7 @@ class CelestialFrameType(FrameType):
     def assert_equal(cls, old, new):
         cls._assert_equal(old, new)
 
-        assert old.reference_position == new.reference_position
+        assert old.reference_position == new.reference_position  # nosec
 
 
 class SpectralFrameType(FrameType):
@@ -242,56 +242,35 @@ class CompositeFrameType(FrameType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
+        assert old.name == new.name  # nosec
         for old_frame, new_frame in zip(old.frames, new.frames):
             helpers.assert_tree_match(old_frame, new_frame)
 
 
-class TemporalFrameType(GWCSType):
+class TemporalFrameType(FrameType):
     name = "temporal_frame"
     requires = _REQUIRES
     types = [TemporalFrame]
     version = '1.0.0'
 
-    @classmethod
-    def to_tree(cls, frame, ctx):
-        import astropy.time
-
-        node = {}
-
-        node['name'] = frame.name
-
-        node['axes_order'] = list(frame.axes_order)
-
-        if frame.axes_names is not None:
-            node['axes_names'] = list(frame.axes_names)
-
-        if frame.reference_frame is not None:
-            if frame.reference_frame is not astropy.time.Time:
-                raise ValueError("Can not save reference_frame unless it's Time")
-
-        if frame.reference_position is not None:
-            node['reference_time'] = yamlutil.custom_tree_to_tagged_tree(
-                frame.reference_position, ctx)
-
-        if frame.unit is not None:
-            node['unit'] = yamlutil.custom_tree_to_tagged_tree(
-                list(frame.unit), ctx)
-
-        return node
 
     @classmethod
     def from_tree(cls, node, ctx):
+        node = cls._from_tree(node, ctx)
+        return TemporalFrame(**node)
 
-        name = node['name']
-        axes_order = node.get('axes_order', None)
-        axes_names = node.get('axes_names', None)
-        reference_frame = node.get('reference_frame', astropy.time.Time)
-        reference_time = node.get('reference_time', None)
-        unit = node.get('unit', None)
+    @classmethod
+    def to_tree(cls, frame, ctx):
+        return cls._to_tree(frame, ctx)
 
-        return TemporalFrame(axes_order, reference_time,
-                             reference_frame, unit, axes_names, name)
+    @classmethod
+    def assert_equal(cls, old, new):
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec
+        assert old.axes_names == new.axes_names  # nosec
+        assert old.unit == new.unit  # nosec
+
+        assert old.reference_frame == new.reference_frame  # nosec
 
 
 class StokesFrameType(FrameType):
@@ -317,5 +296,5 @@ class StokesFrameType(FrameType):
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
-        assert old.name == new.name
-        assert old.axes_order == new.axes_order
+        assert old.name == new.name  # nosec
+        assert old.axes_order == new.axes_order  # nosec

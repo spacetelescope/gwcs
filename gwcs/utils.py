@@ -20,7 +20,7 @@ sky_pairs = {"equatorial": ["RA", "DEC"],
              "helioecliptic": ["HLON", "HLAT"],
              "supergalactic": ["SLON", "SLAT"],
              # "spec": specsystems
-             }
+            }
 
 radesys = ['ICRS', 'FK5', 'FK4', 'FK4-NO-E', 'GAPPT', 'GALACTIC']
 
@@ -295,7 +295,7 @@ sky_systems_map = {'ICRS': coords.ICRS,
                    'FK4NOE': coords.FK4NoETerms,
                    'GAL': coords.Galactic,
                    'HOR': coords.AltAz
-                   }
+                  }
 
 
 def make_fitswcs_transform(header):
@@ -424,8 +424,7 @@ def fitswcs_nonlinear(header):
         transforms.append(n2c)
     if transforms:
         return functools.reduce(core._model_oper('|'), transforms)
-    else:
-        return None
+    return None
 
 
 def create_projection_transform(projcode):

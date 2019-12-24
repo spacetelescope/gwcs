@@ -4,11 +4,13 @@ This module contains a mixin class which exposes the WCS API defined
 in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
+
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
 import astropy.units as u
 
 from . import utils
+from . import coordinate_frames as cf
 
 __all__ = ["GWCSAPIMixin"]
 
@@ -27,6 +29,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         The number of axes in the pixel coordinate system.
         """
+        if self.input_frame is None:
+            return self.forward_transform.n_inputs
         return self.input_frame.naxes
 
     @property
@@ -34,6 +38,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         The number of axes in the world coordinate system.
         """
+        if self.output_frame is None:
+            return self.forward_transform.n_outputs
         return self.output_frame.naxes
 
     @property
@@ -46,7 +52,14 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         arbitrary string.  Alternatively, if the physical type is
         unknown/undefined, an element can be `None`.
         """
-        return self.output_frame.axis_physical_types
+        # A CompositeFrame orders the output correctly based on axes_order.
+        if isinstance(self.output_frame, cf.CompositeFrame):
+            return self.output_frame.axis_physical_types
+
+        # If we don't have a CompositeFrame, where this is taken care of for us,
+        # we need to make sure we re-order the output to match the transform.
+        # The underlying frames don't reorder themselves because axes_order is global.
+        return tuple(self.output_frame.axis_physical_types[i] for i in self.output_frame.axes_order)
 
     @property
     def world_axis_units(self):
@@ -59,6 +72,25 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         allowed, but just not recommended).
         """
         return tuple(unit.to_string(format='vounit') for unit in self.output_frame.unit)
+
+    def _remove_quantity_output(self, result, frame):
+        if self.forward_transform.uses_quantity:
+            if self.output_frame.naxes == 1:
+                result = [result]
+
+            result = tuple(r.to_value(unit) for r, unit in zip(result, frame.unit))
+
+        # If we only have one output axes, we shouldn't return a tuple.
+        if self.output_frame.naxes == 1 and isinstance(result, tuple):
+            return result[0]
+        return result
+
+    def _add_units_input(self, arrays, transform, frame):
+        if transform.uses_quantity:
+            return tuple(u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit))
+
+        return arrays
+
 
     def pixel_to_world_values(self, *pixel_arrays):
         """
@@ -73,8 +105,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         order, where for an image, ``x`` is the horizontal coordinate and ``y``
         is the vertical coordinate.
         """
+        pixel_arrays = self._add_units_input(pixel_arrays, self.forward_transform, self.input_frame)
         result = self(*pixel_arrays, with_units=False)
-        return result
+
+        return self._remove_quantity_output(result, self.output_frame)
 
     def array_index_to_world_values(self, *index_arrays):
         """
@@ -84,8 +118,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         ``i`` is the row and ``j`` is the column (i.e. the opposite order to
         `~BaseLowLevelWCS.pixel_to_world_values`).
         """
-        result = self(*index_arrays[::-1], with_units=False)
-        return result
+        index_arrays = self._add_units_input(index_arrays[::-1], self.forward_transform, self.input_frame)
+
+        result = self(*index_arrays, with_units=False)
+
+        return self._remove_quantity_output(result, self.output_frame)
 
     def world_to_pixel_values(self, *world_arrays):
         """
@@ -99,8 +136,11 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
+        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
+
         result = self.invert(*world_arrays, with_units=False)
-        return result
+
+        return self._remove_quantity_output(result, self.input_frame)
 
     def world_to_array_index_values(self, *world_arrays):
         """
@@ -111,8 +151,12 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         `~BaseLowLevelWCS.pixel_to_world_values`). The indices should be
         returned as rounded integers.
         """
-        result = self.invert(*world_arrays, with_units=False)[::-1]
-        return result  # astype(int)
+        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
+        result = self.invert(*world_arrays, with_units=False)
+        if self.pixel_n_dim != 1:
+            result = result[::-1]
+
+        return self._remove_quantity_output(result, self.input_frame)
 
     @property
     def array_shape(self):
@@ -144,7 +188,25 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         WCS that includes fitted distortions. This is an optional property,
         and it should return `None` if a shape is not known or relevant.
         """
-        return self.bounding_box
+        bounding_box = self.bounding_box
+        if bounding_box is None:
+            return bounding_box
+
+        if self.pixel_n_dim == 1 and len(bounding_box) == 2:
+            bounding_box = (bounding_box,)
+
+        # Iterate over the bounding box and convert from quantity if required.
+        bounding_box = list(bounding_box)
+        for i, bb_axes in enumerate(bounding_box):
+            bb = []
+            for lim in bb_axes:
+                if isinstance(lim, u.Quantity):
+                    lim = lim.value
+                bb.append(lim)
+
+            bounding_box[i] = tuple(bb)
+
+        return tuple(bounding_box)
 
     @property
     def pixel_shape(self):
@@ -164,6 +226,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
     @pixel_shape.setter
     def pixel_shape(self, value):
+        if value is None:
+            self._pixel_shape = None
+            return
         wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
             raise ValueError("The number of data axes, "
@@ -182,9 +247,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         any further information. For completely independent axes, the diagonal
         would be `True` and all other entries `False`.
         """
-
         return separable.separability_matrix(self.forward_transform)
 
+    @property
     def serialized_classes(self):
         """
         Indicates whether Python objects are given in serialized form or as
@@ -192,13 +257,17 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         return False
 
+    @property
     def world_axis_object_classes(self):
-        raise NotImplementedError()
+        return self.output_frame._world_axis_object_classes
 
+    @property
     def world_axis_object_components(self):
-        raise NotImplementedError()
+        return self.output_frame._world_axis_object_components
 
     # High level APE 14 API
+
+    @property
     def low_level_wcs(self):
         """
         Returns a reference to the underlying low-level WCS object.
@@ -248,8 +317,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
             result = [i.value for i in result]
         if self.input_frame.naxes == 1:
             return result[0]
-        else:
-            return result
+        return result
 
     def world_to_array_index(self, *world_objects):
         """
@@ -258,3 +326,21 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         result = self.invert(*world_objects, with_units=True)[::-1]
         return tuple([utils._toindex(r) for r in result])
+
+    @property
+    def pixel_axis_names(self):
+        """
+        An iterable of strings describing the name for each pixel axis.
+        """
+        if self.input_frame is not None:
+            return self.input_frame.axes_names
+        return tuple([''] * self.pixel_n_dim)
+
+    @property
+    def world_axis_names(self):
+        """
+        An iterable of strings describing the name for each world axis.
+        """
+        if self.output_frame is not None:
+            return self.output_frame.axes_names
+        return tuple([''] * self.world_n_dim)

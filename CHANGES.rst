@@ -1,3 +1,41 @@
+0.12.0 (2019-12-24)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- ``gwcs.WCS`` now supports the ``world_axis_object_components`` and
+  ``world_axis_object_classes`` methods of the low level WCS API as specified by
+  APE 14.
+
+- Removed astropy-helpers from package. [#249]
+
+- Added a method ``fix_inputs`` which rturns an unique WCS from a compound
+  WCS by fixing inputs. [#254]
+
+- Added two new transforms - ``ToDirectionCosines`` and ``FromDirectionCosines``. [#256]
+
+- Added new transforms ``WavelengthFromGratingEquation``, ``AnglesFromGratingEquation3D``. [#259]
+
+- ``gwcs.WCS`` now supports the new ``world_axis_names`` and
+  ``pixel_axis_names`` properties on ``LowLevelWCS`` objects. [#260]
+
+- Update the ``StokesFrame`` to work for arrays of coordinates and integrate
+  with APE 14. [#258]
+
+- Added ``Snell3D``, ``SellmeierGlass`` and ``SellmeierZemax`` transforms. [#270]
+
+API Changes
+^^^^^^^^^^^
+
+- Changed the initialization of ``TemporalFrame`` to be consistent with other
+   coordinate frames. [#242]
+
+Bug Fixes
+^^^^^^^^^
+
+- Ensure that ``world_to_pixel_values`` and ``pixel_to_world_values`` always
+  accept and return floats, even if the underlying transform uses units. [#248]
+
 0.11.0 (2019/07/26)
 -------------------
 
