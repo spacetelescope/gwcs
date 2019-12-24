@@ -4,13 +4,18 @@ ASDF tags for spectroscopy related models.
 
 import numpy as np
 from numpy.testing import assert_array_equal
+
+from astropy import units as u
+from astropy.tests.helper import assert_quantity_allclose
 from asdf import yamlutil
+
 from ..gwcs_types import GWCSTransformType
 from .. spectroscopy import *
 from . import _parameter_to_value
 
 
-__all__ = ['SellmeierGlassType', 'SellmeierZemaxType', 'Snell3D']
+__all__ = ['GratingEquationType', 'SellmeierGlassType',
+           'SellmeierZemaxType', 'Snell3D']
 
 
 class SellmeierGlassType(GWCSTransformType):
@@ -66,3 +71,54 @@ class Snell3DType(GWCSTransformType):
     @classmethod
     def to_tree_transform(cls, model, ctx):
         return yamlutil.custom_tree_to_tagged_tree({}, ctx)
+
+
+class GratingEquationType(GWCSTransformType):
+    name = "grating_equation"
+    version = '1.0.0'
+    types = [AnglesFromGratingEquation3D,
+             WavelengthFromGratingEquation]
+
+    @classmethod
+    def from_tree_transform(cls, node, ctx):
+        groove_density = node['groove_density']
+        order = node['order']
+        output = node['output']
+        if output == "wavelength":
+            model = WavelengthFromGratingEquation(groove_density=groove_density,
+                                                  spectral_order=order)
+        elif output == "angle":
+            model = AnglesFromGratingEquation3D(groove_density=groove_density,
+                                                spectral_order=order)
+        else:
+            raise ValueError("Can't create a GratingEquation model with "
+                             "output {0}".format(output))
+        return model
+
+    @classmethod
+    def to_tree_transform(cls, model, ctx):
+        if model.groove_density.unit is not None:
+            groove_density = u.Quantity(model.groove_density.value,
+                                        unit=model.groove_density.unit)
+        else:
+            groove_density = model.groove_density.value
+        node = {'order': model.spectral_order.value,
+                'groove_density': groove_density
+                }
+        if isinstance(model, AnglesFromGratingEquation3D):
+            node['output'] = 'angle'
+        elif isinstance(model, WavelengthFromGratingEquation):
+            node['output'] = 'wavelength'
+        else:
+            raise TypeError("Can't serialize an instance of {0}"
+                            .format(model.__class__.__name__))
+        return yamlutil.custom_tree_to_tagged_tree(node, ctx)
+
+    @classmethod
+    def assert_equal(cls, a, b):
+        if isinstance(a, AnglesFromGratingEquation3D):
+            assert isinstance(b, AnglesFromGratingEquation3D) # nosec
+        elif isinstance(a, WavelengthFromGratingEquation):
+            assert isinstance(b, WavelengthFromGratingEquation) # nosec
+        assert_quantity_allclose(a.groove_density, b.groove_density) # nosec
+        assert a.spectral_order.value == b.spectral_order.value # nosec
