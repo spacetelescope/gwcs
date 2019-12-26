@@ -1,5 +1,10 @@
 0.12.1 (Unreleased)
-------------------
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Added two new transforms - ``SphericalToCartesian`` and ``CartesianToSpherical``. [#275]
+
 
 0.12.0 (2019-12-24)
 -------------------
