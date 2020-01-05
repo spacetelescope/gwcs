@@ -25,6 +25,7 @@ def test_wrong_projcode2():
         gwutils.create_projection_transform("TAM")
 
 
+@pytest.mark.remote_data
 def test_fits_transform():
     hdr = fits.Header.fromfile(get_pkg_data_filename('data/simple_wcs2.hdr'))
     gw1 = gwutils.make_fitswcs_transform(hdr)

@@ -254,6 +254,7 @@ def test_grid_from_bounding_box_step():
         grid_from_bounding_box(bb, step=(1, 2, 1))
 
 
+@pytest.mark.remote_data
 def test_wcs_from_points():
     np.random.seed(0)
     hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
@@ -386,6 +387,7 @@ def test_high_level_api():
     assert_allclose(z1, xv)
 
 
+@pytest.mark.remote_data
 class TestImaging(object):
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
