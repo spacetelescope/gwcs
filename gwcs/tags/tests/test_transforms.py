@@ -19,9 +19,13 @@ sell_zemax = sp.SellmeierZemax(65, 35, 0, 0, [0.58339748, 0.46085267, 3.8915394]
 snell = sp.Snell3D()
 todircos = geometry.ToDirectionCosines()
 fromdircos = geometry.FromDirectionCosines()
+tocart = geometry.SphericalToCartesian()
+tospher = geometry.CartesianToSpherical()
 
 transforms = [todircos,
               fromdircos,
+              tospher,
+              tocart,
               snell,
               sell_glass,
               sell_zemax,
