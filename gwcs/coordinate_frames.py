@@ -629,10 +629,10 @@ class StokesProfile(str):
         indexes = np.asanyarray(indexes, dtype=int)
         out = np.empty_like(indexes, dtype=object)
 
-        out[nans] = np.nan
-
         for profile, index in cls.profiles.items():
             out[indexes == index] = profile
+
+        out[nans] = np.nan
 
         if out.size == 1 and not nans:
             return StokesProfile(out.item())
