@@ -3,7 +3,7 @@
 New Features
 ^^^^^^^^^^^^
 
-- Added two new transforms - ``SphericalToCartesian`` and ``CartesianToSpherical``. [#275]
+- Added two new transforms - ``SphericalToCartesian`` and ``CartesianToSpherical``. [#275, #284]
 
 
 0.12.0 (2019-12-24)
