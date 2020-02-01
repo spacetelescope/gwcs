@@ -22,7 +22,7 @@ def test_spherical_cartesian_inverse():
 
 
 @pytest.mark.parametrize(
-    'testval,unit,wrap_at,theta_def',
+    'testval, unit, wrap_at, theta_def',
     product(
         [
             (45.0, -90.0, (0.0, 0.0, -1.0)),
@@ -48,7 +48,7 @@ def test_spherical_cartesian_inverse():
         ],
         [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
         [180, 360],
-        ['elevation', 'polar'],
+        geometry._THETA_NAMES,
     )
 )
 def test_spherical_to_cartesian(testval, unit, wrap_at, theta_def):
@@ -59,7 +59,7 @@ def test_spherical_to_cartesian(testval, unit, wrap_at, theta_def):
     if wrap_at == 180:
         phi = np.mod(phi - 180.0, 360.0) - 180.0
 
-    if theta_def == 'polar':
+    if theta_def not in geometry._LAT_LIKE:
         theta = 90 - theta
 
     xyz = s2c(phi * unit, theta * unit)
@@ -69,7 +69,7 @@ def test_spherical_to_cartesian(testval, unit, wrap_at, theta_def):
 
 
 @pytest.mark.parametrize(
-    'phi,theta,unit,wrap_at,theta_def',
+    'phi, theta, unit, wrap_at, theta_def',
     list(product(
         45.0 * np.arange(8),
         [-90, -89, -55, 0, 25, 89, 90],
@@ -88,7 +88,7 @@ def test_spher2cart_roundrip(phi, theta, unit, wrap_at, theta_def):
 
     sl = slice(int(theta == 90 or theta == -90), 2)
 
-    if theta_def == 'polar':
+    if theta_def not in geometry._LAT_LIKE:
         theta = 90 - theta
 
     assert s2c.wrap_phi_at == wrap_at
@@ -124,88 +124,48 @@ def test_cartesian_to_spherical_mixed_Q(cart_to_spher, x, y, z):
             "(i.e., quantity or not).")
 
 
-@pytest.mark.parametrize('wrap_at', ['1', 180., True, 180j, [180]])
+@pytest.mark.parametrize('wrap_at', ['1', 180., True, 180j, [180], -180, 0])
 def test_c2s2c_wrong_wrap_type(spher_to_cart, cart_to_spher, wrap_at):
-    with pytest.raises(TypeError) as arg_err:
-        geometry.SphericalToCartesian(wrap_phi_at=wrap_at)
-    assert (arg_err.value.args[0] == "'wrap_phi_at' must be an integer number: "
-            "180 or 360")
-
-    with pytest.raises(TypeError) as arg_err:
-        spher_to_cart.wrap_phi_at = wrap_at
-    assert (arg_err.value.args[0] == "'wrap_phi_at' must be an integer number: "
-            "180 or 360")
-
-    with pytest.raises(TypeError) as arg_err:
-        geometry.SphericalToCartesian(wrap_phi_at=wrap_at)
-    assert (arg_err.value.args[0] == "'wrap_phi_at' must be an integer number: "
-            "180 or 360")
-
-    with pytest.raises(TypeError) as arg_err:
-        cart_to_spher.wrap_phi_at = wrap_at
-    assert (arg_err.value.args[0] == "'wrap_phi_at' must be an integer number: "
-            "180 or 360")
-
-
-@pytest.mark.parametrize('wrap_at', [-180, 0, 1])
-def test_c2s2c_wrong_wrap_val(spher_to_cart, cart_to_spher, wrap_at):
+    err_msg = "'wrap_phi_at' must be an integer number: 180 or 360"
     with pytest.raises(ValueError) as arg_err:
         geometry.SphericalToCartesian(wrap_phi_at=wrap_at)
-    assert arg_err.value.args[0] == "Allowed 'wrap_phi_at' values are 180 and 360"
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
         spher_to_cart.wrap_phi_at = wrap_at
-    assert arg_err.value.args[0] == "Allowed 'wrap_phi_at' values are 180 and 360"
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
-        geometry.SphericalToCartesian(wrap_phi_at=wrap_at)
-    assert arg_err.value.args[0] == "Allowed 'wrap_phi_at' values are 180 and 360"
+        geometry.CartesianToSpherical(wrap_phi_at=wrap_at)
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
         cart_to_spher.wrap_phi_at = wrap_at
-    assert arg_err.value.args[0] == "Allowed 'wrap_phi_at' values are 180 and 360"
+    assert arg_err.value.args[0] == err_msg
 
 
-@pytest.mark.parametrize('theta_def', [180., True, 180j, [180], np.int(1)])
-def test_c2s2c_wrong_theta_type(spher_to_cart, cart_to_spher, theta_def):
-    with pytest.raises(TypeError) as arg_err:
-        geometry.SphericalToCartesian(theta_def=theta_def)
-    assert arg_err.value.args[0] == "'theta_def' must be a string."
-
-    with pytest.raises(TypeError) as arg_err:
-        spher_to_cart.theta_def = theta_def
-    assert arg_err.value.args[0] == "'theta_def' must be a string."
-
-    with pytest.raises(TypeError) as arg_err:
-        geometry.SphericalToCartesian(theta_def=theta_def)
-    assert arg_err.value.args[0] == "'theta_def' must be a string."
-
-    with pytest.raises(TypeError) as arg_err:
-        cart_to_spher.theta_def = theta_def
-    assert arg_err.value.args[0] == "'theta_def' must be a string."
-
-
-@pytest.mark.parametrize('theta_def', ['ele', ''])
+@pytest.mark.parametrize(
+    'theta_def',
+    [180., True, 180j, 'ele', '']
+)
 def test_c2s2c_wrong_theta_value(spher_to_cart, cart_to_spher, theta_def):
+    err_msg = ("'theta_def' must be a string with one of the following "
+               "values: {:s}".format(','.join(map(repr, geometry._THETA_NAMES))))
     with pytest.raises(ValueError) as arg_err:
         geometry.SphericalToCartesian(theta_def=theta_def)
-    assert (arg_err.value.args[0] == "Allowed 'theta_def' values are: "
-            "'elevation', 'inclination', or 'polar'.")
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
         spher_to_cart.theta_def = theta_def
-    assert (arg_err.value.args[0] == "Allowed 'theta_def' values are: "
-            "'elevation', 'inclination', or 'polar'.")
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
-        geometry.SphericalToCartesian(theta_def=theta_def)
-    assert (arg_err.value.args[0] == "Allowed 'theta_def' values are: "
-            "'elevation', 'inclination', or 'polar'.")
+        geometry.CartesianToSpherical(theta_def=theta_def)
+    assert arg_err.value.args[0] == err_msg
 
     with pytest.raises(ValueError) as arg_err:
         cart_to_spher.theta_def = theta_def
-    assert (arg_err.value.args[0] == "Allowed 'theta_def' values are: "
-            "'elevation', 'inclination', or 'polar'.")
+    assert arg_err.value.args[0] == err_msg
 
 
 def test_cartesian_spherical_asdf(spher_to_cart, cart_to_spher):
