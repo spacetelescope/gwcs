@@ -45,12 +45,11 @@ class SphericalCartesianType(GWCSTransformType):
     @classmethod
     def from_tree_transform(cls, node, ctx):
         transform_type = node['transform_type']
-        wrap_phi_at = node['wrap_phi_at']
-        theta_def = node['theta_def']
+        wrap_lon_at = node['wrap_lon_at']
         if transform_type == 'spherical_to_cartesian':
-            return SphericalToCartesian(wrap_phi_at=wrap_phi_at, theta_def=theta_def)
+            return SphericalToCartesian(wrap_lon_at=wrap_lon_at)
         elif transform_type == 'cartesian_to_spherical':
-            return CartesianToSpherical(wrap_phi_at=wrap_phi_at, theta_def=theta_def)
+            return CartesianToSpherical(wrap_lon_at=wrap_lon_at)
         else:
             raise TypeError(f"Unknown model_type {transform_type}")
 
@@ -65,7 +64,6 @@ class SphericalCartesianType(GWCSTransformType):
 
         node = {
             'transform_type': transform_type,
-            'wrap_phi_at': model.wrap_phi_at,
-            'theta_def': model.theta_def
+            'wrap_lon_at': model.wrap_lon_at
         }
         return yamlutil.custom_tree_to_tagged_tree(node, ctx)

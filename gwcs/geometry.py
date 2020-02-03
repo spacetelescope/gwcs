@@ -11,14 +11,6 @@ from astropy import units as u
 __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'SphericalToCartesian', 'CartesianToSpherical']
 
-# allowable values for angle theta definition in spherical<->Cartesian
-# transformations:
-_THETA_NAMES = ['latitude', 'colatitude', 'altitude', 'elevation',
-                'inclination', 'polar']
-
-# theta definitions for which angle is measured from the "reference" plane:
-_LAT_LIKE = ['latitude', 'altitude', 'elevation']
-
 
 class ToDirectionCosines(Model):
     """
@@ -70,11 +62,10 @@ class FromDirectionCosines(Model):
 class SphericalToCartesian(Model):
     """
     Convert spherical coordinates on a unit sphere to cartesian coordinates.
-    Spherical coordinates, when not provided as ``Quantity``, are assumed
-    to be in degrees with ``phi`` being the *azimuthal angle* (or *longitude*)
-    ``[0, 360)`` (or ``[-180, 180)``) and ``theta`` being the *elevation angle*
-    (or *latitude*) ``[-90, 90]`` or the *inclination (polar, colatitude) angle*
-    in range ``[0, 180]`` depending on the used definition.
+    Spherical coordinates when not provided as ``Quantity`` are assumed
+    to be in degrees with ``lon`` being the *longitude (or azimuthal) angle*
+    ``[0, 360)`` (or ``[-180, 180)``) and angle ``lat`` is the *latitude*
+    (or *elevation angle*) in range ``[-90, 90]``.
 
     """
     _separable = False
@@ -85,102 +76,63 @@ class SphericalToCartesian(Model):
     n_inputs = 2
     n_outputs = 3
 
-    def __init__(self, wrap_phi_at=360, theta_def='latitude', **kwargs):
+    def __init__(self, wrap_lon_at=360, **kwargs):
         """
         Parameters
         ----------
-        wrap_phi_at : {360, 180}, optional
-            An **integer number** that specifies the range of the azimuthal
-            (longitude) angle. When ``wrap_phi_at`` is 180, azimuthal angle
-            will have a range of ``[-180, 180)`` and when ``wrap_phi_at``
-            is 360 (default), the azimuthal angle will have a range of
+        wrap_lon_at : {360, 180}, optional
+            An **integer number** that specifies the range of the longitude
+            (azimuthal) angle. When ``wrap_lon_at`` is 180, the longitude angle
+            will have a range of ``[-180, 180)`` and when ``wrap_lon_at``
+            is 360 (default), the longitude angle will have a range of
             ``[0, 360)``.
-
-        theta_def : {'latitude', 'colatitude', 'altitude', 'elevation', \
-                     'inclination', 'polar'}, optional
-            Specifies the definition used for the angle ``theta``:
-            either 'elevation' angle (synonyms: 'latitude', 'altitude') from
-            the reference plane or 'inclination' angle (synonyms: 'polar',
-            'colatitude') measured from the pole (zenith direction).
 
         """
         super().__init__(**kwargs)
-        self.inputs = ('phi', 'theta')
+        self.inputs = ('lon', 'lat')
         self.outputs = ('x', 'y', 'z')
-        self.wrap_phi_at = wrap_phi_at
-        self.theta_def = theta_def
+        self.wrap_lon_at = wrap_lon_at
 
     @property
-    def wrap_phi_at(self):
-        """ An **integer number** that specifies the range of the azimuthal
-        (longitude) angle.
+    def wrap_lon_at(self):
+        """ An **integer number** that specifies the range of the longitude
+        (azimuthal) angle.
 
-        Allowed values are 180 and 360. When ``wrap_phi_at``
-        is 180, azimuthal angle will have a range of ``[-180, 180)`` and when
-        ``wrap_phi_at`` is 360 (default), the azimuthal angle will have a
+        Allowed values are 180 and 360. When ``wrap_lon_at``
+        is 180, the longitude angle will have a range of ``[-180, 180)`` and
+        when ``wrap_lon_at`` is 360 (default), the longitude angle will have a
         range of ``[0, 360)``.
 
         """
-        return self._wrap_phi_at
+        return self._wrap_lon_at
 
-    @wrap_phi_at.setter
-    def wrap_phi_at(self, wrap_angle):
+    @wrap_lon_at.setter
+    def wrap_lon_at(self, wrap_angle):
         if not (isinstance(wrap_angle, numbers.Integral) and wrap_angle in [180, 360]):
-            raise ValueError("'wrap_phi_at' must be an integer number: 180 or 360")
-        self._wrap_phi_at = wrap_angle
+            raise ValueError("'wrap_lon_at' must be an integer number: 180 or 360")
+        self._wrap_lon_at = wrap_angle
 
-    @property
-    def theta_def(self):
-        """ Definition used for the ``theta`` angle, i.e., latitude or colatitude.
-
-        When ``theta_def`` is either 'elevation', or 'latitude', or 'altitude',
-        angle ``theta_def`` is measured from the reference plane.
-        When ``theta_def`` is either 'inclination', or 'polar', or 'colatitude',
-        angle ``theta_def`` is measured from the pole (zenith direction).
-
-        """
-        return self._theta_def
-
-    @theta_def.setter
-    def theta_def(self, theta_def):
-        if theta_def not in _THETA_NAMES:
-            raise ValueError(
-                "'theta_def' must be a string with one of the following "
-                "values: {:s}".format(','.join(map(repr, _THETA_NAMES)))
-            )
-        self._theta_def = theta_def
-        self._is_theta_latitude = theta_def in _LAT_LIKE
-
-    def evaluate(self, phi, theta):
-        if isinstance(phi, u.Quantity) != isinstance(theta, u.Quantity):
+    def evaluate(self, lon, lat):
+        if isinstance(lon, u.Quantity) != isinstance(lat, u.Quantity):
             raise TypeError("All arguments must be of the same type "
                             "(i.e., quantity or not).")
 
-        phi = np.deg2rad(phi)
-        theta = np.deg2rad(theta)
+        lon = np.deg2rad(lon)
+        lat = np.deg2rad(lat)
 
-        if self._is_theta_latitude:
-            cs = np.cos(theta)
-            si = np.sin(theta)
-        else:
-            cs = np.sin(theta)
-            si = np.cos(theta)
-
-        x = cs * np.cos(phi)
-        y = cs * np.sin(phi)
-        z = si
+        cs = np.cos(lat)
+        x = cs * np.cos(lon)
+        y = cs * np.sin(lon)
+        z = np.sin(lat)
 
         return x, y, z
 
     def inverse(self):
-        return CartesianToSpherical(
-            wrap_phi_at=self._wrap_phi_at,
-            theta_def=self._theta_def
-        )
+        return CartesianToSpherical(wrap_lon_at=self._wrap_lon_at)
 
     @property
     def input_units(self):
-        return {'phi': u.deg, 'theta': u.deg}
+        return {'lon': u.deg, 'lat': u.deg}
 
 
 class CartesianToSpherical(Model):
@@ -188,11 +140,10 @@ class CartesianToSpherical(Model):
     Convert cartesian coordinates to spherical coordinates on a unit sphere.
     Output spherical coordinates are in degrees. When input cartesian
     coordinates are quantities (``Quantity`` objects), output angles
-    will also be quantities in degrees. Angle ``phi`` is the *azimuthal angle*
-    (or *longitude*) ``[0, 360)`` (or ``[-180, 180)``) and angle ``theta``
-    is the *elevation angle* (or *latitude*) ``[-90, 90]`` or the *inclination
-    (polar, colatitude) angle* in range ``[0, 180]`` depending on the used
-    definition (see documentation for ``theta_def``).
+    will also be quantities in degrees. Angle ``lon`` is the *longitude*
+    (or *azimuthal angle*) in range ``[0, 360)`` (or ``[-180, 180)``) and
+    angle ``lat`` is the *latitude* (or *elevation angle*) in the
+    range ``[-90, 90]``.
 
     """
     _separable = False
@@ -200,71 +151,41 @@ class CartesianToSpherical(Model):
     n_inputs = 3
     n_outputs = 2
 
-    def __init__(self, wrap_phi_at=360, theta_def='latitude', **kwargs):
+    def __init__(self, wrap_lon_at=360, **kwargs):
         """
         Parameters
         ----------
-        wrap_phi_at : {360, 180}, optional
-            An **integer number** that specifies the range of the azimuthal
-            (longitude) angle. When ``wrap_phi_at`` is 180, azimuthal angle
-            will have a range of ``[-180, 180)`` and when ``wrap_phi_at``
-            is 360 (default), the azimuthal angle will have a range of
+        wrap_lon_at : {360, 180}, optional
+            An **integer number** that specifies the range of the longitude
+            (azimuthal) angle. When ``wrap_lon_at`` is 180, the longitude angle
+            will have a range of ``[-180, 180)`` and when ``wrap_lon_at``
+            is 360 (default), the longitude angle will have a range of
             ``[0, 360)``.
-
-        theta_def : {'latitude', 'colatitude', 'altitude', 'elevation', \
-                     'inclination', 'polar'}, optional
-            Specifies the definition used for the angle ``theta``:
-            either 'elevation' angle (synonyms: 'latitude', 'altitude') from
-            the reference plane or 'inclination' angle (synonyms: 'polar',
-            'colatitude') measured from the pole (zenith direction).
 
         """
         super().__init__(**kwargs)
         self.inputs = ('x', 'y', 'z')
-        self.outputs = ('phi', 'theta')
-        self.wrap_phi_at = wrap_phi_at
-        self.theta_def = theta_def
+        self.outputs = ('lon', 'lat')
+        self.wrap_lon_at = wrap_lon_at
 
     @property
-    def wrap_phi_at(self):
-        """ An **integer number** that specifies the range of the azimuthal
-        (longitude) angle.
+    def wrap_lon_at(self):
+        """ An **integer number** that specifies the range of the longitude
+        (azimuthal) angle.
 
-        Allowed values are 180 and 360. When ``wrap_phi_at``
-        is 180, azimuthal angle will have a range of ``[-180, 180)`` and when
-        ``wrap_phi_at`` is 360 (default), the azimuthal angle will have a
+        Allowed values are 180 and 360. When ``wrap_lon_at``
+        is 180, the longitude angle will have a range of ``[-180, 180)`` and
+        when ``wrap_lon_at`` is 360 (default), the longitude angle will have a
         range of ``[0, 360)``.
 
         """
-        return self._wrap_phi_at
+        return self._wrap_lon_at
 
-    @wrap_phi_at.setter
-    def wrap_phi_at(self, wrap_angle):
+    @wrap_lon_at.setter
+    def wrap_lon_at(self, wrap_angle):
         if not (isinstance(wrap_angle, numbers.Integral) and wrap_angle in [180, 360]):
-            raise ValueError("'wrap_phi_at' must be an integer number: 180 or 360")
-        self._wrap_phi_at = wrap_angle
-
-    @property
-    def theta_def(self):
-        """ Definition used for the ``theta`` angle, i.e., latitude or colatitude.
-
-        When ``theta_def`` is either 'elevation', or 'latitude', or 'altitude',
-        angle ``theta_def`` is measured from the reference plane.
-        When ``theta_def`` is either 'inclination', or 'polar', or 'colatitude',
-        angle ``theta_def`` is measured from the pole (zenith direction).
-
-        """
-        return self._theta_def
-
-    @theta_def.setter
-    def theta_def(self, theta_def):
-        if theta_def not in _THETA_NAMES:
-            raise ValueError(
-                "'theta_def' must be a string with one of the following "
-                "values: {:s}".format(','.join(map(repr, _THETA_NAMES)))
-            )
-        self._theta_def = theta_def
-        self._is_theta_latitude = theta_def in _LAT_LIKE
+            raise ValueError("'wrap_lon_at' must be an integer number: 180 or 360")
+        self._wrap_lon_at = wrap_angle
 
     def evaluate(self, x, y, z):
         nquant = [isinstance(i, u.Quantity) for i in (x, y, z)].count(True)
@@ -273,21 +194,16 @@ class CartesianToSpherical(Model):
                             "(i.e., quantity or not).")
 
         h = np.hypot(x, y)
-        phi = np.rad2deg(np.arctan2(y, x))
+        lon = np.rad2deg(np.arctan2(y, x))
         if h == 0.0:
-            phi *= 0.0
+            lon *= 0.0
 
-        if self._wrap_phi_at != 180:
-            phi = np.mod(phi, 360.0 * u.deg if nquant else 360.0)
+        if self._wrap_lon_at != 180:
+            lon = np.mod(lon, 360.0 * u.deg if nquant else 360.0)
 
-        theta = np.rad2deg(np.arctan2(z, h))
-        if not self._is_theta_latitude:
-            theta = (90.0 * u.deg if nquant else 90.0) - theta
+        lat = np.rad2deg(np.arctan2(z, h))
 
-        return phi, theta
+        return lon, lat
 
     def inverse(self):
-        return SphericalToCartesian(
-            wrap_phi_at=self._wrap_phi_at,
-            theta_def=self._theta_def
-        )
+        return SphericalToCartesian(wrap_lon_at=self._wrap_lon_at)
