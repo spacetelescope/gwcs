@@ -31,9 +31,14 @@ allOf:
   - $ref:  "tag:stsci.edu:asdf/transform/transform-1.1.0"
   - object:
     properties:
+      wrap_lon_at:
+        description: Angle at which to wrap the longitude angle.
+        type: integer
+        enum: [180, 360]
+        default: 360
       transform_type:
-        description: |
-          The type of transform/class to initialize.
+        description: The type of transform/class to initialize.
         type: string
         enum: [spherical_to_cartesian, cartesian_to_spherical]
-    required: [transform_type]
+
+    required: [transform_type, wrap_lon_at]

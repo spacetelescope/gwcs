@@ -1,8 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from itertools import product, permutations
+import io
 
-import numpy as np
 import pytest
+
+import asdf
+from asdf.tests.helpers import assert_roundtrip_tree
+import numpy as np
 from astropy import units as u
 
 from .. import geometry
@@ -20,7 +24,7 @@ def test_spherical_cartesian_inverse():
 
 
 @pytest.mark.parametrize(
-    'testval,unit',
+    'testval, unit, wrap_at',
     product(
         [
             (45.0, -90.0, (0.0, 0.0, -1.0)),
@@ -44,31 +48,49 @@ def test_spherical_cartesian_inverse():
             (315.0, 45.0, (0.5, -0.5, _INV_SQRT2)),
             (315.0, 90.0, (0.0, 0.0, 1.0)),
         ],
-        [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad]
+        [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
+        [180, 360],
     )
 )
-def test_spherical_to_cartesian(spher_to_cart, testval, unit):
+def test_spherical_to_cartesian(testval, unit, wrap_at):
+    s2c = geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
     ounit = 1 if unit == 1 else u.dimensionless_unscaled
-    phi, theta, expected = testval
-    xyz = spher_to_cart(phi * unit, theta * unit)
+    lon, lat, expected = testval
+
+    if wrap_at == 180:
+        lon = np.mod(lon - 180.0, 360.0) - 180.0
+
+    xyz = s2c(lon * unit, lat * unit)
     if unit != 1:
         assert xyz[0].unit == u.dimensionless_unscaled
     assert u.allclose(xyz, u.Quantity(expected, ounit), atol=1e-15 * ounit)
 
 
 @pytest.mark.parametrize(
-    'phi,theta,unit',
+    'lon, lat, unit, wrap_at',
     list(product(
         45.0 * np.arange(8),
-        [-90, -55, 0, 25, 90],
-        [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad]
+        [-90, -89, -55, 0, 25, 89, 90],
+        [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
+        [180, 360],
     ))
 )
-def test_spher2cart_roundrip(spher_to_cart, cart_to_spher, phi, theta, unit):
+def test_spher2cart_roundrip(lon, lat, unit, wrap_at):
+    s2c = geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
+    c2s = geometry.CartesianToSpherical(wrap_lon_at=wrap_at)
     ounit = 1 if unit == 1 else u.deg
+
+    if wrap_at == 180:
+        lon = np.mod(lon - 180.0, 360.0) - 180.0
+
+    sl = slice(int(lat == 90 or lat == -90), 2)
+
+    assert s2c.wrap_lon_at == wrap_at
+    assert c2s.wrap_lon_at == wrap_at
+
     assert u.allclose(
-        cart_to_spher(*spher_to_cart(phi * unit, theta * unit)),
-        (phi * ounit, theta * ounit),
+        c2s(*s2c(lon * unit, lat * unit))[sl],
+        (lon * ounit, lat * ounit)[sl],
         atol=1e-15 * ounit
     )
 
@@ -92,3 +114,76 @@ def test_cartesian_to_spherical_mixed_Q(cart_to_spher, x, y, z):
         cart_to_spher(x, y, z)
     assert (arg_err.value.args[0] == "All arguments must be of the same type "
             "(i.e., quantity or not).")
+
+
+@pytest.mark.parametrize('wrap_at', ['1', 180., True, 180j, [180], -180, 0])
+def test_c2s2c_wrong_wrap_type(spher_to_cart, cart_to_spher, wrap_at):
+    err_msg = "'wrap_lon_at' must be an integer number: 180 or 360"
+    with pytest.raises(ValueError) as arg_err:
+        geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
+    assert arg_err.value.args[0] == err_msg
+
+    with pytest.raises(ValueError) as arg_err:
+        spher_to_cart.wrap_lon_at = wrap_at
+    assert arg_err.value.args[0] == err_msg
+
+    with pytest.raises(ValueError) as arg_err:
+        geometry.CartesianToSpherical(wrap_lon_at=wrap_at)
+    assert arg_err.value.args[0] == err_msg
+
+    with pytest.raises(ValueError) as arg_err:
+        cart_to_spher.wrap_lon_at = wrap_at
+    assert arg_err.value.args[0] == err_msg
+
+
+def test_cartesian_spherical_asdf(tmpdir):
+    s2c0 = geometry.SphericalToCartesian(wrap_lon_at=360)
+    c2s0 = geometry.CartesianToSpherical(wrap_lon_at=180)
+
+    # asdf round-trip test:
+    assert_roundtrip_tree({'c2s': c2s0, 's2c': s2c0}, tmpdir)
+
+    # create file object
+    f = asdf.AsdfFile({'c2s': c2s0, 's2c': s2c0})
+
+    # write to...
+    buf = io.BytesIO()
+    f.write_to(buf)
+
+    # read back:
+    buf.seek(0)
+    f = asdf.open(buf)
+
+    # retrieve transformations:
+    c2s = f['c2s']
+    s2c = f['s2c']
+
+    pcoords = [
+        (45.0, -90.0), (45.0, -45.0), (45, 0.0),
+        (45.0, 45), (45.0, 90.0), (135.0, -90.0),
+        (135.0, -45.0), (135.0, 0.0), (135.0, 45.0),
+        (135.0, 90.0)
+    ]
+
+    ncoords = [
+        (225.0, -90.0), (225.0, -45.0),
+        (225.0, 0.0), (225.0, 45.0), (225.0, 90.0),
+        (315.0, -90.0), (315.0, -45.0), (315.0, 0.0),
+        (315.0, 45.0), (315.0, 90.0)
+    ]
+
+    for lon, lat in pcoords:
+        xyz = s2c(lon, lat)
+        assert xyz == s2c0(lon, lat)
+        lon2, lat2 = c2s(*xyz)
+        assert lon2, lat2 == c2s0(*xyz)
+        assert np.allclose((lon, lat), (lon2, lat2))
+
+    for lon, lat in ncoords:
+        xyz = s2c(lon, lat)
+        assert xyz == s2c0(lon, lat)
+        lon2, lat2 = c2s(*xyz)
+        lon3, lat3 = s2c.inverse(*xyz)
+        assert lon2, lat2 == c2s0(*xyz)
+        assert np.allclose((lon, lat), (lon2 + 360, lat2))
+        assert np.allclose((lon, lat), (lon3, lat2))
