@@ -69,7 +69,7 @@ def test_spherical_to_cartesian(testval, unit, wrap_at):
 @pytest.mark.parametrize(
     'lon, lat, unit, wrap_at',
     list(product(
-        45.0 * np.arange(8),
+        [0, 45, 90, 135, 180, 225, 270, 315, 360],
         [-90, -89, -55, 0, 25, 89, 90],
         [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
         [180, 360],
@@ -83,15 +83,59 @@ def test_spher2cart_roundrip(lon, lat, unit, wrap_at):
     if wrap_at == 180:
         lon = np.mod(lon - 180.0, 360.0) - 180.0
 
-    sl = slice(int(lat == 90 or lat == -90), 2)
-
     assert s2c.wrap_lon_at == wrap_at
     assert c2s.wrap_lon_at == wrap_at
 
     assert u.allclose(
-        c2s(*s2c(lon * unit, lat * unit))[sl],
-        (lon * ounit, lat * ounit)[sl],
+        c2s(*s2c(lon * unit, lat * unit)),
+        (lon * ounit, lat * ounit),
         atol=1e-15 * ounit
+    )
+
+
+def test_cart2spher_at_pole(cart_to_spher):
+    assert np.allclose(cart_to_spher(0, 0, 1), (0, 90), rtol=0, atol=1e-15)
+
+
+@pytest.mark.parametrize(
+    'lonlat, unit, wrap_at',
+    list(product(
+        [
+            [[1], [-80]],
+            [[325], [-89]],
+            [[0, 1, 120, 180, 225, 325, 359], [-89, 0, 89, 10, -15, 45, -30]],
+            [np.array([0.0, 1, 120, 180, 225, 325, 359]), np.array([-89, 0.0, 89, 10, -15, 45, -30])]
+        ],
+        [None, 1 * u.deg],
+        [180, 360],
+    ))
+)
+def test_spher2cart_roundrip_arr(lonlat, unit, wrap_at):
+    lon, lat = lonlat
+    s2c = geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
+    c2s = geometry.CartesianToSpherical(wrap_lon_at=wrap_at)
+
+    if wrap_at == 180:
+        if isinstance(lon, np.ndarray):
+            lon = np.mod(lon - 180.0, 360.0) - 180.0
+        else:
+            lon = [((l - 180.0) % 360.0) - 180.0 for l in lon]
+
+    atol = 1e-15
+    if unit is None:
+        olon = lon
+        olat = lat
+    else:
+        olon = lon * u.deg
+        olat = lat * u.deg
+        lon = lon * unit
+        lat = lat * unit
+        atol = atol * u.deg
+
+    assert u.allclose(
+        c2s(*s2c(lon, lat)),
+        (olon, olat),
+        atol=atol
     )
 
 

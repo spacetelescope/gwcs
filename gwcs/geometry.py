@@ -70,7 +70,6 @@ class SphericalToCartesian(Model):
     """
     _separable = False
 
-    _input_units_strict = True
     _input_units_allow_dimensionless = True
 
     n_inputs = 2
@@ -148,6 +147,8 @@ class CartesianToSpherical(Model):
     """
     _separable = False
 
+    _input_units_allow_dimensionless = True
+
     n_inputs = 3
     n_outputs = 2
 
@@ -194,14 +195,12 @@ class CartesianToSpherical(Model):
                             "(i.e., quantity or not).")
 
         h = np.hypot(x, y)
+        lat = np.rad2deg(np.arctan2(z, h))
         lon = np.rad2deg(np.arctan2(y, x))
-        if h == 0.0:
-            lon *= 0.0
+        lon[h == 0] *= 0
 
         if self._wrap_lon_at != 180:
             lon = np.mod(lon, 360.0 * u.deg if nquant else 360.0)
-
-        lat = np.rad2deg(np.arctan2(z, h))
 
         return lon, lat
 
