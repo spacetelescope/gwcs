@@ -4,6 +4,12 @@ import itertools
 import numpy as np
 from astropy.modeling.core import Model # , fix_inputs
 from astropy.modeling import utils as mutils
+from astropy.modeling.models import (Shift, Polynomial2D, Sky2Pix_TAN, 
+                                     RotateCelestial2Native, Mapping,
+                                     AffineTransformation2D, Pix2Sky_TAN,
+                                     RotateNative2Celestial, Identity)
+from astropy.modeling.fitting import LinearLSQFitter
+import astropy.io.fits as fits
 
 from .api import GWCSAPIMixin
 from . import coordinate_frames
@@ -634,3 +640,195 @@ class WCS(GWCSAPIMixin):
         new_pipeline.append((step0[0], new_transform))
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
+
+    def to_fits_sip(self, bounding_box, max_error=None, max_rms=None, degree=None):
+        """
+        Make a SIP-based approximation to the WCS to be used in FITS WCS
+
+        Parameters
+        ----------
+        bounding_box: a pair of tuples, each consisting of two integers
+            Represents the range of pixel values in both dimensions
+            ((ymin, ymax), (xmin, xmax))
+        max_error: float
+            Maximum allowed error over the domain of the pixel array.
+        max_rms_error: float
+            Maximum allowed rms error over the domain of the pixel array.
+        degree: integer
+            Degree of the SIP polynomial. If supplied, max_error and max_rms_error
+            must be None.
+
+        Returns
+        -------
+        fits_dict, max_error, rms_error
+
+        fits_dict is a dictionary where the keys are FITS keywords and the values
+        the corresonding FITS keyword values, to make it easy to merge with
+        an existing header.
+
+        This assumes a tangent projection.
+        """
+
+        # Handle the options related to degree and thresholds.
+        if degree is not None and (max_error is not None or max_rms is not None):
+            raise ValueError(
+                "Degree cannot be specified if either max_error or max_rms have values")
+        if degree is None and max_error is None and max_rms is None:
+            raise ValueError(
+                "At least one of max_error, max_rms, or degree must be specified")
+        fits_dict = {}
+        transform = self.forward_transform
+        # Determine reference points.
+        (ymin, ymax), (xmin, xmax) = bounding_box
+        crpix1 = int((xmax - xmin) / 2)
+        crpix2 = int((ymax - ymin) / 2)
+        crval1, crval2 = transform(crpix1, crpix2)
+        hdr = fits.Header()
+        hdr['naxis'] = 2
+        hdr['naxis1'] = xmax
+        hdr['naxis2'] = ymax
+        hdr['ctype1'] = 'RA---TAN-SIP'
+        hdr['ctype2'] = 'DEC--TAN-SIP'
+        hdr['CRPIX1'] = crpix1
+        hdr['CRPIX2'] = crpix2
+        hdr['CRVAL1'] = crval1
+        hdr['CRVAL2'] = crval2
+        hdr['cd1_1'] = 0 #  Placeholder
+        hdr['cd1_2'] = 0
+        hdr['cd2_1'] = 0
+        hdr['cd2_2'] = 0
+        # Now rotate to native system and deproject
+        ntransform = (transform |
+                      RotateCelestial2Native(crval1, crval2, 180) |
+                      Sky2Pix_TAN() ) # |
+                      # (Shift(-crpix1) & Shift(-crpix2)))
+        # Evaluate this transform on all pixels in bounding box region
+        y, x = np.mgrid[ymin:ymax, xmin:xmax] # Check on the endpoints needing to be 1 larger
+        u = x - crpix1
+        v = y - crpix2
+        undist_x, undist_y = ntransform(x, y)
+        # The fitting section.
+        llsqfitter = LinearLSQFitter()
+        # The case of one pass with the specified polynomial degree
+        if degree is not None:
+            poly_x = Polynomial2D(degree=degree)
+            poly_y = Polynomial2D(degree=degree)
+            fit_poly_x = llsqfitter(poly_x, u, v, undist_x)
+            fit_poly_y = llsqfitter(poly_y, u, v, undist_y)
+            max_resid, rms = compute_distance_residual(
+                    undist_x, undist_y,
+                    fit_poly_x(u, v), fit_poly_y(u, v))
+        else:
+            cond = True
+            degree = 2
+            while cond:
+                poly_x = Polynomial2D(degree=degree)
+                poly_y = Polynomial2D(degree=degree)
+                fit_poly_x = llsqfitter(poly_x, u, v, undist_x)
+                fit_poly_y = llsqfitter(poly_y, u, v, undist_y)
+                max_resid, rms = compute_distance_residual(
+                    undist_x, undist_y,
+                    fit_poly_x(u, v), fit_poly_y(u, v))
+                print(f'Degree = {degree}, max_resid = {max_resid}, rms = {rms}')
+                if ((max_error is not None and max_resid < max_error and max_rms is None) or
+                    (max_error is not None and max_resid < max_error and max_rms is not None and rms < max_rms) or
+                    (max_error is None and max_resid is not None and rms > max_rms)):
+                    cond = False
+                    print('terminating condition met')
+                    break
+                else:
+                    degree +=1
+                    if degree == 10:
+                        raise RuntimeError("Fit conditions not met")
+        hdr['a_order'] = degree
+        hdr['b_order'] = degree
+        print('fit_poly_x', fit_poly_x)
+        print('fit_poly_y', fit_poly_y)
+        cd, sip_poly_x, sip_poly_y = reform_poly_coefficients(fit_poly_x, fit_poly_y)
+        store_2D_coefficients(hdr, sip_poly_x, 'A')
+        store_2D_coefficients(hdr, sip_poly_y, 'B')
+        hdr['cd1_1'] = cd[0][0]
+        hdr['cd1_2'] = cd[0][1]
+        hdr['cd2_1'] = cd[1][0]
+        hdr['cd2_2'] = cd[1][1]
+        hdr['sipmxerr'] = max_resid
+        hdr['siprms'] = rms
+        # # for test purposes, make sip equivalent in GWCS
+        # cdmat = np.array([[cd[0][0], cd[0][1]], [cd[1][0], cd[1][1]]])
+        # # cdmat = [[cd[0][0], cd[1][0]], [cd[0][1], cd[1][1]]]
+        # sip_poly_test_x = sip_poly_x.copy()
+        # sip_poly_test_y = sip_poly_y.copy()
+        # # sip_poly_test_x.c1_0 = 1
+        # # sip_poly_test_y.c0_1 = 1
+        # shift = (Shift(-crpix1) & Shift(-crpix2))
+        # aff = AffineTransformation2D(cdmat, [0,0])
+
+        # transform = (shift | Mapping([0,1,0,1]) |
+        #             (Mapping([0], n_inputs=2) + sip_poly_test_x) & 
+        #             (Mapping([1], n_inputs=2) + sip_poly_test_y) |
+        #             aff |
+        #             Pix2Sky_TAN() | RotateNative2Celestial(crval1, crval2, 180))
+        # transform2 = ((Shift(-crpix1) & Shift(-crpix2)) | Mapping([0,1,0,1]) |
+        #               (fit_poly_x & fit_poly_y) | Pix2Sky_TAN() | 
+        #               RotateNative2Celestial(crval1, crval2, 180))
+        return hdr # transform, transform2
+
+def compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
+    """
+    Compute the distance residuals and return the rms and maximum values.
+    """
+    dist = np.sqrt((undist_x - fit_poly_x)**2 +(undist_y - fit_poly_y)**2)
+    max_resid = dist.max()
+    rms = np.sqrt((dist**2).sum()/dist.size)
+    return max_resid, rms
+
+def reform_poly_coefficients(fit_poly_x, fit_poly_y):
+    """
+    The fit polynomials must be recombined to align with the SIP decomposition
+
+    The result is the f(u,v) and g(u,v) polynomials, and the CD matrix.
+    """
+    # Extract values for CD matrix and recombing
+    c11 = fit_poly_x.c1_0.value
+    c12 = fit_poly_x.c0_1.value
+    c21 = fit_poly_y.c1_0.value
+    c22 = fit_poly_y.c0_1.value
+    sip_poly_x = fit_poly_x.copy()
+    sip_poly_y = fit_poly_y.copy()
+    # Force low order coefficients to be 0 as defined in SIP
+    sip_poly_x.c0_0 = 0
+    sip_poly_y.c0_0 = 0
+    sip_poly_x.c1_0 = 0
+    sip_poly_x.c0_1 = 0
+    sip_poly_y.c1_0 = 0
+    sip_poly_y.c0_1 = 0
+    det = c11 * c22 - c12 * c21
+    ff = c22 / det
+    fg = c12 / det
+    gg = c11 / det
+    gf = c21 / det
+    degree = fit_poly_x.degree
+    # Now loop through all remaining coefficients
+    for i in range(0, degree + 1):
+        for j in range(0, degree + 1):
+            if (i + j > 1) and (i + j < degree + 1):
+                old_x = getattr(fit_poly_x, f'c{i}_{j}').value
+                old_y = getattr(fit_poly_y, f'c{i}_{j}').value
+                new_x = ff * old_x - fg * old_y
+                setattr(sip_poly_x, f'c{i}_{j}', new_x)
+                new_y = gg * old_y - gf * old_x
+                setattr(sip_poly_y, f'c{i}_{j}', new_y)
+    cd = ((c11, c12), (c21, c22))
+    return cd, sip_poly_x, sip_poly_y
+
+
+def store_2D_coefficients(hdr, poly_model, coeff_prefix):
+    """
+    Write the polynomial model coefficients to the header.
+    """
+    degree = poly_model.degree
+    for i in range(0, degree + 1):
+        for j in range(0, degree + 1):
+            if (i + j) > 1 and (i + j < degree + 1):
+                hdr[f'{coeff_prefix}_{i}_{j}'] = getattr(poly_model, f'c{i}_{j}').value
+
