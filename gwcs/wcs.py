@@ -676,6 +676,9 @@ class WCS(GWCSAPIMixin):
 
         This assumes a tangent projection.
         """
+        if (self.forward_transform.n_inputs !=2
+            or self.forward_transform.n_outputs != 2):
+           raise ValueError("The to_fits_sip method only works with 2 dimensional transforms")
 
         # Handle the options related to degree and thresholds.
         if degree is not None and (max_error is not None or max_rms is not None):
