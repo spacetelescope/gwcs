@@ -500,6 +500,6 @@ def test_to_fits_sip():
     fitssip = astwcs.WCS(mirisip)
     fitsvals = fitssip.all_pix2world(warg, 1)
     assert_allclose(miriwcs(xflat, yflat),
-                    fitsvals.transpose(), atol=10**-10)
+                    fitsvals.transpose(), atol=1e-10, rtol=0)
     fits_inverse_vals = fitssip.all_world2pix(fitsvals, 1)
-    assert_allclose(warg, fits_inverse_vals, atol=0.1)
+    assert_allclose(warg, fits_inverse_vals, atol=0.1, rtol=0)

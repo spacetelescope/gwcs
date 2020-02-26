@@ -668,13 +668,24 @@ class WCS(GWCSAPIMixin):
 
         Returns
         -------
-        fits_dict, max_error, rms_error
-
-        fits_dict is a dictionary where the keys are FITS keywords and the values
-        the corresonding FITS keyword values, to make it easy to merge with
-        an existing header.
+        FITS header with all SIP WCS keywords
 
         This assumes a tangent projection.
+
+        Error cases
+        -----------
+
+        If the WCS is not 2D, an exception will be raised. If the specified accuracy
+        (both forward and inverse) is not achieved an exception will be raised.
+
+        Notes
+        -----
+
+        Use of this requires a judicious choice of required accuracies. Attempts to use
+        higher degrees (~7 or higher) will typically fail due floating point problems
+        that arise with high powers.
+
+
         """
         if (self.forward_transform.n_inputs !=2
             or self.forward_transform.n_outputs != 2):
@@ -719,7 +730,7 @@ class WCS(GWCSAPIMixin):
         undist_x, undist_y = ntransform(x, y)
         # The fitting section.
         # Fit the forward case.
-        fit_poly_x, fit_poly_y, max_resid, rms = fit_2D_poly(degree, max_error, max_rms,
+        fit_poly_x, fit_poly_y, max_resid, rms = _fit_2D_poly(degree, max_error, max_rms,
                                                              u, v, undist_x, undist_y,
                                                              verbose=verbose)
         cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
@@ -727,7 +738,7 @@ class WCS(GWCSAPIMixin):
         det = cdmat[0, 0] * cdmat[1, 1] - cdmat[0, 1] * cdmat[1, 0]
         U = (cdmat[1, 1] * undist_x - cdmat[0, 1] * undist_y) / det
         V = (-cdmat[1, 0] * undist_x + cdmat[0, 0] * undist_y) / det
-        fit_inv_poly_u, fit_inv_poly_v, max_resid, rms = fit_2D_poly(degree,
+        fit_inv_poly_u, fit_inv_poly_v, max_resid, rms = _fit_2D_poly(degree,
                                                             max_inv_error, max_inv_rms,
                                                             U, V, u - U, v - V,
                                                             verbose=verbose)
@@ -737,80 +748,53 @@ class WCS(GWCSAPIMixin):
         ipdegree = fit_inv_poly_u.degree
         hdr['ap_order'] = ipdegree
         hdr['bp_order'] = ipdegree
-        cd, sip_poly_x, sip_poly_y = reform_poly_coefficients(fit_poly_x, fit_poly_y)
-        store_2D_coefficients(hdr, sip_poly_x, 'A')
-        store_2D_coefficients(hdr, sip_poly_y, 'B')
-        store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
-        store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
+        cd, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
+        _store_2D_coefficients(hdr, sip_poly_x, 'A')
+        _store_2D_coefficients(hdr, sip_poly_y, 'B')
+        _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
+        _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
         hdr['cd1_1'] = cd[0][0]
         hdr['cd1_2'] = cd[0][1]
         hdr['cd2_1'] = cd[1][0]
         hdr['cd2_2'] = cd[1][1]
         hdr['sipmxerr'] = max_resid
         hdr['siprms'] = rms
-        # # for test purposes, make sip equivalent in GWCS
-        # cdmat = np.array([[cd[0][0], cd[0][1]], [cd[1][0], cd[1][1]]])
-        # # cdmat = [[cd[0][0], cd[1][0]], [cd[0][1], cd[1][1]]]
-        # sip_poly_test_x = sip_poly_x.copy()
-        # sip_poly_test_y = sip_poly_y.copy()
-        # # sip_poly_test_x.c1_0 = 1
-        # # sip_poly_test_y.c0_1 = 1
-        # shift = (Shift(-crpix1) & Shift(-crpix2))
-        # aff = AffineTransformation2D(cdmat, [0,0])
-
-        # transform = (shift | Mapping([0,1,0,1]) |
-        #             (Mapping([0], n_inputs=2) + sip_poly_test_x) &
-        #             (Mapping([1], n_inputs=2) + sip_poly_test_y) |
-        #             aff |
-        #             Pix2Sky_TAN() | RotateNative2Celestial(crval1, crval2, 180))
-        # transform2 = ((Shift(-crpix1) & Shift(-crpix2)) | Mapping([0,1,0,1]) |
-        #               (fit_poly_x & fit_poly_y) | Pix2Sky_TAN() |
-        #               RotateNative2Celestial(crval1, crval2, 180))
         return hdr
 
 
-def fit_2D_poly(degree, max_error, max_rms, u, v, x, y, verbose=False):
+def _fit_2D_poly(degree, max_error, max_rms, u, v, x, y, verbose=False):
     """
     Fit a pair of ordinary 2D polynomial to the supplied inputs (u, v) and
     outputs (x, y)
     """
     llsqfitter = LinearLSQFitter()
     # The case of one pass with the specified polynomial degree
-    if degree is not None:
-        poly_x = Polynomial2D(degree=degree)
-        poly_y = Polynomial2D(degree=degree)
+    if degree is None:
+        deglist = range(2,10)
+    else:
+        deglist = [degree]
+    for deg in deglist:
+        poly_x = Polynomial2D(degree=deg)
+        poly_y = Polynomial2D(degree=deg)
         fit_poly_x = llsqfitter(poly_x, u, v, x)
         fit_poly_y = llsqfitter(poly_y, u, v, y)
-        max_resid, rms = compute_distance_residual(x, y,
-                                                   fit_poly_x(u, v), fit_poly_y(u, v))
-    else:
-        cond = True
-        degree = 2
-        while cond:
-            poly_x = Polynomial2D(degree=degree)
-            poly_y = Polynomial2D(degree=degree)
-            fit_poly_x = llsqfitter(poly_x, u, v, x)
-            fit_poly_y = llsqfitter(poly_y, u, v, y)
-            max_resid, rms = compute_distance_residual(x, y,
-                                                       fit_poly_x(u, v), fit_poly_y(u, v))
+        max_resid, rms = _compute_distance_residual(x, y,
+                                                    fit_poly_x(u, v), fit_poly_y(u, v))
+        if verbose:
+            print(f'Degree = {degree}, max_resid = {max_resid}, rms = {rms}')
+        if ((max_error is not None and max_resid < max_error and max_rms is None)
+             or (max_error is not None and max_resid < max_error and max_rms is not None
+                 and rms < max_rms)
+             or (max_error is None and max_rms is not None and rms > max_rms)):
             if verbose:
-                print(f'Degree = {degree}, max_resid = {max_resid}, rms = {rms}')
-            if ((max_error is not None and max_resid < max_error and max_rms is None)
-                 or (max_error is not None and max_resid < max_error and max_rms is not None
-                     and rms < max_rms)
-                 or (max_error is None and max_rms is not None and rms > max_rms)):
-                cond = False
-                if verbose:
-                    print('terminating condition met')
-                break
-            else:
-                degree += 1
-                if degree == 10:
-                    raise RuntimeError("Fit conditions not met")
+                print('terminating condition met')
+            break
+        if deg == 9:
+            raise RuntimeError("Unable to achieve required fit accuracy with SIP polynomials")
     return fit_poly_x, fit_poly_y, max_resid, rms
 
 
-def compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
+def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """
     Compute the distance residuals and return the rms and maximum values.
     """
@@ -820,13 +804,13 @@ def compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     return max_resid, rms
 
 
-def reform_poly_coefficients(fit_poly_x, fit_poly_y):
+def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
     """
     The fit polynomials must be recombined to align with the SIP decomposition
 
     The result is the f(u,v) and g(u,v) polynomials, and the CD matrix.
     """
-    # Extract values for CD matrix and recombing
+    # Extract values for CD matrix and recombining
     c11 = fit_poly_x.c1_0.value
     c12 = fit_poly_x.c0_1.value
     c21 = fit_poly_y.c1_0.value
@@ -860,14 +844,11 @@ def reform_poly_coefficients(fit_poly_x, fit_poly_y):
     return cd, sip_poly_x, sip_poly_y
 
 
-def store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
+def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
     """
     Write the polynomial model coefficients to the header.
     """
-    if keeplinear:
-        mindeg = 0
-    else:
-        mindeg = 1
+    mindeg = int(not keeplinear)
     degree = poly_model.degree
     for i in range(0, degree + 1):
         for j in range(0, degree + 1):
