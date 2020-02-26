@@ -15,7 +15,7 @@ from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_poin
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
-
+import asdf
 
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
@@ -486,3 +486,20 @@ class TestImaging(object):
         assert isinstance(sky_coord, coord.SkyCoord)
         assert_allclose(sky_coord.data.lon.value, ra)
         assert_allclose(sky_coord.data.lat.value, dec)
+
+
+def test_to_fits_sip():
+    y, x = np.mgrid[:1024:10, :1024:10]
+    xflat = np.ravel(x[1:-1, 1:-1])
+    yflat = np.ravel(y[1:-1, 1:-1])
+    warg = np.stack((xflat, yflat)).transpose()
+    af = asdf.open('data/miriwcs.asdf')
+    miriwcs = af.tree['wcs']
+    bounding_box = ((0, 1024), (0, 1024))
+    mirisip = miriwcs.to_fits_sip(bounding_box, max_error=1.e-10, max_inv_error=0.1)
+    fitssip = astwcs.WCS(mirisip)
+    fitsvals = fitssip.all_pix2world(warg, 1)
+    assert_allclose(miriwcs(xflat, yflat),
+                    fitsvals.transpose(), atol=10**-10)
+    fits_inverse_vals = fitssip.all_world2pix(fitsvals, 1)
+    assert_allclose(warg, fits_inverse_vals, atol=0.1)
