@@ -753,7 +753,6 @@ class WCS(GWCSAPIMixin):
             hdr['sipmxerr'] = (max_resid, 'Maximum difference from the GWCS model SIP is fit to.')
             hdr['sipiverr'] = (max_inv_resid, 'Maximum difference for the inverse transform')
 
-  
         else:
             hdr['ctype1'] = 'RA---TAN'
             hdr['ctype2'] = 'DEC--TAN'
