@@ -653,7 +653,7 @@ class WCS(GWCSAPIMixin):
         ----------
         bounding_box : a pair of tuples, each consisting of two integers
             Represents the range of pixel values in both dimensions
-            ((ymin, ymax), (xmin, xmax))
+            ((xmin, xmax), (ymin, ymax))
         max_error : float
             Maximum allowed error over the domain of the pixel array.
         degree : int
@@ -697,7 +697,7 @@ class WCS(GWCSAPIMixin):
         fits_dict = {}
         transform = self.forward_transform
         # Determine reference points.
-        (ymin, ymax), (xmin, xmax) = bounding_box
+        (xmin, xmax), (ymin, ymax) = bounding_box
         crpix1 = int((xmax - xmin) / 2)
         crpix2 = int((ymax - ymin) / 2)
         crval1, crval2 = transform(crpix1, crpix2)
