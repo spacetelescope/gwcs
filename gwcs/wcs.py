@@ -788,7 +788,7 @@ def _fit_2D_poly(degree, max_error, u, v, x, y, verbose=False):
             if verbose:
                 print('terminating condition met')
             break
-        if deg == 9:
+        if degree is None and deg == 9:
             raise RuntimeError("Unable to achieve required fit accuracy with SIP polynomials")
     return fit_poly_x, fit_poly_y, max_resid
 
