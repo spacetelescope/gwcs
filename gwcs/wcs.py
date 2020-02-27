@@ -656,15 +656,10 @@ class WCS(GWCSAPIMixin):
             ((ymin, ymax), (xmin, xmax))
         max_error : float
             Maximum allowed error over the domain of the pixel array.
-        max_rms_error : float
-            Maximum allowed rms error over the domain of the pixel array.
         degree : int
-            Degree of the SIP polynomial. If supplied, max_error and max_rms_error
-            must be None.
+            Degree of the SIP polynomial. If supplied, max_error must be None.
         max_inv_error : float
             Maximum allowed inverse error over the domain of the pixel array.
-        max_inv_rms : float
-            Maximum allowed inverse rms over the domain of the pixel array
         verbose : bool
             print progress of fits
 
@@ -690,15 +685,15 @@ class WCS(GWCSAPIMixin):
         """
         if (self.forward_transform.n_inputs !=2
             or self.forward_transform.n_outputs != 2):
-           raise ValueError("The to_fits_sip method only works with 2 dimensional transforms")
+           raise ValueError("The to_fits_sip method only works with 2-dimensional transforms")
 
         # Handle the options related to degree and thresholds.
-        if degree is not None and (max_error is not None or max_rms is not None):
+        if degree is not None and max_error is not None:
             raise ValueError(
-                "Degree cannot be specified if either max_error or max_rms have values")
+                "Degree cannot be specified if max_error has a value")
         if degree is None and max_error is None and max_rms is None:
             raise ValueError(
-                "At least one of max_error, max_rms, or degree must be specified")
+                "max_error must be specified if degree is None")
         fits_dict = {}
         transform = self.forward_transform
         # Determine reference points.
@@ -731,7 +726,7 @@ class WCS(GWCSAPIMixin):
         undist_x, undist_y = ntransform(x, y)
         # The fitting section.
         # Fit the forward case.
-        fit_poly_x, fit_poly_y, max_resid, rms = _fit_2D_poly(degree, max_error, max_rms,
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(degree, max_error,
                                                              u, v, undist_x, undist_y,
                                                              verbose=verbose)
         cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
@@ -739,8 +734,8 @@ class WCS(GWCSAPIMixin):
         det = cdmat[0, 0] * cdmat[1, 1] - cdmat[0, 1] * cdmat[1, 0]
         U = (cdmat[1, 1] * undist_x - cdmat[0, 1] * undist_y) / det
         V = (-cdmat[1, 0] * undist_x + cdmat[0, 0] * undist_y) / det
-        fit_inv_poly_u, fit_inv_poly_v, max_resid, rms = _fit_2D_poly(degree,
-                                                            max_inv_error, max_inv_rms,
+        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(degree,
+                                                            max_inv_error,
                                                             U, V, u - U, v - V,
                                                             verbose=verbose)
         pdegree = fit_poly_x.degree
@@ -756,7 +751,8 @@ class WCS(GWCSAPIMixin):
             _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
             _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
             hdr['sipmxerr'] = (max_resid, 'Maximum difference from the GWCS model SIP is fit to.')
-            hdr['siprms'] = (rms, 'RMS difference from the GWCS model SIP is fit to.')
+            hdr['sipiverr'] = (max_inv_resid, 'Maximum difference for the inverse transform')
+
   
         else:
             hdr['ctype1'] = 'RA---TAN'
@@ -769,7 +765,7 @@ class WCS(GWCSAPIMixin):
         return hdr
 
 
-def _fit_2D_poly(degree, max_error, max_rms, u, v, x, y, verbose=False):
+def _fit_2D_poly(degree, max_error, u, v, x, y, verbose=False):
     """
     Fit a pair of ordinary 2D polynomial to the supplied inputs (u, v) and
     outputs (x, y)
@@ -785,20 +781,17 @@ def _fit_2D_poly(degree, max_error, max_rms, u, v, x, y, verbose=False):
         poly_y = Polynomial2D(degree=deg)
         fit_poly_x = llsqfitter(poly_x, u, v, x)
         fit_poly_y = llsqfitter(poly_y, u, v, y)
-        max_resid, rms = _compute_distance_residual(x, y,
-                                                    fit_poly_x(u, v), fit_poly_y(u, v))
+        max_resid = _compute_distance_residual(x, y,
+                                               fit_poly_x(u, v), fit_poly_y(u, v))
         if verbose:
-            print(f'Degree = {degree}, max_resid = {max_resid}, rms = {rms}')
-        if ((max_error is not None and max_resid < max_error and max_rms is None)
-             or (max_error is not None and max_resid < max_error and max_rms is not None
-                 and rms < max_rms)
-             or (max_error is None and max_rms is not None and rms > max_rms)):
+            print(f'Degree = {degree}, max_resid = {max_resid}')
+        if max_error is not None and max_resid < max_error:
             if verbose:
                 print('terminating condition met')
             break
         if deg == 9:
             raise RuntimeError("Unable to achieve required fit accuracy with SIP polynomials")
-    return fit_poly_x, fit_poly_y, max_resid, rms
+    return fit_poly_x, fit_poly_y, max_resid
 
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
@@ -807,8 +800,7 @@ def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """
     dist = np.sqrt((undist_x - fit_poly_x)**2 + (undist_y - fit_poly_y)**2)
     max_resid = dist.max()
-    rms = np.sqrt((dist**2).sum() / dist.size)
-    return max_resid, rms
+    return max_resid
 
 
 def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
