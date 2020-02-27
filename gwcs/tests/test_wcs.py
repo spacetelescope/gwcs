@@ -498,8 +498,8 @@ def test_to_fits_sip():
     bounding_box = ((0, 1024), (0, 1024))
     mirisip = miriwcs.to_fits_sip(bounding_box, max_error=1.e-10, max_inv_error=0.1)
     fitssip = astwcs.WCS(mirisip)
-    fitsvals = fitssip.all_pix2world(warg, 1)
+    fitsvals = fitssip.all_pix2world(warg + 1, 1)
     assert_allclose(miriwcs(xflat, yflat),
                     fitsvals.transpose(), atol=1e-10, rtol=0)
     fits_inverse_vals = fitssip.all_world2pix(fitsvals, 1)
-    assert_allclose(warg, fits_inverse_vals, atol=0.1, rtol=0)
+    assert_allclose(warg, fits_inverse_vals - 1, atol=0.1, rtol=0)

@@ -711,8 +711,8 @@ class WCS(GWCSAPIMixin):
         hdr['naxis2'] = ymax
         hdr['ctype1'] = 'RA---TAN-SIP'
         hdr['ctype2'] = 'DEC--TAN-SIP'
-        hdr['CRPIX1'] = crpix1
-        hdr['CRPIX2'] = crpix2
+        hdr['CRPIX1'] = crpix1 + 1
+        hdr['CRPIX2'] = crpix2 + 1
         hdr['CRVAL1'] = crval1
         hdr['CRVAL2'] = crval2
         hdr['cd1_1'] = 0  # Placeholders
