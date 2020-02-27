@@ -672,11 +672,12 @@ class WCS(GWCSAPIMixin):
 
         This assumes a tangent projection.
 
-        Error cases
-        -----------
+        Raises
+        ------
 
         If the WCS is not 2D, an exception will be raised. If the specified accuracy
-        (both forward and inverse) is not achieved an exception will be raised.
+        (both forward and inverse, both rms and maximum) is not achieved an exception
+        will be raised.
 
         Notes
         -----
@@ -743,22 +744,28 @@ class WCS(GWCSAPIMixin):
                                                             U, V, u - U, v - V,
                                                             verbose=verbose)
         pdegree = fit_poly_x.degree
-        hdr['a_order'] = pdegree
-        hdr['b_order'] = pdegree
-        ipdegree = fit_inv_poly_u.degree
-        hdr['ap_order'] = ipdegree
-        hdr['bp_order'] = ipdegree
-        cd, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
-        _store_2D_coefficients(hdr, sip_poly_x, 'A')
-        _store_2D_coefficients(hdr, sip_poly_y, 'B')
-        _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
-        _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
+        if pdegree > 1:
+            hdr['a_order'] = pdegree
+            hdr['b_order'] = pdegree
+            ipdegree = fit_inv_poly_u.degree
+            hdr['ap_order'] = ipdegree
+            hdr['bp_order'] = ipdegree
+            cd, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
+            _store_2D_coefficients(hdr, sip_poly_x, 'A')
+            _store_2D_coefficients(hdr, sip_poly_y, 'B')
+            _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
+            _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
+            hdr['sipmxerr'] = (max_resid, 'Maximum difference from the GWCS model SIP is fit to.')
+            hdr['siprms'] = (rms, 'RMS difference from the GWCS model SIP is fit to.')
+  
+        else:
+            hdr['ctype1'] = 'RA---TAN'
+            hdr['ctype2'] = 'DEC--TAN'
+
         hdr['cd1_1'] = cd[0][0]
         hdr['cd1_2'] = cd[0][1]
         hdr['cd2_1'] = cd[1][0]
         hdr['cd2_2'] = cd[1][1]
-        hdr['sipmxerr'] = max_resid
-        hdr['siprms'] = rms
         return hdr
 
 
@@ -770,7 +777,7 @@ def _fit_2D_poly(degree, max_error, max_rms, u, v, x, y, verbose=False):
     llsqfitter = LinearLSQFitter()
     # The case of one pass with the specified polynomial degree
     if degree is None:
-        deglist = range(2,10)
+        deglist = range(1,10)
     else:
         deglist = [degree]
     for deg in deglist:
