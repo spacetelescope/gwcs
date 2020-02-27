@@ -645,39 +645,39 @@ class WCS(GWCSAPIMixin):
     def to_fits_sip(self, bounding_box, max_error=None, max_rms=None, degree=None,
                     max_inv_error=None, max_inv_rms=None, verbose=False):
         """
-        Make a SIP-based approximation to the WCS to be used in FITS WCS
+        Construct a SIP-based approximation to the WCS in the form of a FITS header
+
+        This assumes a tangent projection.
 
         Parameters
         ----------
-        bounding_box: a pair of tuples, each consisting of two integers
+        bounding_box : a pair of tuples, each consisting of two integers
             Represents the range of pixel values in both dimensions
             ((ymin, ymax), (xmin, xmax))
-        max_error: float
+        max_error : float
             Maximum allowed error over the domain of the pixel array.
-        max_rms_error: float
+        max_rms_error : float
             Maximum allowed rms error over the domain of the pixel array.
-        degree: integer
+        degree : int
             Degree of the SIP polynomial. If supplied, max_error and max_rms_error
             must be None.
-        max_inv_error: float
+        max_inv_error : float
             Maximum allowed inverse error over the domain of the pixel array.
-        max_inv_rms: float
+        max_inv_rms : float
             Maximum allowed inverse rms over the domain of the pixel array
-        verbose: boolean
+        verbose : bool
             print progress of fits
 
         Returns
         -------
         FITS header with all SIP WCS keywords
 
-        This assumes a tangent projection.
-
         Raises
         ------
-
-        If the WCS is not 2D, an exception will be raised. If the specified accuracy
-        (both forward and inverse, both rms and maximum) is not achieved an exception
-        will be raised.
+        ValueError
+            If the WCS is not 2D, an exception will be raised. If the specified accuracy
+            (both forward and inverse, both rms and maximum) is not achieved an exception
+            will be raised.
 
         Notes
         -----
@@ -831,11 +831,9 @@ def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
     sip_poly_x.c0_1 = 0
     sip_poly_y.c1_0 = 0
     sip_poly_y.c0_1 = 0
-    det = c11 * c22 - c12 * c21
-    ff = c22 / det
-    fg = c12 / det
-    gg = c11 / det
-    gf = c21 / det
+
+    cdmat = ((c11, c12), (c21, c22))
+    invcdmat = npla.inv(np.array(cdmat))
     degree = fit_poly_x.degree
     # Now loop through all remaining coefficients
     for i in range(0, degree + 1):
@@ -843,12 +841,11 @@ def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
             if (i + j > 1) and (i + j < degree + 1):
                 old_x = getattr(fit_poly_x, f'c{i}_{j}').value
                 old_y = getattr(fit_poly_y, f'c{i}_{j}').value
-                new_x = ff * old_x - fg * old_y
-                setattr(sip_poly_x, f'c{i}_{j}', new_x)
-                new_y = gg * old_y - gf * old_x
-                setattr(sip_poly_y, f'c{i}_{j}', new_y)
-    cd = ((c11, c12), (c21, c22))
-    return cd, sip_poly_x, sip_poly_y
+                newcoeff = np.dot(invcdmat, np.array([[old_x], [old_y]]))
+                setattr(sip_poly_x, f'c{i}_{j}', newcoeff[0, 0])
+                setattr(sip_poly_y, f'c{i}_{j}', newcoeff[1, 0])
+
+    return cdmat, sip_poly_x, sip_poly_y
 
 
 def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
