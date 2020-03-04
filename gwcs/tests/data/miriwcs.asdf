@@ -8,20 +8,11 @@ asdf_library: !core/software-1.0.0 {author: Space Telescope Science Institute, h
 history:
   extensions:
   - !core/extension_metadata-1.0.0
-    extension_class: jwst.transforms.jwextension.JWSTExtension
-    software: {name: jwst, version: 0.13.8a0.dev236+g8e11a52b}
-  - !core/extension_metadata-1.0.0
     extension_class: gwcs.extension.GWCSExtension
-    software: {name: gwcs, version: 0.8.dev460+g1c1cb3b.d20200224}
+    software: {name: gwcs, version: 0.12.0}
   - !core/extension_metadata-1.0.0
     extension_class: asdf.extension.BuiltinExtension
     software: {name: asdf, version: 2.5.1}
-  - !core/extension_metadata-1.0.0
-    extension_class: astropy.io.misc.asdf.extension.AstropyAsdfExtension
-    software: {name: astropy, version: 4.1.dev580+g3d3d98ea1.d20200212}
-  - !core/extension_metadata-1.0.0
-    extension_class: astropy.io.misc.asdf.extension.AstropyExtension
-    software: {name: astropy, version: 4.1.dev580+g3d3d98ea1.d20200212}
 wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
   name: ''
   steps:
@@ -32,262 +23,190 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
       axis_physical_types: ['custom:x', 'custom:y']
       name: detector
       unit: [!unit/unit-1.0.0 'pixel', !unit/unit-1.0.0 'pixel']
-    transform: !transform/compose-1.2.0
+    transform: !transform/compose-1.1.0
       bounding_box:
       - [-0.5, 1023.5]
       - [3.5, 1027.5]
       forward:
-      - !transform/concatenate-1.2.0
+      - !transform/concatenate-1.1.0
         forward:
         - !transform/shift-1.2.0 {offset: 0.15}
         - !transform/shift-1.2.0 {offset: -0.59}
-      - !transform/compose-1.2.0
+      - !transform/compose-1.1.0
         forward:
-        - !transform/compose-1.2.0
+        - !transform/compose-1.1.0
           forward:
-          - !transform/compose-1.2.0
+          - !transform/compose-1.1.0
             forward:
-            - !transform/compose-1.2.0
+            - !transform/compose-1.1.0
               forward:
-              - !transform/compose-1.2.0
+              - !transform/compose-1.1.0
                 forward:
-                - !transform/compose-1.2.0
+                - !transform/compose-1.1.0
                   forward:
-                  - !transform/compose-1.2.0
+                  - !transform/compose-1.1.0
                     forward:
-                    - !transform/concatenate-1.2.0
+                    - !transform/concatenate-1.1.0
                       forward:
                       - !transform/shift-1.2.0 {offset: -4.0}
-                      - !transform/identity-1.2.0 {}
-                    - !transform/concatenate-1.2.0
+                      - !transform/identity-1.1.0 {}
+                    - !transform/concatenate-1.1.0
                       forward:
-                      - !transform/polynomial-1.2.0
+                      - !transform/polynomial-1.1.0
                         coefficients: !core/ndarray-1.0.0
                           source: 0
                           datatype: float64
                           byteorder: little
                           shape: [2]
-                        domain: [-1, 1]
-                        inverse: !transform/polynomial-1.2.0
+                        inverse: !transform/polynomial-1.1.0
                           coefficients: !core/ndarray-1.0.0
                             source: 1
                             datatype: float64
                             byteorder: little
                             shape: [2]
-                          domain: [-1, 1]
-                          window: [-1, 1]
                         name: M_column_correction
-                        window: [-1, 1]
-                      - !transform/polynomial-1.2.0
+                      - !transform/polynomial-1.1.0
                         coefficients: !core/ndarray-1.0.0
                           source: 2
                           datatype: float64
                           byteorder: little
                           shape: [2]
-                        domain: [-1, 1]
-                        inverse: !transform/polynomial-1.2.0
+                        inverse: !transform/polynomial-1.1.0
                           coefficients: !core/ndarray-1.0.0
                             source: 3
                             datatype: float64
                             byteorder: little
                             shape: [2]
-                          domain: [-1, 1]
-                          window: [-1, 1]
                         name: M_row_correction
-                        window: [-1, 1]
-                  - !transform/remap_axes-1.2.0
-                    inverse: !transform/identity-1.2.0 {n_dims: 2}
+                  - !transform/remap_axes-1.1.0
+                    inverse: !transform/identity-1.1.0 {n_dims: 2}
                     mapping: [0, 1, 0, 1]
-                - !transform/concatenate-1.2.0
+                - !transform/concatenate-1.1.0
                   forward:
-                  - !transform/polynomial-1.2.0
+                  - !transform/polynomial-1.1.0
                     coefficients: !core/ndarray-1.0.0
                       source: 4
                       datatype: float64
                       byteorder: little
                       shape: [5, 5]
-                    domain:
-                    - [-1, 1]
-                    - [-1, 1]
-                    inverse: !transform/polynomial-1.2.0
+                    inverse: !transform/polynomial-1.1.0
                       coefficients: !core/ndarray-1.0.0
                         source: 5
                         datatype: float64
                         byteorder: little
                         shape: [5, 5]
-                      domain:
-                      - [-1, 1]
-                      - [-1, 1]
-                      window:
-                      - [-1, 1]
-                      - [-1, 1]
                     name: B_correction
-                    window:
-                    - [-1, 1]
-                    - [-1, 1]
-                  - !transform/polynomial-1.2.0
+                  - !transform/polynomial-1.1.0
                     coefficients: !core/ndarray-1.0.0
                       source: 6
                       datatype: float64
                       byteorder: little
                       shape: [5, 5]
-                    domain:
-                    - [-1, 1]
-                    - [-1, 1]
-                    inverse: !transform/polynomial-1.2.0
+                    inverse: !transform/polynomial-1.1.0
                       coefficients: !core/ndarray-1.0.0
                         source: 7
                         datatype: float64
                         byteorder: little
                         shape: [5, 5]
-                      domain:
-                      - [-1, 1]
-                      - [-1, 1]
-                      window:
-                      - [-1, 1]
-                      - [-1, 1]
                     name: A_correction
-                    window:
-                    - [-1, 1]
-                    - [-1, 1]
-              - !transform/remap_axes-1.2.0
-                inverse: !transform/remap_axes-1.2.0
+              - !transform/remap_axes-1.1.0
+                inverse: !transform/remap_axes-1.1.0
                   mapping: [0, 1, 0, 1]
                 mapping: [0, 1, 0, 1]
-            - !transform/concatenate-1.2.0
+            - !transform/concatenate-1.1.0
               forward:
-              - !transform/polynomial-1.2.0
+              - !transform/polynomial-1.1.0
                 coefficients: !core/ndarray-1.0.0
                   source: 8
                   datatype: float64
                   byteorder: little
                   shape: [2, 2]
-                domain:
-                - [-1, 1]
-                - [-1, 1]
                 name: TI_row_correction
-                window:
-                - [-1, 1]
-                - [-1, 1]
-              - !transform/polynomial-1.2.0
+              - !transform/polynomial-1.1.0
                 coefficients: !core/ndarray-1.0.0
                   source: 9
                   datatype: float64
                   byteorder: little
                   shape: [2, 2]
-                domain:
-                - [-1, 1]
-                - [-1, 1]
                 name: TI_column_correction
-                window:
-                - [-1, 1]
-                - [-1, 1]
-          - !transform/identity-1.2.0
-            inverse: !transform/remap_axes-1.2.0
+          - !transform/identity-1.1.0
+            inverse: !transform/remap_axes-1.1.0
               mapping: [0, 1, 0, 1]
             n_dims: 2
-        - !transform/remap_axes-1.2.0
+        - !transform/remap_axes-1.1.0
           mapping: [1, 0]
-      inverse: !transform/compose-1.2.0
+      inverse: !transform/compose-1.1.0
         forward:
-        - !transform/compose-1.2.0
+        - !transform/compose-1.1.0
           forward:
-          - !transform/remap_axes-1.2.0
+          - !transform/remap_axes-1.1.0
             mapping: [1, 0]
-          - !transform/compose-1.2.0
+          - !transform/compose-1.1.0
             forward:
-            - !transform/remap_axes-1.2.0
+            - !transform/remap_axes-1.1.0
               mapping: [0, 1, 0, 1]
-            - !transform/compose-1.2.0
+            - !transform/compose-1.1.0
               forward:
-              - !transform/concatenate-1.2.0
+              - !transform/concatenate-1.1.0
                 forward:
-                - !transform/polynomial-1.2.0
+                - !transform/polynomial-1.1.0
                   coefficients: !core/ndarray-1.0.0
                     source: 10
                     datatype: float64
                     byteorder: little
                     shape: [2, 2]
-                  domain:
-                  - [-1, 1]
-                  - [-1, 1]
                   name: T_row_correction
-                  window:
-                  - [-1, 1]
-                  - [-1, 1]
-                - !transform/polynomial-1.2.0
+                - !transform/polynomial-1.1.0
                   coefficients: !core/ndarray-1.0.0
                     source: 11
                     datatype: float64
                     byteorder: little
                     shape: [2, 2]
-                  domain:
-                  - [-1, 1]
-                  - [-1, 1]
                   name: T_column_correction
-                  window:
-                  - [-1, 1]
-                  - [-1, 1]
-              - !transform/compose-1.2.0
+              - !transform/compose-1.1.0
                 forward:
-                - !transform/remap_axes-1.2.0
+                - !transform/remap_axes-1.1.0
                   mapping: [0, 1, 0, 1]
-                - !transform/compose-1.2.0
+                - !transform/compose-1.1.0
                   forward:
-                  - !transform/concatenate-1.2.0
+                  - !transform/concatenate-1.1.0
                     forward:
-                    - !transform/polynomial-1.2.0
+                    - !transform/polynomial-1.1.0
                       coefficients: !core/ndarray-1.0.0
                         source: 12
                         datatype: float64
                         byteorder: little
                         shape: [5, 5]
-                      domain:
-                      - [-1, 1]
-                      - [-1, 1]
-                      window:
-                      - [-1, 1]
-                      - [-1, 1]
-                    - !transform/polynomial-1.2.0
+                    - !transform/polynomial-1.1.0
                       coefficients: !core/ndarray-1.0.0
                         source: 13
                         datatype: float64
                         byteorder: little
                         shape: [5, 5]
-                      domain:
-                      - [-1, 1]
-                      - [-1, 1]
-                      window:
-                      - [-1, 1]
-                      - [-1, 1]
-                  - !transform/compose-1.2.0
+                  - !transform/compose-1.1.0
                     forward:
-                    - !transform/identity-1.2.0 {n_dims: 2}
-                    - !transform/compose-1.2.0
+                    - !transform/identity-1.1.0 {n_dims: 2}
+                    - !transform/compose-1.1.0
                       forward:
-                      - !transform/concatenate-1.2.0
+                      - !transform/concatenate-1.1.0
                         forward:
-                        - !transform/polynomial-1.2.0
+                        - !transform/polynomial-1.1.0
                           coefficients: !core/ndarray-1.0.0
                             source: 14
                             datatype: float64
                             byteorder: little
                             shape: [2]
-                          domain: [-1, 1]
-                          window: [-1, 1]
-                        - !transform/polynomial-1.2.0
+                        - !transform/polynomial-1.1.0
                           coefficients: !core/ndarray-1.0.0
                             source: 15
                             datatype: float64
                             byteorder: little
                             shape: [2]
-                          domain: [-1, 1]
-                          window: [-1, 1]
-                      - !transform/concatenate-1.2.0
+                      - !transform/concatenate-1.1.0
                         forward:
                         - !transform/shift-1.2.0 {offset: 4.0}
-                        - !transform/identity-1.2.0 {}
-        - !transform/concatenate-1.2.0
+                        - !transform/identity-1.1.0 {}
+        - !transform/concatenate-1.1.0
           forward:
           - !transform/shift-1.2.0 {offset: -0.15}
           - !transform/shift-1.2.0 {offset: 0.59}
@@ -298,18 +217,16 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
       axis_physical_types: ['custom:x', 'custom:y']
       name: v2v3
       unit: [!unit/unit-1.0.0 'arcsec', !unit/unit-1.0.0 'arcsec']
-    transform: !transform/compose-1.2.0
+    transform: !transform/compose-1.1.0
       forward:
-      - !transform/concatenate-1.2.0
+      - !transform/concatenate-1.1.0
         forward:
         - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
         - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
       - !<tag:stsci.edu:jwst_pipeline/v23tosky-0.7.0>
         angles: [0.12597594444444443, -0.10374517305555556, -0.0, 72.0545718, 5.630568]
         axes_order: zyxyz
-        inputs: [v2, v3]
         name: v23tosky
-        outputs: [ra, dec]
   - !<tag:stsci.edu:gwcs/step-1.0.0>
     frame: !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
       axes_names: [lon, lat]
@@ -328,20 +245,20 @@ X,,Ræ        Ù[áﬁå™>–Iªƒ∞ÿÉ>¿¨á%ñîΩ                 Mu,ïi"æqèêÛF!æ          
 ÿê=                                ”BLK 0               »       »       »*WÀ≤˛VäN¨ÛìäËü‰Â{îCÃ&Iø˙i›uâjBøÜC∆û> @ ’à8æx:?Z4¡˛Ω~˘\ÚW¡Ã?rfÂ≈∆æ ‡d;‚Pí>Ä≈6óïX¶=        Ï#ÓÄóòÃ> Ë π“Ò<æ˝?ù_Y*æ                 mN$éa°>`µhg≥¥=                        ÛeLìûD-æ                                ”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@#ASDF BLOCK INDEX
 %YAML 1.1
 ---
-- 12376
-- 12446
-- 12516
-- 12586
-- 12656
-- 12910
-- 13164
-- 13418
-- 13672
-- 13758
-- 13844
-- 13930
-- 14016
-- 14270
-- 14524
-- 14594
+- 9552
+- 9622
+- 9692
+- 9762
+- 9832
+- 10086
+- 10340
+- 10594
+- 10848
+- 10934
+- 11020
+- 11106
+- 11192
+- 11446
+- 11700
+- 11770
 ...

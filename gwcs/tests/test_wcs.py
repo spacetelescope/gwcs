@@ -496,7 +496,7 @@ def test_to_fits_sip():
     af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
     miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
-    mirisip = miriwcs.to_fits_sip(bounding_box, max_error=1.e-10, max_inv_error=0.1)
+    mirisip = miriwcs.to_fits_sip(bounding_box, max_pix_error=1.e-1, max_inv_pix_error=0.1, verbose=True)
     fitssip = astwcs.WCS(mirisip)
     fitsvals = fitssip.all_pix2world(warg + 1, 1)
     assert_allclose(miriwcs(xflat, yflat),

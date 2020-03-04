@@ -642,24 +642,34 @@ class WCS(GWCSAPIMixin):
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
 
-    def to_fits_sip(self, bounding_box, max_error=None, max_rms=None, degree=None,
-                    max_inv_error=None, max_inv_rms=None, verbose=False):
+    def to_fits_sip(self, bounding_box, max_pix_error=0.25, degree=None,
+                    max_inv_pix_error=0.25, inv_degree=None, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
 
         This assumes a tangent projection.
+
+        The default mode in using this attempts to achieve roughly 0.25 pixel
+        accuracy over the whole image.
 
         Parameters
         ----------
         bounding_box : a pair of tuples, each consisting of two integers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
-        max_error : float
-            Maximum allowed error over the domain of the pixel array.
+        max_pix_error : float
+            Maximum allowed error over the domain of the pixel array. This
+            error is the equivalent pixel error that corresponds to the maximum
+            error in the output coordinate resulting from the fit based on
+            a nominal plate scale.
         degree : int
-            Degree of the SIP polynomial. If supplied, max_error must be None.
+            Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
         max_inv_error : float
-            Maximum allowed inverse error over the domain of the pixel array.
+            Maximum allowed inverse error over the domain of the pixel array
+            in pixel units. If None, no inverse is generated.
+        inv_degree : int
+            Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
+            is ignored.
         verbose : bool
             print progress of fits
 
@@ -683,18 +693,11 @@ class WCS(GWCSAPIMixin):
 
 
         """
-        if (self.forward_transform.n_inputs !=2
-            or self.forward_transform.n_outputs != 2):
-           raise ValueError("The to_fits_sip method only works with 2-dimensional transforms")
+        if (self.forward_transform.n_inputs != 2
+                or self.forward_transform.n_outputs != 2):
+            raise ValueError(
+                "The to_fits_sip method only works with 2-dimensional transforms")
 
-        # Handle the options related to degree and thresholds.
-        if degree is not None and max_error is not None:
-            raise ValueError(
-                "Degree cannot be specified if max_error has a value")
-        if degree is None and max_error is None and max_rms is None:
-            raise ValueError(
-                "max_error must be specified if degree is None")
-        fits_dict = {}
         transform = self.forward_transform
         # Determine reference points.
         (xmin, xmax), (ymin, ymax) = bounding_box
@@ -724,19 +727,31 @@ class WCS(GWCSAPIMixin):
         u = x - crpix1
         v = y - crpix2
         undist_x, undist_y = ntransform(x, y)
+        # Determine approximate pixel scale in order to compute error threshold
+        # from the specified pixel error. Computed at the center of the array.
+        x0, y0 = ntransform(0, 0)
+        xx, xy = ntransform(1, 0)
+        yx, yy = ntransform(0, 1)
+        dist1 = np.sqrt((xx - x0)**2 + (xy-y0)**2)
+        dist2 = np.sqrt((yx - x0)**2 + (yy-y0)**2)
+        # Average the distances in the two different directions.
+        plate_scale = 2. / (dist1 + dist2)
+        max_error = max_pix_error / plate_scale
         # The fitting section.
         # Fit the forward case.
-        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(degree, max_error,
-                                                             u, v, undist_x, undist_y,
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, degree, max_error,
+                                                             bounding_box,
                                                              verbose=verbose)
         cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
                           [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
         det = cdmat[0, 0] * cdmat[1, 1] - cdmat[0, 1] * cdmat[1, 0]
         U = (cdmat[1, 1] * undist_x - cdmat[0, 1] * undist_y) / det
         V = (-cdmat[1, 0] * undist_x + cdmat[0, 0] * undist_y) / det
-        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(degree,
-                                                            max_inv_error,
-                                                            U, V, u - U, v - V,
+        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform, None,
+                                                            max_inv_pix_error,
+                                                            bounding_box,
+                                                            inverse_fit=True,
+                                                            #U, V, u - U, v - V,
                                                             verbose=verbose)
         pdegree = fit_poly_x.degree
         if pdegree > 1:
@@ -750,8 +765,8 @@ class WCS(GWCSAPIMixin):
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
             _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
             _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
-            hdr['sipmxerr'] = (max_resid, 'Maximum difference from the GWCS model SIP is fit to.')
-            hdr['sipiverr'] = (max_inv_resid, 'Maximum difference for the inverse transform')
+            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS model.')
+            hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse transform')
 
         else:
             hdr['ctype1'] = 'RA---TAN'
@@ -764,35 +779,87 @@ class WCS(GWCSAPIMixin):
         return hdr
 
 
-def _fit_2D_poly(degree, max_error, u, v, x, y, verbose=False):
+def _fit_2D_poly(ntransform, degree, max_error, bounding_box, 
+                 inverse_fit=False, verbose=False):
     """
-    Fit a pair of ordinary 2D polynomial to the supplied inputs (u, v) and
-    outputs (x, y)
+    Fit a pair of ordinary 2D polynomial to the supplied transform.
+
+    Use adaptive sampling based on the current degree.
     """
     llsqfitter = LinearLSQFitter()
+
     # The case of one pass with the specified polynomial degree
-    if degree is None:
-        deglist = range(1,10)
-    else:
+    if degree:
         deglist = [degree]
+    else:
+        deglist = range(10)
+    prev_max_error = -1
+    # Use 32 points in each direction since numpy is not much faster for fewer
+    # than 1000 values
+    npoints = 32
+    u, v = _make_sampling_grid(npoints, bounding_box)
+    undist_x, undist_y = ntransform(u, v)
+    if verbose:
+        print(f'maximum_specified_error: {max_error}')
     for deg in deglist:
         poly_x = Polynomial2D(degree=deg)
         poly_y = Polynomial2D(degree=deg)
-        fit_poly_x = llsqfitter(poly_x, u, v, x)
-        fit_poly_y = llsqfitter(poly_y, u, v, y)
-        max_resid = _compute_distance_residual(x, y,
-                                               fit_poly_x(u, v), fit_poly_y(u, v))
+        if not inverse_fit:
+            fit_poly_x = llsqfitter(poly_x, u, v, undist_x)
+            fit_poly_y = llsqfitter(poly_y, u, v, undist_y)
+            max_resid = _compute_distance_residual(undist_x, undist_y,
+                                                   fit_poly_x(u, v),
+                                                   fit_poly_y(u, v))
+        else:
+            fit_poly_x = llsqfitter(poly_x, undist_x, undist_y, u)
+            fit_poly_y = llsqfitter(poly_y, undist_x, undist_y, v)
+            max_resid = _compute_distance_residual(u, v,
+                                                   fit_poly_x(undist_x, undist_y),
+                                                   fit_poly_y(undist_x, undist_y ))
+        if prev_max_error < 0:
+            prev_max_error = max_resid
+        else:
+            if max_resid > prev_max_error:
+                raise RuntimeError('Failed to achieve required error tolerance')
         if verbose:
-            print(f'Degree = {degree}, max_resid = {max_resid}')
-        if max_error is not None and max_resid < max_error:
+            print(f'Degree = {deg}, max_resid = {max_resid}')
+        if max_resid < max_error:
+            # Check to see if double sampling meets error requirement.
+            ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
+            undist_xd, undist_yd = ntransform(ud, vd)
+            if not inverse_fit:
+                max_resid = _compute_distance_residual(undist_xd, undist_yd,
+                                                       fit_poly_x(ud, vd),
+                                                       fit_poly_y(ud, vd))
+            else:
+                max_resid = _compute_distance_residual(ud, vd, 
+                                                       fit_poly_x(undist_xd, undist_yd),
+                                                       fit_poly_y(undist_xd, undist_yd))
             if verbose:
-                print('terminating condition met')
-            break
-        if degree is None and deg == 9:
-            raise RuntimeError("Unable to achieve required fit accuracy with SIP polynomials")
+                print(f'Double sampling check: maximum residual={max_resid}')
+            if max_resid < max_error:
+                if verbose:
+                    print('terminating condition met')
+                break
     return fit_poly_x, fit_poly_y, max_resid
 
 
+def _make_sampling_grid(npoints, bounding_box):
+    (xmin, xmax), (ymin, ymax) = bounding_box
+    xsize = xmax - xmin
+    ysize = ymax - ymin
+    crpix1 = int(xsize / 2)
+    crpix2 = int(ysize / 2)
+    stepsize_x = int(xsize / npoints)
+    stepsize_y = int(ysize / npoints)
+    # Ensure last row and column are part of the evaluation grid.
+    y, x = np.mgrid[: ymax + 1: stepsize_x, : xmax + 1: stepsize_y]
+    x[:, -1] = xsize - 1
+    y[-1, :] = ysize - 1
+    u = x - crpix1
+    v = y - crpix2
+    return u, v
+ 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """
     Compute the distance residuals and return the rms and maximum values.
