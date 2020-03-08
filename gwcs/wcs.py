@@ -727,6 +727,9 @@ class WCS(GWCSAPIMixin):
                       | Sky2Pix_TAN())
         u, v = _make_sampling_grid(npoints, bounding_box)
         undist_x, undist_y = ntransform(u, v)
+        # double sampling to check if sampling is sufficient
+        ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
+        undist_xd, undist_yd = ntransform(ud, vd)
         # undist_x, undist_y = ntransform(x, y)
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
@@ -741,7 +744,8 @@ class WCS(GWCSAPIMixin):
         # The fitting section.
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
                                                              degree, max_error,
-                                                             bounding_box,
+                                                             u, v, undist_x, undist_y,
+                                                             ud, vd, undist_xd, undist_yd,
                                                              verbose=verbose)
         # The Following is necessary to put the fit into the SIP formalism.
         cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
@@ -750,13 +754,16 @@ class WCS(GWCSAPIMixin):
         det = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
         U = ( cdmat[1][1] * undist_x - cdmat[0][1] * undist_y) / det
         V = (-cdmat[1][0] * undist_x + cdmat[0][0] * undist_y) / det
+        detd = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
+        Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
+        Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
+  
         if max_inv_pix_error:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, None,
                                                             max_inv_pix_error,
-                                                            bounding_box,
-                                                            inverse_fit=True,
-                                                            UV=(U, V),
+                                                            U, V, u-U, v-V,
+                                                            Ud, Vd, ud-Ud, vd-Vd,
                                                             verbose=verbose)
         pdegree = fit_poly_x.degree
         if pdegree > 1:
@@ -784,8 +791,10 @@ class WCS(GWCSAPIMixin):
         return hdr
 
 
-def _fit_2D_poly(ntransform, npoints, degree, max_error, bounding_box, 
-                 inverse_fit=False, UV=None, verbose=False):
+def _fit_2D_poly(ntransform, npoints, degree, max_error,
+                 xin, yin, xout, yout,
+                 xind, yind, xoutd, youtd,
+                 verbose=False):
     """
     Fit a pair of ordinary 2D polynomial to the supplied transform.
 
@@ -799,27 +808,16 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error, bounding_box,
     else:
         deglist = range(10)
     prev_max_error = -1
-    u, v = _make_sampling_grid(npoints, bounding_box)
-    undist_x, undist_y = ntransform(u, v)
     if verbose:
         print(f'maximum_specified_error: {max_error}')
     for deg in deglist:
         poly_x = Polynomial2D(degree=deg)
         poly_y = Polynomial2D(degree=deg)
-        if not inverse_fit:
-            fit_poly_x = llsqfitter(poly_x, u, v, undist_x)
-            fit_poly_y = llsqfitter(poly_y, u, v, undist_y)
-            max_resid = _compute_distance_residual(undist_x, undist_y,
-                                                   fit_poly_x(u, v),
-                                                   fit_poly_y(u, v))
-        else:
-            U, V = UV
-            fit_poly_x = llsqfitter(poly_x, U, V, u - U)
-            fit_poly_y = llsqfitter(poly_y, U, V, v - V)
-            max_resid = _compute_distance_residual(u-U, v-V,
-                                                   fit_poly_x(U, V),
-                                                   fit_poly_y(U, V))
-            #print(u, v, U, )
+        fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
+        fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
+        max_resid = _compute_distance_residual(xout, yout,
+                                               fit_poly_x(xin, yin),
+                                               fit_poly_y(xin, yin))
         if prev_max_error < 0:
             prev_max_error = max_resid
         else:
@@ -829,16 +827,9 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error, bounding_box,
             print(f'Degree = {deg}, max_resid = {max_resid}')
         if max_resid < max_error:
             # Check to see if double sampling meets error requirement.
-            ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
-            undist_xd, undist_yd = ntransform(ud, vd)
-            if not inverse_fit:
-                max_resid = _compute_distance_residual(undist_xd, undist_yd,
-                                                       fit_poly_x(ud, vd),
-                                                       fit_poly_y(ud, vd))
-            else:
-                max_resid = _compute_distance_residual(ud, vd, 
-                                                       fit_poly_x(undist_xd, undist_yd),
-                                                       fit_poly_y(undist_xd, undist_yd))
+            max_resid = _compute_distance_residual(xoutd, youtd,
+                                                   fit_poly_x(xind, yind),
+                                                   fit_poly_y(xind, yind))
             if verbose:
                 print(f'Double sampling check: maximum residual={max_resid}')
             if max_resid < max_error:
