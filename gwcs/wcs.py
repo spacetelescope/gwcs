@@ -643,7 +643,8 @@ class WCS(GWCSAPIMixin):
         return self.__class__(new_pipeline)
 
     def to_fits_sip(self, bounding_box, max_pix_error=0.25, degree=None,
-                    max_inv_pix_error=0.25, inv_degree=None, verbose=False):
+                    max_inv_pix_error=0.25, inv_degree=None, 
+                    npoints=32, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
 
@@ -718,69 +719,73 @@ class WCS(GWCSAPIMixin):
         hdr['cd1_2'] = 0
         hdr['cd2_1'] = 0
         hdr['cd2_2'] = 0
-        # Now rotate to native system and deproject
-        ntransform = (transform
+        # Now rotate to native system and deproject. Recall that transform
+        # expects pixels in the original coordinate system, but the SIP
+        # transform is relative to crpix coordinates, thus the initial shift.
+        ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
-        # Evaluate this transform on all pixels in bounding box region
-        y, x = np.mgrid[ymin:ymax, xmin:xmax]  # Check on the endpoints needing to be 1 larger
-        u = x - crpix1
-        v = y - crpix2
-        undist_x, undist_y = ntransform(x, y)
+        u, v = _make_sampling_grid(npoints, bounding_box)
+        undist_x, undist_y = ntransform(u, v)
+        # undist_x, undist_y = ntransform(x, y)
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
         x0, y0 = ntransform(0, 0)
         xx, xy = ntransform(1, 0)
         yx, yy = ntransform(0, 1)
-        dist1 = np.sqrt((xx - x0)**2 + (xy-y0)**2)
-        dist2 = np.sqrt((yx - x0)**2 + (yy-y0)**2)
+        dist1 = np.sqrt((xx - x0)**2 + (xy - y0)**2)
+        dist2 = np.sqrt((yx - x0)**2 + (yy - y0)**2)
         # Average the distances in the two different directions.
-        plate_scale = 2. / (dist1 + dist2)
-        max_error = max_pix_error / plate_scale
+        plate_scale = (dist1 + dist2) / 2.
+        max_error = max_pix_error * plate_scale
         # The fitting section.
-        # Fit the forward case.
-        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, degree, max_error,
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
+                                                             degree, max_error,
                                                              bounding_box,
                                                              verbose=verbose)
-        cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
-                          [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
-        det = cdmat[0, 0] * cdmat[1, 1] - cdmat[0, 1] * cdmat[1, 0]
-        U = (cdmat[1, 1] * undist_x - cdmat[0, 1] * undist_y) / det
-        V = (-cdmat[1, 0] * undist_x + cdmat[0, 0] * undist_y) / det
-        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform, None,
+        # The Following is necessary to put the fit into the SIP formalism.
+        cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
+        # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
+        #                   [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
+        det = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
+        U = ( cdmat[1][1] * undist_x - cdmat[0][1] * undist_y) / det
+        V = (-cdmat[1][0] * undist_x + cdmat[0][0] * undist_y) / det
+        if max_inv_pix_error:
+            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
+                                                            npoints, None,
                                                             max_inv_pix_error,
                                                             bounding_box,
                                                             inverse_fit=True,
-                                                            #U, V, u - U, v - V,
+                                                            UV=(U, V),
                                                             verbose=verbose)
         pdegree = fit_poly_x.degree
         if pdegree > 1:
             hdr['a_order'] = pdegree
             hdr['b_order'] = pdegree
-            ipdegree = fit_inv_poly_u.degree
-            hdr['ap_order'] = ipdegree
-            hdr['bp_order'] = ipdegree
-            cd, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
             _store_2D_coefficients(hdr, sip_poly_x, 'A')
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
-            _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
-            _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
-            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS model.')
-            hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse transform')
-
+            if max_inv_pix_error:
+                _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
+                _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
+            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            if max_inv_pix_error:
+                ipdegree = fit_inv_poly_u.degree
+                hdr['ap_order'] = ipdegree
+                hdr['bp_order'] = ipdegree
+                hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
         else:
             hdr['ctype1'] = 'RA---TAN'
             hdr['ctype2'] = 'DEC--TAN'
 
-        hdr['cd1_1'] = cd[0][0]
-        hdr['cd1_2'] = cd[0][1]
-        hdr['cd2_1'] = cd[1][0]
-        hdr['cd2_2'] = cd[1][1]
+        hdr['cd1_1'] = cdmat[0][0]
+        hdr['cd1_2'] = cdmat[0][1]
+        hdr['cd2_1'] = cdmat[1][0]
+        hdr['cd2_2'] = cdmat[1][1]
         return hdr
 
 
-def _fit_2D_poly(ntransform, degree, max_error, bounding_box, 
-                 inverse_fit=False, verbose=False):
+def _fit_2D_poly(ntransform, npoints, degree, max_error, bounding_box, 
+                 inverse_fit=False, UV=None, verbose=False):
     """
     Fit a pair of ordinary 2D polynomial to the supplied transform.
 
@@ -794,9 +799,6 @@ def _fit_2D_poly(ntransform, degree, max_error, bounding_box,
     else:
         deglist = range(10)
     prev_max_error = -1
-    # Use 32 points in each direction since numpy is not much faster for fewer
-    # than 1000 values
-    npoints = 32
     u, v = _make_sampling_grid(npoints, bounding_box)
     undist_x, undist_y = ntransform(u, v)
     if verbose:
@@ -811,11 +813,13 @@ def _fit_2D_poly(ntransform, degree, max_error, bounding_box,
                                                    fit_poly_x(u, v),
                                                    fit_poly_y(u, v))
         else:
-            fit_poly_x = llsqfitter(poly_x, undist_x, undist_y, u)
-            fit_poly_y = llsqfitter(poly_y, undist_x, undist_y, v)
-            max_resid = _compute_distance_residual(u, v,
-                                                   fit_poly_x(undist_x, undist_y),
-                                                   fit_poly_y(undist_x, undist_y ))
+            U, V = UV
+            fit_poly_x = llsqfitter(poly_x, U, V, u - U)
+            fit_poly_y = llsqfitter(poly_y, U, V, v - V)
+            max_resid = _compute_distance_residual(u-U, v-V,
+                                                   fit_poly_x(U, V),
+                                                   fit_poly_y(U, V))
+            #print(u, v, U, )
         if prev_max_error < 0:
             prev_max_error = max_resid
         else:
@@ -853,7 +857,7 @@ def _make_sampling_grid(npoints, bounding_box):
     stepsize_x = int(xsize / npoints)
     stepsize_y = int(ysize / npoints)
     # Ensure last row and column are part of the evaluation grid.
-    y, x = np.mgrid[: ymax + 1: stepsize_x, : xmax + 1: stepsize_y]
+    y, x = np.mgrid[: ymax + 1: stepsize_y, : xmax + 1: stepsize_x]
     x[:, -1] = xsize - 1
     y[-1, :] = ysize - 1
     u = x - crpix1
