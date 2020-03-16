@@ -4,15 +4,18 @@
 %TAG ! tag:stsci.edu:asdf/
 --- !core/asdf-1.1.0
 asdf_library: !core/software-1.0.0 {author: Space Telescope Science Institute, homepage: 'http://github.com/spacetelescope/asdf',
-  name: asdf, version: 2.5.1}
+  name: asdf, version: 2.5.2}
 history:
   extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: astropy.io.misc.asdf.extension.AstropyAsdfExtension
+    software: {name: astropy, version: '4.0'}
   - !core/extension_metadata-1.0.0
     extension_class: gwcs.extension.GWCSExtension
     software: {name: gwcs, version: 0.12.0}
   - !core/extension_metadata-1.0.0
     extension_class: asdf.extension.BuiltinExtension
-    software: {name: asdf, version: 2.5.1}
+    software: {name: asdf, version: 2.5.2}
 wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
   name: ''
   steps:
@@ -223,10 +226,11 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
         forward:
         - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
         - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
-      - !<tag:stsci.edu:jwst_pipeline/v23tosky-0.7.0>
-        angles: [0.12597594444444443, -0.10374517305555556, -0.0, 72.0545718, 5.630568]
+      - !transform/rotate_sequence_3d-1.0.0
+        angles: [-0.12597594444444443, 0.10374517305555556, 0.0, -72.0545718, -5.630568]
         axes_order: zyxyz
         name: v23tosky
+        rotation_type: spherical
   - !<tag:stsci.edu:gwcs/step-1.0.0>
     frame: !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
       axes_names: [lon, lat]
@@ -245,20 +249,20 @@ X,,Ræ        Ù[áﬁå™>–Iªƒ∞ÿÉ>¿¨á%ñîΩ                 Mu,ïi"æqèêÛF!æ          
 ÿê=                                ”BLK 0               »       »       »*WÀ≤˛VäN¨ÛìäËü‰Â{îCÃ&Iø˙i›uâjBøÜC∆û> @ ’à8æx:?Z4¡˛Ω~˘\ÚW¡Ã?rfÂ≈∆æ ‡d;‚Pí>Ä≈6óïX¶=        Ï#ÓÄóòÃ> Ë π“Ò<æ˝?ù_Y*æ                 mN$éa°>`µhg≥¥=                        ÛeLìûD-æ                                ”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@#ASDF BLOCK INDEX
 %YAML 1.1
 ---
-- 9552
-- 9622
-- 9692
-- 9762
-- 9832
-- 10086
-- 10340
-- 10594
-- 10848
-- 10934
-- 11020
-- 11106
-- 11192
-- 11446
-- 11700
-- 11770
+- 9730
+- 9800
+- 9870
+- 9940
+- 10010
+- 10264
+- 10518
+- 10772
+- 11026
+- 11112
+- 11198
+- 11284
+- 11370
+- 11624
+- 11878
+- 11948
 ...
