@@ -700,7 +700,7 @@ class WCS(GWCSAPIMixin):
         """
         if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
-                "The to_fits_sip method only works with 2-dimensional transforms")
+                "The to_fits_sip method only works with celestial frame transforms")
 
         transform = self.forward_transform
         # Determine reference points.
