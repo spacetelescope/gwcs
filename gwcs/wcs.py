@@ -658,20 +658,23 @@ class WCS(GWCSAPIMixin):
         bounding_box : a pair of tuples, each consisting of two integers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
-        max_pix_error : float
+        max_pix_error : float, optional
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
             a nominal plate scale.
-        degree : int
+        degree : int, optional
             Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
-        max_inv_error : float
+        max_inv_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
             in pixel units. If None, no inverse is generated.
-        inv_degree : int
+        inv_degree : int, optional
             Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
             is ignored.
-        verbose : bool
+        npoints : int, optional
+            The number of points in each dimension to sample the bounding box
+            for use in the SIP fit.
+        verbose : bool, optional
             print progress of fits
 
         Returns
@@ -727,19 +730,16 @@ class WCS(GWCSAPIMixin):
                       | Sky2Pix_TAN())
         u, v = _make_sampling_grid(npoints, bounding_box)
         undist_x, undist_y = ntransform(u, v)
-        # double sampling to check if sampling is sufficient
+        # Double sampling to check if sampling is sufficient.
         ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
         undist_xd, undist_yd = ntransform(ud, vd)
-        # undist_x, undist_y = ntransform(x, y)
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
         x0, y0 = ntransform(0, 0)
         xx, xy = ntransform(1, 0)
         yx, yy = ntransform(0, 1)
-        dist1 = np.sqrt((xx - x0)**2 + (xy - y0)**2)
-        dist2 = np.sqrt((yx - x0)**2 + (yy - y0)**2)
-        # Average the distances in the two different directions.
-        plate_scale = (dist1 + dist2) / 2.
+        pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
+        plate_scale = np.sqrt(pixarea)
         max_error = max_pix_error * plate_scale
         # The fitting section.
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
@@ -747,7 +747,7 @@ class WCS(GWCSAPIMixin):
                                                              u, v, undist_x, undist_y,
                                                              ud, vd, undist_xd, undist_yd,
                                                              verbose=verbose)
-        # The Following is necessary to put the fit into the SIP formalism.
+        # The following is necessary to put the fit into the SIP formalism.
         cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
         # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
         #                   [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
@@ -771,15 +771,15 @@ class WCS(GWCSAPIMixin):
             hdr['b_order'] = pdegree
             _store_2D_coefficients(hdr, sip_poly_x, 'A')
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
+            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
             if max_inv_pix_error:
+                hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
                 _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
                 _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
-            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
             if max_inv_pix_error:
                 ipdegree = fit_inv_poly_u.degree
                 hdr['ap_order'] = ipdegree
                 hdr['bp_order'] = ipdegree
-                hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
         else:
             hdr['ctype1'] = 'RA---TAN'
             hdr['ctype2'] = 'DEC--TAN'
@@ -796,9 +796,8 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
                  xind, yind, xoutd, youtd,
                  verbose=False):
     """
-    Fit a pair of ordinary 2D polynomial to the supplied transform.
+    Fit a pair of ordinary 2D polynomials to the supplied transform.
 
-    Use adaptive sampling based on the current degree.
     """
     llsqfitter = LinearLSQFitter()
 
@@ -807,7 +806,7 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
         deglist = [degree]
     else:
         deglist = range(10)
-    prev_max_error = -1
+    prev_max_error = float(np.inf)
     if verbose:
         print(f'maximum_specified_error: {max_error}')
     for deg in deglist:
@@ -818,11 +817,8 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
         max_resid = _compute_distance_residual(xout, yout,
                                                fit_poly_x(xin, yin),
                                                fit_poly_y(xin, yin))
-        if prev_max_error < 0:
-            prev_max_error = max_resid
-        else:
-            if max_resid > prev_max_error:
-                raise RuntimeError('Failed to achieve required error tolerance')
+        if max_resid > prev_max_error:
+            raise RuntimeError('Failed to achieve required error tolerance')
         if verbose:
             print(f'Degree = {deg}, max_resid = {max_resid}')
         if max_resid < max_error:
