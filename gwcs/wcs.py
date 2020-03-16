@@ -17,6 +17,7 @@ from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
+from gwcs import coordinate_frames as cf
 
 
 HAS_FIX_INPUTS = True
@@ -655,7 +656,7 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        bounding_box : a pair of tuples, each consisting of two integers
+        bounding_box : a pair of tuples, each consisting of two numbers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
         max_pix_error : float, optional
@@ -697,16 +698,15 @@ class WCS(GWCSAPIMixin):
 
 
         """
-        if (self.forward_transform.n_inputs != 2
-                or self.forward_transform.n_outputs != 2):
+        if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
                 "The to_fits_sip method only works with 2-dimensional transforms")
 
         transform = self.forward_transform
         # Determine reference points.
         (xmin, xmax), (ymin, ymax) = bounding_box
-        crpix1 = int((xmax - xmin) / 2)
-        crpix2 = int((ymax - ymin) / 2)
+        crpix1 = (xmax - xmin) // 2
+        crpix2 = (ymax - ymin) // 2
         crval1, crval2 = transform(crpix1, crpix2)
         hdr = fits.Header()
         hdr['naxis'] = 2
@@ -718,10 +718,10 @@ class WCS(GWCSAPIMixin):
         hdr['CRPIX2'] = crpix2 + 1
         hdr['CRVAL1'] = crval1
         hdr['CRVAL2'] = crval2
-        hdr['cd1_1'] = 0  # Placeholders
+        hdr['cd1_1'] = 1  # Placeholders for FITS card order, all will change.
         hdr['cd1_2'] = 0
         hdr['cd2_1'] = 0
-        hdr['cd2_2'] = 0
+        hdr['cd2_2'] = 1
         # Now rotate to native system and deproject. Recall that transform
         # expects pixels in the original coordinate system, but the SIP
         # transform is relative to crpix coordinates, thus the initial shift.
