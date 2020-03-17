@@ -6,6 +6,8 @@ New Features
 - Added two new transforms - ``SphericalToCartesian`` and
   ``CartesianToSpherical``. [#275, #284, #285]
 
+- Added ``to_fits_sip`` method to generate FITS header with SIP keywords [#286]
+
 
 0.12.0 (2019-12-24)
 -------------------
