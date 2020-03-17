@@ -492,7 +492,6 @@ def test_to_fits_sip():
     y, x = np.mgrid[:1024:10, :1024:10]
     xflat = np.ravel(x[1:-1, 1:-1])
     yflat = np.ravel(y[1:-1, 1:-1])
-    warg = np.stack((xflat, yflat)).transpose()
     af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
     miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))

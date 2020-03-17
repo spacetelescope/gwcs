@@ -6,9 +6,7 @@ import numpy.linalg as npla
 from astropy.modeling.core import Model # , fix_inputs
 from astropy.modeling import utils as mutils
 from astropy.modeling.models import (Shift, Polynomial2D, Sky2Pix_TAN, 
-                                     RotateCelestial2Native, Mapping,
-                                     AffineTransformation2D, Pix2Sky_TAN,
-                                     RotateNative2Celestial, Identity)
+                                     RotateCelestial2Native)
 from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 
