@@ -375,7 +375,7 @@ def fitswcs_linear(header):
     # raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
     # "{0} given".format(wcsaxes))
 
-    translation_models = [astmodels.Shift(-shift, name='crpix' + str(i + 1))
+    translation_models = [astmodels.Shift(-(shift - 1), name='crpix' + str(i + 1))
                           for i, shift in enumerate(crpix)]
     translation = functools.reduce(lambda x, y: x & y, translation_models)
 
