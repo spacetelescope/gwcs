@@ -54,7 +54,7 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
 
 
 def get_ctype_from_ucd(ucd):
-    """ Return CTYPE string corresponding to a UCD1 value."""
+    """ Return the FITS ``CTYPE`` corresponding to a UCD1 value."""
     return UCD1_TO_CTYPE.get(ucd, "")
 
 
