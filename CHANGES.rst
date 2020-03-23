@@ -8,6 +8,7 @@ New Features
 
 - Added ``to_fits_sip`` method to generate FITS header with SIP keywords [#286]
 
+- Added ``get_ctype_from_ucd`` function. [#288]
 
 0.12.0 (2019-12-24)
 -------------------
