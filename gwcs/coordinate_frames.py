@@ -54,7 +54,19 @@ STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
 
 
 def get_ctype_from_ucd(ucd):
-    """ Return the FITS ``CTYPE`` corresponding to a UCD1 value."""
+    """
+    Return the FITS ``CTYPE`` corresponding to a UCD1 value.
+
+    Parameters
+    ----------
+    ucd : str
+        UCD string, for example one of ```WCS.world_axis_physical_types``.
+
+    Returns
+    -------
+    CTYPE : str
+        The corresponding FITS ``CTYPE`` value or an empty string.
+    """
     return UCD1_TO_CTYPE.get(ucd, "")
 
 
