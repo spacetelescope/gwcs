@@ -703,13 +703,12 @@ class WCS(GWCSAPIMixin):
 
         transform = self.forward_transform
         # Determine reference points.
-        if bounding_box is not None:
-            (xmin, xmax), (ymin, ymax) = bounding_box
-        else:
-            try:
-                (xmin, xmax), (ymin, ymax) = self.bounding_box
-            except KeyError:
-                raise TypeError("A bounding_box is needed to proceed.")
+        if bounding_box is None and self.bounding_box is None:
+            raise ValueError("A bounding_box is needed to proceed.")
+        if bounding_box is None:
+            bounding_box = self.bounding_box
+
+        (xmin, xmax), (ymin, ymax) = bounding_box
         crpix1 = (xmax - xmin) // 2
         crpix2 = (ymax - ymin) // 2
         crval1, crval2 = transform(crpix1, crpix2)
