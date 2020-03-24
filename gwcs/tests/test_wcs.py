@@ -500,7 +500,17 @@ def test_to_fits_sip():
     fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
     gwcsvalx, gwcsvaly = miriwcs(xflat, yflat)
     assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
-    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)    
+    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
     fits_inverse_valx, fits_inverse_valy = fitssip.all_world2pix(fitsvalx, fitsvaly, 1)
     assert_allclose(xflat, fits_inverse_valx - 1, atol=0.1, rtol=0)
     assert_allclose(yflat, fits_inverse_valy - 1, atol=0.1, rtol=0)
+
+    mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+    fitssip = astwcs.WCS(mirisip)
+    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
+    assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
+    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
+
+    with pytest.raises(ValueError):
+        miriwcs.bounding_box = None
+        mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)

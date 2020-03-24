@@ -5,7 +5,7 @@ import numpy as np
 import numpy.linalg as npla
 from astropy.modeling.core import Model # , fix_inputs
 from astropy.modeling import utils as mutils
-from astropy.modeling.models import (Shift, Polynomial2D, Sky2Pix_TAN, 
+from astropy.modeling.models import (Shift, Polynomial2D, Sky2Pix_TAN,
                                      RotateCelestial2Native)
 from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
@@ -641,8 +641,8 @@ class WCS(GWCSAPIMixin):
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
 
-    def to_fits_sip(self, bounding_box, max_pix_error=0.25, degree=None,
-                    max_inv_pix_error=0.25, inv_degree=None, 
+    def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
+                    max_inv_pix_error=0.25, inv_degree=None,
                     npoints=32, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
@@ -654,7 +654,8 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        bounding_box : a pair of tuples, each consisting of two numbers
+        bounding_box : tuple, optional
+            A pair of tuples, each consisting of two numbers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
         max_pix_error : float, optional
@@ -702,6 +703,11 @@ class WCS(GWCSAPIMixin):
 
         transform = self.forward_transform
         # Determine reference points.
+        if bounding_box is None and self.bounding_box is None:
+            raise ValueError("A bounding_box is needed to proceed.")
+        if bounding_box is None:
+            bounding_box = self.bounding_box
+
         (xmin, xmax), (ymin, ymax) = bounding_box
         crpix1 = (xmax - xmin) // 2
         crpix2 = (ymax - ymin) // 2
@@ -755,7 +761,7 @@ class WCS(GWCSAPIMixin):
         detd = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
         Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
-  
+
         if max_inv_pix_error:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, None,
@@ -848,7 +854,7 @@ def _make_sampling_grid(npoints, bounding_box):
     u = x - crpix1
     v = y - crpix2
     return u, v
- 
+
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """
     Compute the distance residuals and return the rms and maximum values.
