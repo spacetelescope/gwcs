@@ -10,6 +10,11 @@ New Features
 
 - Added ``get_ctype_from_ucd`` function. [#288]
 
+Bug Fixes
+^^^^^^^^^
+
+- Fixed an off by one issue in ``utils.make_fitswcs_transform``. [#290]
+
 0.12.0 (2019-12-24)
 -------------------
 New Features
