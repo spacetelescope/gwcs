@@ -1,0 +1,268 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.4.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: Space Telescope Science Institute, homepage: 'http://github.com/spacetelescope/asdf',
+  name: asdf, version: 2.5.2}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: astropy.io.misc.asdf.extension.AstropyAsdfExtension
+    software: {name: astropy, version: '4.0'}
+  - !core/extension_metadata-1.0.0
+    extension_class: gwcs.extension.GWCSExtension
+    software: {name: gwcs, version: 0.12.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension.BuiltinExtension
+    software: {name: asdf, version: 2.5.2}
+wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
+  name: ''
+  steps:
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.0.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: detector
+      unit: [!unit/unit-1.0.0 'pixel', !unit/unit-1.0.0 'pixel']
+    transform: !transform/compose-1.1.0
+      bounding_box:
+      - [-0.5, 1023.5]
+      - [3.5, 1027.5]
+      forward:
+      - !transform/concatenate-1.1.0
+        forward:
+        - !transform/shift-1.2.0 {offset: 0.15}
+        - !transform/shift-1.2.0 {offset: -0.59}
+      - !transform/compose-1.1.0
+        forward:
+        - !transform/compose-1.1.0
+          forward:
+          - !transform/compose-1.1.0
+            forward:
+            - !transform/compose-1.1.0
+              forward:
+              - !transform/compose-1.1.0
+                forward:
+                - !transform/compose-1.1.0
+                  forward:
+                  - !transform/compose-1.1.0
+                    forward:
+                    - !transform/concatenate-1.1.0
+                      forward:
+                      - !transform/shift-1.2.0 {offset: -4.0}
+                      - !transform/identity-1.1.0 {}
+                    - !transform/concatenate-1.1.0
+                      forward:
+                      - !transform/polynomial-1.1.0
+                        coefficients: !core/ndarray-1.0.0
+                          source: 0
+                          datatype: float64
+                          byteorder: little
+                          shape: [2]
+                        inverse: !transform/polynomial-1.1.0
+                          coefficients: !core/ndarray-1.0.0
+                            source: 1
+                            datatype: float64
+                            byteorder: little
+                            shape: [2]
+                        name: M_column_correction
+                      - !transform/polynomial-1.1.0
+                        coefficients: !core/ndarray-1.0.0
+                          source: 2
+                          datatype: float64
+                          byteorder: little
+                          shape: [2]
+                        inverse: !transform/polynomial-1.1.0
+                          coefficients: !core/ndarray-1.0.0
+                            source: 3
+                            datatype: float64
+                            byteorder: little
+                            shape: [2]
+                        name: M_row_correction
+                  - !transform/remap_axes-1.1.0
+                    inverse: !transform/identity-1.1.0 {n_dims: 2}
+                    mapping: [0, 1, 0, 1]
+                - !transform/concatenate-1.1.0
+                  forward:
+                  - !transform/polynomial-1.1.0
+                    coefficients: !core/ndarray-1.0.0
+                      source: 4
+                      datatype: float64
+                      byteorder: little
+                      shape: [5, 5]
+                    inverse: !transform/polynomial-1.1.0
+                      coefficients: !core/ndarray-1.0.0
+                        source: 5
+                        datatype: float64
+                        byteorder: little
+                        shape: [5, 5]
+                    name: B_correction
+                  - !transform/polynomial-1.1.0
+                    coefficients: !core/ndarray-1.0.0
+                      source: 6
+                      datatype: float64
+                      byteorder: little
+                      shape: [5, 5]
+                    inverse: !transform/polynomial-1.1.0
+                      coefficients: !core/ndarray-1.0.0
+                        source: 7
+                        datatype: float64
+                        byteorder: little
+                        shape: [5, 5]
+                    name: A_correction
+              - !transform/remap_axes-1.1.0
+                inverse: !transform/remap_axes-1.1.0
+                  mapping: [0, 1, 0, 1]
+                mapping: [0, 1, 0, 1]
+            - !transform/concatenate-1.1.0
+              forward:
+              - !transform/polynomial-1.1.0
+                coefficients: !core/ndarray-1.0.0
+                  source: 8
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                name: TI_row_correction
+              - !transform/polynomial-1.1.0
+                coefficients: !core/ndarray-1.0.0
+                  source: 9
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                name: TI_column_correction
+          - !transform/identity-1.1.0
+            inverse: !transform/remap_axes-1.1.0
+              mapping: [0, 1, 0, 1]
+            n_dims: 2
+        - !transform/remap_axes-1.1.0
+          mapping: [1, 0]
+      inverse: !transform/compose-1.1.0
+        forward:
+        - !transform/compose-1.1.0
+          forward:
+          - !transform/remap_axes-1.1.0
+            mapping: [1, 0]
+          - !transform/compose-1.1.0
+            forward:
+            - !transform/remap_axes-1.1.0
+              mapping: [0, 1, 0, 1]
+            - !transform/compose-1.1.0
+              forward:
+              - !transform/concatenate-1.1.0
+                forward:
+                - !transform/polynomial-1.1.0
+                  coefficients: !core/ndarray-1.0.0
+                    source: 10
+                    datatype: float64
+                    byteorder: little
+                    shape: [2, 2]
+                  name: T_row_correction
+                - !transform/polynomial-1.1.0
+                  coefficients: !core/ndarray-1.0.0
+                    source: 11
+                    datatype: float64
+                    byteorder: little
+                    shape: [2, 2]
+                  name: T_column_correction
+              - !transform/compose-1.1.0
+                forward:
+                - !transform/remap_axes-1.1.0
+                  mapping: [0, 1, 0, 1]
+                - !transform/compose-1.1.0
+                  forward:
+                  - !transform/concatenate-1.1.0
+                    forward:
+                    - !transform/polynomial-1.1.0
+                      coefficients: !core/ndarray-1.0.0
+                        source: 12
+                        datatype: float64
+                        byteorder: little
+                        shape: [5, 5]
+                    - !transform/polynomial-1.1.0
+                      coefficients: !core/ndarray-1.0.0
+                        source: 13
+                        datatype: float64
+                        byteorder: little
+                        shape: [5, 5]
+                  - !transform/compose-1.1.0
+                    forward:
+                    - !transform/identity-1.1.0 {n_dims: 2}
+                    - !transform/compose-1.1.0
+                      forward:
+                      - !transform/concatenate-1.1.0
+                        forward:
+                        - !transform/polynomial-1.1.0
+                          coefficients: !core/ndarray-1.0.0
+                            source: 14
+                            datatype: float64
+                            byteorder: little
+                            shape: [2]
+                        - !transform/polynomial-1.1.0
+                          coefficients: !core/ndarray-1.0.0
+                            source: 15
+                            datatype: float64
+                            byteorder: little
+                            shape: [2]
+                      - !transform/concatenate-1.1.0
+                        forward:
+                        - !transform/shift-1.2.0 {offset: 4.0}
+                        - !transform/identity-1.1.0 {}
+        - !transform/concatenate-1.1.0
+          forward:
+          - !transform/shift-1.2.0 {offset: -0.15}
+          - !transform/shift-1.2.0 {offset: 0.59}
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.0.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: v2v3
+      unit: [!unit/unit-1.0.0 'arcsec', !unit/unit-1.0.0 'arcsec']
+    transform: !transform/compose-1.1.0
+      forward:
+      - !transform/concatenate-1.1.0
+        forward:
+        - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
+        - !transform/scale-1.2.0 {factor: 0.0002777777777777778}
+      - !transform/rotate_sequence_3d-1.0.0
+        angles: [-0.12597594444444443, 0.10374517305555556, 0.0, -72.0545718, -5.630568]
+        axes_order: zyxyz
+        name: v23tosky
+        rotation_type: spherical
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
+      axes_names: [lon, lat]
+      axes_order: [0, 1]
+      axis_physical_types: [pos.eq.ra, pos.eq.dec]
+      name: world
+      reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+        frame_attributes: {}
+      unit: [!unit/unit-1.0.0 'deg', !unit/unit-1.0.0 'deg']
+...
+”BLK 0                             ⁄€¥®‘« ke-.uüÛ33333ì)¿öôôôôôô?”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0                             ⁄€¥®‘« ke-.uüÛ33333ì)¿öôôôôôô?”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0               »       »       »£Z¥¡∆ÊÉÇ<¥Ö‹”LC¶« jX?_Õ@ ÂÓr+ø 9:mŸM)øÄ€3ÆˆÚ’>Ö ò<«πÜ?"KímäL-? @n.µ> åTóÓF>        6ÖÚ¬\UøÄn´“™øx¶»Ê-’>                 Ä‹ØFa> ©Vï9>                        `˝ëÇ˚f®>                                ”BLK 0               »       »       »*WÀ≤˛VäN¨ÛìäËü‰Â{îCÃ&Iø˙i›uâjBøÜC∆û> @ ’à8æx:?Z4¡˛Ω~˘\ÚW¡Ã?rfÂ≈∆æ ‡d;‚Pí>Ä≈6óïX¶=        Ï#ÓÄóòÃ> Ë π“Ò<æ˝?ù_Y*æ                 mN$éa°>`µhg≥¥=                        ÛeLìûD-æ                                ”BLK 0               »       »       »ìrë‘)ı«∏ÛW`¨ÍÌßÛµù”∑i?œù_2*úñø0IAn€‘ø d¡á†èø> ‰(öÜØ[ææÏRò—®@ÙH`íÁÈfø0'9YEø(ípÎø]Ã>        ‹≈o”-L'?  çÄtù> åß3ûMXæ                 /Egyœ>\<ªòzÙ√>                         `õ^Ω>                                ”BLK 0               »       »       »9ˆ€UëHıw—íØoÉ+u€ùFø_|0W4˛Ã?†W Ωx¡æ†–Ω{ÄDæ =ù_˛Ö=è„ümR?w£8j{? àıhæ¸
+X,,Ræ        Ù[áﬁå™>–Iªƒ∞ÿÉ>¿¨á%ñîΩ                 Mu,ïi"æqèêÛF!æ                         ÀZ9
+ÿê=                                ”BLK 0                                Éb¸dÿ•ZË*»«O^Ë
+◊£p=vw¿cCnqËN¥?g$†À.ÊÔ?        ”BLK 0                                ßˆ“çÜZo±î¢J¿ÈÑä·zÆG!{¿g$†À.ÊÔøcCnqËN¥?        ”BLK 0                                Uœú4‚q&+®˜C¶ß-õFäy@eCnqËN¥?h$†À.ÊÔ?        ”BLK 0                                ÖçMôÀax‚d!˘&ﬁ∫]oêﬂ>/Ï.y¿h$†À.ÊÔøcCnqËN¥?        ”BLK 0               »       »       »9ˆ€UëHıw—íØoÉ+u€ùFø_|0W4˛Ã?†W Ωx¡æ†–Ω{ÄDæ =ù_˛Ö=è„ümR?w£8j{? àıhæ¸
+X,,Ræ        Ù[áﬁå™>–Iªƒ∞ÿÉ>¿¨á%ñîΩ                 Mu,ïi"æqèêÛF!æ                         ÀZ9
+ÿê=                                ”BLK 0               »       »       »*WÀ≤˛VäN¨ÛìäËü‰Â{îCÃ&Iø˙i›uâjBøÜC∆û> @ ’à8æx:?Z4¡˛Ω~˘\ÚW¡Ã?rfÂ≈∆æ ‡d;‚Pí>Ä≈6óïX¶=        Ï#ÓÄóòÃ> Ë π“Ò<æ˝?ù_Y*æ                 mN$éa°>`µhg≥¥=                        ÛeLìûD-æ                                ”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@#ASDF BLOCK INDEX
+%YAML 1.1
+---
+- 9730
+- 9800
+- 9870
+- 9940
+- 10010
+- 10264
+- 10518
+- 10772
+- 11026
+- 11112
+- 11198
+- 11284
+- 11370
+- 11624
+- 11878
+- 11948
+...

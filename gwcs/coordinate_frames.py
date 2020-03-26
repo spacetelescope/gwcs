@@ -18,11 +18,56 @@ __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame']
 
 
+UCD1_TO_CTYPE = {
+    'pos.eq.ra': 'RA',
+    'pos.eq.dec': 'DEC',
+    'pos.galactic.lon': 'GLON',
+    'pos.galactic.lat': 'GLAT',
+    'pos.ecliptic.lon': 'ELON',
+    'pos.ecliptic.lat': 'ELAT',
+    'pos.bodyrc.lon': 'TLON',
+    'pos.bodyrc.lat': 'TLAT',
+    'custom:pos.helioprojective.lat': 'HPLT',
+    'custom:pos.helioprojective.lon': 'HPLN',
+    'custom:pos.heliographic.stonyhurst.lon': 'HGLN',
+    'custom:pos.heliographic.stonyhurst.lat': 'HGLT',
+    'custom:pos.heliographic.carrington.lon': 'CRLN',
+    'custom:pos.heliographic.carrington.lat': 'CRLT',
+    'em.freq': 'FREQ',
+    'em.energy': 'ENER',
+    'em.wavenumber': 'WAVN',
+    'em.wl': 'WAVE',
+    'spect.dopplerVeloc.radio': 'VRAD',
+    'spect.dopplerVeloc.opt': 'VOPT',
+    'src.redshift': 'ZOPT',
+    'spect.dopplerVeloc': 'VELO',
+    'custom:spect.doplerVeloc.beta': 'BETA',
+    'time': 'TIME',
+    }
+
+
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
 STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
                                "TOPOCENTER", "LSR", "LSRK", "LSRD",
                                "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
+
+
+def get_ctype_from_ucd(ucd):
+    """
+    Return the FITS ``CTYPE`` corresponding to a UCD1 value.
+
+    Parameters
+    ----------
+    ucd : str
+        UCD string, for example one of ```WCS.world_axis_physical_types``.
+
+    Returns
+    -------
+    CTYPE : str
+        The corresponding FITS ``CTYPE`` value or an empty string.
+    """
+    return UCD1_TO_CTYPE.get(ucd, "")
 
 
 class CoordinateFrame:
@@ -475,7 +520,6 @@ class TemporalFrame(CoordinateFrame):
         else:
             return time.Time(dt, **kwargs)
 
-
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):
             ref_value = self.reference_frame.value
@@ -629,10 +673,10 @@ class StokesProfile(str):
         indexes = np.asanyarray(indexes, dtype=int)
         out = np.empty_like(indexes, dtype=object)
 
-        out[nans] = np.nan
-
         for profile, index in cls.profiles.items():
             out[indexes == index] = profile
+
+        out[nans] = np.nan
 
         if out.size == 1 and not nans:
             return StokesProfile(out.item())

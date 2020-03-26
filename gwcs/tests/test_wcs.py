@@ -15,7 +15,7 @@ from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_poin
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
-
+import asdf
 
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
@@ -254,6 +254,7 @@ def test_grid_from_bounding_box_step():
         grid_from_bounding_box(bb, step=(1, 2, 1))
 
 
+@pytest.mark.remote_data
 def test_wcs_from_points():
     np.random.seed(0)
     hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
@@ -386,6 +387,7 @@ def test_high_level_api():
     assert_allclose(z1, xv)
 
 
+@pytest.mark.remote_data
 class TestImaging(object):
     def setup_class(self):
         hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
@@ -484,3 +486,31 @@ class TestImaging(object):
         assert isinstance(sky_coord, coord.SkyCoord)
         assert_allclose(sky_coord.data.lon.value, ra)
         assert_allclose(sky_coord.data.lat.value, dec)
+
+
+def test_to_fits_sip():
+    y, x = np.mgrid[:1024:10, :1024:10]
+    xflat = np.ravel(x[1:-1, 1:-1])
+    yflat = np.ravel(y[1:-1, 1:-1])
+    af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
+    miriwcs = af.tree['wcs']
+    bounding_box = ((0, 1024), (0, 1024))
+    mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1)
+    fitssip = astwcs.WCS(mirisip)
+    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
+    gwcsvalx, gwcsvaly = miriwcs(xflat, yflat)
+    assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
+    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
+    fits_inverse_valx, fits_inverse_valy = fitssip.all_world2pix(fitsvalx, fitsvaly, 1)
+    assert_allclose(xflat, fits_inverse_valx - 1, atol=0.1, rtol=0)
+    assert_allclose(yflat, fits_inverse_valy - 1, atol=0.1, rtol=0)
+
+    mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+    fitssip = astwcs.WCS(mirisip)
+    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
+    assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
+    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
+
+    with pytest.raises(ValueError):
+        miriwcs.bounding_box = None
+        mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)

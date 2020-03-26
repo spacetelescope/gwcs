@@ -1,0 +1,44 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/spherical_cartesian-1.0.0"
+tag: "tag:stsci.edu:gwcs/spherical_cartesian-1.0.0"
+
+title: >
+  Convert coordinates between spherical and Cartesian coordinates.
+
+description: |
+  This schema is for transforms which convert between spherical coordinates
+  (on the unit sphere) and Cartesian coordinates.
+
+examples:
+  -
+    - Convert spherical coordinates to Cartesian coordinates.
+
+    - |
+
+        !<tag:stsci.edu:gwcs/spherical_cartesian-1.0.0>
+          transform_type: spherical_to_cartesian
+
+  -
+    - Convert Cartesian coordinates to spherical coordinates.
+
+    - |
+        !<tag:stsci.edu:gwcs/spherical_cartesian-1.0.0>
+          transform_type: cartesian_to_spherical
+
+allOf:
+  - $ref:  "tag:stsci.edu:asdf/transform/transform-1.1.0"
+  - object:
+    properties:
+      wrap_lon_at:
+        description: Angle at which to wrap the longitude angle.
+        type: integer
+        enum: [180, 360]
+        default: 360
+      transform_type:
+        description: The type of transform/class to initialize.
+        type: string
+        enum: [spherical_to_cartesian, cartesian_to_spherical]
+
+    required: [transform_type, wrap_lon_at]

@@ -13,6 +13,7 @@ from astropy.time import Time
 from .. import coordinate_frames as cf
 from .. import spectroscopy as sp
 from .. import wcs
+from .. import geometry
 
 # frames
 detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
@@ -271,3 +272,13 @@ def gwcs_3d_galactic_spectral():
     owcs.pixel_shape = (10, 20, 30)
 
     return owcs
+
+
+@pytest.fixture
+def spher_to_cart():
+    return geometry.SphericalToCartesian()
+
+
+@pytest.fixture
+def cart_to_spher():
+    return geometry.CartesianToSpherical()

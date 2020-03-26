@@ -2,14 +2,20 @@
 import functools
 import itertools
 import numpy as np
+import numpy.linalg as npla
 from astropy.modeling.core import Model # , fix_inputs
 from astropy.modeling import utils as mutils
+from astropy.modeling.models import (Shift, Polynomial2D, Sky2Pix_TAN,
+                                     RotateCelestial2Native)
+from astropy.modeling.fitting import LinearLSQFitter
+import astropy.io.fits as fits
 
 from .api import GWCSAPIMixin
 from . import coordinate_frames
 from .utils import CoordinateFrameError
 from .utils import _toindex
 from . import utils
+from gwcs import coordinate_frames as cf
 
 
 HAS_FIX_INPUTS = True
@@ -634,3 +640,274 @@ class WCS(GWCSAPIMixin):
         new_pipeline.append((step0[0], new_transform))
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
+
+    def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
+                    max_inv_pix_error=0.25, inv_degree=None,
+                    npoints=32, verbose=False):
+        """
+        Construct a SIP-based approximation to the WCS in the form of a FITS header
+
+        This assumes a tangent projection.
+
+        The default mode in using this attempts to achieve roughly 0.25 pixel
+        accuracy over the whole image.
+
+        Parameters
+        ----------
+        bounding_box : tuple, optional
+            A pair of tuples, each consisting of two numbers
+            Represents the range of pixel values in both dimensions
+            ((xmin, xmax), (ymin, ymax))
+        max_pix_error : float, optional
+            Maximum allowed error over the domain of the pixel array. This
+            error is the equivalent pixel error that corresponds to the maximum
+            error in the output coordinate resulting from the fit based on
+            a nominal plate scale.
+        degree : int, optional
+            Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
+        max_inv_error : float, optional
+            Maximum allowed inverse error over the domain of the pixel array
+            in pixel units. If None, no inverse is generated.
+        inv_degree : int, optional
+            Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
+            is ignored.
+        npoints : int, optional
+            The number of points in each dimension to sample the bounding box
+            for use in the SIP fit.
+        verbose : bool, optional
+            print progress of fits
+
+        Returns
+        -------
+        FITS header with all SIP WCS keywords
+
+        Raises
+        ------
+        ValueError
+            If the WCS is not 2D, an exception will be raised. If the specified accuracy
+            (both forward and inverse, both rms and maximum) is not achieved an exception
+            will be raised.
+
+        Notes
+        -----
+
+        Use of this requires a judicious choice of required accuracies. Attempts to use
+        higher degrees (~7 or higher) will typically fail due floating point problems
+        that arise with high powers.
+
+
+        """
+        if not isinstance(self.output_frame, cf.CelestialFrame):
+            raise ValueError(
+                "The to_fits_sip method only works with celestial frame transforms")
+
+        transform = self.forward_transform
+        # Determine reference points.
+        if bounding_box is None and self.bounding_box is None:
+            raise ValueError("A bounding_box is needed to proceed.")
+        if bounding_box is None:
+            bounding_box = self.bounding_box
+
+        (xmin, xmax), (ymin, ymax) = bounding_box
+        crpix1 = (xmax - xmin) // 2
+        crpix2 = (ymax - ymin) // 2
+        crval1, crval2 = transform(crpix1, crpix2)
+        hdr = fits.Header()
+        hdr['naxis'] = 2
+        hdr['naxis1'] = xmax
+        hdr['naxis2'] = ymax
+        hdr['ctype1'] = 'RA---TAN-SIP'
+        hdr['ctype2'] = 'DEC--TAN-SIP'
+        hdr['CRPIX1'] = crpix1 + 1
+        hdr['CRPIX2'] = crpix2 + 1
+        hdr['CRVAL1'] = crval1
+        hdr['CRVAL2'] = crval2
+        hdr['cd1_1'] = 1  # Placeholders for FITS card order, all will change.
+        hdr['cd1_2'] = 0
+        hdr['cd2_1'] = 0
+        hdr['cd2_2'] = 1
+        # Now rotate to native system and deproject. Recall that transform
+        # expects pixels in the original coordinate system, but the SIP
+        # transform is relative to crpix coordinates, thus the initial shift.
+        ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
+                      | RotateCelestial2Native(crval1, crval2, 180)
+                      | Sky2Pix_TAN())
+        u, v = _make_sampling_grid(npoints, bounding_box)
+        undist_x, undist_y = ntransform(u, v)
+        # Double sampling to check if sampling is sufficient.
+        ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
+        undist_xd, undist_yd = ntransform(ud, vd)
+        # Determine approximate pixel scale in order to compute error threshold
+        # from the specified pixel error. Computed at the center of the array.
+        x0, y0 = ntransform(0, 0)
+        xx, xy = ntransform(1, 0)
+        yx, yy = ntransform(0, 1)
+        pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
+        plate_scale = np.sqrt(pixarea)
+        max_error = max_pix_error * plate_scale
+        # The fitting section.
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
+                                                             degree, max_error,
+                                                             u, v, undist_x, undist_y,
+                                                             ud, vd, undist_xd, undist_yd,
+                                                             verbose=verbose)
+        # The following is necessary to put the fit into the SIP formalism.
+        cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
+        # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
+        #                   [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
+        det = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
+        U = ( cdmat[1][1] * undist_x - cdmat[0][1] * undist_y) / det
+        V = (-cdmat[1][0] * undist_x + cdmat[0][0] * undist_y) / det
+        detd = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
+        Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
+        Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
+
+        if max_inv_pix_error:
+            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
+                                                            npoints, None,
+                                                            max_inv_pix_error,
+                                                            U, V, u-U, v-V,
+                                                            Ud, Vd, ud-Ud, vd-Vd,
+                                                            verbose=verbose)
+        pdegree = fit_poly_x.degree
+        if pdegree > 1:
+            hdr['a_order'] = pdegree
+            hdr['b_order'] = pdegree
+            _store_2D_coefficients(hdr, sip_poly_x, 'A')
+            _store_2D_coefficients(hdr, sip_poly_y, 'B')
+            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            if max_inv_pix_error:
+                hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
+                _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
+                _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
+            if max_inv_pix_error:
+                ipdegree = fit_inv_poly_u.degree
+                hdr['ap_order'] = ipdegree
+                hdr['bp_order'] = ipdegree
+        else:
+            hdr['ctype1'] = 'RA---TAN'
+            hdr['ctype2'] = 'DEC--TAN'
+
+        hdr['cd1_1'] = cdmat[0][0]
+        hdr['cd1_2'] = cdmat[0][1]
+        hdr['cd2_1'] = cdmat[1][0]
+        hdr['cd2_2'] = cdmat[1][1]
+        return hdr
+
+
+def _fit_2D_poly(ntransform, npoints, degree, max_error,
+                 xin, yin, xout, yout,
+                 xind, yind, xoutd, youtd,
+                 verbose=False):
+    """
+    Fit a pair of ordinary 2D polynomials to the supplied transform.
+
+    """
+    llsqfitter = LinearLSQFitter()
+
+    # The case of one pass with the specified polynomial degree
+    if degree:
+        deglist = [degree]
+    else:
+        deglist = range(10)
+    prev_max_error = float(np.inf)
+    if verbose:
+        print(f'maximum_specified_error: {max_error}')
+    for deg in deglist:
+        poly_x = Polynomial2D(degree=deg)
+        poly_y = Polynomial2D(degree=deg)
+        fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
+        fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
+        max_resid = _compute_distance_residual(xout, yout,
+                                               fit_poly_x(xin, yin),
+                                               fit_poly_y(xin, yin))
+        if max_resid > prev_max_error:
+            raise RuntimeError('Failed to achieve required error tolerance')
+        if verbose:
+            print(f'Degree = {deg}, max_resid = {max_resid}')
+        if max_resid < max_error:
+            # Check to see if double sampling meets error requirement.
+            max_resid = _compute_distance_residual(xoutd, youtd,
+                                                   fit_poly_x(xind, yind),
+                                                   fit_poly_y(xind, yind))
+            if verbose:
+                print(f'Double sampling check: maximum residual={max_resid}')
+            if max_resid < max_error:
+                if verbose:
+                    print('terminating condition met')
+                break
+    return fit_poly_x, fit_poly_y, max_resid
+
+
+def _make_sampling_grid(npoints, bounding_box):
+    (xmin, xmax), (ymin, ymax) = bounding_box
+    xsize = xmax - xmin
+    ysize = ymax - ymin
+    crpix1 = int(xsize / 2)
+    crpix2 = int(ysize / 2)
+    stepsize_x = int(xsize / npoints)
+    stepsize_y = int(ysize / npoints)
+    # Ensure last row and column are part of the evaluation grid.
+    y, x = np.mgrid[: ymax + 1: stepsize_y, : xmax + 1: stepsize_x]
+    x[:, -1] = xsize - 1
+    y[-1, :] = ysize - 1
+    u = x - crpix1
+    v = y - crpix2
+    return u, v
+
+def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
+    """
+    Compute the distance residuals and return the rms and maximum values.
+    """
+    dist = np.sqrt((undist_x - fit_poly_x)**2 + (undist_y - fit_poly_y)**2)
+    max_resid = dist.max()
+    return max_resid
+
+
+def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
+    """
+    The fit polynomials must be recombined to align with the SIP decomposition
+
+    The result is the f(u,v) and g(u,v) polynomials, and the CD matrix.
+    """
+    # Extract values for CD matrix and recombining
+    c11 = fit_poly_x.c1_0.value
+    c12 = fit_poly_x.c0_1.value
+    c21 = fit_poly_y.c1_0.value
+    c22 = fit_poly_y.c0_1.value
+    sip_poly_x = fit_poly_x.copy()
+    sip_poly_y = fit_poly_y.copy()
+    # Force low order coefficients to be 0 as defined in SIP
+    sip_poly_x.c0_0 = 0
+    sip_poly_y.c0_0 = 0
+    sip_poly_x.c1_0 = 0
+    sip_poly_x.c0_1 = 0
+    sip_poly_y.c1_0 = 0
+    sip_poly_y.c0_1 = 0
+
+    cdmat = ((c11, c12), (c21, c22))
+    invcdmat = npla.inv(np.array(cdmat))
+    degree = fit_poly_x.degree
+    # Now loop through all remaining coefficients
+    for i in range(0, degree + 1):
+        for j in range(0, degree + 1):
+            if (i + j > 1) and (i + j < degree + 1):
+                old_x = getattr(fit_poly_x, f'c{i}_{j}').value
+                old_y = getattr(fit_poly_y, f'c{i}_{j}').value
+                newcoeff = np.dot(invcdmat, np.array([[old_x], [old_y]]))
+                setattr(sip_poly_x, f'c{i}_{j}', newcoeff[0, 0])
+                setattr(sip_poly_y, f'c{i}_{j}', newcoeff[1, 0])
+
+    return cdmat, sip_poly_x, sip_poly_y
+
+
+def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
+    """
+    Write the polynomial model coefficients to the header.
+    """
+    mindeg = int(not keeplinear)
+    degree = poly_model.degree
+    for i in range(0, degree + 1):
+        for j in range(0, degree + 1):
+            if (i + j) > mindeg and (i + j < degree + 1):
+                hdr[f'{coeff_prefix}_{i}_{j}'] = getattr(poly_model, f'c{i}_{j}').value
