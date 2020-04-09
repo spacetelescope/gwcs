@@ -157,6 +157,9 @@ class Polygon(Region):
         # 2. Currently it uses intersection of the scan line with edges. If this is
         # too slow it should use the 1/m increment (replace 3 above) (or the increment
         # should be removed from the GET entry).
+        if self._bbox[2] <= 0:
+            return data
+
         y = np.min(list(self._GET.keys()))
         AET = []
         scline = self._scan_line_range[-1]
@@ -311,6 +314,9 @@ class Edge:
         u = self._stop - self._start
         v = edge._stop - edge._start
         w = self._start - edge._start
+        eps = 1e2 * np.finfo(np.float).eps
+        if np.allclose(np.cross(u, v), 0, rtol=0, atol=eps):
+            return np.array(self._start)
         D = np.cross(u, v)
         return np.cross(v, w) / D * u + self._start
 

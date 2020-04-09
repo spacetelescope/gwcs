@@ -74,6 +74,14 @@ def test_polygon1():
     assert_equal(mask, pol1)
 
 
+def test_polygon_zero_width_bbox():
+    vert = [(1, 1), (1, 3), (1, 6), (1, 1)]
+    pol = region.Polygon('1', vert)
+    mask = np.zeros((9, 9), dtype=np.int)
+    mask = pol.scan(mask)
+    assert not np.any(mask)
+
+
 def test_create_mask_two_polygons():
     vertices = {1: [[2, 1], [3, 5], [6, 6], [3, 8], [0, 4], [2, 1]],
                 2: [[10, 0], [30, 0], [30, 30], [10, 30], [10, 0]]}

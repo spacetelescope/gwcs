@@ -1,5 +1,11 @@
 0.13.1 (Unreleased)
 
+Bug Fixes
+^^^^^^^^^
+
+- Fix a bug in polygon fill for zero-width bounding boxes. [#293]
+
+
 0.13.0 (2020-03-26)
 -------------------
 New Features
