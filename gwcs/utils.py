@@ -7,7 +7,7 @@ import re
 import functools
 import numpy as np
 from astropy.modeling import models as astmodels
-from astropy.modeling import core, projections
+from astropy.modeling import core, projections, Model
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
@@ -466,3 +466,123 @@ def isnumerical(val):
           and not np.issubdtype(val.dtype, np.integer)):
         isnum = False
     return isnum
+
+
+def chain_models(step, operator='|'):
+    """
+    Construct a CompoundModel instance by chaining the elements of the
+    internally-stored nested list
+
+    Parameters
+    ----------
+    step: Model/list
+        pipeline step to be turned into a Model
+    operator: '|' or '&'
+        model chaining operator to use for top-level list
+
+    Returns
+    -------
+    model: astropy.modeling.Model
+        a Model/CompoundModel instance implementing this step
+    """
+    # This is required for a test where the pipeline is
+    # [('detector', None), ('icrs', None)]
+    if step is None:
+        return None
+    if isinstance(step, Model):
+        return step
+    else:
+        new_operator = '|' if operator == '&' else '&'
+        return functools.reduce(core._model_oper(operator),
+                                [chain_models(item, new_operator) for item in step])
+
+def get_model_index(step, name, ind=[]):
+    """
+    Return the location of a Model with the requested name within the nested
+    list structure of a pipeline step.
+
+    Parameters
+    ----------
+    step: Model/list
+        pipeline step to be inspected
+    name: str
+        name of model to locate
+    ind: list
+        existing index while recursively propagating a nested list
+
+    Returns
+    -------
+    ind: list
+        indices to traverse the nested list structure, or an empty list
+        if not found
+    """
+    if isinstance(step, list):
+        try:
+            return list(filter(([]).__ne__,
+                               [get_model_index(item, name, ind+[i])
+                                for i, item in enumerate(step)]))[0]
+        except IndexError:
+            return []
+    return (ind or True) if getattr(step, 'name', None) == name else []
+
+def set_model(step, index, new_model):
+    """
+    Set (replace) the model at the specified index in the nested list
+    with a new model.
+
+    Parameters
+    ----------
+    step: Model/list
+        pipeline step to be inspected
+    index: list/tuple
+        indices indication location of required model
+    new_model: Model
+        replacement model
+    """
+    if index is True:
+        raise ValueError("Cannot replace the entire pipeline step using set_model")
+    if len(index) > 1:
+        set_model(step[index[0]], index[1:], new_model)
+    else:
+        old_model = step[index[0]]
+        if ((new_model.n_inputs, new_model.n_outputs) !=
+                (old_model.n_inputs, old_model.n_outputs)):
+            raise ValueError("New model does not have the same number of "
+                             "inputs and output as old model")
+        if not new_model.name:
+            new_model.name = old_model.name
+        step[index[0]] = new_model
+
+def get_model(step, index):
+    """
+    Return the Model instance at the given index in the nested list.
+
+    Parameters
+    ----------
+    step: Model/list
+        pipeline step to be inspected
+    index: list/tuple
+        indices indication location of required model
+    """
+    if len(index) > 1:
+        return get_model(step[index[0]], index[1:])
+    else:
+        return step[index[0]]
+
+def replace_model(step, name, new_model):
+    """
+
+    Parameters
+    ----------
+    step: Model/list
+        pipeline step to be inspected
+    name: str
+        name of model to locate
+    new_model: Model
+        replacement model
+    """
+    ind = get_model_index(step, name)
+    if ind:
+        set_model(step, ind, new_model)
+    else:
+        raise ValueError(f"Cannot find model {name}")

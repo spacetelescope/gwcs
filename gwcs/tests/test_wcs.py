@@ -53,6 +53,7 @@ def test_create_wcs():
     # use a pipeline to initialize
     pipe = [(detector, m1), (icrs, None)]
     gw4 = wcs.WCS(forward_transform=pipe)
+    gw5 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=[m1, m2])
     assert(gw1.available_frames == gw2.available_frames == \
            gw3.available_frames == gw4.available_frames == ['detector', 'icrs'])
     res = m(1, 2)
@@ -60,7 +61,7 @@ def test_create_wcs():
     assert_allclose(gw2(1, 2), res)
     assert_allclose(gw3(1, 2), res)
     assert_allclose(gw3(1, 2), res)
-
+    assert_allclose(gw5(1, 2), res)
 
 def test_init_no_transform():
     """
@@ -504,3 +505,15 @@ def test_to_fits_sip():
     fits_inverse_valx, fits_inverse_valy = fitssip.all_world2pix(fitsvalx, fitsvaly, 1)
     assert_allclose(xflat, fits_inverse_valx - 1, atol=0.1, rtol=0)
     assert_allclose(yflat, fits_inverse_valy - 1, atol=0.1, rtol=0)
+
+
+def test_replacing_models():
+    res = m(1, 2)
+    m1.name = 'shift'
+    gw = wcs.WCS(output_frame='icrs', forward_transform=[m1, m2])
+    assert_allclose(gw(1, 2), res)
+
+    m1a = m1[0] & models.Shift(2)
+    res2 = (m1a | m2)(1, 2)
+    utils.replace_model(gw.pipeline[0][1], 'shift', m1[0] & models.Shift(2))
+    assert_allclose(gw(1, 2), res2)

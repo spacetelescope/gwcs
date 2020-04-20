@@ -61,7 +61,27 @@ class WCS(GWCSAPIMixin):
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
-            if isinstance(forward_transform, Model):
+            is_pipeline = False
+            is_model = isinstance(forward_transform, Model)
+            if isinstance(forward_transform, list):
+                for item in forward_transform:
+                    try:
+                        if len(item) != 2 or not isinstance(item[0], (coordinate_frames.CoordinateFrame, str)):
+                            is_model = True
+                            break
+                    except TypeError:
+                        is_model = True
+                        break
+                else:
+                    is_pipeline = True
+
+            if is_pipeline:
+                for item in forward_transform:
+                    name, frame_obj = self._get_frame_name(item[0])
+                    super(WCS, self).__setattr__(name, frame_obj)
+                    #self._pipeline.append((name, item[1]))
+                    self._pipeline = forward_transform
+            elif is_model:
                 if output_frame is None:
                     raise CoordinateFrameError("An output_frame must be specified"
                                                "if forward_transform is a model.")
@@ -73,12 +93,6 @@ class WCS(GWCSAPIMixin):
 
                 self._pipeline = [(input_frame, forward_transform.copy()),
                                   (output_frame, None)]
-            elif isinstance(forward_transform, list):
-                for item in forward_transform:
-                    name, frame_obj = self._get_frame_name(item[0])
-                    super(WCS, self).__setattr__(name, frame_obj)
-                    #self._pipeline.append((name, item[1]))
-                    self._pipeline = forward_transform
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
                                 "(frame, transform) list, got {0}".format(
@@ -124,12 +138,12 @@ class WCS(GWCSAPIMixin):
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         if to_ind < from_ind:
             transforms = np.array(self._pipeline[to_ind: from_ind])[:, 1].tolist()
-            transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
             transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].copy()
-        return functools.reduce(lambda x, y: x | y, transforms)
+        transform = functools.reduce(lambda x, y: x | y, [utils.chain_models(t) for t in transforms])
+        return transform if to_ind > from_ind else transform.inverse
 
     def set_transform(self, from_frame, to_frame, transform):
         """
@@ -174,7 +188,8 @@ class WCS(GWCSAPIMixin):
         """
 
         if self._pipeline:
-            return functools.reduce(lambda x, y: x | y, [step[1] for step in self._pipeline[: -1]])
+            return functools.reduce(lambda x, y: x | y, [utils.chain_models(step[1])
+                                                         for step in self._pipeline[: -1]])
         else:
             return None
 
@@ -412,10 +427,19 @@ class WCS(GWCSAPIMixin):
         frame_ind = self._get_frame_index(name)
         if not after:
             fr, current_transform = self._pipeline[frame_ind - 1]
-            self._pipeline[frame_ind - 1] = (fr, current_transform | transform)
         else:
             fr, current_transform = self._pipeline[frame_ind]
-            self._pipeline[frame_ind] = (fr, transform | current_transform)
+
+        if isinstance(transform, list) and not isinstance(current_transform, list):
+            current_transform = [current_transform]
+        elif isinstance(current_transform, list) and not isinstance(transform, list):
+            transform = [transform]
+
+        oper = list.__add__ if isinstance(transform, list) else Model.__or__
+        if not after:
+            self._pipeline[frame_ind - 1] = (fr, functools.reduce(oper, [current_transform, transform]))
+        else:
+            self._pipeline[frame_ind] = (fr, functools.reduce(oper, [transform, current_transform]))
 
     @property
     def unit(self):
@@ -532,7 +556,7 @@ class WCS(GWCSAPIMixin):
         col1 = [item[0] for item in self._pipeline]
         col2 = []
         for item in self._pipeline[: -1]:
-            model = item[1]
+            model = utils.chain_models(item[1])
             if model.name is not None:
                 col2.append(model.name)
             else:
@@ -636,7 +660,7 @@ class WCS(GWCSAPIMixin):
 
         new_pipeline = []
         step0 = self.pipeline[0]
-        new_transform = fix_inputs(step0[1], fixed)
+        new_transform = fix_inputs(utils.chain_models(step0[1]), fixed)
         new_pipeline.append((step0[0], new_transform))
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
