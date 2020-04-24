@@ -252,7 +252,7 @@ Save a WCS object as an ASDF extension in a FITS file
   No.    Name      Ver    Type      Cards   Dimensions   Format
   0  PRIMARY       1 PrimaryHDU     775   ()
   1  SCI           1 ImageHDU        71   (600, 550)   float32
-  >>> tree = {"sci", hdul.data,
+  >>> tree = {"sci": hdul[1].data,
   ...         "wcs": wcsobj}
   >>> fa = fits.embed.AsdfInFits(hdul, tree)
   >>> fa.write_to("imaging_with_wcs_in_asdf.fits")
