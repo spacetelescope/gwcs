@@ -1,4 +1,9 @@
 0.15.0 (Unreleased)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Added ``insert_frame`` method to modify the pipeline of a ``WCS`` object. [#299]
 
 0.14.0 (2020-08-19)
 -------------------
@@ -20,7 +25,6 @@ Bug Fixes
 - Fix a bug in polygon fill for zero-width bounding boxes. [#293]
 
 - Add an optional parameter ``input_frame`` to ``wcstools.wcs_from_fiducial`. [#312]
-
 
 0.13.0 (2020-03-26)
 -------------------

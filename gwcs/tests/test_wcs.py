@@ -99,6 +99,36 @@ def test_insert_transform():
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
 
 
+def test_insert_frame():
+    """ Test inserting a frame into an existing pipeline """
+    w = wcs.WCS(pipe[:])
+    original_result = w(1, 2)
+    mnew = models.Shift(1) & models.Shift(1)
+    new_frame = cf.Frame2D(name='new')
+
+    # Insert at the beginning
+    w.insert_frame(new_frame, mnew, w.input_frame)
+    assert_allclose(w(0, 1), original_result)
+
+    tr = w.get_transform('detector', w.output_frame)
+    assert_allclose(tr(1, 2), original_result)
+
+    # Insert at the end
+    w = wcs.WCS(pipe[:])
+    with pytest.raises(ValueError, match=r"New coordinate frame.*"):
+        w.insert_frame('not a frame', mnew, new_frame)
+
+    w.insert_frame('icrs', mnew, new_frame)
+    assert_allclose([x - 1 for x in w(1, 2)], original_result)
+
+    tr = w.get_transform('detector', 'icrs')
+    assert_allclose(tr(1, 2), original_result)
+
+    # Force error by trying same operation
+    with pytest.raises(ValueError, match=r".*both frames.*"):
+        w.insert_frame('icrs', mnew, new_frame)
+
+
 def test_set_transform():
     """ Test setting a transform between two frames in the pipeline."""
     w = wcs.WCS(forward_transform=pipe[:])
