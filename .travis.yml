@@ -87,7 +87,7 @@ matrix:
 
         - python: 3.7
           env:
-            - PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[test]"
+            - PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
 
 
     allow_failures:
@@ -98,7 +98,7 @@ matrix:
 
         - python: 3.7
           env:
-            - PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT .[test]"
+            - PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
 
 install:
   - pip install numpy~=$NUMPY_VERSION
