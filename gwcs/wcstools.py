@@ -17,7 +17,6 @@ from .utils import _compute_lon_pole
 __all__ = ['wcs_from_fiducial', 'grid_from_bounding_box', 'wcs_from_points']
 
 
-
 def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
                       transform=None, name='', bounding_box=None):
     """
