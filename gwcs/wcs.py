@@ -508,7 +508,7 @@ class WCS(GWCSAPIMixin):
             try:
                 # Make sure the dimensions of the new bbox are correct.
                 mutils._BoundingBox.validate(transform_0, value)
-            except:
+            except Exception:
                 raise
             # get the sorted order of axes' indices
             axes_ind = self._get_axes_indices()
@@ -854,6 +854,7 @@ def _make_sampling_grid(npoints, bounding_box):
     u = x - crpix1
     v = y - crpix2
     return u, v
+
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """

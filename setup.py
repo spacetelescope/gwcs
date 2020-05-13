@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-import glob
 import os
 import sys
 
@@ -27,6 +26,7 @@ AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'http://astropy.org')
 
+
 def get_package_data():
     # Installs the schema files
     schemas = []
@@ -39,6 +39,7 @@ def get_package_data():
     # In the package directory, install to the subdirectory 'schemas'
     schemas = [os.path.join('schemas', s) for s in schemas]
     return schemas
+
 
 schemas = get_package_data()
 PACKAGE_DATA ={'gwcs':schemas}

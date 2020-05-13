@@ -123,7 +123,6 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
 
-
     new_call_pixel = wcsobj.invert(*call_world, with_units=False)
     [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel)]
 
@@ -147,7 +146,6 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
 
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
-
 
     new_call_pixel = wcsobj.invert(call_world, with_units=False)
     assert_allclose(new_call_pixel, call_pixel)
@@ -206,6 +204,7 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     assert temporal[2] == {'unit': u.s,
                            'format': 'isot', 'scale': 'utc', 'precision': 3,
                            'in_subfmt': '*', 'out_subfmt': '*', 'location': None}
+
 
 def _compare_frame_output(wc1, wc2):
     if isinstance(wc1, coord.SkyCoord):
@@ -267,7 +266,6 @@ def test_stokes_wrapper(gwcs_stokes_lookup):
 
     assert list(out) == ['I', 'Q', 'U', 'V']
 
-
     pixel_input = [[0, 1, 2, 3],
                    [0, 1, 2, 3],
                    [0, 1, 2, 3],
@@ -295,7 +293,6 @@ def test_stokes_wrapper(gwcs_stokes_lookup):
 
     assert np.isnan(np.array(out[0], dtype=float)).all()
     assert (out[1] == np.array(['Q', 'U'], dtype=object)).all()
-
 
     out = hlvl.pixel_to_world(1*u.pix)
 
