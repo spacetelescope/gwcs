@@ -1,4 +1,10 @@
-0.13.1 (Unreleased)
+0.14.0 (Unreleased)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Updated versions of schemas for gwcs objects based on latest versions of
+  transform schemas in asdf-standard. [#307]
 
 Bug Fixes
 ^^^^^^^^^

@@ -21,7 +21,7 @@ class WCSType(GWCSType):
     name = "wcs"
     requires = _REQUIRES
     types = [WCS]
-    version = '1.0.0'
+    version = '1.1.0'
 
     @classmethod
     def from_tree(cls, node, ctx):
@@ -67,7 +67,7 @@ class WCSType(GWCSType):
 class StepType(dict, GWCSType):
     name = "step"
     requires = _REQUIRES
-    version = '1.0.0'
+    version = '1.1.0'
 
 
 class FrameType(GWCSType):
