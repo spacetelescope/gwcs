@@ -86,6 +86,16 @@ def test_coordinates_composite(inputs):
     assert_allclose(result[1].value, inputs[2])
 
 
+def test_coordinates_composite_order():
+    time = cf.TemporalFrame(Time("2011-01-01T00:00:00"), name='time', unit=[u.s, ], axes_order=(0, ))
+    dist = cf.CoordinateFrame(name='distance', naxes=1,
+                              axes_type=["SPATIAL"], unit=[u.m, ], axes_order=(1, ))
+    frame = cf.CompositeFrame([time, dist])
+    result = frame.coordinates(0, 0)
+    assert result[0] == Time("2011-01-01T00:00:00")
+    assert u.allclose(result[1], 0*u.m)
+
+
 @pytest.mark.parametrize(('frame'), coord_frames)
 def test_celestial_attributes_length(frame):
     """
