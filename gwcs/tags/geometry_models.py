@@ -13,7 +13,7 @@ __all__ = ['DirectionCosinesType', 'SphericalCartesianType']
 class DirectionCosinesType(GWCSTransformType):
     name = "direction_cosines"
     types = [ToDirectionCosines, FromDirectionCosines]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -40,7 +40,7 @@ class DirectionCosinesType(GWCSTransformType):
 class SphericalCartesianType(GWCSTransformType):
     name = "spherical_cartesian"
     types = [SphericalToCartesian, CartesianToSpherical]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):

@@ -20,7 +20,7 @@ __all__ = ['GratingEquationType', 'SellmeierGlassType',
 class SellmeierGlassType(GWCSTransformType):
     name = "sellmeier_glass"
     types = [SellmeierGlass]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -36,7 +36,7 @@ class SellmeierGlassType(GWCSTransformType):
 class SellmeierZemaxType(GWCSTransformType):
     name = "sellmeier_zemax"
     types = [SellmeierZemax]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -61,7 +61,7 @@ class SellmeierZemaxType(GWCSTransformType):
 class Snell3DType(GWCSTransformType):
     name = "snell3d"
     types = [Snell3D]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -74,7 +74,7 @@ class Snell3DType(GWCSTransformType):
 
 class GratingEquationType(GWCSTransformType):
     name = "grating_equation"
-    version = '1.0.0'
+    version = '1.1.0'
     types = [AnglesFromGratingEquation3D,
              WavelengthFromGratingEquation]
 
