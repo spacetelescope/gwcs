@@ -148,6 +148,10 @@ def test_base_coordinate():
     assert_quantity_allclose(q1, 12 * u.deg)
     assert_quantity_allclose(q2, 3 * u.arcsec)
 
+    q1, q2 = frame.coordinate_to_quantity((12 * u.deg, 3 * u.arcsec))
+    assert_quantity_allclose(q1, 12 * u.deg)
+    assert_quantity_allclose(q2, 3 * u.arcsec)
+
 
 def test_temporal_relative():
     t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"), unit=u.s)
