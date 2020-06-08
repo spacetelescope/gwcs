@@ -501,7 +501,12 @@ class TemporalFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_components(self):
-        return [('temporal', 0, 'value')]
+        if isinstance(self.reference_frame.value, np.ndarray):
+            return [('temporal', 0, 'value')]
+
+        def offset_from_time_and_reference(time):
+            return (time - self.reference_frame).sec
+        return [('temporal', 0, offset_from_time_and_reference)]
 
     def coordinates(self, *args):
         if np.isscalar(args):
@@ -512,13 +517,12 @@ class TemporalFrame(CoordinateFrame):
         return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
-        if not isinstance(self.reference_frame.value, np.ndarray):
-            if not hasattr(dt, 'unit'):
-                dt = dt * unit
-            return self.reference_frame + dt
-
-        else:
+        if isinstance(dt, time.Time) or isinstance(self.reference_frame.value, np.ndarray):
             return time.Time(dt, **kwargs)
+
+        if not hasattr(dt, 'unit'):
+            dt = dt * unit
+        return self.reference_frame + dt
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):
