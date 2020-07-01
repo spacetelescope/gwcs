@@ -18,7 +18,7 @@ __all__ = ['wcs_from_fiducial', 'grid_from_bounding_box', 'wcs_from_points']
 
 
 def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
-                      transform=None, name='', bounding_box=None):
+                      transform=None, name='', bounding_box=None, input_frame=None):
     """
     Create a WCS object from a fiducial point in a coordinate frame.
 
@@ -45,10 +45,13 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     name : str
         Name of this WCS.
     bounding_box : tuple
-        Domain of this WCS. The format is a list of dictionaries for each
-        axis in the input frame
-        [{'lower': float, 'upper': float, 'includes_lower': bool,
-        'includes_upper': bool, 'step': float}]
+        The bounding box over which the WCS is valid.
+        It is a tuple of tuples of size 2 where each tuple
+        represents a range of (low, high) values. The `bounding_box` is in the order of
+        the axes, `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        For two inputs and axes_order(0, 1) the bounding box is ((xlow, xhigh), (ylow, yhigh)).
+    input_frame : ~gwcs.coordinate_frames.CoordinateFrame`
+        The input coordinate frame.
     """
     if transform is not None:
         if not isinstance(transform, Model):
@@ -89,8 +92,10 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
             raise ValueError("Expected the number of items in 'bounding_box' to be equal to the "
                              "number of outputs of the forawrd transform.")
         forward_transform.bounding_box = bounding_box[::-1]
-    return WCS(output_frame=coordinate_frame, forward_transform=forward_transform,
-               name=name)
+    if input_frame is None:
+        input_frame = 'detector'
+    return WCS(output_frame=coordinate_frame, input_frame=input_frame,
+               forward_transform=forward_transform, name=name)
 
 
 def _verify_projection(projection):
