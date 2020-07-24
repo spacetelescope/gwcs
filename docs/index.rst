@@ -333,3 +333,4 @@ Reference/API
 .. automodapi:: gwcs.wcstools
 .. automodapi:: gwcs.selector
 .. automodapi:: gwcs.spectroscopy
+.. automodapi:: gwcs.geometry

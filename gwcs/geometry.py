@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-Spectroscopy related models.
+Models for general analytical geometry transformations.
 """
 
 import numbers
