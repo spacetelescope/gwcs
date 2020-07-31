@@ -123,12 +123,12 @@ class WCS(GWCSAPIMixin):
         except ValueError:
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         if to_ind < from_ind:
-            transforms = np.array(self._pipeline[to_ind: from_ind])[:, 1].tolist()
+            transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
             transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
-            transforms = np.array(self._pipeline[from_ind: to_ind])[:, 1].copy()
+            transforms = np.array(self._pipeline[from_ind: to_ind], dtype="object")[:, 1].copy()
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):

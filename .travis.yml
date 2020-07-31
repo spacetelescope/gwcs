@@ -1,18 +1,10 @@
+os: linux
+dist: xenial
 language: python
 
-os: linux
 
 # Setting sudo to false opts in to Travis-CI container-based builds.
 sudo: false
-
-# The apt packages below are needed for sphinx builds, which can no longer
-# be installed with sudo apt-get.
-addons:
-    apt:
-        packages:
-            - graphviz
-            - texlive-latex-extra
-            - dvipng
 
 python:
   - 3.7
@@ -23,15 +15,13 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.16
-        - ASDF_GIT='git+https://github.com/spacetelescope/asdf.git#egg=asdf'
-        #- CONDA_DEPENDENCIES='scipy'
-        #- ASTROPY_GIT='git+https://github.com/astropy/astropy.git@v3.1.x'
-        - ASTROPY_GIT='git+https://github.com/astropy/astropy.git#egg=astropy
-        - PIP_DEPENDENCIES=".[all]"
+        - NUMPY_VERSION="1.16"
+        - ASDF_GIT="git+https://github.com/spacetelescope/asdf.git#egg=asdf"
+        - ASTROPY_GIT="git+https://github.com/astropy/astropy.git#egg=astropy"
+        - PIP_DEPENDENCIES=.[test]
+        - TEST_COMMAND=pytest
 
-matrix:
-
+jobs:
     # Don't wait for allowed failures
     fast_finish: true
 
@@ -39,66 +29,55 @@ matrix:
 
         # Do a security check
         - env:
-            - TEST_COMMAND="bandit -r gwcs -c .bandit.yaml"
-            - PIP_DEPENDENCIES="bandit"
+            TEST_COMMAND="bandit -r gwcs -c .bandit.yaml"
+            PIP_DEPENDENCIES=bandit
 
         # Do a coverage test.
-        - python: 3.7
+        - python: "3.7"
           env:
-            - TEST_COMMAND='pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs'
-            - PIP_DEPENDENCIES='.[test] coveralls pytest-cov'
+            TEST_COMMAND="pytest --cov-config=gwcs/tests/coveragerc --cov=gwcs"
+            PIP_DEPENDENCIES=".[test] coveralls pytest-cov"
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
-        - python: 3.7
+        - python: "3.8"
+          env: 
+            PIP_DEPENDENCIES=".[docs]"
+            TEST_COMMAND="make --directory=docs html"
+          addons:
+            apt:
+              packages:
+                - graphviz
+                - texlive-latex-extra
+                - dvipng
 
-          env: #PIP_DEPENDENCIES="$ASTROPY_GIT $ASDF_GIT sphinx sphinx-automodapi sphinx-rtd-theme stsci-rtd-theme sphinx-astropy -sphinx-asdf"
-               PIP_DEPENDENCIES=".[docs]"
-               TEST_COMMAND="make --directory=docs html"
-
-        - python: 3.6
+        - python: "3.6"
           env:
-            - NUMPY_VERSION=1.17
-            - PIP_DEPENDENCIES='.[test]'
-            - TEST_COMMAND="pytest"
+            NUMPY_VERSION="1.17"
 
-        - python: 3.7
+        - python: "3.7"
           env:
-            - NUMPY_VERSION=1.17
-            - PIP_DEPENDENCIES='.[test]'
-            - TEST_COMMAND="pytest"
+            NUMPY_VERSION="1.17"
 
-        - python: 3.8
+        - python: "3.8"
           env:
-            - NUMPY_VERSION=1.17
-            - PIP_DEPENDENCIES='.[test]'
-            - TEST_COMMAND="pytest"
+            NUMPY_VERSION="1.17"
 
         # Do a PEP8 test with flake8
-        - python: 3.6
+        - python: "3.8"
           env:
-            - TEST_COMMAND="flake8 gwcs --count"
-            - PIP_DEPENDENCIES="flake8"
+            TEST_COMMAND="flake8 gwcs --count"
+            PIP_DEPENDENCIES=flake8
 
-        - python: 3.6
+        - python: "3.8"
           env:
-            - TEST_COMMAND='flake8 gwcs --count --max-line-length=110'
-            - PIP_DEPENDENCIES="flake8"
-
-        - python: 3.7
-          env:
-            - PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
+            PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
 
 
     allow_failures:
-        - python: 3.6
+        - python: "3.8"
           env:
-            - TEST_COMMAND='flake8 gwcs --count --max-line-length=110'
-            - PIP_DEPENDENCIES="flake8"
-
-        - python: 3.7
-          env:
-            - PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
+            PIP_DEPENDENCIES="-r requirements-dev.txt .[test]"
 
 install:
   - pip install numpy~=$NUMPY_VERSION
