@@ -6,6 +6,9 @@ New Features
 - Updated versions of schemas for gwcs objects based on latest versions of
   transform schemas in asdf-standard. [#307]
 
+- Added a ``WCS.steps`` attribute and a ``wcs.Step`` class to allow serialization
+  to ASDF to use references. [#317]
+
 Bug Fixes
 ^^^^^^^^^
 
