@@ -148,10 +148,10 @@ def test_references(tmpdir):
     af = asdf.AsdfFile(tree)
     output_path = os.path.join(str(tmpdir), "test.asdf")
     af.write_to(output_path)
-    
+
     with asdf.open(output_path) as af:
         gw1 = af.tree['wcs1']
         gw2 = af.tree['wcs2']
-        assert gw1.steps[0].transform is gw1.steps[1].transform
-        assert gw2.steps[0].transform is gw2.steps[1].transform
-        assert gw2.steps[0].frame is gw2.steps[1].frame
+        assert gw1.pipeline[0].transform is gw1.pipeline[1].transform
+        assert gw2.pipeline[0].transform is gw2.pipeline[1].transform
+        assert gw2.pipeline[0].frame is gw2.pipeline[1].frame

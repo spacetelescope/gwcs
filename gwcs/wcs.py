@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
 import itertools
+import warnings
 import numpy as np
 import numpy.linalg as npla
 from astropy.modeling.core import Model # , fix_inputs
@@ -58,10 +59,7 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
-
-    @property
-    def steps(self):
-        return [Step(*step) for step in self._pipeline]
+        self._pipeline = [Step(*step) for step in self._pipeline]
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
@@ -127,12 +125,14 @@ class WCS(GWCSAPIMixin):
         except ValueError:
             raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
         if to_ind < from_ind:
-            transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
+            #transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
+            transforms = [step.transform for step in self._pipeline[to_ind: from_ind]]
             transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
-            transforms = np.array(self._pipeline[from_ind: to_ind], dtype="object")[:, 1].copy()
+            #transforms = np.array(self._pipeline[from_ind: to_ind], dtype="object")[:, 1].copy()
+            transforms = [step.transform for step in self._pipeline[from_ind: to_ind]]
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
@@ -168,7 +168,7 @@ class WCS(GWCSAPIMixin):
 
         if from_ind + 1 != to_ind:
             raise ValueError("Frames {0} and {1} are not  in sequence".format(from_name, to_name))
-        self._pipeline[from_ind] = (self._pipeline[from_ind][0], transform)
+        self._pipeline[from_ind].transform = transform
 
     @property
     def forward_transform(self):
@@ -178,7 +178,8 @@ class WCS(GWCSAPIMixin):
         """
 
         if self._pipeline:
-            return functools.reduce(lambda x, y: x | y, [step[1] for step in self._pipeline[: -1]])
+            #return functools.reduce(lambda x, y: x | y, [step[1] for step in self._pipeline[: -1]])
+            return functools.reduce(lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]])
         else:
             return None
 
@@ -205,7 +206,8 @@ class WCS(GWCSAPIMixin):
         """
         if isinstance(frame, coordinate_frames.CoordinateFrame):
             frame = frame.name
-        frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
+        #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
+        frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
         return frame_names.index(frame)
 
     def _get_frame_name(self, frame):
@@ -392,7 +394,8 @@ class WCS(GWCSAPIMixin):
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
+            #return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
+            return [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline ]
         else:
             return None
 
@@ -415,18 +418,19 @@ class WCS(GWCSAPIMixin):
         name, _ = self._get_frame_name(frame)
         frame_ind = self._get_frame_index(name)
         if not after:
-            fr, current_transform = self._pipeline[frame_ind - 1]
-            self._pipeline[frame_ind - 1] = (fr, current_transform | transform)
+            current_transform = self._pipeline[frame_ind - 1].transform
+            self._pipeline[frame_ind - 1].transform = current_transform | transform
         else:
-            fr, current_transform = self._pipeline[frame_ind]
-            self._pipeline[frame_ind] = (fr, transform | current_transform)
+            current_transform = self._pipeline[frame_ind].transform
+            self._pipeline[frame_ind].transform = transform | current_transform
 
     @property
     def unit(self):
         """The unit of the coordinates in the output coordinate system."""
         if self._pipeline:
             try:
-                return getattr(self, self._pipeline[-1][0].name).unit
+                #return getattr(self, self._pipeline[-1][0].name).unit
+                return self._pipeline[-1].frame.unit
             except AttributeError:
                 return None
         else:
@@ -436,7 +440,8 @@ class WCS(GWCSAPIMixin):
     def output_frame(self):
         """Return the output coordinate frame."""
         if self._pipeline:
-            frame = self._pipeline[-1][0]
+            #frame = self._pipeline[-1][0]
+            frame = self._pipeline[-1].frame
             if not isinstance(frame, str):
                 frame = frame.name
             return getattr(self, frame)
@@ -447,7 +452,8 @@ class WCS(GWCSAPIMixin):
     def input_frame(self):
         """Return the input coordinate frame."""
         if self._pipeline:
-            frame = self._pipeline[0][0]
+            #frame = self._pipeline[0][0]
+            frame = self._pipeline[0].frame
             if not isinstance(frame, str):
                 frame = frame.name
             return getattr(self, frame)
@@ -533,10 +539,12 @@ class WCS(GWCSAPIMixin):
 
     def __str__(self):
         from astropy.table import Table
-        col1 = [item[0] for item in self._pipeline]
+        #col1 = [item[0] for item in self._pipeline]
+        col1 = [step.frame for step in self._pipeline]
         col2 = []
         for item in self._pipeline[: -1]:
-            model = item[1]
+            #model = item[1]
+            model = item.transform
             if model.name is not None:
                 col2.append(model.name)
             else:
@@ -931,13 +939,48 @@ class Step:
         The transform of the last step should be ``None``.
     """
     def __init__(self, frame, transform=None):
-        self._frame = frame
-        self._transform = transform
+        self.frame = frame
+        self.transform = transform
 
     @property
     def frame(self):
         return self._frame
 
+    @frame.setter
+    def frame(self, val):
+        if not isinstance(val, (cf.CoordinateFrame, str)):
+            raise TypeError('"frame" should be an instance of CoordinateFrame or a string.')
+
+        self._frame = val
+
     @property
     def transform(self):
         return self._transform
+
+    @transform.setter
+    def transform(self, val):
+        if val is not None and not isinstance(val, (Model)):
+            raise TypeError('"transform" should be an instance of astropy.modeling.Model.')
+        self._transform = val
+
+    @property
+    def frame_name(self):
+        if isinstance(self.frame, str):
+            return self.frame
+        return self.frame.name
+
+    def __getitem__(self, ind):
+        warnings.warn("Indexing a WCS.pipeline step is deprecated. "
+                      "Use the `frame` and `transform` attributes instead.", DeprecationWarning)
+        if ind not in (0, 1):
+            raise IndexError("Allowed inices are 0 (frame) and 1 (transform).")
+        if ind == 0:
+            return self.frame
+        return self.transform
+
+    def __str__(self):
+        return f"{self.frame_name}\t {getattr(self.transform, 'name', 'None') or self.transform.__class__.__name__}"
+
+    def __repr__(self):
+        return f"Step(frame={self.frame_name}, \
+                      transform={getattr(self.transform, 'name', 'None') or self.transform.__class__.__name__})"
