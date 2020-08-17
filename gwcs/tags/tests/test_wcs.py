@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-
+import os.path
 import pytest
 import warnings
 
@@ -11,7 +11,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 from astropy import time
 
-from asdf import AsdfFile
+import asdf
 from asdf.tests import helpers
 
 from ... import coordinate_frames as cf
@@ -130,3 +130,28 @@ def test_frames(tmpdir):
     }
 
     helpers.assert_roundtrip_tree(tree, tmpdir)
+
+
+def test_references(tmpdir):
+    m1 = models.Shift(12.4) & models.Shift(-2)
+    icrs = cf.CelestialFrame(name='icrs', reference_frame=coord.ICRS())
+    det = cf.Frame2D(name='detector', axes_order=(0, 1))
+    focal = cf.Frame2D(name='focal', axes_order=(0, 1))
+
+    pipe1 = [(det, m1), (focal, m1), (icrs, None)]
+    gw1 = wcs.WCS(pipe1)
+
+    pipe2 = [(det, m1), (det, m1), (icrs, None)]
+    gw2 = wcs.WCS(pipe2)
+
+    tree = {'wcs1': gw1, 'wcs2': gw2}
+    af = asdf.AsdfFile(tree)
+    output_path = os.path.join(str(tmpdir), "test.asdf")
+    af.write_to(output_path)
+    
+    with asdf.open(output_path) as af:
+        gw1 = af.tree['wcs1']
+        gw2 = af.tree['wcs2']
+        assert gw1.steps[0].transform is gw1.steps[1].transform
+        assert gw2.steps[0].transform is gw2.steps[1].transform
+        assert gw2.steps[0].frame is gw2.steps[1].frame

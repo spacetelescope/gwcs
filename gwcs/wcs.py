@@ -59,6 +59,10 @@ class WCS(GWCSAPIMixin):
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
 
+    @property
+    def steps(self):
+        return [Step(*step) for step in self._pipeline]
+
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
@@ -912,3 +916,28 @@ def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
         for j in range(0, degree + 1):
             if (i + j) > mindeg and (i + j < degree + 1):
                 hdr[f'{coeff_prefix}_{i}_{j}'] = getattr(poly_model, f'c{i}_{j}').value
+
+
+class Step:
+    """
+    Represents a ``step`` in the WCS pipeline.
+
+    Parameters
+    ----------
+    frame : `~gwcs.coordinate_frames.CoordinateFrame`
+        A gwcs coordinate frame object.
+    transform : `~astropy.modeling.core.Model` or None
+        A transform from this step's frame to next step's frame.
+        The transform of the last step should be ``None``.
+    """
+    def __init__(self, frame, transform=None):
+        self._frame = frame
+        self._transform = transform
+
+    @property
+    def frame(self):
+        return self._frame
+
+    @property
+    def transform(self):
+        return self._transform
