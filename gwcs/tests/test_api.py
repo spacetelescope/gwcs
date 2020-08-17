@@ -233,7 +233,7 @@ def test_high_level_wrapper(wcsobj, request):
 
     # Remove the bounding box because the type test is a little broken with the
     # bounding box.
-    del wcsobj._pipeline[0][1].bounding_box
+    del wcsobj._pipeline[0].transform.bounding_box
 
     hlvl = HighLevelWCSWrapper(wcsobj)
 

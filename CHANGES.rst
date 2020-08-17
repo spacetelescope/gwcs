@@ -9,6 +9,10 @@ New Features
 - Added a ``WCS.steps`` attribute and a ``wcs.Step`` class to allow serialization
   to ASDF to use references. [#317]
 
+- ``wcs.pipeline`` now is a list of ``Step`` instances instead of
+  a (frame, transform) tuple. Use ``WCS.pipeline.transform`` and
+  ``WCS.pipeline.frame`` to access them. [#319]
+
 Bug Fixes
 ^^^^^^^^^
 

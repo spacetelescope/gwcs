@@ -32,7 +32,7 @@ class WCSType(GWCSType):
     @classmethod
     def to_tree(cls, gwcsobj, ctx):
         return {'name': gwcsobj.name,
-                'steps': gwcsobj.steps
+                'steps': gwcsobj.pipeline
                 }
 
     @classmethod
@@ -40,10 +40,10 @@ class WCSType(GWCSType):
         from asdf.tests import helpers
         assert old.name == new.name # nosec
         assert len(old.available_frames) == len(new.available_frames) # nosec
-        for (old_frame, old_transform), (new_frame, new_transform) in zip(
+        for old_step, new_step in zip(
                 old.pipeline, new.pipeline):
-            helpers.assert_tree_match(old_frame, new_frame)
-            helpers.assert_tree_match(old_transform, new_transform)
+            helpers.assert_tree_match(old_step.frame, new_step.frame)
+            helpers.assert_tree_match(old_step.transform, new_step.transform)
 
 
 class StepType(dict, GWCSType):
