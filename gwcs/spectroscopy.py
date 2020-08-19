@@ -231,7 +231,6 @@ class SellmeierGlass(Model):
     C_coef = Parameter(default=np.array([0, 0, 0]))
     """ C1, C2, C3 coefficients in units of um ** 2. """
 
-
     def __init__(self, B_coef, C_coef, **kwargs):
         super().__init__(B_coef, C_coef)
         self.inputs = ('wavelength',)

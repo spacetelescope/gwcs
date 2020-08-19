@@ -641,6 +641,7 @@ class RegionsSelector(Model):
     def n_outputs(self):
         return self._n_outputs
 
+
 class LabelMapper(_LabelMapper):
     """
     Maps inputs to regions. Returns the region labels corresponding to the inputs.

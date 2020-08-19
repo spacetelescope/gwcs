@@ -63,7 +63,8 @@ def test_ellipsis(gwcs_3d_galactic_spectral):
     assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 39., 44.))
     assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 29))
 
-    assert str(wcs) == repr(wcs) == EXPECTED_ELLIPSIS_REPR.strip()
+    assert str(wcs) == EXPECTED_ELLIPSIS_REPR.strip()
+    assert EXPECTED_ELLIPSIS_REPR.strip() in repr(wcs)
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (-2, 45), (5, 50)])
 
@@ -121,7 +122,8 @@ def test_spectral_slice(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (5, 50)])
 
-    assert str(wcs) == repr(wcs) == EXPECTED_SPECTRAL_SLICE_REPR.strip()
+    assert str(wcs) == EXPECTED_SPECTRAL_SLICE_REPR.strip()
+    assert EXPECTED_SPECTRAL_SLICE_REPR.strip() in repr(wcs)
 
 
 EXPECTED_SPECTRAL_RANGE_REPR = """
@@ -185,7 +187,8 @@ def test_spectral_range(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (-6, 41), (5, 50)])
 
-    assert str(wcs) == repr(wcs) == EXPECTED_SPECTRAL_RANGE_REPR.strip()
+    assert str(wcs) == EXPECTED_SPECTRAL_RANGE_REPR.strip()
+    assert EXPECTED_SPECTRAL_RANGE_REPR.strip() in repr(wcs)
 
 
 EXPECTED_CELESTIAL_SLICE_REPR = """
@@ -248,7 +251,8 @@ def test_celestial_slice(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.pixel_bounds, [(-2, 45), (5, 50)])
 
-    assert str(wcs) == repr(wcs) == EXPECTED_CELESTIAL_SLICE_REPR.strip()
+    assert str(wcs) == EXPECTED_CELESTIAL_SLICE_REPR.strip()
+    assert EXPECTED_CELESTIAL_SLICE_REPR.strip() in repr(wcs)
 
 
 EXPECTED_CELESTIAL_RANGE_REPR = """
@@ -312,7 +316,8 @@ def test_celestial_range(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.pixel_bounds, [(-6, 30), (-2, 45), (5, 50)])
 
-    assert str(wcs) == repr(wcs) == EXPECTED_CELESTIAL_RANGE_REPR.strip()
+    assert str(wcs) == EXPECTED_CELESTIAL_RANGE_REPR.strip()
+    assert EXPECTED_CELESTIAL_RANGE_REPR.strip() in repr(wcs)
 
 
 EXPECTED_NO_SHAPE_REPR = """
@@ -377,7 +382,8 @@ def test_no_array_shape(gwcs_3d_galactic_spectral):
     assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 39., 44.))
     assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 29))
 
-    assert str(wcs) == repr(wcs) == EXPECTED_NO_SHAPE_REPR.strip()
+    assert str(wcs) == EXPECTED_NO_SHAPE_REPR.strip()
+    assert EXPECTED_NO_SHAPE_REPR.strip() in repr(wcs)
 
 
 # Testing the WCS object having some physical types as None/Unknown
@@ -442,4 +448,5 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (-2, 45), (5, 50)])
 
-    assert str(wcs) == repr(wcs) == EXPECTED_ELLIPSIS_REPR_NONE_TYPES.strip()
+    assert str(wcs) == EXPECTED_ELLIPSIS_REPR_NONE_TYPES.strip()
+    assert EXPECTED_ELLIPSIS_REPR_NONE_TYPES.strip() in repr(wcs)

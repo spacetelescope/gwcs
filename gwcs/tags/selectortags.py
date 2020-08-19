@@ -22,7 +22,7 @@ __all__ = ['LabelMapperType', 'RegionsSelectorType']
 class LabelMapperType(GWCSTransformType):
     name = "label_mapper"
     types = [LabelMapperArray, LabelMapperDict, LabelMapperRange, LabelMapper]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -107,7 +107,7 @@ class LabelMapperType(GWCSTransformType):
 class RegionsSelectorType(GWCSTransformType):
     name = "regions_selector"
     types = [RegionsSelector]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):

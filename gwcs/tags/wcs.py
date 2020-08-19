@@ -7,7 +7,7 @@ from ..gwcs_types import GWCSType
 from ..coordinate_frames import (Frame2D, CoordinateFrame, CelestialFrame,
                                  SpectralFrame, TemporalFrame, CompositeFrame,
                                  StokesFrame)
-from ..wcs import WCS
+from ..wcs import WCS, Step
 
 
 _REQUIRES = ['astropy']
@@ -21,53 +21,45 @@ class WCSType(GWCSType):
     name = "wcs"
     requires = _REQUIRES
     types = [WCS]
-    version = '1.0.0'
+    version = '1.1.0'
 
     @classmethod
     def from_tree(cls, node, ctx):
-
-        steps = [(x['frame'], x.get('transform')) for x in node['steps']]
         name = node['name']
-
+        steps = [(x.frame, x.transform) for x in node['steps']]
         return WCS(steps, name=name)
 
     @classmethod
     def to_tree(cls, gwcsobj, ctx):
-        def get_frame(frame_name):
-            frame = getattr(gwcsobj, frame_name)
-            if frame is None:
-                return frame_name
-            return frame
-
-        frames = gwcsobj.available_frames
-        steps = []
-        for i in range(len(frames) - 1):
-            frame_name = frames[i]
-            frame = get_frame(frame_name)
-            transform = gwcsobj.get_transform(frames[i], frames[i + 1])
-            steps.append(StepType({'frame': frame, 'transform': transform}))
-        frame_name = frames[-1]
-        frame = get_frame(frame_name)
-        steps.append(StepType({'frame': frame}))
-
         return {'name': gwcsobj.name,
-                'steps': yamlutil.custom_tree_to_tagged_tree(steps, ctx)}
+                'steps': gwcsobj.pipeline
+                }
 
     @classmethod
     def assert_equal(cls, old, new):
         from asdf.tests import helpers
         assert old.name == new.name # nosec
         assert len(old.available_frames) == len(new.available_frames) # nosec
-        for (old_frame, old_transform), (new_frame, new_transform) in zip(
+        for old_step, new_step in zip(
                 old.pipeline, new.pipeline):
-            helpers.assert_tree_match(old_frame, new_frame)
-            helpers.assert_tree_match(old_transform, new_transform)
+            helpers.assert_tree_match(old_step.frame, new_step.frame)
+            helpers.assert_tree_match(old_step.transform, new_step.transform)
 
 
 class StepType(dict, GWCSType):
     name = "step"
     requires = _REQUIRES
-    version = '1.0.0'
+    version = '1.1.0'
+    types = [Step]
+
+    @classmethod
+    def from_tree(cls, node, ctx):
+        return Step(frame=node['frame'], transform=node.get('transform', None))
+
+    @classmethod
+    def to_tree(cls, step, ctx):
+        return {'frame': step.frame,
+                'transform': step.transform}
 
 
 class FrameType(GWCSType):

@@ -1,0 +1,72 @@
+%YAML 1.1
+---
+$schema: "http://stsci.edu/schemas/yaml-schema/draft-01"
+id: "http://stsci.edu/schemas/gwcs/sellmeier_zemax-1.1.0"
+tag: "tag:stsci.edu:gwcs/sellmeier_zemax-1.1.0"
+title: Sellmeier equation for glass used by Zemax
+
+description: |
+  Sellmeier equation for glass used by Zemax
+
+allOf:
+  - $ref: "tag:stsci.edu:asdf/transform/transform-1.2.0"
+  - type: object
+    properties:
+      B_coef:
+        description: |
+          B coefficients in Sellmeier equation.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
+      C_coef:
+        description: |
+          C coefficients in Sellmeier equation.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
+      D_coef:
+        description: |
+          Thermal D coefficients of the glass.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
+      E_coef:
+        description: |
+          Thermal E coefficients of the glass.
+        anyOf:
+          - type: array
+          - $ref: "tag:stsci.edu:asdf/core/ndarray-1.0.0"
+        items:
+          type: number
+        minItems: 3
+        maxItems: 3
+      ref_temperature:
+        description: |
+          Reference temperature of the glass in Kelvin.
+        type: number
+      ref_pressure:
+        description: |
+          Reference pressure of the glass in ATM.
+        type: number
+      temperature:
+        description: |
+          System temperature in Kelvin.
+        type: number
+      pressure:
+        description: |
+          System pressure in ATM.
+        type: number
+    required: [B_coef, C_coef, D_coef, E_coef, ref_temperature,
+               ref_pressure, temperature, pressure]

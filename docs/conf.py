@@ -28,6 +28,7 @@
 import datetime
 import os
 import sys
+from pkg_resources import get_distribution
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -84,7 +85,6 @@ copyright = '{0}, {1}'.format(
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-from pkg_resources import get_distribution
 release = get_distribution(project).version
 # for example take major/minor
 version = '.'.join(release.split('.')[:2])

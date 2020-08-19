@@ -67,10 +67,17 @@ def test_init_no_transform():
     Test initializing a WCS object without a forward_transform.
     """
     gw = wcs.WCS(output_frame='icrs')
-    assert gw._pipeline == [('detector', None), ('icrs', None)]
+    assert len(gw._pipeline) == 2
+    assert gw.pipeline[0].frame == "detector"
+    assert gw.pipeline[0][0] == "detector"
+    assert gw.pipeline[1].frame == "icrs"
+    assert gw.pipeline[1][0] == "icrs"
     assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
     gw = wcs.WCS(output_frame=icrs, input_frame=detector)
-    assert gw._pipeline == [('detector', None), ('icrs', None)]
+    assert gw._pipeline[0].frame == "detector"
+    assert gw._pipeline[0][0] == "detector"
+    assert gw._pipeline[1].frame == "icrs"
+    assert gw._pipeline[1][0] == "icrs"
     assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
     with pytest.raises(NotImplementedError):
         gw(1, 2)
@@ -110,6 +117,7 @@ def test_get_transform():
     tr_back = w.get_transform('icrs', 'detector')
     x, y = 1, 2
     fx, fy = tr_forward(1, 2)
+    assert_allclose(w.pipeline[0].transform(x, y), (fx, fy))
     assert_allclose(w.pipeline[0][1](x, y), (fx, fy))
     assert_allclose((x, y), tr_back(*w(x, y)))
     assert(w.get_transform('detector', 'detector') is None)

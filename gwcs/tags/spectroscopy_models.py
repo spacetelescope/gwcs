@@ -5,7 +5,7 @@ ASDF tags for spectroscopy related models.
 from numpy.testing import assert_allclose
 
 from astropy import units as u
-from astropy.units.quantity import _unquantify_allclose_arguments
+from astropy.units import allclose
 from asdf import yamlutil
 
 from ..gwcs_types import GWCSTransformType
@@ -20,7 +20,7 @@ __all__ = ['GratingEquationType', 'SellmeierGlassType',
 class SellmeierGlassType(GWCSTransformType):
     name = "sellmeier_glass"
     types = [SellmeierGlass]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -36,7 +36,7 @@ class SellmeierGlassType(GWCSTransformType):
 class SellmeierZemaxType(GWCSTransformType):
     name = "sellmeier_zemax"
     types = [SellmeierZemax]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -61,7 +61,7 @@ class SellmeierZemaxType(GWCSTransformType):
 class Snell3DType(GWCSTransformType):
     name = "snell3d"
     types = [Snell3D]
-    version = "1.0.0"
+    version = "1.1.0"
 
     @classmethod
     def from_tree_transform(cls, node, ctx):
@@ -74,7 +74,7 @@ class Snell3DType(GWCSTransformType):
 
 class GratingEquationType(GWCSTransformType):
     name = "grating_equation"
-    version = '1.0.0'
+    version = '1.1.0'
     types = [AnglesFromGratingEquation3D,
              WavelengthFromGratingEquation]
 
@@ -119,16 +119,5 @@ class GratingEquationType(GWCSTransformType):
             assert isinstance(b, AnglesFromGratingEquation3D) # nosec
         elif isinstance(a, WavelengthFromGratingEquation):
             assert isinstance(b, WavelengthFromGratingEquation) # nosec
-        assert_quantity_allclose(a.groove_density, b.groove_density) # nosec
+        allclose(a.groove_density, b.groove_density) # nosec
         assert a.spectral_order.value == b.spectral_order.value # nosec
-
-
-def assert_quantity_allclose(actual, desired, rtol=1.e-7, atol=None, **kwargs):
-    """
-    Raise an assertion if two objects are not equal up to desired tolerance.
-
-    This is a :class:`~astropy.units.Quantity`-aware version of
-    :func:`numpy.testing.assert_allclose`.
-    """
-    assert_allclose(*_unquantify_allclose_arguments(
-        actual, desired, rtol, atol), **kwargs)

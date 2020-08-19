@@ -1,3 +1,25 @@
+0.14.0 (2020-08-19)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Updated versions of schemas for gwcs objects based on latest versions of
+  transform schemas in asdf-standard. [#307]
+
+- Added a ``wcs.Step`` class to allow serialization to ASDF to use references. [#317]
+
+- ``wcs.pipeline`` now is a list of ``Step`` instances instead of
+  a (frame, transform) tuple. Use ``WCS.pipeline.transform`` and
+  ``WCS.pipeline.frame`` to access them. [#319]
+
+Bug Fixes
+^^^^^^^^^
+
+- Fix a bug in polygon fill for zero-width bounding boxes. [#293]
+
+- Add an optional parameter ``input_frame`` to ``wcstools.wcs_from_fiducial`. [#312]
+
+
 0.13.0 (2020-03-26)
 -------------------
 New Features
