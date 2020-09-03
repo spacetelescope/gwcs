@@ -642,3 +642,42 @@ def test_to_fits_tab_miri_lrs():
     tab = np.array(fits_wcs.wcs_pix2world(x, y, 0, 0))
     m = np.cumprod(np.isfinite(ref), dtype=np.bool_, axis=0)
     assert np.allclose(ref[m], tab[m], rtol=5e-6, atol=5e-6, equal_nan=True)
+
+
+def test_in_image():
+    # create a 1-dim WCS:
+    w1 = wcs.WCS(
+        [
+            (cf.SpectralFrame(name='input', axes_names=('x',), unit=(u.pix,)), models.Scale(2)),
+            (cf.SpectralFrame(name='output', axes_names=('x'), unit=(u.pix,)), None)
+        ]
+    )
+    w1.bounding_box = (1, 5)
+
+    assert np.isscalar(w1.in_image(4))
+    assert w1.in_image(4)
+    assert not w1.in_image(14)
+    assert np.array_equal(
+        w1.in_image([[-1, 4, 11], [2, 3, 12]]),
+        [[False, True, False], [True, True, False]],
+    )
+
+    # create a 2-dim WCS:
+    w2 = wcs.WCS([(cf.Frame2D(name='input', axes_names=('x', 'y'), unit=(u.pix, u.pix)),
+                   models.Scale(2) & models.Scale(1.5)),
+                  (cf.Frame2D(name='output', axes_names=('x', 'y'), unit=(u.pix, u.pix)),
+                   None)])
+    w2.bounding_box = [(1, 100), (2, 20)]
+
+    assert np.isscalar(w2.in_image(2, 6))
+    assert not np.isscalar(w2.in_image([2], [6]))
+    assert w2.in_image(4, 6)
+    assert not w2.in_image(5, 0)
+    assert np.array_equal(
+        w2.in_image(
+            [[9, 10, 11, 15], [8, 9, 67, 98], [2, 2, np.nan, 102]],
+            [[9, np.nan, 11, 15], [8, 9, 67, 98], [1, 1, np.nan, -10]]
+        ),
+        [[ True, False,  True,  True], [ True,  True, False, False], [False, False, False, False]],
+    )
+

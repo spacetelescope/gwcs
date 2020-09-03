@@ -333,6 +333,63 @@ class WCS(GWCSAPIMixin):
         """
         raise NotImplementedError
 
+    def in_image(self, *args, **kwargs):
+        """
+        This method tests if one or more of the input world coordinates are
+        contained within forward transformation's image and that it maps to
+        the domain of definition of the forward transformation.
+        In practical terms, this function tests
+        that input world coordinate(s) can be converted to input frame and that
+        it is within the forward transformation's ``bounding_box`` when
+        defined.
+
+        Parameters
+        ----------
+        args : float, array like, `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Unit` coordinates to be inverted
+
+        kwargs : dict
+            keyword arguments to be passed either to ``backward_transform``
+            (when defined) or to the iterative invert method.
+
+        Returns
+        -------
+        result : bool, numpy.ndarray
+           A single boolean value or an array of boolean values with `True`
+           indicating that the WCS footprint contains the coordinate
+           and `False` if input is outside the footprint.
+
+        """
+        kwargs['with_bounding_box'] = True
+        kwargs['fill_value'] = np.nan
+
+        coords = self.invert(*args, **kwargs)
+
+        result = np.isfinite(coords)
+        if self.input_frame.naxes > 1:
+            result = np.all(result, axis=0)
+
+        if self.bounding_box is None or not np.any(result):
+            return result
+
+        if self.input_frame.naxes == 1:
+            x1, x2 = self.bounding_box
+
+            if len(np.shape(args[0])) > 0:
+                result[result] = (coords[result] >= x1) & (coords[result] <= x2)
+            elif result:
+                result = (coords >= x1) and (coords <= x2)
+
+        else:
+            if len(np.shape(args[0])) > 0:
+                for c, (x1, x2) in zip(coords, self.bounding_box):
+                    result[result] = (c[result] >= x1) & (c[result] <= x2)
+
+            elif result:
+                result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
+
+        return result
+
     def transform(self, from_frame, to_frame, *args, **kwargs):
         """
         Transform positions between two frames.
