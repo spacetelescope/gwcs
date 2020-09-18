@@ -424,6 +424,62 @@ class WCS(GWCSAPIMixin):
             current_transform = self._pipeline[frame_ind].transform
             self._pipeline[frame_ind].transform = transform | current_transform
 
+    def insert_frame(self, input_frame, transform, output_frame):
+        """
+        Insert a new frame into an existing pipeline. This frame must be
+        anchored to a frame already in the pipeline by a transform. This
+        existing frame is identified solely by its name, although an entire
+        `~gwcs.coordinate_frame.CoordinateFrame` can be passed (e.g., the
+        `input_frame` or `output_frame` attribute). This frame is never
+        modified.
+
+        Parameters
+        ----------
+        input_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+            Coordinate frame at start of new transform
+        transform : `~astropy.modeling.Model`
+            New transform to be inserted in the pipeline
+        output_frame: str or `~gwcs.coordinate_frame.CoordinateFrame`
+            Coordinate frame at end of new transform
+        """
+        input_name, input_frame_obj = self._get_frame_name(input_frame)
+        output_name, output_frame_obj = self._get_frame_name(output_frame)
+        try:
+            input_index = self._get_frame_index(input_frame)
+        except ValueError:
+            input_index = None
+            if input_frame_obj is None:
+                raise ValueError(f"New coordinate frame {input_name} must "
+                                 "be defined")
+        try:
+            output_index = self._get_frame_index(output_frame)
+        except ValueError:
+            output_index = None
+            if output_frame_obj is None:
+                raise ValueError(f"New coordinate frame {output_name} must "
+                                 "be defined")
+
+        new_frames = [input_index, output_index].count(None)
+        if new_frames == 0:
+            raise ValueError("Could not insert frame as both frames "
+                             f"{input_name} and {output_name} already exist")
+        elif new_frames == 2:
+            raise ValueError("Could not insert frame as neither frame "
+                             f"{input_name} nor {output_name} exists")
+
+        if input_index is None:
+            self._pipeline = (self._pipeline[:output_index] +
+                              [Step(input_frame_obj, transform)] +
+                              self._pipeline[output_index:])
+            super(WCS, self).__setattr__(input_name, input_frame_obj)
+        else:
+            split_step = self._pipeline[input_index]
+            self._pipeline = (self._pipeline[:input_index] +
+                              [Step(split_step.frame, transform),
+                               Step(output_frame_obj, split_step.transform)] +
+                              self._pipeline[input_index + 1:])
+            super(WCS, self).__setattr__(output_name, output_frame_obj)
+
     @property
     def unit(self):
         """The unit of the coordinates in the output coordinate system."""
