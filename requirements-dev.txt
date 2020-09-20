@@ -1,3 +1,4 @@
-git+https://github.com/astropy/astropy#egg=astropy
+#git+https://github.com/astropy/astropy#egg=astropy
+astropy==4.1rc2
 git+https://github.com/spacetelescope/asdf#egg=asdf
 
