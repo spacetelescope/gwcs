@@ -286,12 +286,15 @@ class CoordinateFrame:
         return self._axis_physical_types
 
     @property
-    def _world_axis_object_components(self):
-        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+    def _world_axis_object_classes(self):
+        return {self._axes_type[0]: (
+            u.Quantity,
+            (),
+            {'unit': self.unit[0]})}
 
     @property
-    def _world_axis_object_classes(self):
-        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+    def _world_axis_object_components(self):
+        return [(self._axes_type[0], 0, 'value')]
 
 
 class CelestialFrame(CoordinateFrame):
