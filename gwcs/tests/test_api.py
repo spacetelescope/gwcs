@@ -173,10 +173,10 @@ def test_world_axis_object_components_1d(gwcs_1d_freq):
 
 def test_world_axis_object_components_4d(gwcs_4d_identity_units):
     waoc = gwcs_4d_identity_units.world_axis_object_components
-    assert waoc == [('celestial', 0, 'spherical.lon'),
-                    ('celestial', 1, 'spherical.lat'),
-                    ('spectral', 0, 'value'),
-                    ('temporal', 0, 'value')]
+    assert waoc[0:3] == [('celestial', 0, 'spherical.lon'),
+                         ('celestial', 1, 'spherical.lat'),
+                         ('spectral', 0, 'value')]
+    assert waoc[3][0:2] == ('temporal', 0)
 
 
 def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
