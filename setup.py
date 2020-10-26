@@ -69,6 +69,7 @@ setup(name=PACKAGENAME,
       install_requires=[
           'astropy>=4.1',
           'numpy',
+          'scipy',
           'asdf'],
       packages=find_packages(),
       extras_require={

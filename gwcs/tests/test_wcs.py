@@ -503,8 +503,7 @@ class TestImaging(object):
 
     def test_inverse(self):
         sky_coord = self.wcs(1, 2, with_units=True)
-        with pytest.raises(NotImplementedError):
-            self.wcs.invert(sky_coord)
+        assert np.allclose(self.wcs.invert(sky_coord), (1, 2))
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
@@ -681,3 +680,107 @@ def test_in_image():
         [[ True, False,  True,  True], [ True,  True, False, False], [False, False, False, False]],
     )
 
+
+def test_iter_inv():
+    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    w.pipeline[0].transform.inverse = None
+    w.bounding_box = None
+
+    # test single point
+    assert np.allclose((1, 2), w.invert(*w(1, 2), with_method='iterative'))
+    assert np.allclose(
+        (np.nan, np.nan),
+        w.invert(*w(np.nan, 2), with_method='iterative'),
+        equal_nan=True
+    )
+
+    # prepare to test a vector of points:
+    np.random.seed(10)
+    x, y = 2047 * np.random.random((2, 10000))  # "truth"
+
+    # test adaptive:
+    xp, yp = w.invert(
+        *w(x, y),
+        with_method='iterative',
+        adaptive=True,
+        detect_divergence=True,
+        quiet=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    # remove analytic/user-supplied inverse:
+    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+
+    # test single point
+    assert np.allclose((1, 2), w.invert(*w(1, 2), with_method='iterative'))
+    assert np.allclose(
+        (np.nan, np.nan),
+        w.invert(*w(np.nan, 2), with_method='iterative'),
+        equal_nan=True
+    )
+
+    # don't detect devergence
+    xp, yp = w.invert(
+        *w(x, y),
+        with_method='iterative',
+        adaptive=True,
+        detect_divergence=False,
+        quiet=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    with pytest.raises(wcs.NoConvergence) as e:
+        w.invert(
+            *w([1, 20, 200, 2000], [200, 1000, 2000, 5]),
+            with_method='iterative',
+            adaptive=True,
+            detect_divergence=True,
+            maxiter=2,  # force not reaching requested accuracy
+            quiet=False
+        )
+
+    xp, yp = e.value.best_solution.T
+    assert e.value.slow_conv.size == 4
+    assert np.all(np.sort(e.value.slow_conv) == np.arange(4))
+
+    # test non-adaptive:
+    xp, yp = w.invert(
+        *w(x, y, with_bounding_box=False),
+        with_method='iterative',
+        adaptive=False,
+        detect_divergence=True,
+        quiet=False,
+        with_bounding_box=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    # test non-adaptive:
+    x[0] = 3000
+    y[0] = 10000
+    xp, yp = w.invert(
+        *w(x, y, with_bounding_box=False),
+        with_method='iterative',
+        adaptive=False,
+        detect_divergence=True,
+        quiet=False,
+        with_bounding_box=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    # test non-adaptive with non-recoverable divergence:
+    x[0] = 300000
+    y[0] = 1000000
+    with pytest.raises(wcs.NoConvergence) as e:
+        xp, yp = w.invert(
+            *w(x, y, with_bounding_box=False),
+            with_method='iterative',
+            adaptive=False,
+            detect_divergence=True,
+            quiet=False,
+            with_bounding_box=False
+        )
+        assert np.allclose((x, y), (xp, yp))
+
+    xp, yp = e.value.best_solution.T
+    assert np.allclose((x[1:], y[1:]), (xp[1:], yp[1:]))
+    assert e.value.divergent[0] == 0
