@@ -367,3 +367,23 @@ def test_base_frame():
     assert frame.axes_names == ("x",)
 
     frame.coordinate_to_quantity(1, 2)
+
+
+def test_axes_order():
+    # CelestialFrame
+    icrs1 = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(1, 0))
+    coord_0_1 = icrs.coordinates(3, 5)
+    coord_1_0 = icrs1.coordinates(5, 3)
+    assert coord_0_1 == coord_1_0
+
+    comp = cf.CompositeFrame(frames=[spec2, icrs1])
+    result = comp.coordinates(2, 3, 4)
+    assert result[0] == 4 * u.m
+    assert result[1] == coord.SkyCoord(2, 3, unit=(u.deg, u.deg))
+
+    cel2 = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(2, 0))
+    spec1 = cf.SpectralFrame(name='wave', unit=[u.m,], axes_order=(1,), axes_names=('lambda',))
+    comp=cf.CompositeFrame([cel2, spec1])
+    result = comp.coordinates(2, 3, 4)
+    assert result[1] == 3 * u.m
+    assert result[0] == coord.SkyCoord(2, 4, unit=(u.deg, u.deg))
