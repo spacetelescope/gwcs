@@ -17,6 +17,7 @@ from .. import utils
 from ..utils import CoordinateFrameError
 import asdf
 
+
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
 m = m1 | m2
@@ -552,3 +553,92 @@ def test_to_fits_sip():
     with pytest.raises(ValueError):
         miriwcs.bounding_box = None
         mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+
+
+def test_to_fits_tab_no_bb(gwcs_3d_galactic_spectral):
+    # gWCS:
+    w = gwcs_3d_galactic_spectral
+    w.bounding_box = None
+
+    # FITS WCS -TAB:
+    with pytest.raises(ValueError):
+        hdr, bt = w.to_fits_tab()
+
+
+def test_to_fits_tab_cube(gwcs_3d_galactic_spectral):
+    # gWCS:
+    w = gwcs_3d_galactic_spectral
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab()
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    hdr, bt = w.to_fits_tab(bounding_box=w.bounding_box)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs_user_bb = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+    z = zmin + (zmax - zmin) * np.random.random(100)
+
+    # test:
+    assert np.allclose(w(x, y, z), fits_wcs.wcs_pix2world(x, y, z, 0),
+                       rtol=1e-6, atol=1e-7)
+
+    assert np.allclose(w(x, y, z), fits_wcs_user_bb.wcs_pix2world(x, y, z, 0),
+                       rtol=1e-6, atol=1e-7)
+
+
+def test_to_fits_tab_miri_image():
+    # gWCS:
+    af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
+    w = af.tree['wcs']
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab(sampling=0.5)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+
+    # test:
+    assert np.allclose(w(x, y), fits_wcs.wcs_pix2world(x, y, 0),
+                       rtol=1e-6, atol=1e-7)
+
+
+def test_to_fits_tab_miri_lrs():
+    af = asdf.open(get_pkg_data_filename('data/miri_lrs_wcs.asdf'))
+    w = af.tree['wcs']
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab(sampling=0.25)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+
+    # test:
+    ref = np.array(w(x, y))
+    tab = np.array(fits_wcs.wcs_pix2world(x, y, 0, 0))
+    m = np.cumprod(np.isfinite(ref), dtype=np.bool_, axis=0)
+    assert np.allclose(ref[m], tab[m], rtol=5e-6, atol=5e-6, equal_nan=True)

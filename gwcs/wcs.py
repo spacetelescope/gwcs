@@ -19,10 +19,9 @@ from . import utils
 from gwcs import coordinate_frames as cf
 
 
-HAS_FIX_INPUTS = True
-
 try:
     from astropy.modeling.core import fix_inputs
+    HAS_FIX_INPUTS = True
 except ImportError:
     HAS_FIX_INPUTS = False
 
@@ -861,6 +860,143 @@ class WCS(GWCSAPIMixin):
         hdr['cd2_1'] = cdmat[1][0]
         hdr['cd2_2'] = cdmat[1][1]
         return hdr
+
+    def to_fits_tab(self, bounding_box=None, bin_ext_name='WCS-TABLE',
+                    coord_col_name='coordinates', sampling=1):
+        """
+        Construct a FITS WCS ``-TAB``-based approximation to the WCS
+        in the form of a FITS header and a binary table extension. For the
+        description of the FITS WCS ``-TAB`` convention, see
+        "Representations of spectral coordinates in FITS" in
+        `Greisen, E. W. et al. A&A 446 (2) 747-771 (2006)
+        <https://doi.org/10.1051/0004-6361:20053818>`_ .
+
+        Parameters
+        ----------
+        bounding_box : tuple, optional
+            Specifies the range of acceptable values for each input axis.
+            The order of the axes is
+            `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+            For two image axes ``bounding_box`` is of the form
+            ``((xmin, xmax), (ymin, ymax))``.
+
+        bin_ext_name : str, optional
+            Extension name for the `~astropy.io.fits.BinTableHDU` extension.
+
+        coord_col_name : str, optional
+            Field name of the coordinate array in the structured array
+            stored in `~astropy.io.fits.BinTableHDU` data. This corresponds to
+            ``TTYPEi`` field in the FITS header of the binary table extension.
+
+        sampling : float, tuple, optional
+            The target "density" of grid nodes per pixel to be used when
+            creating the coordinate array for the ``-TAB`` FITS WCS convention.
+            It is equal to ``1/step`` where ``step`` is the distance between
+            grid nodes in pixels. ``sampling`` can be specified as a single
+            number to be used for all axes or as a `tuple` of numbers
+            that specify the sampling for each image axis.
+
+        Returns
+        -------
+        hdr : `~astropy.io.fits.Header`
+            Header with WCS-TAB information associated (to be used) with image
+            data.
+
+        bin_table : `~astropy.io.fits.BinTableHDU`
+            Binary table extension containing the coordinate array.
+
+        Raises
+        ------
+        ValueError
+            When ``bounding_box`` is not defined either through the input
+            ``bounding_box`` parameter or this object's ``bounding_box``
+            property.
+
+        ValueError
+            When ``sampling`` is a `tuple` of length larger than 1 that
+            does not match the number of image axes.
+
+        RuntimeError
+            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
+            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+
+        """
+        if bounding_box is None:
+            if self.bounding_box is None:
+                raise ValueError(
+                    "Need a valid bounding_box to compute the footprint."
+                )
+            bounding_box = self.bounding_box
+
+        else:
+            # validate user-supplied bounding box:
+            frames = self.available_frames
+            transform_0 = self.get_transform(frames[0], frames[1])
+            mutils._BoundingBox.validate(transform_0, bounding_box)
+
+        if self.pixel_n_dim > self.world_n_dim:
+            raise RuntimeError(
+                "The case when the number of input axes is larger than the "
+                "number of output axes is not supported."
+            )
+
+        try:
+            sampling = np.broadcast_to(sampling, (self.pixel_n_dim, ))
+        except ValueError:
+            raise ValueError("Number of sampling values either must be 1 "
+                             "or it must match the number of pixel axes.")
+
+        # 1D grid coordinates:
+        gcrds = []
+        cdelt = []
+        for (xmin, xmax), s in zip(bounding_box, sampling):
+            npix = max(2, 1 + int(np.ceil(abs((xmax - xmin) / s))))
+            gcrds.append(np.linspace(xmin, xmax, npix))
+            cdelt.append((npix - 1) / (xmax - xmin) if xmin != xmax else 1)
+
+        # n-dim coordinate arrays:
+        coord = np.stack(
+            self(*np.meshgrid(*gcrds[::-1], indexing='ij')[::-1]),
+            axis=-1
+        )
+
+        # create header with WCS info:
+        hdr = fits.Header()
+
+        for k in range(self.world_n_dim):
+            k1 = k + 1
+            ct = cf.get_ctype_from_ucd(self.world_axis_physical_types[k])
+            if len(ct) > 4:
+                raise ValueError("Axis type name too long.")
+
+            hdr['CTYPE{:d}'.format(k1)] = ct + (4 - len(ct)) * '-' + '-TAB'
+            hdr['CUNIT{:d}'.format(k1)] = self.world_axis_units[k]
+            hdr['PS{:d}_0'.format(k1)] = bin_ext_name
+            hdr['PS{:d}_1'.format(k1)] = coord_col_name
+            hdr['PV{:d}_3'.format(k1)] = k1
+            hdr['CRVAL{:d}'.format(k1)] = 1
+
+            if k < self.pixel_n_dim:
+                hdr['CRPIX{:d}'.format(k1)] = gcrds[k][0] + 1
+                hdr['PC{0:d}_{0:d}'.format(k1)] = 1.0
+                hdr['CDELT{:d}'.format(k1)] = cdelt[k]
+            else:
+                hdr['CRPIX{:d}'.format(k1)] = 1
+                coord = coord[None, :]
+
+        # structured array (data) for binary table HDU:
+        arr = np.array(
+            [(coord, )],
+            dtype=[
+                (coord_col_name, np.float64, coord.shape),
+            ]
+        )
+
+        # create binary table HDU:
+        bin_tab = fits.BinTableHDU(arr)
+        bin_tab.header['EXTNAME'] = bin_ext_name
+
+        return hdr, bin_tab
 
 
 def _fit_2D_poly(ntransform, npoints, degree, max_error,

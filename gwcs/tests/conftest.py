@@ -235,7 +235,7 @@ def sellmeier_zemax():
                              E_coef=E_coef)
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def gwcs_3d_galactic_spectral():
     """
     This fixture has the axes ordered as lat, spectral, lon.
