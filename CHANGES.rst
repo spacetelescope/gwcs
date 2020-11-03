@@ -8,6 +8,9 @@ New Features
 - Added ``to_fits_tab`` method to generate FITS header and binary table
   extension following FITS WCS ``-TAB`` convension. [#295]
 
+- Added ``in_image`` function for testing whether a point in world coordinates
+  maps back to the domain of definition of the forward transformation. [#322]
+
 0.14.0 (2020-08-19)
 -------------------
 New Features
