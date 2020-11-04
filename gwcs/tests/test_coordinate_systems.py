@@ -7,7 +7,9 @@ import astropy.units as u
 from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.tests.helper import assert_quantity_allclose
+from astropy.modeling import models as m
 
+from .. import WCS
 from .. import coordinate_frames as cf
 
 import astropy
@@ -94,6 +96,20 @@ def test_coordinates_composite_order():
     result = frame.coordinates(0, 0)
     assert result[0] == Time("2011-01-01T00:00:00")
     assert u.allclose(result[1], 0*u.m)
+
+
+def test_bare_baseframe():
+    # This is a regression test for the following call:
+    frame = cf.CoordinateFrame(1, "SPATIAL", (0,), unit=(u.km,))
+    assert u.allclose(frame.coordinate_to_quantity((1*u.m,)), 1*u.m)
+
+    # Now also setup the same situation through the whole call stack to be safe.
+    w = WCS(forward_transform=m.Tabular1D(points=np.arange(10)*u.pix,
+                                          lookup_table=np.arange(10)*u.km),
+            output_frame=frame,
+            input_frame=cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,))
+            )
+    assert u.allclose(w.world_to_pixel(0*u.km), 0)
 
 
 @pytest.mark.parametrize(('frame'), coord_frames)
