@@ -426,7 +426,7 @@ class WCS(GWCSAPIMixin):
         Returns
         -------
         result : tuple
-            Returns a tuple of values or arrays of values for each axis.
+            Returns a tuple of scalar or array values for each axis.
 
         """
         with_units = kwargs.pop('with_units', False)
@@ -613,7 +613,7 @@ class WCS(GWCSAPIMixin):
         Returns
         -------
         result : tuple
-            Returns a tuple of values or arrays of values for each axis.
+            Returns a tuple of scalar or array values for each axis.
 
         Raises
         ------
