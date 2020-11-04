@@ -539,6 +539,8 @@ class TemporalFrame(CoordinateFrame):
         # Is already a quantity
         elif hasattr(coords[0], 'unit'):
             return coords[0]
+        if isinstance(coords[0], np.ndarray):
+            return coords[0] * self.unit[0]
         else:
             raise ValueError("Can not convert {} to Quantity".format(coords[0]))
 

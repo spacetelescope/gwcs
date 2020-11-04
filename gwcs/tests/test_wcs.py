@@ -9,6 +9,8 @@ from astropy import units as u
 import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
+from astropy.wcs import wcsapi
+from astropy.time import Time
 
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
@@ -26,6 +28,7 @@ icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
 detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
+time = cf.TemporalFrame(name='time', unit=[u.s, ], axes_order=(3, ), axes_names=('time', ), reference_frame=Time("2020-01-01"))
 
 pipe = [(detector, m1),
         (focal, m2),
@@ -405,25 +408,42 @@ def test_high_level_api():
     """
     Test WCS high level API.
     """
-    output_frame = cf.CompositeFrame(frames=[icrs, spec])
-    transform = m1 & models.Scale(1.5)
-    det = cf.CoordinateFrame(naxes=3, unit=(u.pix, u.pix, u.pix),
-                             axes_order=(0, 1, 2),
-                             axes_type=('length', 'length', 'length'))
+    output_frame = cf.CompositeFrame(frames=[icrs, spec, time])
+    transform = m1 & models.Scale(1.5) & models.Scale(2)
+    det = cf.CoordinateFrame(naxes=4, unit=(u.pix, u.pix, u.pix, u.pix),
+                             axes_order=(0, 1, 2, 3),
+                             axes_type=('length', 'length', 'length', 'length'))
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame, input_frame=det)
+    wrapped = wcsapi.HighLevelWCSWrapper(w)
 
-    r, d, lam = w(xv, yv, xv)
-    world_coord = w.pixel_to_world(xv, yv, xv)
+    r, d, lam, t = w(xv, yv, xv, xv)
+    world_coord = w.pixel_to_world(xv, yv, xv, xv)
     assert isinstance(world_coord[0], coord.SkyCoord)
     assert isinstance(world_coord[1], u.Quantity)
+    assert isinstance(world_coord[2], Time)
     assert_allclose(world_coord[0].data.lon.value, r)
     assert_allclose(world_coord[0].data.lat.value, d)
     assert_allclose(world_coord[1].value, lam)
+    assert_allclose((world_coord[2] - time.reference_frame).to(u.s).value, t)
 
-    x1, y1, z1 = w.world_to_pixel(*world_coord)
+    wrapped_world_coord = wrapped.pixel_to_world(xv, yv, xv, xv)
+    assert_allclose(wrapped_world_coord[0].data.lon.value, r)
+    assert_allclose(wrapped_world_coord[0].data.lat.value, d)
+    assert_allclose(wrapped_world_coord[1].value, lam)
+    assert_allclose((world_coord[2] - time.reference_frame).to(u.s).value, t)
+
+
+    x1, y1, z1, k1 = w.world_to_pixel(*world_coord)
     assert_allclose(x1, xv)
     assert_allclose(y1, yv)
     assert_allclose(z1, xv)
+    assert_allclose(k1, xv)
+
+    x1, y1, z1, k1 = wrapped.world_to_pixel(*world_coord)
+    assert_allclose(x1, xv)
+    assert_allclose(y1, yv)
+    assert_allclose(z1, xv)
+    assert_allclose(k1, xv)
 
 
 @pytest.mark.remote_data
