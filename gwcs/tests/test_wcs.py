@@ -683,14 +683,15 @@ def test_in_image():
 
 def test_iter_inv():
     w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    # remove analytic/user-supplied inverse:
     w.pipeline[0].transform.inverse = None
     w.bounding_box = None
 
     # test single point
-    assert np.allclose((1, 2), w.invert(*w(1, 2), with_method='iterative'))
+    assert np.allclose((1, 2), w.invert(*w(1, 2)))
     assert np.allclose(
         (np.nan, np.nan),
-        w.invert(*w(np.nan, 2), with_method='iterative'),
+        w.numerical_inverse(*w(np.nan, 2)),
         equal_nan=True
     )
 
@@ -701,28 +702,25 @@ def test_iter_inv():
     # test adaptive:
     xp, yp = w.invert(
         *w(x, y),
-        with_method='iterative',
         adaptive=True,
         detect_divergence=True,
         quiet=False
     )
     assert np.allclose((x, y), (xp, yp))
 
-    # remove analytic/user-supplied inverse:
     w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
 
     # test single point
-    assert np.allclose((1, 2), w.invert(*w(1, 2), with_method='iterative'))
+    assert np.allclose((1, 2), w.numerical_inverse(*w(1, 2)))
     assert np.allclose(
         (np.nan, np.nan),
-        w.invert(*w(np.nan, 2), with_method='iterative'),
+        w.numerical_inverse(*w(np.nan, 2)),
         equal_nan=True
     )
 
     # don't detect devergence
-    xp, yp = w.invert(
+    xp, yp = w.numerical_inverse(
         *w(x, y),
-        with_method='iterative',
         adaptive=True,
         detect_divergence=False,
         quiet=False
@@ -730,9 +728,8 @@ def test_iter_inv():
     assert np.allclose((x, y), (xp, yp))
 
     with pytest.raises(wcs.NoConvergence) as e:
-        w.invert(
+        w.numerical_inverse(
             *w([1, 20, 200, 2000], [200, 1000, 2000, 5]),
-            with_method='iterative',
             adaptive=True,
             detect_divergence=True,
             maxiter=2,  # force not reaching requested accuracy
@@ -744,9 +741,8 @@ def test_iter_inv():
     assert np.all(np.sort(e.value.slow_conv) == np.arange(4))
 
     # test non-adaptive:
-    xp, yp = w.invert(
+    xp, yp = w.numerical_inverse(
         *w(x, y, with_bounding_box=False),
-        with_method='iterative',
         adaptive=False,
         detect_divergence=True,
         quiet=False,
@@ -757,9 +753,8 @@ def test_iter_inv():
     # test non-adaptive:
     x[0] = 3000
     y[0] = 10000
-    xp, yp = w.invert(
+    xp, yp = w.numerical_inverse(
         *w(x, y, with_bounding_box=False),
-        with_method='iterative',
         adaptive=False,
         detect_divergence=True,
         quiet=False,
@@ -771,9 +766,8 @@ def test_iter_inv():
     x[0] = 300000
     y[0] = 1000000
     with pytest.raises(wcs.NoConvergence) as e:
-        xp, yp = w.invert(
+        xp, yp = w.numerical_inverse(
             *w(x, y, with_bounding_box=False),
-            with_method='iterative',
             adaptive=False,
             detect_divergence=True,
             quiet=False,

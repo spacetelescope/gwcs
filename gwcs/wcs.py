@@ -331,27 +331,155 @@ class WCS(GWCSAPIMixin):
 
         return result
 
+    def in_image(self, *args, **kwargs):
+        """
+        This method tests if one or more of the input world coordinates are
+        contained within forward transformation's image and that it maps to
+        the domain of definition of the forward transformation.
+        In practical terms, this function tests
+        that input world coordinate(s) can be converted to input frame and that
+        it is within the forward transformation's ``bounding_box`` when
+        defined.
+
+        Parameters
+        ----------
+        args : float, array like, `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Unit` coordinates to be inverted
+
+        kwargs : dict
+            keyword arguments to be passed either to ``backward_transform``
+            (when defined) or to the iterative invert method.
+
+        Returns
+        -------
+        result : bool, numpy.ndarray
+           A single boolean value or an array of boolean values with `True`
+           indicating that the WCS footprint contains the coordinate
+           and `False` if input is outside the footprint.
+
+        """
+        kwargs['with_bounding_box'] = True
+        kwargs['fill_value'] = np.nan
+
+        coords = self.invert(*args, **kwargs)
+
+        result = np.isfinite(coords)
+        if self.input_frame.naxes > 1:
+            result = np.all(result, axis=0)
+
+        if self.bounding_box is None or not np.any(result):
+            return result
+
+        if self.input_frame.naxes == 1:
+            x1, x2 = self.bounding_box
+
+            if len(np.shape(args[0])) > 0:
+                result[result] = (coords[result] >= x1) & (coords[result] <= x2)
+            elif result:
+                result = (coords >= x1) and (coords <= x2)
+
+        else:
+            if len(np.shape(args[0])) > 0:
+                for c, (x1, x2) in zip(coords, self.bounding_box):
+                    result[result] = (c[result] >= x1) & (c[result] <= x2)
+
+            elif result:
+                result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
+
+        return result
+
     def invert(self, *args, **kwargs):
         """
-        Invert coordinates from output frame to input frame.
-
-        The analytical inverse of the forward transform is used, if available.
-        If not, an iterative method is used.
+        Invert coordinates from output frame to input frame using analytical or
+        user-supplied inverse. When neither analytical nor user-supplied
+        inverses are defined, a numerical solution will be attempted using
+        :py:meth:`numerical_inverse`.
 
         .. note::
-            Currently iterative inverse is implemented only for 2D imaging WCS.
+            Currently numerical inverse is implemented only for 2D imaging WCS.
 
         Parameters
         ----------
         args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
-            coordinates to be inverted
+            Coordinates to be inverted. The number of arguments must be equal
+            to the number of world coordinates given by ``world_n_dim``.
 
-        with_method : {'analytic', 'iterative'}, optional
-            If ``'analytic'`` is specified (default) and forward WCS
-            transformation has an analytic inverse, analytic inverse will be used.
-            If analytic inverse is not available, :py:meth:`invert` will switch to
-            ``'iterative'`` inverse. When ``with_method`` set to ``'iterative'``,
-            :py:meth:`invert` will use an iterative method to invert the coordinates.
+        with_bounding_box : bool, optional
+             If `True` (default) values in the result which correspond to any
+             of the inputs being outside the bounding_box are set to
+             ``fill_value``.
+
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is ``np.nan``).
+
+        with_units : bool, optional
+            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.units.Quantity` object, by using the units of
+            the output cooridnate frame. Default is `False`.
+
+        Other Parameters
+        ----------------
+        kwargs : dict
+            Keyword arguments to be passed to `numerical_inverse`
+            (when defined) or to the iterative invert method.
+
+        Returns
+        -------
+        result : tuple
+            Returns a tuple of values or arrays of values for each axis.
+
+        """
+        with_units = kwargs.pop('with_units', False)
+
+        if not utils.isnumerical(args[0]):
+            args = self.output_frame.coordinate_to_quantity(*args)
+            if self.output_frame.naxes == 1:
+                args = [args]
+            try:
+                if not self.backward_transform.uses_quantity:
+                    args = utils.get_values(self.output_frame.unit, *args)
+            except (NotImplementedError, KeyError):
+                args = utils.get_values(self.output_frame.unit, *args)
+
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
+
+        try:
+            # remove iterative inverse-specific keyword arguments:
+            akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
+            result = self.backward_transform(*args, **akwargs)
+        except (NotImplementedError, KeyError):
+            result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
+
+        if with_units and self.input_frame:
+            if self.input_frame.naxes == 1:
+                return self.input_frame.coordinates(result)
+            else:
+                return self.input_frame.coordinates(*result)
+        else:
+            return result
+
+    def numerical_inverse(self, *args, **kwargs):
+        """
+        Invert coordinates from output frame to input frame using numerical
+        inverse.
+
+        .. note::
+            Currently numerical inverse is implemented only for 2D imaging WCS.
+
+        .. note::
+            This method uses a combination of vectorized fixed-point
+            iterations algorithm and `scipy.optimize.root`. The later is used
+            for input coordinates for which vectorized algorithm diverges.
+
+        Parameters
+        ----------
+        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
+            Coordinates to be inverted. The number of arguments must be equal
+            to the number of world coordinates given by ``world_n_dim``.
 
         with_bounding_box : bool, optional
              If `True` (default) values in the result which correspond to any
@@ -503,122 +631,26 @@ class WCS(GWCSAPIMixin):
             more details.
 
         NotImplementedError
-            Either iterative or analytic or both inverses have not been
-            implemented.
+            Numerical inverse has not been implemented for this WCS.
 
         ValueError
             Invalid argument values.
 
-        """
-        with_units = kwargs.pop('with_units', False)
-        with_method = kwargs.pop('with_method', 'analytic')
-
-        if not utils.isnumerical(args[0]):
-            args = self.output_frame.coordinate_to_quantity(*args)
-            if self.output_frame.naxes == 1:
-                args = [args]
-            try:
-                if with_method == 'iterative' or not self.backward_transform.uses_quantity:
-                    args = utils.get_values(self.output_frame.unit, *args)
-            except (NotImplementedError, KeyError):
-                args = utils.get_values(self.output_frame.unit, *args)
-
-        if 'with_bounding_box' not in kwargs:
-            kwargs['with_bounding_box'] = True
-
-        if 'fill_value' not in kwargs:
-            kwargs['fill_value'] = np.nan
-
-        if with_method == 'analytic':
-            try:
-                # remove iterative inverse-specific keyword arguments:
-                akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-                result = self.backward_transform(*args, **akwargs)
-            except (NotImplementedError, KeyError):
-                result = self._invert_vfp(*args, **kwargs)
-
-        elif with_method == 'iterative':
-            result = self._invert_vfp(*args, **kwargs)
-
-        else:
-            raise ValueError('Unsupported method')
-
-        if with_units and self.input_frame:
-            if self.input_frame.naxes == 1:
-                return self.input_frame.coordinates(result)
-            else:
-                return self.input_frame.coordinates(*result)
-        else:
-            return result
-
-    def in_image(self, *args, **kwargs):
-        """
-        This method tests if one or more of the input world coordinates are
-        contained within forward transformation's image and that it maps to
-        the domain of definition of the forward transformation.
-        In practical terms, this function tests
-        that input world coordinate(s) can be converted to input frame and that
-        it is within the forward transformation's ``bounding_box`` when
-        defined.
-
-        Parameters
-        ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Unit` coordinates to be inverted
-
-        kwargs : dict
-            keyword arguments to be passed either to ``backward_transform``
-            (when defined) or to the iterative invert method.
-
-        Returns
-        -------
-        result : bool, numpy.ndarray
-           A single boolean value or an array of boolean values with `True`
-           indicating that the WCS footprint contains the coordinate
-           and `False` if input is outside the footprint.
-
-        """
-        kwargs['with_bounding_box'] = True
-        kwargs['fill_value'] = np.nan
-
-        coords = self.invert(*args, **kwargs)
-
-        result = np.isfinite(coords)
-        if self.input_frame.naxes > 1:
-            result = np.all(result, axis=0)
-
-        if self.bounding_box is None or not np.any(result):
-            return result
-
-        if self.input_frame.naxes == 1:
-            x1, x2 = self.bounding_box
-
-            if len(np.shape(args[0])) > 0:
-                result[result] = (coords[result] >= x1) & (coords[result] <= x2)
-            elif result:
-                result = (coords >= x1) and (coords <= x2)
-
-        else:
-            if len(np.shape(args[0])) > 0:
-                for c, (x1, x2) in zip(coords, self.bounding_box):
-                    result[result] = (c[result] >= x1) & (c[result] <= x2)
-
-            elif result:
-                result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
-
-        return result
-
-    def _invert_vfp(self, *args, **kwargs):
-        """
-        Implements vectorized iterative inverse using fixed-point iterations.
         """
         tolerance = kwargs.get('tolerance', 1e-5)
         maxiter = kwargs.get('maxiter', 50)
         adaptive = kwargs.get('adaptive', True)
         detect_divergence = kwargs.get('detect_divergence', True)
         quiet = kwargs.get('quiet', True)
-        with_bounding_box = kwargs['with_bounding_box']
-        fill_value = kwargs['fill_value']
+        with_bounding_box = kwargs.get('with_bounding_box', True)
+        fill_value = kwargs.get('fill_value', np.nan)
+        with_units = kwargs.pop('with_units', False)
+
+        if not utils.isnumerical(args[0]):
+            args = self.output_frame.coordinate_to_quantity(*args)
+            if self.output_frame.naxes == 1:
+                args = [args]
+            args = utils.get_values(self.output_frame.unit, *args)
 
         args_shape = np.shape(args)
         nargs = args_shape[0]
@@ -653,7 +685,7 @@ class WCS(GWCSAPIMixin):
                 if not np.all(np.isfinite(x0)):
                     return [np.array(np.nan) for _ in range(nargs)]
 
-            result = self._vectorized_fixed_point(
+            result = tuple(self._vectorized_fixed_point(
                 x0, argsi,
                 tolerance=tolerance,
                 maxiter=maxiter,
@@ -662,9 +694,7 @@ class WCS(GWCSAPIMixin):
                 quiet=quiet,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value
-            ).T.ravel().tolist()
-
-            return list(map(np.array, result))
+            ).T.ravel().tolist())
 
         else:
             arg_shape = args_shape[1:]
@@ -688,7 +718,15 @@ class WCS(GWCSAPIMixin):
                 fill_value=fill_value
             ).T
 
-            return list(np.reshape(result, args_shape))
+            result = tuple(np.reshape(result, args_shape))
+
+        if with_units and self.input_frame:
+            if self.input_frame.naxes == 1:
+                return self.input_frame.coordinates(result)
+            else:
+                return self.input_frame.coordinates(*result)
+        else:
+            return result
 
     def _vectorized_fixed_point(self, pix0, world, tolerance, maxiter,
                                 adaptive, detect_divergence, quiet,
@@ -1637,7 +1675,6 @@ class WCS(GWCSAPIMixin):
             # The _calc_approx_inv method only works with celestial frame transforms
             return
 
-        transform = self.forward_transform
         # Determine reference points.
         if self.bounding_box is None:
             # A bounding_box is needed to proceed.
@@ -1646,13 +1683,13 @@ class WCS(GWCSAPIMixin):
         (xmin, xmax), (ymin, ymax) = self.bounding_box
         crpix1 = (xmax - xmin) // 2
         crpix2 = (ymax - ymin) // 2
-        crval1, crval2 = transform(crpix1, crpix2)
+        crval1, crval2 = self.forward_transform(crpix1, crpix2)
 
         # Rotate to native system and deproject. Set center of the projection
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
-        ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
+        ntransform = ((Shift(crpix1) & Shift(crpix2)) | self.forward_transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
 
