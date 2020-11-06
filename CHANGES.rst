@@ -11,6 +11,8 @@ New Features
 - Added ``in_image`` function for testing whether a point in world coordinates
   maps back to the domain of definition of the forward transformation. [#322]
 
+- Implemented iterative inverse for some imaging WCS. [#324]
+
 0.14.0 (2020-08-19)
 -------------------
 New Features
