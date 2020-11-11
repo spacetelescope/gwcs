@@ -270,7 +270,6 @@ class CoordinateFrame:
 
     def coordinates(self, *args):
         """ Create world coordinates object"""
-        args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
         return coo
 
@@ -279,6 +278,10 @@ class CoordinateFrame:
         Given a rich coordinate object return an astropy quantity object.
         """
         # NoOp leaves it to the model to handle
+        # If coords is a 1-tuple of quantity then return the element of the tuple
+        # This aligns the behavior with the other implementations
+        if not hasattr(coords, 'unit') and len(coords) == 1:
+            return coords[0]
         return coords
 
     @property
