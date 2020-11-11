@@ -520,11 +520,14 @@ class TemporalFrame(CoordinateFrame):
         return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
-        if isinstance(dt, time.Time) or isinstance(self.reference_frame.value, np.ndarray):
+        if (not isinstance(dt, time.TimeDelta) and
+                isinstance(dt, time.Time) or
+                isinstance(self.reference_frame.value, np.ndarray)):
             return time.Time(dt, **kwargs)
 
         if not hasattr(dt, 'unit'):
             dt = dt * unit
+
         return self.reference_frame + dt
 
     def coordinate_to_quantity(self, *coords):

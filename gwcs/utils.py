@@ -11,7 +11,7 @@ from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -462,7 +462,7 @@ def isnumerical(val):
         isnum = False
     elif isinstance(val, u.Quantity):
         isnum = False
-    elif isinstance(val, Time):
+    elif isinstance(val, (Time, TimeDelta)):
         isnum = False
     elif (isinstance(val, np.ndarray)
           and not np.issubdtype(val.dtype, np.floating)

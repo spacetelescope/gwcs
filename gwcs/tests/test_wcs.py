@@ -432,7 +432,6 @@ def test_high_level_api():
     assert_allclose(wrapped_world_coord[1].value, lam)
     assert_allclose((world_coord[2] - time.reference_frame).to(u.s).value, t)
 
-
     x1, y1, z1, k1 = w.world_to_pixel(*world_coord)
     assert_allclose(x1, xv)
     assert_allclose(y1, yv)
