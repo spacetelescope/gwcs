@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import astropy.units as u
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 from astropy import coordinates as coord
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.modeling import models as m
@@ -180,6 +180,7 @@ def test_temporal_relative():
 
     t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"))
     assert t.coordinates(10 * u.s) == Time("2018-01-01T00:00:00") + 10 * u.s
+    assert t.coordinates(TimeDelta(10, format='sec')) == Time("2018-01-01T00:00:00") + 10 * u.s
 
     a = t.coordinates((10, 20) * u.s)
     assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
