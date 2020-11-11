@@ -107,7 +107,7 @@ def test_bare_baseframe():
     w = WCS(forward_transform=m.Tabular1D(points=np.arange(10)*u.pix,
                                           lookup_table=np.arange(10)*u.km),
             output_frame=frame,
-            input_frame=cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,))
+            input_frame=cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,), name="detector_frame")
             )
     assert u.allclose(w.world_to_pixel(0*u.km), 0)
 

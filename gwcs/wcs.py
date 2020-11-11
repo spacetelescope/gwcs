@@ -496,7 +496,6 @@ class WCS(GWCSAPIMixin):
     def output_frame(self):
         """Return the output coordinate frame."""
         if self._pipeline:
-            #frame = self._pipeline[-1][0]
             frame = self._pipeline[-1].frame
             if not isinstance(frame, str):
                 frame = frame.name
@@ -508,7 +507,6 @@ class WCS(GWCSAPIMixin):
     def input_frame(self):
         """Return the input coordinate frame."""
         if self._pipeline:
-            #frame = self._pipeline[0][0]
             frame = self._pipeline[0].frame
             if not isinstance(frame, str):
                 frame = frame.name
