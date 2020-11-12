@@ -420,7 +420,7 @@ class WCS(GWCSAPIMixin):
         Other Parameters
         ----------------
         kwargs : dict
-            Keyword arguments to be passed to `numerical_inverse`
+            Keyword arguments to be passed to :py:meth:`numerical_inverse`
             (when defined) or to the iterative invert method.
 
         Returns
@@ -522,7 +522,7 @@ class WCS(GWCSAPIMixin):
             accuracy for the next iteration. Default (`True`) is recommended.
 
             .. note::
-               The :py:meth:`invert` uses a vectorized
+               The :py:meth:`numerical_inverse` uses a vectorized
                implementation of the method of consecutive
                approximations (see ``Notes`` section below) in which it
                iterates over *all* input points *regardless* until
@@ -534,25 +534,25 @@ class WCS(GWCSAPIMixin):
                depends mostly on the characteristics of the geometric
                distortions for a given instrument). In this situation
                it may be advantageous to set ``adaptive`` = `True` in
-               which case :py:meth:`invert` will continue
+               which case :py:meth:`numerical_inverse` will continue
                iterating *only* over the points that have not yet
                converged to the required accuracy.
 
             .. note::
                When ``detect_divergence`` is `True`,
-               :py:meth:`invert` will automatically switch
+               :py:meth:`numerical_inverse` will automatically switch
                to the adaptive algorithm once divergence has been
                detected.
 
         detect_divergence : bool, optional
             Specifies whether to perform a more detailed analysis
             of the convergence to a solution. Normally
-            :py:meth:`invert` may not achieve the required
+            :py:meth:`numerical_inverse` may not achieve the required
             accuracy if either the ``tolerance`` or ``maxiter`` arguments
             are too low. However, it may happen that for some
             geometric distortions the conditions of convergence for
             the the method of consecutive approximations used by
-            :py:meth:`invert` may not be satisfied, in which
+            :py:meth:`numerical_inverse` may not be satisfied, in which
             case consecutive approximations to the solution will
             diverge regardless of the ``tolerance`` or ``maxiter``
             settings.
@@ -566,20 +566,20 @@ class WCS(GWCSAPIMixin):
             diverging solutions. This may result in ``NaN`` or
             ``Inf`` values in the return results (in addition to a
             performance penalties). Even when ``detect_divergence``
-            is `False`, :py:meth:`invert`, at the end of the
+            is `False`, :py:meth:`numerical_inverse`, at the end of the
             iterative process, will identify invalid results
             (``NaN`` or ``Inf``) as "diverging" solutions and will
             raise :py:class:`NoConvergence` unless the ``quiet``
             parameter is set to `True`.
 
             When ``detect_divergence`` is `True` (default),
-            :py:meth:`invert` will detect points for which
+            :py:meth:`numerical_inverse` will detect points for which
             current correction to the coordinates is larger than
             the correction applied during the previous iteration
             **if** the requested accuracy **has not yet been
             achieved**. In this case, if ``adaptive`` is `True`,
             these points will be excluded from further iterations and
-            if ``adaptive`` is `False`, :py:meth:`invert` will
+            if ``adaptive`` is `False`, :py:meth:`numerical_inverse` will
             automatically switch to the adaptive algorithm. Thus, the
             reported divergent solution will be the latest converging
             solution computed immediately *before* divergence
