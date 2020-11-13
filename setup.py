@@ -67,8 +67,9 @@ setup(name=PACKAGENAME,
       setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
       install_requires=[
-          'astropy',
+          'astropy>=4.1',
           'numpy',
+          'scipy',
           'asdf'],
       packages=find_packages(),
       extras_require={

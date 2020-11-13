@@ -9,6 +9,8 @@ from astropy import units as u
 import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
+from astropy.wcs import wcsapi
+from astropy.time import Time
 
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
@@ -16,6 +18,7 @@ from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
 import asdf
+
 
 m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
@@ -25,6 +28,7 @@ icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
 detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
+time = cf.TemporalFrame(name='time', unit=[u.s, ], axes_order=(3, ), axes_names=('time', ), reference_frame=Time("2020-01-01"))
 
 pipe = [(detector, m1),
         (focal, m2),
@@ -97,6 +101,36 @@ def test_insert_transform():
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame='icrs', transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
+
+
+def test_insert_frame():
+    """ Test inserting a frame into an existing pipeline """
+    w = wcs.WCS(pipe[:])
+    original_result = w(1, 2)
+    mnew = models.Shift(1) & models.Shift(1)
+    new_frame = cf.Frame2D(name='new')
+
+    # Insert at the beginning
+    w.insert_frame(new_frame, mnew, w.input_frame)
+    assert_allclose(w(0, 1), original_result)
+
+    tr = w.get_transform('detector', w.output_frame)
+    assert_allclose(tr(1, 2), original_result)
+
+    # Insert at the end
+    w = wcs.WCS(pipe[:])
+    with pytest.raises(ValueError, match=r"New coordinate frame.*"):
+        w.insert_frame('not a frame', mnew, new_frame)
+
+    w.insert_frame('icrs', mnew, new_frame)
+    assert_allclose([x - 1 for x in w(1, 2)], original_result)
+
+    tr = w.get_transform('detector', 'icrs')
+    assert_allclose(tr(1, 2), original_result)
+
+    # Force error by trying same operation
+    with pytest.raises(ValueError, match=r".*both frames.*"):
+        w.insert_frame('icrs', mnew, new_frame)
 
 
 def test_set_transform():
@@ -374,25 +408,41 @@ def test_high_level_api():
     """
     Test WCS high level API.
     """
-    output_frame = cf.CompositeFrame(frames=[icrs, spec])
-    transform = m1 & models.Scale(1.5)
-    det = cf.CoordinateFrame(naxes=3, unit=(u.pix, u.pix, u.pix),
-                             axes_order=(0, 1, 2),
-                             axes_type=('length', 'length', 'length'))
+    output_frame = cf.CompositeFrame(frames=[icrs, spec, time])
+    transform = m1 & models.Scale(1.5) & models.Scale(2)
+    det = cf.CoordinateFrame(naxes=4, unit=(u.pix, u.pix, u.pix, u.pix),
+                             axes_order=(0, 1, 2, 3),
+                             axes_type=('length', 'length', 'length', 'length'))
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame, input_frame=det)
+    wrapped = wcsapi.HighLevelWCSWrapper(w)
 
-    r, d, lam = w(xv, yv, xv)
-    world_coord = w.pixel_to_world(xv, yv, xv)
+    r, d, lam, t = w(xv, yv, xv, xv)
+    world_coord = w.pixel_to_world(xv, yv, xv, xv)
     assert isinstance(world_coord[0], coord.SkyCoord)
     assert isinstance(world_coord[1], u.Quantity)
+    assert isinstance(world_coord[2], Time)
     assert_allclose(world_coord[0].data.lon.value, r)
     assert_allclose(world_coord[0].data.lat.value, d)
     assert_allclose(world_coord[1].value, lam)
+    assert_allclose((world_coord[2] - time.reference_frame).to(u.s).value, t)
 
-    x1, y1, z1 = w.world_to_pixel(*world_coord)
+    wrapped_world_coord = wrapped.pixel_to_world(xv, yv, xv, xv)
+    assert_allclose(wrapped_world_coord[0].data.lon.value, r)
+    assert_allclose(wrapped_world_coord[0].data.lat.value, d)
+    assert_allclose(wrapped_world_coord[1].value, lam)
+    assert_allclose((world_coord[2] - time.reference_frame).to(u.s).value, t)
+
+    x1, y1, z1, k1 = w.world_to_pixel(*world_coord)
     assert_allclose(x1, xv)
     assert_allclose(y1, yv)
     assert_allclose(z1, xv)
+    assert_allclose(k1, xv)
+
+    x1, y1, z1, k1 = wrapped.world_to_pixel(*world_coord)
+    assert_allclose(x1, xv)
+    assert_allclose(y1, yv)
+    assert_allclose(z1, xv)
+    assert_allclose(k1, xv)
 
 
 @pytest.mark.remote_data
@@ -472,8 +522,7 @@ class TestImaging(object):
 
     def test_inverse(self):
         sky_coord = self.wcs(1, 2, with_units=True)
-        with pytest.raises(NotImplementedError):
-            self.wcs.invert(sky_coord)
+        assert np.allclose(self.wcs.invert(sky_coord), (1, 2))
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
@@ -522,3 +571,229 @@ def test_to_fits_sip():
     with pytest.raises(ValueError):
         miriwcs.bounding_box = None
         mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+
+
+def test_to_fits_tab_no_bb(gwcs_3d_galactic_spectral):
+    # gWCS:
+    w = gwcs_3d_galactic_spectral
+    w.bounding_box = None
+
+    # FITS WCS -TAB:
+    with pytest.raises(ValueError):
+        hdr, bt = w.to_fits_tab()
+
+
+def test_to_fits_tab_cube(gwcs_3d_galactic_spectral):
+    # gWCS:
+    w = gwcs_3d_galactic_spectral
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab()
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    hdr, bt = w.to_fits_tab(bounding_box=w.bounding_box)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs_user_bb = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+    z = zmin + (zmax - zmin) * np.random.random(100)
+
+    # test:
+    assert np.allclose(w(x, y, z), fits_wcs.wcs_pix2world(x, y, z, 0),
+                       rtol=1e-6, atol=1e-7)
+
+    assert np.allclose(w(x, y, z), fits_wcs_user_bb.wcs_pix2world(x, y, z, 0),
+                       rtol=1e-6, atol=1e-7)
+
+
+def test_to_fits_tab_miri_image():
+    # gWCS:
+    af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
+    w = af.tree['wcs']
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab(sampling=0.5)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+
+    # test:
+    assert np.allclose(w(x, y), fits_wcs.wcs_pix2world(x, y, 0),
+                       rtol=1e-6, atol=1e-7)
+
+
+def test_to_fits_tab_miri_lrs():
+    af = asdf.open(get_pkg_data_filename('data/miri_lrs_wcs.asdf'))
+    w = af.tree['wcs']
+
+    # FITS WCS -TAB:
+    hdr, bt = w.to_fits_tab(sampling=0.25)
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+
+    # test:
+    ref = np.array(w(x, y))
+    tab = np.array(fits_wcs.wcs_pix2world(x, y, 0, 0))
+    m = np.cumprod(np.isfinite(ref), dtype=np.bool_, axis=0)
+    assert np.allclose(ref[m], tab[m], rtol=5e-6, atol=5e-6, equal_nan=True)
+
+
+def test_in_image():
+    # create a 1-dim WCS:
+    w1 = wcs.WCS(
+        [
+            (cf.SpectralFrame(name='input', axes_names=('x',), unit=(u.pix,)), models.Scale(2)),
+            (cf.SpectralFrame(name='output', axes_names=('x'), unit=(u.pix,)), None)
+        ]
+    )
+    w1.bounding_box = (1, 5)
+
+    assert np.isscalar(w1.in_image(4))
+    assert w1.in_image(4)
+    assert not w1.in_image(14)
+    assert np.array_equal(
+        w1.in_image([[-1, 4, 11], [2, 3, 12]]),
+        [[False, True, False], [True, True, False]],
+    )
+
+    # create a 2-dim WCS:
+    w2 = wcs.WCS([(cf.Frame2D(name='input', axes_names=('x', 'y'), unit=(u.pix, u.pix)),
+                   models.Scale(2) & models.Scale(1.5)),
+                  (cf.Frame2D(name='output', axes_names=('x', 'y'), unit=(u.pix, u.pix)),
+                   None)])
+    w2.bounding_box = [(1, 100), (2, 20)]
+
+    assert np.isscalar(w2.in_image(2, 6))
+    assert not np.isscalar(w2.in_image([2], [6]))
+    assert w2.in_image(4, 6)
+    assert not w2.in_image(5, 0)
+    assert np.array_equal(
+        w2.in_image(
+            [[9, 10, 11, 15], [8, 9, 67, 98], [2, 2, np.nan, 102]],
+            [[9, np.nan, 11, 15], [8, 9, 67, 98], [1, 1, np.nan, -10]]
+        ),
+        [[ True, False,  True,  True], [ True,  True, False, False], [False, False, False, False]],
+    )
+
+
+def test_iter_inv():
+    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    # remove analytic/user-supplied inverse:
+    w.pipeline[0].transform.inverse = None
+    w.bounding_box = None
+
+    # test single point
+    assert np.allclose((1, 2), w.invert(*w(1, 2)))
+    assert np.allclose(
+        (np.nan, np.nan),
+        w.numerical_inverse(*w(np.nan, 2)),
+        equal_nan=True
+    )
+
+    # prepare to test a vector of points:
+    np.random.seed(10)
+    x, y = 2047 * np.random.random((2, 10000))  # "truth"
+
+    # test adaptive:
+    xp, yp = w.invert(
+        *w(x, y),
+        adaptive=True,
+        detect_divergence=True,
+        quiet=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+
+    # test single point
+    assert np.allclose((1, 2), w.numerical_inverse(*w(1, 2)))
+    assert np.allclose(
+        (np.nan, np.nan),
+        w.numerical_inverse(*w(np.nan, 2)),
+        equal_nan=True
+    )
+
+    # don't detect devergence
+    xp, yp = w.numerical_inverse(
+        *w(x, y),
+        adaptive=True,
+        detect_divergence=False,
+        quiet=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    with pytest.raises(wcs.NoConvergence) as e:
+        w.numerical_inverse(
+            *w([1, 20, 200, 2000], [200, 1000, 2000, 5]),
+            adaptive=True,
+            detect_divergence=True,
+            maxiter=2,  # force not reaching requested accuracy
+            quiet=False
+        )
+
+    xp, yp = e.value.best_solution.T
+    assert e.value.slow_conv.size == 4
+    assert np.all(np.sort(e.value.slow_conv) == np.arange(4))
+
+    # test non-adaptive:
+    xp, yp = w.numerical_inverse(
+        *w(x, y, with_bounding_box=False),
+        adaptive=False,
+        detect_divergence=True,
+        quiet=False,
+        with_bounding_box=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    # test non-adaptive:
+    x[0] = 3000
+    y[0] = 10000
+    xp, yp = w.numerical_inverse(
+        *w(x, y, with_bounding_box=False),
+        adaptive=False,
+        detect_divergence=True,
+        quiet=False,
+        with_bounding_box=False
+    )
+    assert np.allclose((x, y), (xp, yp))
+
+    # test non-adaptive with non-recoverable divergence:
+    x[0] = 300000
+    y[0] = 1000000
+    with pytest.raises(wcs.NoConvergence) as e:
+        xp, yp = w.numerical_inverse(
+            *w(x, y, with_bounding_box=False),
+            adaptive=False,
+            detect_divergence=True,
+            quiet=False,
+            with_bounding_box=False
+        )
+        assert np.allclose((x, y), (xp, yp))
+
+    xp, yp = e.value.best_solution.T
+    assert np.allclose((x[1:], y[1:]), (xp[1:], yp[1:]))
+    assert e.value.divergent[0] == 0

@@ -1,3 +1,18 @@
+0.15.0 (2020-11-13)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Added ``insert_frame`` method to modify the pipeline of a ``WCS`` object. [#299]
+
+- Added ``to_fits_tab`` method to generate FITS header and binary table
+  extension following FITS WCS ``-TAB`` convension. [#295]
+
+- Added ``in_image`` function for testing whether a point in world coordinates
+  maps back to the domain of definition of the forward transformation. [#322]
+
+- Implemented iterative inverse for some imaging WCS. [#324]
+
 0.14.0 (2020-08-19)
 -------------------
 New Features
@@ -18,7 +33,6 @@ Bug Fixes
 - Fix a bug in polygon fill for zero-width bounding boxes. [#293]
 
 - Add an optional parameter ``input_frame`` to ``wcstools.wcs_from_fiducial`. [#312]
-
 
 0.13.0 (2020-03-26)
 -------------------

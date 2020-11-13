@@ -1,0 +1,955 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.5.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: Space Telescope Science Institute, homepage: 'http://github.com/spacetelescope/asdf',
+  name: asdf, version: 2.6.0}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension.BuiltinExtension
+    software: !core/software-1.0.0 {name: asdf, version: 2.6.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: gwcs.extension.GWCSExtension
+    software: !core/software-1.0.0 {name: gwcs, version: 0.13.1.dev16+g71f9b60}
+wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
+  name: ''
+  steps:
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.0.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: detector
+      unit: [!unit/unit-1.0.0 'pixel', !unit/unit-1.0.0 'pixel']
+    transform: !transform/compose-1.2.0
+      bounding_box:
+      - [6.5, 396.5]
+      - [302.5, 346.5]
+      bounds:
+        amplitude_7: [null, null]
+        angle_22: [null, null]
+        angle_3: [null, null]
+        c0_0_13: [null, null]
+        c0_0_14: [null, null]
+        c0_0_16: [null, null]
+        c0_0_17: [null, null]
+        c0_10: [null, null]
+        c0_11: [null, null]
+        c0_1_13: [null, null]
+        c0_1_14: [null, null]
+        c0_1_16: [null, null]
+        c0_1_17: [null, null]
+        c0_2_13: [null, null]
+        c0_2_14: [null, null]
+        c0_3_13: [null, null]
+        c0_3_14: [null, null]
+        c0_4_13: [null, null]
+        c0_4_14: [null, null]
+        c1_0_13: [null, null]
+        c1_0_14: [null, null]
+        c1_0_16: [null, null]
+        c1_0_17: [null, null]
+        c1_10: [null, null]
+        c1_11: [null, null]
+        c1_1_13: [null, null]
+        c1_1_14: [null, null]
+        c1_2_13: [null, null]
+        c1_2_14: [null, null]
+        c1_3_13: [null, null]
+        c1_3_14: [null, null]
+        c2_0_13: [null, null]
+        c2_0_14: [null, null]
+        c2_1_13: [null, null]
+        c2_1_14: [null, null]
+        c2_2_13: [null, null]
+        c2_2_14: [null, null]
+        c3_0_13: [null, null]
+        c3_0_14: [null, null]
+        c3_1_13: [null, null]
+        c3_1_14: [null, null]
+        c4_0_13: [null, null]
+        c4_0_14: [null, null]
+        offset_1: [null, null]
+        offset_2: [null, null]
+        offset_20: [null, null]
+        offset_21: [null, null]
+        offset_4: [null, null]
+        offset_5: [null, null]
+        offset_8: [null, null]
+      fixed: {amplitude_7: false, angle_22: false, angle_3: false, c0_0_13: false,
+        c0_0_14: false, c0_0_16: false, c0_0_17: false, c0_10: false, c0_11: false,
+        c0_1_13: false, c0_1_14: false, c0_1_16: false, c0_1_17: false, c0_2_13: false,
+        c0_2_14: false, c0_3_13: false, c0_3_14: false, c0_4_13: false, c0_4_14: false,
+        c1_0_13: false, c1_0_14: false, c1_0_16: false, c1_0_17: false, c1_10: false,
+        c1_11: false, c1_1_13: false, c1_1_14: false, c1_2_13: false, c1_2_14: false,
+        c1_3_13: false, c1_3_14: false, c2_0_13: false, c2_0_14: false, c2_1_13: false,
+        c2_1_14: false, c2_2_13: false, c2_2_14: false, c3_0_13: false, c3_0_14: false,
+        c3_1_13: false, c3_1_14: false, c4_0_13: false, c4_0_14: false, offset_1: false,
+        offset_2: false, offset_20: false, offset_21: false, offset_4: false, offset_5: false,
+        offset_8: false}
+      forward:
+      - !transform/remap_axes-1.2.0
+        bounds: {}
+        fixed: {}
+        mapping: [0, 1, 0, 1]
+      - !transform/concatenate-1.2.0
+        forward:
+        - !transform/compose-1.2.0
+          forward:
+          - !transform/compose-1.2.0
+            forward:
+            - !transform/concatenate-1.2.0
+              forward:
+              - !transform/shift-1.2.0
+                bounds:
+                  offset: &id001 [null, null]
+                fixed: {offset: false}
+                offset: -325.13
+              - !transform/shift-1.2.0
+                bounds:
+                  offset: *id001
+                fixed: {offset: false}
+                offset: -299.7
+            - !transform/rotate2d-1.2.0
+              angle: 0.24155757363306068
+              bounds:
+                angle: &id002 [null, null]
+              fixed: {angle: false}
+          - !transform/compose-1.2.0
+            forward:
+            - !transform/concatenate-1.2.0
+              forward:
+              - !transform/shift-1.2.0
+                bounds:
+                  offset: *id001
+                fixed: {offset: false}
+                offset: 325.13
+              - !transform/shift-1.2.0
+                bounds:
+                  offset: *id001
+                fixed: {offset: false}
+                offset: 299.7
+            - !transform/compose-1.2.0
+              forward:
+              - !transform/concatenate-1.2.0
+                forward:
+                - !transform/identity-1.2.0
+                  bounds: {}
+                  fixed: {}
+                - !transform/constant-1.2.0
+                  bounds:
+                    amplitude: [null, null]
+                  fixed: {amplitude: false}
+                  inverse: !transform/constant-1.2.0
+                    bounds:
+                      amplitude: [null, null]
+                    fixed: {amplitude: false}
+                    value: 299.7
+                  value: 299.7
+              - !transform/compose-1.2.0
+                forward:
+                - !transform/compose-1.2.0
+                  forward:
+                  - !transform/compose-1.2.0
+                    forward:
+                    - !transform/compose-1.2.0
+                      forward:
+                      - !transform/compose-1.2.0
+                        forward:
+                        - !transform/compose-1.2.0
+                          forward:
+                          - !transform/compose-1.2.0
+                            forward:
+                            - !transform/concatenate-1.2.0
+                              forward:
+                              - !transform/shift-1.2.0
+                                bounds:
+                                  offset: *id001
+                                fixed: {offset: false}
+                                offset: -4.0
+                              - !transform/identity-1.2.0
+                                bounds: {}
+                                fixed: {}
+                            - !transform/concatenate-1.2.0
+                              forward:
+                              - !transform/polynomial-1.2.0
+                                bounds:
+                                  c0: [null, null]
+                                  c1: [null, null]
+                                coefficients: !core/ndarray-1.0.0
+                                  source: 0
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [2]
+                                domain: [-1, 1]
+                                fixed: {c0: false, c1: false}
+                                inverse: !transform/polynomial-1.2.0
+                                  bounds:
+                                    c0: [null, null]
+                                    c1: [null, null]
+                                  coefficients: !core/ndarray-1.0.0
+                                    source: 1
+                                    datatype: float64
+                                    byteorder: little
+                                    shape: [2]
+                                  domain: [-1, 1]
+                                  fixed: {c0: false, c1: false}
+                                  window: [-1, 1]
+                                name: M_column_correction
+                                window: [-1, 1]
+                              - !transform/polynomial-1.2.0
+                                bounds:
+                                  c0: [null, null]
+                                  c1: [null, null]
+                                coefficients: !core/ndarray-1.0.0
+                                  source: 2
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [2]
+                                domain: [-1, 1]
+                                fixed: {c0: false, c1: false}
+                                inverse: !transform/polynomial-1.2.0
+                                  bounds:
+                                    c0: [null, null]
+                                    c1: [null, null]
+                                  coefficients: !core/ndarray-1.0.0
+                                    source: 3
+                                    datatype: float64
+                                    byteorder: little
+                                    shape: [2]
+                                  domain: [-1, 1]
+                                  fixed: {c0: false, c1: false}
+                                  window: [-1, 1]
+                                name: M_row_correction
+                                window: [-1, 1]
+                          - !transform/remap_axes-1.2.0
+                            bounds: {}
+                            fixed: {}
+                            inverse: !transform/identity-1.2.0
+                              bounds: {}
+                              fixed: {}
+                              n_dims: 2
+                            mapping: [0, 1, 0, 1]
+                        - !transform/concatenate-1.2.0
+                          forward:
+                          - !transform/polynomial-1.2.0
+                            bounds:
+                              c0_0: [null, null]
+                              c0_1: [null, null]
+                              c0_2: [null, null]
+                              c0_3: [null, null]
+                              c0_4: [null, null]
+                              c1_0: [null, null]
+                              c1_1: [null, null]
+                              c1_2: [null, null]
+                              c1_3: [null, null]
+                              c2_0: [null, null]
+                              c2_1: [null, null]
+                              c2_2: [null, null]
+                              c3_0: [null, null]
+                              c3_1: [null, null]
+                              c4_0: [null, null]
+                            coefficients: !core/ndarray-1.0.0
+                              source: 4
+                              datatype: float64
+                              byteorder: little
+                              shape: [5, 5]
+                            domain:
+                            - [-1, 1]
+                            - [-1, 1]
+                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                              c3_0: false, c3_1: false, c4_0: false}
+                            inverse: !transform/polynomial-1.2.0
+                              bounds:
+                                c0_0: [null, null]
+                                c0_1: [null, null]
+                                c0_2: [null, null]
+                                c0_3: [null, null]
+                                c0_4: [null, null]
+                                c1_0: [null, null]
+                                c1_1: [null, null]
+                                c1_2: [null, null]
+                                c1_3: [null, null]
+                                c2_0: [null, null]
+                                c2_1: [null, null]
+                                c2_2: [null, null]
+                                c3_0: [null, null]
+                                c3_1: [null, null]
+                                c4_0: [null, null]
+                              coefficients: !core/ndarray-1.0.0
+                                source: 5
+                                datatype: float64
+                                byteorder: little
+                                shape: [5, 5]
+                              domain:
+                              - [-1, 1]
+                              - [-1, 1]
+                              fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                                c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                                c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                                c3_0: false, c3_1: false, c4_0: false}
+                              window:
+                              - [-1, 1]
+                              - [-1, 1]
+                            name: B_correction
+                            window:
+                            - [-1, 1]
+                            - [-1, 1]
+                          - !transform/polynomial-1.2.0
+                            bounds:
+                              c0_0: [null, null]
+                              c0_1: [null, null]
+                              c0_2: [null, null]
+                              c0_3: [null, null]
+                              c0_4: [null, null]
+                              c1_0: [null, null]
+                              c1_1: [null, null]
+                              c1_2: [null, null]
+                              c1_3: [null, null]
+                              c2_0: [null, null]
+                              c2_1: [null, null]
+                              c2_2: [null, null]
+                              c3_0: [null, null]
+                              c3_1: [null, null]
+                              c4_0: [null, null]
+                            coefficients: !core/ndarray-1.0.0
+                              source: 6
+                              datatype: float64
+                              byteorder: little
+                              shape: [5, 5]
+                            domain:
+                            - [-1, 1]
+                            - [-1, 1]
+                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                              c3_0: false, c3_1: false, c4_0: false}
+                            inverse: !transform/polynomial-1.2.0
+                              bounds:
+                                c0_0: [null, null]
+                                c0_1: [null, null]
+                                c0_2: [null, null]
+                                c0_3: [null, null]
+                                c0_4: [null, null]
+                                c1_0: [null, null]
+                                c1_1: [null, null]
+                                c1_2: [null, null]
+                                c1_3: [null, null]
+                                c2_0: [null, null]
+                                c2_1: [null, null]
+                                c2_2: [null, null]
+                                c3_0: [null, null]
+                                c3_1: [null, null]
+                                c4_0: [null, null]
+                              coefficients: !core/ndarray-1.0.0
+                                source: 7
+                                datatype: float64
+                                byteorder: little
+                                shape: [5, 5]
+                              domain:
+                              - [-1, 1]
+                              - [-1, 1]
+                              fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                                c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                                c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                                c3_0: false, c3_1: false, c4_0: false}
+                              window:
+                              - [-1, 1]
+                              - [-1, 1]
+                            name: A_correction
+                            window:
+                            - [-1, 1]
+                            - [-1, 1]
+                      - !transform/remap_axes-1.2.0
+                        bounds: {}
+                        fixed: {}
+                        inverse: !transform/remap_axes-1.2.0
+                          bounds: {}
+                          fixed: {}
+                          mapping: [0, 1, 0, 1]
+                        mapping: [0, 1, 0, 1]
+                    - !transform/concatenate-1.2.0
+                      forward:
+                      - !transform/polynomial-1.2.0
+                        bounds:
+                          c0_0: [null, null]
+                          c0_1: [null, null]
+                          c1_0: [null, null]
+                        coefficients: !core/ndarray-1.0.0
+                          source: 8
+                          datatype: float64
+                          byteorder: little
+                          shape: [2, 2]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        name: TI_row_correction
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      - !transform/polynomial-1.2.0
+                        bounds:
+                          c0_0: [null, null]
+                          c0_1: [null, null]
+                          c1_0: [null, null]
+                        coefficients: !core/ndarray-1.0.0
+                          source: 9
+                          datatype: float64
+                          byteorder: little
+                          shape: [2, 2]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        name: TI_column_correction
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                  - !transform/identity-1.2.0
+                    bounds: {}
+                    fixed: {}
+                    inverse: !transform/remap_axes-1.2.0
+                      bounds: {}
+                      fixed: {}
+                      mapping: [0, 1, 0, 1]
+                    n_dims: 2
+                - !transform/remap_axes-1.2.0
+                  bounds: {}
+                  fixed: {}
+                  mapping: [1, 0]
+        - !transform/compose-1.2.0
+          forward:
+          - !transform/compose-1.2.0
+            forward:
+            - !transform/compose-1.2.0
+              forward:
+              - !transform/concatenate-1.2.0
+                forward:
+                - !transform/shift-1.2.0
+                  bounds:
+                    offset: *id001
+                  fixed: {offset: false}
+                  offset: -325.13
+                - !transform/shift-1.2.0
+                  bounds:
+                    offset: *id001
+                  fixed: {offset: false}
+                  offset: -299.7
+              - !transform/rotate2d-1.2.0
+                angle: 0.24155757363306068
+                bounds:
+                  angle: *id002
+                fixed: {angle: false}
+            - !transform/remap_axes-1.2.0
+              bounds: {}
+              fixed: {}
+              mapping: [1]
+          - !transform/tabular-1.2.0
+            bounding_box: [-291.60259000740217, 95.69787960086536]
+            bounds: {}
+            bounds_error: false
+            fill_value: .nan
+            fixed: {}
+            inverse: !transform/tabular-1.2.0
+              bounding_box: [3.596040329703134, 14.387876373781149]
+              bounds: {}
+              bounds_error: false
+              fill_value: .nan
+              fixed: {}
+              lookup_table: !core/ndarray-1.0.0
+                source: 12
+                datatype: float64
+                byteorder: little
+                shape: [699]
+              name: waverefinv
+              points:
+              - !core/ndarray-1.0.0
+                source: 13
+                datatype: float64
+                byteorder: little
+                shape: [699]
+            lookup_table: !core/ndarray-1.0.0
+              source: 10
+              datatype: float64
+              byteorder: little
+              shape: [388]
+            name: waveref
+            points:
+            - !core/ndarray-1.0.0
+              source: 11
+              datatype: float64
+              byteorder: little
+              shape: [388]
+      inverse: !transform/compose-1.2.0
+        bounds:
+          angle_14: [null, null]
+          angle_17: [null, null]
+          c0_0_2: [null, null]
+          c0_0_3: [null, null]
+          c0_0_5: [null, null]
+          c0_0_6: [null, null]
+          c0_1_2: [null, null]
+          c0_1_3: [null, null]
+          c0_1_5: [null, null]
+          c0_1_6: [null, null]
+          c0_2_5: [null, null]
+          c0_2_6: [null, null]
+          c0_3_5: [null, null]
+          c0_3_6: [null, null]
+          c0_4_5: [null, null]
+          c0_4_6: [null, null]
+          c0_8: [null, null]
+          c0_9: [null, null]
+          c1_0_2: [null, null]
+          c1_0_3: [null, null]
+          c1_0_5: [null, null]
+          c1_0_6: [null, null]
+          c1_1_5: [null, null]
+          c1_1_6: [null, null]
+          c1_2_5: [null, null]
+          c1_2_6: [null, null]
+          c1_3_5: [null, null]
+          c1_3_6: [null, null]
+          c1_8: [null, null]
+          c1_9: [null, null]
+          c2_0_5: [null, null]
+          c2_0_6: [null, null]
+          c2_1_5: [null, null]
+          c2_1_6: [null, null]
+          c2_2_5: [null, null]
+          c2_2_6: [null, null]
+          c3_0_5: [null, null]
+          c3_0_6: [null, null]
+          c3_1_5: [null, null]
+          c3_1_6: [null, null]
+          c4_0_5: [null, null]
+          c4_0_6: [null, null]
+          offset_10: [null, null]
+          offset_12: [null, null]
+          offset_13: [null, null]
+          offset_18: [null, null]
+          offset_19: [null, null]
+        fixed: {angle_14: false, angle_17: false, c0_0_2: false, c0_0_3: false, c0_0_5: false,
+          c0_0_6: false, c0_1_2: false, c0_1_3: false, c0_1_5: false, c0_1_6: false,
+          c0_2_5: false, c0_2_6: false, c0_3_5: false, c0_3_6: false, c0_4_5: false,
+          c0_4_6: false, c0_8: false, c0_9: false, c1_0_2: false, c1_0_3: false, c1_0_5: false,
+          c1_0_6: false, c1_1_5: false, c1_1_6: false, c1_2_5: false, c1_2_6: false,
+          c1_3_5: false, c1_3_6: false, c1_8: false, c1_9: false, c2_0_5: false, c2_0_6: false,
+          c2_1_5: false, c2_1_6: false, c2_2_5: false, c2_2_6: false, c3_0_5: false,
+          c3_0_6: false, c3_1_5: false, c3_1_6: false, c4_0_5: false, c4_0_6: false,
+          offset_10: false, offset_12: false, offset_13: false, offset_18: false,
+          offset_19: false}
+        forward:
+        - !transform/concatenate-1.2.0
+          forward:
+          - !transform/compose-1.2.0
+            forward:
+            - !transform/compose-1.2.0
+              forward:
+              - !transform/compose-1.2.0
+                forward:
+                - !transform/remap_axes-1.2.0
+                  bounds: {}
+                  fixed: {}
+                  mapping: [1, 0]
+                - !transform/compose-1.2.0
+                  forward:
+                  - !transform/remap_axes-1.2.0
+                    bounds: {}
+                    fixed: {}
+                    mapping: [0, 1, 0, 1]
+                  - !transform/compose-1.2.0
+                    forward:
+                    - !transform/concatenate-1.2.0
+                      forward:
+                      - !transform/polynomial-1.2.0
+                        bounds:
+                          c0_0: [null, null]
+                          c0_1: [null, null]
+                          c1_0: [null, null]
+                        coefficients: !core/ndarray-1.0.0
+                          source: 14
+                          datatype: float64
+                          byteorder: little
+                          shape: [2, 2]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        name: T_row_correction
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      - !transform/polynomial-1.2.0
+                        bounds:
+                          c0_0: [null, null]
+                          c0_1: [null, null]
+                          c1_0: [null, null]
+                        coefficients: !core/ndarray-1.0.0
+                          source: 15
+                          datatype: float64
+                          byteorder: little
+                          shape: [2, 2]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        name: T_column_correction
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                    - !transform/compose-1.2.0
+                      forward:
+                      - !transform/remap_axes-1.2.0
+                        bounds: {}
+                        fixed: {}
+                        mapping: [0, 1, 0, 1]
+                      - !transform/compose-1.2.0
+                        forward:
+                        - !transform/concatenate-1.2.0
+                          forward:
+                          - !transform/polynomial-1.2.0
+                            bounds:
+                              c0_0: [null, null]
+                              c0_1: [null, null]
+                              c0_2: [null, null]
+                              c0_3: [null, null]
+                              c0_4: [null, null]
+                              c1_0: [null, null]
+                              c1_1: [null, null]
+                              c1_2: [null, null]
+                              c1_3: [null, null]
+                              c2_0: [null, null]
+                              c2_1: [null, null]
+                              c2_2: [null, null]
+                              c3_0: [null, null]
+                              c3_1: [null, null]
+                              c4_0: [null, null]
+                            coefficients: !core/ndarray-1.0.0
+                              source: 16
+                              datatype: float64
+                              byteorder: little
+                              shape: [5, 5]
+                            domain:
+                            - [-1, 1]
+                            - [-1, 1]
+                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                              c3_0: false, c3_1: false, c4_0: false}
+                            window:
+                            - [-1, 1]
+                            - [-1, 1]
+                          - !transform/polynomial-1.2.0
+                            bounds:
+                              c0_0: [null, null]
+                              c0_1: [null, null]
+                              c0_2: [null, null]
+                              c0_3: [null, null]
+                              c0_4: [null, null]
+                              c1_0: [null, null]
+                              c1_1: [null, null]
+                              c1_2: [null, null]
+                              c1_3: [null, null]
+                              c2_0: [null, null]
+                              c2_1: [null, null]
+                              c2_2: [null, null]
+                              c3_0: [null, null]
+                              c3_1: [null, null]
+                              c4_0: [null, null]
+                            coefficients: !core/ndarray-1.0.0
+                              source: 17
+                              datatype: float64
+                              byteorder: little
+                              shape: [5, 5]
+                            domain:
+                            - [-1, 1]
+                            - [-1, 1]
+                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
+                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
+                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
+                              c3_0: false, c3_1: false, c4_0: false}
+                            window:
+                            - [-1, 1]
+                            - [-1, 1]
+                        - !transform/compose-1.2.0
+                          forward:
+                          - !transform/identity-1.2.0
+                            bounds: {}
+                            fixed: {}
+                            n_dims: 2
+                          - !transform/compose-1.2.0
+                            forward:
+                            - !transform/concatenate-1.2.0
+                              forward:
+                              - !transform/polynomial-1.2.0
+                                bounds:
+                                  c0: [null, null]
+                                  c1: [null, null]
+                                coefficients: !core/ndarray-1.0.0
+                                  source: 18
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [2]
+                                domain: [-1, 1]
+                                fixed: {c0: false, c1: false}
+                                window: [-1, 1]
+                              - !transform/polynomial-1.2.0
+                                bounds:
+                                  c0: [null, null]
+                                  c1: [null, null]
+                                coefficients: !core/ndarray-1.0.0
+                                  source: 19
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [2]
+                                domain: [-1, 1]
+                                fixed: {c0: false, c1: false}
+                                window: [-1, 1]
+                            - !transform/concatenate-1.2.0
+                              forward:
+                              - !transform/shift-1.2.0
+                                bounds:
+                                  offset: &id003 [null, null]
+                                fixed: {offset: false}
+                                offset: 4.0
+                              - !transform/identity-1.2.0
+                                bounds: {}
+                                fixed: {}
+              - !transform/compose-1.2.0
+                forward:
+                - !transform/concatenate-1.2.0
+                  forward:
+                  - !transform/shift-1.2.0
+                    bounds:
+                      offset: *id003
+                    fixed: {offset: false}
+                    offset: -325.13
+                  - !transform/shift-1.2.0
+                    bounds:
+                      offset: *id003
+                    fixed: {offset: false}
+                    offset: -299.7
+                - !transform/rotate2d-1.2.0
+                  angle: 0.24155757363306068
+                  bounds:
+                    angle: &id004 [null, null]
+                  fixed: {angle: false}
+            - !transform/remap_axes-1.2.0
+              bounds: {}
+              fixed: {}
+              mapping: [0]
+              n_inputs: 2
+          - !transform/tabular-1.2.0
+            bounding_box: [3.596040329703134, 14.387876373781149]
+            bounds: {}
+            bounds_error: false
+            fill_value: .nan
+            fixed: {}
+            lookup_table: !core/ndarray-1.0.0
+              source: 20
+              datatype: float64
+              byteorder: little
+              shape: [699]
+            name: waverefinv
+            points:
+            - !core/ndarray-1.0.0
+              source: 21
+              datatype: float64
+              byteorder: little
+              shape: [699]
+        - !transform/compose-1.2.0
+          forward:
+          - !transform/rotate2d-1.2.0
+            angle: -0.24155757363306068
+            bounds:
+              angle: *id004
+            fixed: {angle: false}
+          - !transform/concatenate-1.2.0
+            forward:
+            - !transform/shift-1.2.0
+              bounds:
+                offset: *id003
+              fixed: {offset: false}
+              offset: 325.13
+            - !transform/shift-1.2.0
+              bounds:
+                offset: *id003
+              fixed: {offset: false}
+              offset: 299.7
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.0.0>
+        axes_names: [v2, v3]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:v2', 'custom:v3']
+        name: v2v3_spatial
+        unit: [!unit/unit-1.0.0 'arcsec', !unit/unit-1.0.0 'arcsec']
+      - !<tag:stsci.edu:gwcs/spectral_frame-1.0.0>
+        axes_names: [lambda]
+        axes_order: [2]
+        axis_physical_types: [em.wl]
+        name: spec
+        unit: [!unit/unit-1.0.0 'um']
+      name: v2v3
+    transform: !transform/concatenate-1.2.0
+      bounds:
+        angles_2: [null, null]
+        factor_0: [null, null]
+        factor_1: [null, null]
+      fixed: {angles_2: false, factor_0: false, factor_1: false}
+      forward:
+      - !transform/compose-1.2.0
+        forward:
+        - !transform/concatenate-1.2.0
+          forward:
+          - !transform/scale-1.2.0
+            bounds:
+              factor: &id005 [null, null]
+            factor: 0.0002777777777777778
+            fixed: {factor: false}
+          - !transform/scale-1.2.0
+            bounds:
+              factor: *id005
+            factor: 0.0002777777777777778
+            fixed: {factor: false}
+        - !transform/rotate_sequence_3d-1.0.0
+          angles: [-0.12597594444444443, 0.10374517305555556, 0.0, -72.0545718, -5.630568]
+          axes_order: zyxyz
+          bounds:
+            angles: [null, null]
+          fixed: {angles: false}
+          name: v23tosky
+          rotation_type: spherical
+      - !transform/identity-1.2.0
+        bounds: {}
+        fixed: {}
+  - !<tag:stsci.edu:gwcs/step-1.0.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
+        axes_names: [RA, DEC]
+        axes_order: [0, 1]
+        axis_physical_types: [pos.eq.ra, pos.eq.dec]
+        name: icrs
+        reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+          frame_attributes: {}
+        unit: [!unit/unit-1.0.0 'deg', !unit/unit-1.0.0 'deg']
+      - !<tag:stsci.edu:gwcs/spectral_frame-1.0.0>
+        axes_names: [lambda]
+        axes_order: [2]
+        axis_physical_types: [em.wl]
+        name: spec
+        unit: [!unit/unit-1.0.0 'um']
+      name: world
+...
+ÓBLK 0                             ÚÛ´¨ÔÇ ke-.uŸó33333“)Àš™™™™™™?ÓBLK 0                             E‹Õ¿5“N—âßh…{     ø@      D@ÓBLK 0                             ÚÛ´¨ÔÇ ke-.uŸó33333“)Àš™™™™™™?ÓBLK 0                             E‹Õ¿5“N—âßh…{     ø@      D@ÓBLK 0               È       È       È£Z´ÁÆæƒ‚<´…ÜÓLC¦Ç jX?_Í@ åîr+¿ 9:mÙM)¿€Û3®öòÕ>… ˜<Ç¹†?"K’mŠL-? @n.µ> ğŒT—îF>        6…òÂ\U¿€n«Òª¿x¦Èæ-Õ>                 €Ü¯Fa> ğ©V•9>                        `ı‘‚ûf¨>                                ÓBLK 0               È       È       È*WË²şVŠN¬ó“ŠèŸäå{”CÌ&I¿úiİu‰jB¿†CÆğ> @ Õˆ8¾x:?Z4Áş½~ù\òWÁÌ?rfåÅÆ¾ àd;âP’>€Å6—•X¦=        ì#î€—˜Ì> è ¹Òñ<¾ı?_Y*¾                 mN$a¡>`µhg³´=                        óeL“D-¾                                ÓBLK 0               È       È       È“r‘Ô)õÇ¸óW`¬êí§óµÓ·i?Ï_2*œ–¿0IAnÛÔ¿ dÁ‡ ¿> ä(š†¯[¾¾ìR˜Ñ¨@ôH`’çéf¿0'9YE¿(’pë¿]Ì>        ÜÅoÓ-L'?  €t> Œ§3MX¾                 /EgyğÏ>\<»˜zôÃ>                         `›^½>                                ÓBLK 0               È       È       È9öÛU‘HõwÑ’¯oƒ+uÛF¿_|0W4şÌ? WÊ½xÁ¾ Ğ½{€D¾ =_ş…=ãŸmR?w£8j{? ˆõh¾ü
+X,,R¾        ô[‡ŞŒª>ĞI»Ä°Øƒ>À¬‡ğ%–”½                 Mu,•i"¾qóF!¾                         ËZ9
+Ø=                                ÓBLK 0                                ƒbüdØ¥Zè*ÈÇO^è
+×£p=vwÀcCnqèN´?g$ Ë.æï?        ÓBLK 0                                §öÒ†Zo±”¢JÀé„Šáz®G!{Àg$ Ë.æï¿cCnqèN´?        ÓBLK 0                             Uä òLb~xR0îhóá9-È,@"Ö\“BÀ,@æRÈV¸,@g<³g°,@q!yJw¨,@ç>Ş„ ,@DÄLh˜,@`Êcâ™,@²CF¡ˆ,@*Š¬¦€,@a^²©x,@ìF®ªp,@BIz©h,@Xwª¦`,@à m X,@’`†˜P,@tœ‰WH,@æ<Ú@,@Bõ7s8,@`a=Ûa0,@aMN(,@AeW8 ,@¨Vô,@-j³,@ L)Ëç,@Û)ùÇÿ+@¯¹r ¥÷+@óaÆº€ï+@}äAYç+@&à‹//ß+@½Ó}}×+@şy%ÓÎ+@n@!¡Æ+@2‘jl¾+@HZ,û4¶+@$ôÑÌú­+@òBÙ½¥+@Œ¹<~+@Å‚‰;•+@sùÑ öŒ+@m¬ìÙ­„+@Š*’®b|+@›‚‚˜t+@|Ã}‘Ãk+@şûC“oc+@ú:•—[+@B1˜¾R+@°ÙaJ+@³KuB+@L IE9+@'Ş’ø71+@{çˆÎ(+@%‡ğa +@ô³'ò+@¾$ª)+@ZÔ¬ï+@œ-{sş*@^?Õ®ö*@r{›’í*@±Ç,3å*@ì[ªoˆÜ*@ ä³JşÓ*@¹n	¾pË*@ô
+kÃßÂ*@…Ç˜TKº*@C³Rk³±*@İX©*@—Sky *@Ø%J’Ö—*@bµ€0*@ºmÕ††*@W1ŠÙ}*@V,Â˜(u*@§ßúsl*@W×Iª»c*@¶ÊÀ ÿZ*@mØ?R*@X7ÕI|I*@HÎòï´@*@dÄé7*@’À/*@˜Ç™İG&*@ü²kq*@’ØJd–*@4G÷À·*@²1&Õ*@ä:¸îù)@£İLññ)@Â¯Jè)@¿“"ß)@tÜÅ+Ö)@´('Û0Í)@«õ?Í1Ä)@0‘æ•.»)@
+Û.'²)@8oİ‘©)@fÏ­¸ )@w9÷–)@B¼¸8ß)@œfs…Â„)@^Gü|¡{)@Xm|r)@cçxSRi)@VÄì%$`)@/ŠñV)@EâÿyºM)@ï@ï~D)@Ô=Mã>;)@ÍçIPú1)@®MÕ/±()@O~¯{c)@…ˆ˜-)@${P?º)@e—ª^)@ùT-işù(@ÚYÒt™ğ(@|‚FÇ/ç(@·İIZÁİ(@^zœ'NÔ(@Hgş(ÖÊ(@I³/XYÁ(@8mğ®×·(@ì£ 'Q®(@:f ºÅ¤(@øÂb5›(@ùÈ ‘(@‡]×ˆ(@$<˜f~(@÷fêTÂt(@h¦(k(@JÙ¶¨ja(@sU3·W(@½TÃ şM(@÷ºÁê@D(@ùO~:(@"oûµ0(@¶Aµè&(@¼]3(@˜ mn>(@ş`a	(@Tã~ÿ'@8_ Q—õ'@”€ÒBªë'@;VµÒ·á'@ïhú¿×'@ÈY­³ÂÍ'@[¥Bø¿Ã'@‘àèÁ·¹'@?`
+ª¯'@?ahË–¥'@bÄÁş}›'@€R,_‘'@oh£;‡'@+5}'@“SÆâr'@{aƒ×­h'@¥„5s^'@’lÚ2T'@íÆû¾ìI'@ôÂñİ ?'@wo¹0O5'@QÛ±÷*'@T¾Xš '@V,{!7'@0/
+Î'@¶,+ı^'@º3êö&@S#oì&@¡™z"îá&@/d.g×&@’×Ÿ/ÚÌ&@¦ìíGÂ&@>dù­·&@-MÁ´­&@N¶ÆLi¢&@p®Şº½—&@qDÉø&@#‡F T‚&@Z…Ë•w&@íMùRÑl&@´ï®‘b&@€y÷€5W&@*ú’^L&@Š€AX€A&@pÃ3œ6&@¶Ù×¦±+&@/Ê?«À &@´ûº:É&@}	OË
+&@4]ëáÆÿ%@Úª í»ô%@àtijªé%@Ê…S’Ş%@k¹5¢sÓ%@˜Q9PNÈ%@<T"½%@Ü}G—ï±%@¾_" ¶¦%@)£ëtu›%@`+ìÛ-%@¦Ûlß„%@C—¶‰y%@zA½+n%@½ÈëÆb%@Íî"ŒZW%@o¸i„æK%@Âıåºj@%@¢àç4%@‡ˆ¢{[)%@ƒ”tÒÇ%@>©Ÿ ,%@ªlì‡%@z$|Ûú$@±ü–&ï$@(x iã$@¶¦¥£×$@¥”áÔË$@;Âtaü¿$@¶¨¬´$@`iÄç1¨$@©ù>œ$@S¶ÛÆB$@&sh7=„$@9Ã1.x$@Ô‰ğ™l$@9ª}Xó_$@®òRÇS$@y…–o‘G$@Ü´”Q;$@!o“¨/$@‰¡}‘³"$@Z»5U$@Ùñ•{ì	$@IÖUIyı#@óD…ûğ#@ˆ©sä#@ıÏàß×#@ê°ıÌAË#@"*~À˜¾#@éj™¡ä±#@„V˜V%¥#@;ĞÃÅZ˜#@Q»dÕ„‹#@	ûÃk£~#@ªr*o¶q#@xáÅ½d#@º–0V¹W#@²	b©J#@¦A¾¼Œ=#@Û!_d0#@•Õ/##@h¬ï#@±”ŒÑ¡#@›ö%Hû"@!q[äáí"@çÛõnà"@	=Î?ïÒ"@öT{¨bÅ"@‘,É·"@Y)o"ª"@ã¼™nœ"@"-|­"@"CÅüŞ€"@)Ís"@yÒqe"@ZóQ2"W"@Ô_*I"@ÜW@
+;"@bYé,"@ØÕ"]º"@–41}"@r‡ı»1"@Ç‹Æã×ó!@Ó†Øoå!@Û[|£øÖ!@%îúsÈ!@ñ ¢Ş¹!@‰×«Y;«!@0õo‰œ!@+]2¶Ç!@¿ò;(÷~!@2™ÕOp!@Æ3H(a!@Á¥ÜX)R!@kÒÛC!@ı3!@Õè=5Ï$!@"™2‚‘!@.‘µĞC!@>´æö @šå‰xç @ƒmÄù× @ˆ‹kÈ @mòİ`Ë¸ @.[æP© @Ò×&TW™ @_}!è‰ @İ`XŠ™y @M—M¸i @¶5ƒïY @ Q{­iI @ş·o09 @S»³á( @‹c÷| @$E· @³ãŞî@\ŸiG‹Í@MEq–¬@“5ËRŠ@6šwàkh@F~ÑQF@Êh8™$@Ë&©2€@XÕ˜ÆŞ@|"ÀÆÕ»@=´n·¬˜@©àäeJu@ÊÑ&Í­Q@«±8èÕ-@Wª²Á	@ÚåÜ%på@<w>àÀ@Íòöœ@ÑÍRJw@¹›3°Q@h¹Ñ­,@Ìøø³E@V¡A*à@İ+PÉ¹@øÕ?Ü!“@&¶Uà2l@Ÿ§qWûD@qÔ—<z@¤fÌŠ®õ@Dˆ=—Í@^cqN3¥@÷!ê¹|@îzS@Şñ<‹1*@AWç @Í-ÛÖ@şjiüS¬@ÏW×1®@3åyb§V@$Tu:+@™ıhQbÿ@Š–»İÓ@ğëN\¦@À&£#y@öçCªkK@ˆœ«ı.@i)`„hî@–•d%¿@è»Ç)@³'iR§^@[o¬†-@—ŠÑ¼Âû@¾»’jVÉ@ öµœ<–@R@>:pb@®¡.*ì-@!ŠS«ø@]ÅS¨Â@£•îŞ‹@¾=äFT@Zı˜HÉ@¹—ÆPâ@ZUË³Ä§@ì¶;l@RÂ|‡/@\ĞÃ¼ğ@éhô°@HÍ¸ o@Ğm¹Åª,@/oúç@«õòŞw¡@V(öX@|6$0ó@µ/DØ¿@«0Kn@¥õ¨Eş@…á4½@hÛİ[@JË5¬ï@ßDœ«õr@nÖnaÀ@5o©c@K`ÙÊ°Ä@ÓBLK 0                             †ÚLõªSæÉGi–VSkk5¤9rÀ.L¡)rÀ8ò,ÙrÀĞµ«š	rÀjyî|—ùqÀ=ÏN”éqÀœ ° ‘ÙqÀ5ÄòÉqÀÏ‡qÄŠ¹qÀhKR–‡©qÀ3h„™qÀ›Ò:‰qÀ4–ô~yqÀÎYÕİziqÀf¶¯wYqÀ á–tIqÀ™¤wSq9qÀ3hX%n)qÀÌ+9÷jqÀfïÉg	qÀş²úšdùpÀ™vÛlaépÀ1:¼>^ÙpÀËıœ[ÉpÀdÁ}âW¹pÀş„^´T©pÀ–H?†Q™pÀ1 XN‰pÀÉÏ *KypÀd“áûGipÀüVÂÍDYpÀ•£ŸAIpÀ/Şƒq>9pÀÈ¡dC;)pÀaeE8pÀû(&ç4	pÀ(ÙrcòoÀZ`Ï]ÒoÀç¹V²oÀÀnR]P’oÀóõJroÀ%}Õ¤CRoÀW—H=2oÀ‹‹Xì6oÀ½0ònÀï™Û3*ÒnÀ#!×#²nÀU¨^{’nÀ‰/ rnÀ»¶áÂRnÀí=£f
+2nÀ!Åd
+nÀSL&®ıñmÀ…ÓçQ÷ÑmÀ¹Z©õğ±mÀëáj™ê‘mÀi,=äqmÀQğíàİQmÀ‚w¯„×1mÀ¶şp(ÑmÀè…2ÌÊñlÀôoÄÑlÀN”µ¾±lÀ€w··‘lÀ²¢8[±qlÀæ)úşªQlÀ±»¢¤1lÀJ8}FlÀ~¿>ê—ñkÀ¯F ‘ÑkÀãÍÁ1‹±kÀUƒÕ„‘kÀGÜDy~qkÀ{cxQkÀ­êÇÀq1kÀŞq‰dkkÀùJeñjÀD€¬^ÑjÀxÎOX±jÀªóQ‘jÀÜQ—KqjÀ;EQjÀB$ÔŞ>1jÀt«•‚8jÀ¨2W&2ñiÀÚ¹Ê+ÑiÀAÚm%±iÀ@È›‘iÀrO]µqiÀ¦ÖYQiÀØ]àü1iÀ
+å¡ iÀ=lcDÿğhÀoó$èøĞhÀ¡zæ‹ò°hÀÕ¨/ìhÀ‰iÓåphÀ;+wßPhÀm—ìÙ0hÀŸ®¾ÒhÀÓ¥obÌğgÀ-1ÆĞgÀ7´ò©¿°gÀk;´M¹gÀÂuñ²pgÀÏI7•¬PgÀÑø8¦0gÀ5XºÜŸgÀiß{€™ğfÀ›f=$“ĞfÀÌíşÇŒ°fÀ uÀk†fÀ1ü€pfÀcƒC³yPfÀ—
+Ws0fÀÉ‘ÆúlfÀûˆfğeÀ/ IB`ĞeÀa'æY°eÀ•®Ì‰SeÀÇ5-MpeÀù¼OÑFPeÀ-Du@0eÀ_ËÒ:eÀ‘R”¼3ğdÀÅÙU`-ĞdÀ÷`'°dÀ*èØ§ dÀ\ošKpdÀö[ïPdÀÂ}“0dÀôß6dÀ'Œ Ú ğcÀYb~úÏcÀŒš#"ô¯cÀ¿!åÅícÀò¨¦içocÀ$0háOcÀW·)±Ú/cÀŠ>ëTÔcÀ½Å¬øÍïbÀïLnœÇÏbÀ"Ô/@Á¯bÀU[ñãºbÀˆâ²‡´obÀ¹it+®ObÀìğ5Ï§/bÀx÷r¡bÀQÿ¸›ïaÀ„†zº”ÏaÀ·<^¯aÀê”ıˆaÀ¿¥oaÀO£€I{OaÀ*Bít/aÀ´±‘naÀæ8Å4hï`ÀÀ†ØaÏ`ÀLGH|[¯`ÀÎ	 U`À±UËÃNo`ÀäÜŒgHO`ÀdNB/`ÀIë¯;`Àøä¢¥jŞ_À]ó%í]_ÀÃ©4Q^_À&,|D_ÀŒ¯Ã7Ş^Àò,2+^ÀX;µR^^À¼I8š^À"X»áŞ]Àˆf>)ø]ÀîtÁpë]]ÀRƒD¸Ş]À·‘ÇÿÑİ\À JGÅ\Àƒ®Í¸]\Àç¼PÖ«\ÀMËÓŸİ[À³ÙVe’[ÀèÙ¬…][À}ö\ôx[Àâà;lİZÀHcƒ_ZÀ«!æÊR]ZÀ0iFZÀw>ìY9İYÀİLo¡,YÀA[òè]YÀ§iu0YÀxøwİXÀr†{¿ùœXÀÖ”şí\XÀ<£NàXÀ¢±–ÓÜWÀÀ‡İÆœWÀlÎ
+%º\WÀÒÜl­WÀ8ë´ ÜVÀœù“û“œVÀC‡\VÀgšŠzVÀÍ$ÒmÜUÀ13 aœUÀ—A#aT\UÀıO¦¨GUÀb^)ğ:ÜTÀÆl¬7.œTÀ+{/!\TÀ‘‰²ÆTÀõ—5ÜSÀ[¦¸Uû›SÀÁ´;î[SÀ'Ã¾äáSÀ‹ÑA,ÕÛRÀñßÄsÈ›RÀWîG»»[RÀ¼üÊ¯RÀ NJ¢ÛQÀ†Ñ‘•›QÀì'TÙˆ[QÀR6× |QÀ¶DZhoÛPÀSİ¯b›PÀ‚a`÷U[PÀæoã>IPÀ–üÌy¶OÀbÓ›_6OÀ-6Ù*F¶NÀõRß¹,6NÀÁoåH¶MÀŒë×ù5MÀX©ñfàµLÀÆ÷õÆ5LÀëâı„­µKÀ·ÿ”5KÀƒ
+£zµJÀJ92a5JÀVÁGµIÀârP.5IÀ®"ßµHÀu¬(nû4HÀAÉ.ıá´GÀæ4ŒÈ4GÀÔ;¯´FÀ Aª•4FÀk<G9|´EÀ7YMÈb4EÀÿuSWI´DÀË’Yæ/4DÀ–¯_u´CÀbÌeı3CÀ*ék“ã³BÀör"Ê3BÀÀ"x±°³AÀŒ?~@—3AÀT\„Ï}³@À yŠ^d3@ÀÓ+!Û•f?Àke-ùbf>Àş90f=À–ØE5ıe<À(RSÊe;ÀÀK^q—e:ÀS…jde9Àë¾v­1e8À~ø‚Ëşd7À2éËd6À©k›™d5À@¥§%fd4ÀÔŞ³C3d3ÀkÀa d2ÀÿQÌÍc1À•‹Øšc0ÀRŠÉwÏÆ.Àyıá³iÆ,À¨púïÆ*ÀÎã,Å(ÀıV+h8Å&À#ÊC¤ÒÄ$ÀR=\àlÄ"Ày°tÄ ÀOG±B‡À-K)w†Àú|¡«…ÀGú¬à„ÀIÁ»#)Àå’À?µşö	ö¿Ò9	§Ø¿¬0ôjÌøã?à~¶T”ÿù?Örù9a@¦—Iø@Àìš¬G‚@bj4ƒ@ 9¼Şƒ@·9Dª„@µ©ëåºB!@†6Ó© C#@_Ãºm†C%@1P¢1ìC'@
+İ‰õQD)@Ûiq¹·D+@µöX}E-@ƒ@AƒE/@0”‚ô¢0@œÎ‡d'£1@•{FZ£2@q[o(£3@Û!c
+À£4@GèVìò£5@°®JÎ%¤6@u>°X¤7@…;2’‹¤8@ñ&t¾¤9@ZÈVñ¤:@Ç8$¥;@/UW¥<@œõû‰¥=@âèİ¼¥>@r¨Ü¿ï¥?@n7èPS@@£âÁ*Ó@@ÙıÛ2DSA@áÕ£]ÓA@CÄÏwSB@x§É…ÓB@­ŠÃö©SC@äm½gÃÓC@Q·ØÜSD@O4±IöÓD@„«ºTE@ºú¤+)ÔE@ïİœBTF@$Á˜\ÔF@Y¤’~uTG@‡ŒïÔG@Äj†`¨TH@ùM€ÑÁÔH@/1zBÛTI@dt³ôÔI@š÷m$UJ@ÏÚg•'ÕJ@¾aAUK@:¡[wZÕK@p„UèsUL@¥gOYÕL@ÚJIÊ¦UM@.C;ÀÕM@F=¬ÙUN@{ô6óÕN@°×0VO@åº*ÿ%ÖO@O¸+P@§@p,kP@B2)9«P@Ş#‰áEëP@yšR+Q@ƒR_kQ@®øÿ
+l«Q@Hê|ÃxëQ@ãÛù{…+R@}Ív4’kR@¿óì«R@³°p¥«ëR@N¢í]¸+S@è“jÅkS@ƒ…çÎÑ«S@wd‡ŞëS@¸há?ë+T@RZ^ø÷kT@íKÛ°¬T@ˆ=XiìT@#/Õ!,U@¾ RÚ*lU@XÏ’7¬U@ôLKDìU@õÈQ,V@)çE¼]lV@ÃØÂtj¬V@^Ê?-wìV@ø»¼åƒ,W@”­9lW@.Ÿ¶V¬W@É3ªìW@ÓBLK 0              Ø      Ø      Ø„tbcöí›\® &ÓÏãj(ìW@—´şeÎçW@†ŒÄdãW@œÆ¾æêŞW@ÖïÉ,`ÚW@1àöÃÕW@¤x5¥ÑW@3Ôû—TÌW@Ó‘f/€ÇW@†¯¨Ë—ÂW@B+õÌš½W@“ˆ¸W@Ñ4y`³W@œ¾ñ!®W@eŠHÌ¨W@$Òæ^£W@ÙWÁ)ÙW@€-ês:˜W@Qµ$‚’W@ÀUœ¯ŒW@ñyş:Â†W@5{â`¹€W@VÂ4n”zW@QM(ÃRtW@ ğ¿ómW@Â&¿ÄvgW@6qÈ1Û`W@p÷>g ZW@q·UÅESW@6¯?¬JLW@¹Ü/|.EW@ö=Y•ğ=W@ëĞîW6W@’“#$/W@çƒ*Zf'W@éŸ6Z›W@’åz„«W@ŞR*9–W@ËåwØZW@Tœ–ÂøşV@st¹WoöV@&lø½íV@‹ï¬ääV@ê™tÓáÛV@v}S«·ÒV@Ë¯fÉV@{F£í¿V@Wˆ¿N¶V@F÷Ğí‰¬V@<7¬Ÿ¢V@‹<‰x˜V@Ó•Ğ\V@úÂ(2„V@–tŠyV@@7 	ìnV@  z+dV@FàëHYV@i½.ÜDNV@$œÙÈCV@Ù÷®/Ú7V@²â|t,V@0Yï V@â‡<ŞJV@±/4c‡	V@3©-¥ıU@–a-ƒ¤ñU@S©…åU@§¬åHÙU@®‰Ê}îÌU@C‡@·vÀU@“ ×á³U@È-{$0§U@ícãašU@”XìYwU@‚{¦Íp€U@a$„NsU@HøÂfU@w ³Ï·XU@¿éïCKU@Ip*iµ=U@EÊ	0U@Ú)}I"U@6šê¢lU@…&8vU@ôÙ‚føT@¬¿ŸÆ=êT@Úâ-KüÛT@ªNXU¢ÍT@G±*0¿T@İ,Ê¦°T@É\ğI¢T@TD÷÷J“T@ò*z„T@æÒgï‘uT@x¸İV’fT@ôÛ„o{WT@Ÿ\cHMHT@ÁYğ9T@òŞv«)T@ƒFˆê7T@¸tZ­
+T@œĞÕûS@'İ{kSëS@óU‰*„ÛS@,&ÿ!ËS@mã`¡»S@J<ö«S@0Üñc›S@éBd`#‹S@v?SÌzS@¨Ø^jS@(«£ÿÚYS@Üœ8×@IS@„ÿln8S@fòFÔÉ'S@É”ÌíS@÷HúS@5eósñôR@ÌÑ ªÒãR@kûÒR@&PNtSÁR@u Z%ó¯R@>{=}R@ÆÿüjñŒR@UMŸP{R@5ƒ*D™iR@©À¤íÌWR@ı$)ëER@yÏ~ô3R@`ßê‘ç!R@şs^İÅR@˜¬ßöıQ@z¨tíBëQ@æ†#ĞáØQ@)gò­kÆQ@‡hç•à³Q@/V–@¡Q@çD±‹Q@é‡-ŞÁ{Q@÷[8ãhQ@ŠJïUQ@ùYHxæBQ@Ê¹˜”È/Q@hÓ –•Q@ÀA†uM	Q@ÁŸn(ğõP@[ˆ¦}âP@–ŞæõÎP@e±àX»P@‹¦§P@t¯HİŞ“P@aXÎ€P@ê>rUlP@ãã»iXP@ñêZêCP@ït·/P@‹/nP@ôY°P@`í9¾9åO@Zø5'¼O@¸
+ é’O@WZÃ€iO@ëyê?O@ÔˆbÜ)O@pÓt–=ìN@É2m–%ÂN@½Ü–Êá—N@.=!rmN@øçªˆÖBN@÷´+ïN@¤
+CíM@ ë’rûÁM@Àl¯–M@™XÌ7kM@mŸ´w’?M@µÁM@ü|œÄçL@r3PÜ›»L@³rr‰GL@{'ßÇbL@ö³6L@“ìXqG	L@@Ø\$GÜK@K’m¯K@Ü†ÇK@µvB¬HTK@·#d &K@M¤6	ÎøJ@Î¹ı¶ÒÊJ@‚%ı]®œJ@¼¨x9anJ@Ë´„ë?J@ùúòzMJ@›LyW‡âI@úºŠU™³I@fk°ƒ„I@0ó]£FUI@¥?§iâ%I@®Š>WöH@ÈÿK]¥ÆH@ö.Í–H@GRweÎfH@¬ÕhÅ©6H@”AG\_H@NWVeïÕG@'ØÙZ¥G@m…»ŸtG@—|¸}ÀCG@‘’}¼G@l–¢“áF@ã½ĞE°F@¬,FëÒ~F@~ˆ†Ö:MF@øv}F@"¢Ê­šéE@c­ba’·E@‘@¬td…E@_‚qËSE@Š™|I— E@Ç¬—Ò÷íD@ÏâŒJ2»D@[b&•FˆD@!R.–4UD@ÚØn1ü!D@>²JîC@FÂÅ»C@êyi†k‡C@¡ßqp˜SC@å¥gC@lÛÎO}ëB@í¾·5·B@$o*‚Å‚B@Æñ“.NB@ĞÕ%pB@0Ï¢ŠäA@f5"Y|¯A@ë)ÂFzA@rÓ`:éDA@µX´¥cA@oàâçµÙ@@S‘¶äß£@@ ’ùám@@…	vº7@@Bö k@@î‡Üå•?@5uSÒ£(?@Iãê»>@Ì9Ëí)M>@) ¢ñŞ=@ÏõõĞfp=@32a@‰=@¿v¸X’<@ëêÈ Õ"<@îàı²;@Ğ§y ÓB;@l) ‡TÒ:@dÔÜa:@+öNçZğ9@,Ü?pß~9@ÙÓ|>9@¦*šêš8@ü-,Éo(8@T+Ç µ7@pÿÃzB7@¸IiÿÎ6@ÄEq.[6@b•×Pç5@ıòA…Šr5@%áV¸ı4@brF‘ˆ4@<áô4@=øªPD3@ñ]Íl'3@à¸ü¦°2@“¯ÊÚ92@—èÈºÂ1@r
+‰GK1@²»œÓ0@Ü¢•ªh[0@ûÌ
+æûÅ/@>Zû~‚Ô.@”: ±eâ-@»œ¦ï,@Ê(”%Dü+@ÎĞ)Š@+@6 Ì›*@½}V)@z)/q((@~½pqì1'@2/ÖÈ:&@ªe_îC%@ö%K§J$@1e£}ªQ#@j¦ıX"@¶$W¨Û]!@'-ÓÂ
+c @ *ï=Ï@!€¯1×@=ïèñİ@Ôs½½ã@|ò1PÜç@V"“Âë@'7í@Nş5ĞÕí@w½	`ñÚ@÷±µñß×	@gı™yÒ@%mÀÊ@Ê %nû?=÷¿hó?—Òàñ–æ? «±\ùLÉ?puÕ$óÓ¿ì‡ëRwOê¿ÄÕy§3Wõ¿~íĞš-‹ı¿AiÕáÀˆ/ŒW Àúi¥D!À+pèb)DÀêuXp¾´À[C­–ŒÈÀFu ÜİÀà_ø˜óÀZ£Ø
+À¹¶ú“?#À[Ë±‚Î<Àj6vÃ+ À8,œ³9!ÀñÔQ79H"Àš÷½@TW#ÀpŠGg$ÀäwÅLw%Àiª‰)ˆ&Àiúá™'ÀZˆ^t©«(À¦œL¾)ÀÂwî´‡Ñ*ÀÀÇ[å+À&Ìu)Çù,ÀM†Ï<Ì.À Ù«°j$/À[×ppQ0Àëø£”º¨0ÀjÆÚòp41Àµ ¹tÀ1À:ÆL2À´ÊÇ4eÙ2ÀÜ?FRf3À”ãTwó3ÀEVòõ4Ào©ğî5ÀFRt“5ÀÆ/‹+6Àäy!Oº6Àã4AcI7ÀŞvUUÆØ7Àjªnøxh8ÀõòkX{ø8À¶Å8£Íˆ9Àç—Àp:ÀÀŞî°bª:Àv¯Ï¥;;ÀCŸì9Í;À`“"_<À±²Sñ<ÀiÈnÚƒ=ÀÂ½-…²>ÀLª#Ü©>À=o(xW=?ÀÍj”°$Ñ?À™·lı¡2@ÀÔxqÂÚ|@À³3N¾<Ç@ÀĞ¢øÈAÀÊ€f¶|\AÀ;ˆàZ§AÀ¿scbòAÀòıİ”=BÀráò*ïˆBÀÙØ—)tÔBÀÄÂ# CÀÍíh	ükCÀ“€€ÿ·CÀ°ÿZ,DÀÁ[ÚçƒPDÀ`ÖDÀ,~<²éDÀ¿Ù12‰6EÀ¶QÎŠƒEÀ¬'*'·ĞEÀ>ZTFÀØlkFÀ¤'î†=¹FÀ°¿=ºGÀÇZƒUGÀ†³´ÇG£GÀˆ„ÇÏ¡ñGÀjˆ±L'@HÀÉyhUØHÀ>â µİHÀhf½,IÀKİë˜ñ{IÀ"…§œQËIÀ>ÃÏnİJÀ¿ì•jJÀÂÖƒtxºJÀe–£‡
+KÀÃÀC–ÂZKÀÿÊzK)«KÀ2*KÀ»ûKÀ~S<òyLLÀı»ÕŞcLÀĞØƒyîLÀŞº?MÀæŞë'‘MÀiübªÀâMÀ´}5…4NÀéüÜ/u†NÀ&ïàñØNÀ‡ÉÈZØ*OÀ)hK}OÀ-bêÏOÀY.3ZPÀi5ò(Õ:PÀVÕìedPÀ°ÈE{PÀÊ?ÕÈ·PÀæ“ÉøšáPÀŞà¦ä‚QÀ~k›—€5QÀWîj”_QÀ÷#ÙM½‰QÀêÆ©Nü³QÀÁ‘ QŞQÀ?•»RÀZ‰Ù;3RÀ8+ÛÑ]RÀ9ßCš}ˆRÀ6vı?³RÀv-AŞRÀ!×d	SÀ+†ög4SÀÍ3?_SÀB`nJŠSÀ8ñ÷µSÀk3" åàSÀÏÙ>RTÀ[—ŸVÔ7TÀ–¦kcTÀÇ#t÷TÀ“X‹7ÙºTÀ`p-U¯æTÀ$¬>šUÀÛYâ™>UÀu†.®jUÀì¨„×–UÀ5¬¦yÃUÀGÄ=UfïUÀ¤›’ÌVÀŸş GHVÀÒ†òëÕtVÀ¨ïäx¡VÀì8ø/ÎVÀ/BûúVÀškü)Ú'WÀT¹$ÍTWÀÊóÓWÀì÷…î®WÀ(1ÈÜWÀ½°)ª^	XÀœt½´6XÀÀ>dXÀJıZ™‘XÀ¡=K)¿XÀæ&ÍÌìXÀ\A‹‚YÀñ¼oLHYÀ‹nĞ)vYÀßÈ·¤YÀmån0ÒYÀ„0E7 ZÀBÄ$ c.ZÀ¤xl¢\ZÀOÕŸ”õŠZÀpZ<ƒ\¹ZÀÚ7ğB×çZÀqq]Şe[À&`E[ÀÎìÒ¾s[ÀenQA‰¢[ÀÌ?øµgÑ[Àé€‚;Z \À«5’Ü`/\ÀõaÉ£{^\À±	Ê›ª\ÀÆ06Ïí¼\ÀÛ¯HEì\ÀŸÙ±]À6ÉS81K]ÀÅÂÃÅz]À8óÅ¿nª]Àwh7,Ú]Àhx4ş	^Àø&§Áä9^ÀxUêßi^ÀŒoÃ¸ï™^Àb“7Ê^ÀrafqMú^À­cßp›*_Àó @şZ_À0Jëu‹_ÀK¾€{¼_À-°äû£ì_Àß3Œ;­`ÀsôŞû'`ÀÈ›;Dƒ?`ÀĞ+óşW`À¦V‚ƒp`ÀÍ·‚‰`Àªce ®¡`Àª²`Sº`ÀçâïHÓ`À.nŞ½ë`À×3~&ƒaÀÖOq&SaÀf˜ã-6aÀ¡xDcOaÀX‰ÆªhaÀ3šo¿ş€aÀ)­¦šaÀ.Äze³aÀ3á~1ÌaÀ/îWåaÀ5æˆşaÀİoQ9ÅbÀu¸ç~1bÀÖ-¼^JbÀğzrö»cbÀIG÷2$}bÀK/–u—–bÀW?ßÀ°bÀVŸÉbÀ~{3ãbÀ
+ÙÚïÒübÀ“ğv}cÀĞA30cÀåQÇóIcÀñ¥•¿ccÀ¿€–}cÀ€+#‹x—cÀDçT·e±cÀ‡Ğ×^ËcÀqs/aåcÀ\ßpÿcÀµkì‰dÀU/Vç®3dÀ!2$ßMdÀ8«XrhdÀÃ&wa‚dÀŞ0Õ²œdÀ®U€İ·dÀT!r#xÑdÀñ\©ëëdÀªİÁqjeÀ æ&ô eÀöÆÔ‰;eÀÉ
+ır*VeÀB>u^ÖpeÀíú˜‹eÀ¤¤%P¦eÀÒï<ÁeÀ+[ <÷ÛeÀÑrßËÛöeÀèÂ]·ËfÀ×ş Ç,fÀì<F«ÍGfÀ·¸ßbfÀF*Ö+ı}fÀŠÊ%&™fÀ	ì)MZ´fÀêf šÏfÀIã]#åêfÀIÑ”¸;gÀqÂ!gÀ»NÎC=gÀrö×>„XgÀRô.¶tgÀ€ÔV¬˜gÀ#Ó#4«gÀJl'ÛÆgÀ-<× âgÀåf«KşgÀ• WAhÀ\M/eê5hÀa±pËQhÀÂXŸ`·mhÀzàp<¯‰hÀˆ­ª²¥hÀ+Œ%¥ÁÁhÀRÜ=)ÜİhÀûı÷1úhÀQîº3iÀ¡5»¿p2iÀù;¹NiÀÖ2B+kiÀp1‰l‡iÀSõ_Q×£iÀuPiMÀiÀÍ|çÏÜiÀRÚtû[ùiÀıÈ«@ôjÀÂ¨&Ú—2jÀ›ÙÃFOjÀz»Qø ljÀ[®6tÆˆjÀ5É2—¥jÀúF£/sÂjÀ¥¬_fZßjÀ,£˜ÒLüjÀ…ŠèoJkÀ«Âé9S6kÀ«6,gSkÀ*¥iB†pkÀux°kÀgJëÈåªkÀóµn0&ÈkÀ²AªqåkÀÁş1ÈlÀìÛ?Ã) lÀÉŸY–=lÀ¦Ç¸ğ[lÀ"6%„xlÀût–lÀ&äa¶³lÀ ãfüYÑlÀXÓ(UïlÀJB”ÁmÀnMµ…*mÀ¸ä³THmÀ t¡‹.fmÀŸ´8„mÀ&%ù´¢mÀ³%Èıü¿mÀ6'ŞmÀ®V°áümÀGşs,nÀHG«ÀQ8nÀY·QÃVnÀp¯‹w¼tnÀ€/èÖ“nÀNÜ­ÔQ±nÀ?ïb¬ÏnÀûâ¾sînÀ:P/ù€oÀSåú*oÀ"¯<*IoÀ-´ş¹hoÀâ©«†¦†oÀóV‚I¥oÀŸöÃoÀ	íÎ­âoÀ¹Ôÿ· pÀ²,pÀÀ¤£‡pÀÉñ–÷.pÀöİæzk>pÀ#®ÿ¹äMpÀ*§êÑb]pÀä±»ålpÀ*'\pm|pÀÙ7õèù‹pÀÉ„…‹›pÀÔR
+!«pÀÖæ°¤»ºpÀ¦…^çZÊpÀ t(ËşÙpÀ÷I§épÀxS6ZTùpÀÎŒ÷	qÀ°«$¼qÀ>1»v(qÀ”£=Ó58qÀˆGÑ[ùGqÀõaËMÁWqÀ·75¢gqÀ¨R^wqÀ(}V3‡qÀuÍm¨—qÀ
+Aó@ê¦qÀ3ÈÌ¶qÀÍ§á)²ÆqÀ°$]lœÖqÀ¶ƒ’ÙŠæqÀ»	‹j}öqÀ–ûOtrÀ$êÛnrÀ<6d®m&rÀ»Æˆp6rÀÓBLK 0              Ø      Ø      ØjÇ:ş)ÖOíÖ=!ˆş.ÌK`ÙÊ°Ä@MÚZä@Ó¾Áé@î5ù®#@[ªYC@ŸLc@ã{’'­‚@'«7W¢@kÚzFÂ@¯	ïU«á@ó8ceU@7h×tÿ @{—K„©@@¿Æ¿“S`@ö3£ı@G%¨²§Ÿ@‹TÂQ¿@ÏƒÑûŞ@³á¥ş@WâxğO@›íÿù=@ß@a¤]@#pÕN}@gŸI.øœ@«Î½=¢¼@ïı1MLÜ@3-¦\öû@<.6Ğ@ŞEÇ=¥@€]Ez-@"u;MO=@ÄŒõT$M@f¤¯\ù\@¼idÎl@ªÓ#l£|@LëİsxŒ@î˜{Mœ@Rƒ"¬@22‹÷»@ÔIÆ’ÌË@va€š¡Û@y:¢vë@ºô©Kû@\¨®± @ş¿h¹õ@ ×"ÁÊ*@BïÜÈŸ:@ä—ĞtJ@†QØIZ@(6àj@ÊMÅçóy@leïÈ‰@}9÷™@°”óşr©@R¬­H¹@ôÃgÉ@–Û!òØ@8óÛÇè@Ú
+–%œø@|"P-q@:
+5F@ÀQÄ<(@bi~Dğ7@8LÅG@¦˜òSšW@H°¬[og@êÇfcDw@Œß k‡@.÷Úrî–@Ğ•zÃ¦@r&O‚˜¶@>	ŠmÆ@¶UÃ‘BÖ@Xm}™æ@ú„7¡ìõ@œœñ¨Á@>´«°–@àËe¸k%@‚ãÀ@5@$ûÙÇE@Æ”ÏêT@h*N×¿d@
+Bß”t@¬YÂæi„@Nq|î>”@ğˆ6ö¤@’ ğıè³@4¸ª¾Ã@ÖÏd“Ó@xçhã@ÿØ=ó@¼“$@^.M,ç@ F4¼"@¢]Á;‘2@Du{CfB@æŒ5K;R@ˆ¤ïRb@*¼©Zåq@ÌÓcbº@nëj‘@Øqd¡@²’y9±@T2LÁ@öI‰ãĞ@˜aÀ¸à@:yz˜ğ@Ü4 b @~¨î§7@ À¨¯ @Â×b·á/@dï¿¶?@×Æ‹O@¨‘Î`_@J6KÖ5o@ìMŞ
+@e¿åß@0}yí´@Ò”3õ‰®@t¬íü^¾@Ä§4Î@¸Ûa	Ş@ZóŞí@ü
+Ö³ı@"#ˆ@@:J+]@âQ32-@„i¾:=@&xBÜL@È˜2J±\@j°ìQ†l@È¦Y[|@®ß`a0Œ@P÷iœ@òÕpÚ«@”&x¯»@6>I€„Ë@ØUˆYÛ@zm½.ë@…w—û@¾œ1ŸØ
+@`´ë¦­@Ì¥®‚*@¤ã_¶W:@Fû¾,J@èÔÅZ@Š*ÍÖi@,BHÕ«y@ÎYİ€‰@pq¼äU™@‰vì*©@´ 0ôÿ¸@V¸êûÔÈ@øÏ¤ªØ@šç^è@<ÿTø@ŞÓ)@€."ş@"FG*Ó'@Ä]2¨7@fu»9}G@uARW@ª¤/I'g@L¼éPüv@îÓ£XÑ†@ë]`¦–@2h{¦@ÔÒoP¶@v2Œw%Æ@JFúÕ@ºa ‡Ïå@\yº¤õ@şt–y@ ¨.N@BÀè¥#%@ä×¢­ø4@†ï\µÍD@(½¢T@ÊÑÄwd@l6‹ÌLt@NEÔ!„@°eÿÛö“@R}¹ãË£@ô”së ³@–¬-óuÃ@8ÄçúJÓ@ÚÛ¡ ã@|ó[
+õò@Ê@À"ĞŸ@b:Š!t"@RD)I2@¦iş0B@H¸8óQ@ê˜r@Èa@Œ°,Hq@.ÈæOr@Ğß WG‘@r÷Z_¡@gñ°@¶&ÏnÆÀ@X>‰v›Ğ@úUC~pà@œmı…Eğ@>…· @àœq•ï@‚´+Ä@$Ìå¤™/@ÆãŸ¬n?@hûY´CO@
+¼_@¬*ÎÃín@NBˆËÂ~@ğYBÓ—@’qüÚl@4‰¶âA®@Ö pê¾@x¸*òëÍ@ĞäùÀİ@¼ç–í@^ÿX	kı@ @@¢.Í@DF‡ ê,@æ]A(¿<@ˆuû/”L@*µ7i\@Ì¤o?>l@n¼)G|@ÔãNè‹@²ëV½›@TX^’«@öfg»@˜2Ìm<Ë@:J†uÛ@Üa@}æê@~yú„»ú@ ‘´Œ
+@Â¨n”e@dÀ(œ:*@Øâ£:@¨ïœ«äI@JW³¹Y@ì»i@6ËÂcy@0N…Ê8‰@Òe?Ò™@t}ùÙâ¨@•³á·¸@¸¬méŒÈ@ZÄ'ñaØ@üÛáø6è@ó› ø@@Vá@â"¶@„:Ê‹'@&R„`7@Èi>'5G@jø.
+W@™²6ßf@®°l>´v@PÈ&F‰†@òßàM^–@”÷šU3¦@6U]¶@Ø&eİÅ@z>Él²Õ@Vƒt‡å@¾m=|\õ@`…÷ƒ1@±‹@¤´k“Û$@FÌ%›°4@èãß¢…D@Šû™ªZT@,T²/d@Î*ºt@pBÈÁÙƒ@Z‚É®“@´q<Ñƒ£@V‰öØX³@ø °à-Ã@š¸jèÓ@<Ğ$ğ×â@ŞçŞ÷¬ò@ÀÌÿ@ @‘‹©ƒ+	 @b—† @3£c‹  @¯@ë  @Õº“Õ( @¦ÆúÀ0 @wÒ×šª8 @HŞ´•@ @ê‘¢H @êõn&jP @»LªTX @Œ).?` @]²)h @.%ã5p @ÿ0À¹şw @Ğ<=é @¡HzÁÓ‡ @rTWE¾ @C`4É¨— @lM“Ÿ @åwîĞ}§ @¶ƒËTh¯ @‡¨ØR· @X›…\=¿ @)§bà'Ç @ú²?dÏ @Ë¾èüÖ @œÊùkçŞ @mÖÖïÑæ @>â³s¼î @î÷¦ö @àùm{‘ş @±Kÿ{!@‚(ƒf!@SQ!@$)âŠ;!@õ4¿&&!@Æ@œ’.!@—Lyû5!@hXVšå=!@9d3ĞE!@
+p¢ºM!@Û{í%¥U!@¬‡Ê©]!@}“§-ze!@NŸ„±dm!@«a5Ou!@ğ¶>¹9}!@ÁÂ=$…!@’ÎøÀ!@cÚÕDù”!@4æ²Èãœ!@òLÎ¤!@ÖılĞ¸¬!@§	JT£´!@x'Ø¼!@I!\xÄ!@-áßbÌ!@ë8¾cMÔ!@¼D›ç7Ü!@Pxk"ä!@^\Uïì!@/h2s÷ó!@ t÷áû!@ÑìzÌ"@¢‹Éş¶"@s—¦‚¡"@D£ƒŒ"@¯`Šv#"@æº=a+"@·Æ’K3"@ˆÒ÷6;"@YŞÔ™ C"@*ê±K"@ûõ¡õR"@Ìl%àZ"@I©Êb"@n&-µj"@?%±Ÿr"@1à4Šz"@á<½¸t‚"@²Hš<_Š"@ƒTwÀI’"@T`TD4š"@%l1È¢"@öwL	ª"@ÇƒëÏó±"@˜ÈSŞ¹"@i›¥×ÈÁ"@:§‚[³É"@³_ßÑ"@Ü¾<cˆÙ"@­Êçrá"@~Ööj]é"@OâÓîGñ"@ î°r2ù"@ñùö#@Âkz	#@“Hşñ#@d%‚Ü#@5)Ç #@5ß‰±(#@×@¼œ0#@¨L™‘†8#@yXvq@#@JdS™[H#@p0FP#@ì{¡0X#@½‡ê$`#@“Ç¨h#@_Ÿ¤,ğo#@0«°Úw#@·^4Å#@ÒÂ;¸¯‡#@£Î<š#@tÚõ¿„—#@EæÒCoŸ#@ò¯ÇY§#@çıŒKD¯#@¸	jÏ.·#@‰GS¿#@Z!$×Ç#@+-[îÎ#@ü8ŞŞØÖ#@ÍD»bÃŞ#@P˜æ­æ#@o\uj˜î#@@hRî‚ö#@t/rmş#@âöW$@³‹éyB$@„—Æı,$@U££$@&¯€&$@÷º]‰ì-$@ÈÆ:×5$@™Ò‘Á=$@jŞô¬E$@;êÑ˜–M$@ö®U$@İŒ k]$@®i$Ve$@F¨@m$@P%#,+u$@!1 °}$@ò<İ3 …$@ÃHº·êŒ$@”T—;Õ”$@e`t¿¿œ$@6lQCª¤$@x.Ç”¬$@ØƒK´$@©èÎi¼$@z›ÅRTÄ$@K§¢Ö>Ì$@³Z)Ô$@í¾\ŞÜ$@¾Ê9bşã$@Öæèë$@`âóiÓó$@1îĞí½û$@ú­q¨%@Ó‹õ’%@¤hy}%@uEıg%@F)"R#%@5ÿ=+%@è@Üˆ'3%@¹L¹;%@ŠX–üB%@[dsçJ%@,pP˜ÑR%@ı{-¼Z%@Î‡
+ ¦b%@Ÿ“ç#‘j%@pŸÄ§{r%@A«¡+fz%@·~¯P‚%@ãÂ[3;Š%@´Î8·%’%@…Ú;š%@Væò¾ú¡%@'òÏBå©%@øı¬ÆÏ±%@É	ŠJº¹%@šgÎ¤Á%@k!DRÉ%@<-!ÖyÑ%@9şYdÙ%@ŞDÛİNá%@¯P¸a9é%@€\•å#ñ%@Qhriù%@"tOíø &@ó,qã&@Ä‹	õÍ&@•—æx¸&@f£Ãü¢ &@7¯ €(&@»}x0&@ÙÆZˆb8&@ªÒ7M@&@{Ş7H&@Lêñ"P&@öÎ—X&@î¬÷_&@¿‰Ÿág&@f#Ìo&@a%C§¶w&@21 +¡&@=ı®‹‡&@ÔHÚ2v&@¥T·¶`—&@v`”:KŸ&@Glq¾5§&@xNB ¯&@éƒ+Æ
+·&@ºJõ¾&@‹›åÍßÆ&@\§ÂQÊÎ&@-³ŸÕ´Ö&@ş¾|YŸŞ&@ÏÊYİ‰æ&@ Ö6atî&@qâå^ö&@BîğhIş&@úÍì3'@ä«p'@µˆô'@†exó'@W)Büİ%'@(5€È-'@ù@ü³5'@ÊLÙ‡='@›X¶ˆE'@ld“rM'@=pp]U'@|M—G]'@ß‡*2e'@°“Ÿm'@Ÿä"u'@R«Á¦ñ|'@#·*Ü„'@ôÂ{®ÆŒ'@ÅÎX2±”'@–Ú5¶›œ'@gæ:†¤'@8òï½p¬'@	şÌA[´'@Ú	ªÅE¼'@«‡I0Ä'@|!dÍÌ'@M-AQÔ'@9ÕïÛ'@ïDûXÚã'@ÀPØÜÄë'@‘\µ`¯ó'@bh’ä™û'@3toh„(@€Lìn(@Õ‹)pY(@¦—ôC(@w£ãw.#(@H¯Àû+(@»3(@êÆzî:(@»ÒW‡ØB(@ŒŞ4ÃJ(@]ê­R(@.öî˜Z(@ÿÌ–‚b(@Ğ©mj(@¡†Wr(@r%c"Bz(@C1@¦,‚(@=*Š(@åHú­’(@¶T×1ì™(@‡`´µÖ¡(@Xl‘9Á©(@)xn½«±(@úƒKA–¹(@Ë(Å€Á(@œ›IkÉ(@m§âÌUÑ(@>³¿P@Ù(@¿œÔ*á(@àÊyXé(@±ÖVÜÿğ(@‚â3`êø(@SîäÔ )@$úíg¿)@õËë©)@Æ¨o”)@—…ó~ )@h)bwi()@95?ûS0)@
+A>8)@ÛLù)@)@¬XÖ†H)@}d³
+şO)@NpèW)@|mÓ_)@ğ‡J–½g)@Á“'¨o)@’Ÿ’w)@c«á!})@4·¾¥g‡)@Ã›)R)@ÖÎx­<—)@§ÚU1'Ÿ)@xæ2µ§)@Iò9ü®)@şì¼æ¶)@ë	Ê@Ñ¾)@¼§Ä»Æ)@!„H¦Î)@^-aÌÖ)@/9>P{Ş)@ EÔeæ)@ÑPøWPî)@¢\ÕÛ:ö)@sh²_%ş)@Dtã*@€lgú*@æ‹Iëä*@·—&oÏ*@ˆ£ó¹%*@Y¯àv¤-*@*»½ú5*@ûÆš~y=*@ÌÒwdE*@ŞT†NM*@nê1
+9U*@?ö#]*@ìe*@áÉ•øl*@²¦ãt*@ƒ%ƒÍ|*@T1`!¸„*@%==¥¢Œ*@öH)”*@ÇT÷¬wœ*@˜`Ô0b¤*@il±´L¬*@:x87´*@„k¼!¼*@ÜH@Ä*@­›%ÄöË*@~§HáÓ*@O³ßËËÛ*@ ¿¼O¶ã*@ñÊ™Ó ë*@ÂÖvW‹ó*@“âSÛuû*@dî0_`+@5úãJ+@ëf5+@×Èê+@¨¥n
+#+@y)‚òô*+@J5_vß2+@A<úÉ:+@ìL~´B+@½XöŸJ+@dÓ…‰R+@_p°	tZ+@0|^b+@ˆjIj+@Ò“G•3r+@£Ÿ$z+@t«‚+@E·Ş ó‰+@Ã»¤İ‘+@çÎ˜(È™+@¸Úu¬²¡+@‰æR0©+@Zò/´‡±+@+ş8r¹+@ü	ê»\Á+@ÍÇ?GÉ+@!¤Ã1Ñ+@o-GÙ+@@9^Ëá+@E;Oñè+@âPÓÛğ+@³\õVÆø+@„hÒÚ° ,@Ut¯^›,@&€Œâ…,@÷‹ifp,@È—FêZ ,@™£#nE(,@j¯ ò/0,@;»İu8,@Çºù@,@İÒ—}ïG,@®ŞtÚO,@êQ…ÄW,@Pö.	¯_,@!™g,@òé„o,@ÃÆ”nw,@”%£Y,@e1€œC‡,@6=] .,@I:¤—,@ØT(Ÿ,@©`ô«í¦,@zlÑ/Ø®,@Kx®³Â¶,@„‹7­¾,@íh»—Æ,@ÓBLK 0                                UÏœ4âq&+¨÷C¦§-›FŠy@eCnqèN´?h$ Ë.æï?        ÓBLK 0                                …M™Ëaxâd!ù&Şº]oß>/ì.yÀh$ Ë.æï¿cCnqèN´?        ÓBLK 0               È       È       È9öÛU‘HõwÑ’¯oƒ+uÛF¿_|0W4şÌ? WÊ½xÁ¾ Ğ½{€D¾ =_ş…=ãŸmR?w£8j{? ˆõh¾ü
+X,,R¾        ô[‡ŞŒª>ĞI»Ä°Øƒ>À¬‡ğ%–”½                 Mu,•i"¾qóF!¾                         ËZ9
+Ø=                                ÓBLK 0               È       È       È*WË²şVŠN¬ó“ŠèŸäå{”CÌ&I¿úiİu‰jB¿†CÆğ> @ Õˆ8¾x:?Z4Áş½~ù\òWÁÌ?rfåÅÆ¾ àd;âP’>€Å6—•X¦=        ì#î€—˜Ì> è ¹Òñ<¾ı?_Y*¾                 mN$a¡>`µhg³´=                        óeL“D-¾                                ÓBLK 0                             E‹Õ¿5“N—âßh…{     ø@      D@ÓBLK 0                             E‹Õ¿5“N—âßh…{     ø@      D@ÓBLK 0              Ø      Ø      Ø„tbcöí›\® &ÓÏãj(ìW@—´şeÎçW@†ŒÄdãW@œÆ¾æêŞW@ÖïÉ,`ÚW@1àöÃÕW@¤x5¥ÑW@3Ôû—TÌW@Ó‘f/€ÇW@†¯¨Ë—ÂW@B+õÌš½W@“ˆ¸W@Ñ4y`³W@œ¾ñ!®W@eŠHÌ¨W@$Òæ^£W@ÙWÁ)ÙW@€-ês:˜W@Qµ$‚’W@ÀUœ¯ŒW@ñyş:Â†W@5{â`¹€W@VÂ4n”zW@QM(ÃRtW@ ğ¿ómW@Â&¿ÄvgW@6qÈ1Û`W@p÷>g ZW@q·UÅESW@6¯?¬JLW@¹Ü/|.EW@ö=Y•ğ=W@ëĞîW6W@’“#$/W@çƒ*Zf'W@éŸ6Z›W@’åz„«W@ŞR*9–W@ËåwØZW@Tœ–ÂøşV@st¹WoöV@&lø½íV@‹ï¬ääV@ê™tÓáÛV@v}S«·ÒV@Ë¯fÉV@{F£í¿V@Wˆ¿N¶V@F÷Ğí‰¬V@<7¬Ÿ¢V@‹<‰x˜V@Ó•Ğ\V@úÂ(2„V@–tŠyV@@7 	ìnV@  z+dV@FàëHYV@i½.ÜDNV@$œÙÈCV@Ù÷®/Ú7V@²â|t,V@0Yï V@â‡<ŞJV@±/4c‡	V@3©-¥ıU@–a-ƒ¤ñU@S©…åU@§¬åHÙU@®‰Ê}îÌU@C‡@·vÀU@“ ×á³U@È-{$0§U@ícãašU@”XìYwU@‚{¦Íp€U@a$„NsU@HøÂfU@w ³Ï·XU@¿éïCKU@Ip*iµ=U@EÊ	0U@Ú)}I"U@6šê¢lU@…&8vU@ôÙ‚føT@¬¿ŸÆ=êT@Úâ-KüÛT@ªNXU¢ÍT@G±*0¿T@İ,Ê¦°T@É\ğI¢T@TD÷÷J“T@ò*z„T@æÒgï‘uT@x¸İV’fT@ôÛ„o{WT@Ÿ\cHMHT@ÁYğ9T@òŞv«)T@ƒFˆê7T@¸tZ­
+T@œĞÕûS@'İ{kSëS@óU‰*„ÛS@,&ÿ!ËS@mã`¡»S@J<ö«S@0Üñc›S@éBd`#‹S@v?SÌzS@¨Ø^jS@(«£ÿÚYS@Üœ8×@IS@„ÿln8S@fòFÔÉ'S@É”ÌíS@÷HúS@5eósñôR@ÌÑ ªÒãR@kûÒR@&PNtSÁR@u Z%ó¯R@>{=}R@ÆÿüjñŒR@UMŸP{R@5ƒ*D™iR@©À¤íÌWR@ı$)ëER@yÏ~ô3R@`ßê‘ç!R@şs^İÅR@˜¬ßöıQ@z¨tíBëQ@æ†#ĞáØQ@)gò­kÆQ@‡hç•à³Q@/V–@¡Q@çD±‹Q@é‡-ŞÁ{Q@÷[8ãhQ@ŠJïUQ@ùYHxæBQ@Ê¹˜”È/Q@hÓ –•Q@ÀA†uM	Q@ÁŸn(ğõP@[ˆ¦}âP@–ŞæõÎP@e±àX»P@‹¦§P@t¯HİŞ“P@aXÎ€P@ê>rUlP@ãã»iXP@ñêZêCP@ït·/P@‹/nP@ôY°P@`í9¾9åO@Zø5'¼O@¸
+ é’O@WZÃ€iO@ëyê?O@ÔˆbÜ)O@pÓt–=ìN@É2m–%ÂN@½Ü–Êá—N@.=!rmN@øçªˆÖBN@÷´+ïN@¤
+CíM@ ë’rûÁM@Àl¯–M@™XÌ7kM@mŸ´w’?M@µÁM@ü|œÄçL@r3PÜ›»L@³rr‰GL@{'ßÇbL@ö³6L@“ìXqG	L@@Ø\$GÜK@K’m¯K@Ü†ÇK@µvB¬HTK@·#d &K@M¤6	ÎøJ@Î¹ı¶ÒÊJ@‚%ı]®œJ@¼¨x9anJ@Ë´„ë?J@ùúòzMJ@›LyW‡âI@úºŠU™³I@fk°ƒ„I@0ó]£FUI@¥?§iâ%I@®Š>WöH@ÈÿK]¥ÆH@ö.Í–H@GRweÎfH@¬ÕhÅ©6H@”AG\_H@NWVeïÕG@'ØÙZ¥G@m…»ŸtG@—|¸}ÀCG@‘’}¼G@l–¢“áF@ã½ĞE°F@¬,FëÒ~F@~ˆ†Ö:MF@øv}F@"¢Ê­šéE@c­ba’·E@‘@¬td…E@_‚qËSE@Š™|I— E@Ç¬—Ò÷íD@ÏâŒJ2»D@[b&•FˆD@!R.–4UD@ÚØn1ü!D@>²JîC@FÂÅ»C@êyi†k‡C@¡ßqp˜SC@å¥gC@lÛÎO}ëB@í¾·5·B@$o*‚Å‚B@Æñ“.NB@ĞÕ%pB@0Ï¢ŠäA@f5"Y|¯A@ë)ÂFzA@rÓ`:éDA@µX´¥cA@oàâçµÙ@@S‘¶äß£@@ ’ùám@@…	vº7@@Bö k@@î‡Üå•?@5uSÒ£(?@Iãê»>@Ì9Ëí)M>@) ¢ñŞ=@ÏõõĞfp=@32a@‰=@¿v¸X’<@ëêÈ Õ"<@îàı²;@Ğ§y ÓB;@l) ‡TÒ:@dÔÜa:@+öNçZğ9@,Ü?pß~9@ÙÓ|>9@¦*šêš8@ü-,Éo(8@T+Ç µ7@pÿÃzB7@¸IiÿÎ6@ÄEq.[6@b•×Pç5@ıòA…Šr5@%áV¸ı4@brF‘ˆ4@<áô4@=øªPD3@ñ]Íl'3@à¸ü¦°2@“¯ÊÚ92@—èÈºÂ1@r
+‰GK1@²»œÓ0@Ü¢•ªh[0@ûÌ
+æûÅ/@>Zû~‚Ô.@”: ±eâ-@»œ¦ï,@Ê(”%Dü+@ÎĞ)Š@+@6 Ì›*@½}V)@z)/q((@~½pqì1'@2/ÖÈ:&@ªe_îC%@ö%K§J$@1e£}ªQ#@j¦ıX"@¶$W¨Û]!@'-ÓÂ
+c @ *ï=Ï@!€¯1×@=ïèñİ@Ôs½½ã@|ò1PÜç@V"“Âë@'7í@Nş5ĞÕí@w½	`ñÚ@÷±µñß×	@gı™yÒ@%mÀÊ@Ê %nû?=÷¿hó?—Òàñ–æ? «±\ùLÉ?puÕ$óÓ¿ì‡ëRwOê¿ÄÕy§3Wõ¿~íĞš-‹ı¿AiÕáÀˆ/ŒW Àúi¥D!À+pèb)DÀêuXp¾´À[C­–ŒÈÀFu ÜİÀà_ø˜óÀZ£Ø
+À¹¶ú“?#À[Ë±‚Î<Àj6vÃ+ À8,œ³9!ÀñÔQ79H"Àš÷½@TW#ÀpŠGg$ÀäwÅLw%Àiª‰)ˆ&Àiúá™'ÀZˆ^t©«(À¦œL¾)ÀÂwî´‡Ñ*ÀÀÇ[å+À&Ìu)Çù,ÀM†Ï<Ì.À Ù«°j$/À[×ppQ0Àëø£”º¨0ÀjÆÚòp41Àµ ¹tÀ1À:ÆL2À´ÊÇ4eÙ2ÀÜ?FRf3À”ãTwó3ÀEVòõ4Ào©ğî5ÀFRt“5ÀÆ/‹+6Àäy!Oº6Àã4AcI7ÀŞvUUÆØ7Àjªnøxh8ÀõòkX{ø8À¶Å8£Íˆ9Àç—Àp:ÀÀŞî°bª:Àv¯Ï¥;;ÀCŸì9Í;À`“"_<À±²Sñ<ÀiÈnÚƒ=ÀÂ½-…²>ÀLª#Ü©>À=o(xW=?ÀÍj”°$Ñ?À™·lı¡2@ÀÔxqÂÚ|@À³3N¾<Ç@ÀĞ¢øÈAÀÊ€f¶|\AÀ;ˆàZ§AÀ¿scbòAÀòıİ”=BÀráò*ïˆBÀÙØ—)tÔBÀÄÂ# CÀÍíh	ükCÀ“€€ÿ·CÀ°ÿZ,DÀÁ[ÚçƒPDÀ`ÖDÀ,~<²éDÀ¿Ù12‰6EÀ¶QÎŠƒEÀ¬'*'·ĞEÀ>ZTFÀØlkFÀ¤'î†=¹FÀ°¿=ºGÀÇZƒUGÀ†³´ÇG£GÀˆ„ÇÏ¡ñGÀjˆ±L'@HÀÉyhUØHÀ>â µİHÀhf½,IÀKİë˜ñ{IÀ"…§œQËIÀ>ÃÏnİJÀ¿ì•jJÀÂÖƒtxºJÀe–£‡
+KÀÃÀC–ÂZKÀÿÊzK)«KÀ2*KÀ»ûKÀ~S<òyLLÀı»ÕŞcLÀĞØƒyîLÀŞº?MÀæŞë'‘MÀiübªÀâMÀ´}5…4NÀéüÜ/u†NÀ&ïàñØNÀ‡ÉÈZØ*OÀ)hK}OÀ-bêÏOÀY.3ZPÀi5ò(Õ:PÀVÕìedPÀ°ÈE{PÀÊ?ÕÈ·PÀæ“ÉøšáPÀŞà¦ä‚QÀ~k›—€5QÀWîj”_QÀ÷#ÙM½‰QÀêÆ©Nü³QÀÁ‘ QŞQÀ?•»RÀZ‰Ù;3RÀ8+ÛÑ]RÀ9ßCš}ˆRÀ6vı?³RÀv-AŞRÀ!×d	SÀ+†ög4SÀÍ3?_SÀB`nJŠSÀ8ñ÷µSÀk3" åàSÀÏÙ>RTÀ[—ŸVÔ7TÀ–¦kcTÀÇ#t÷TÀ“X‹7ÙºTÀ`p-U¯æTÀ$¬>šUÀÛYâ™>UÀu†.®jUÀì¨„×–UÀ5¬¦yÃUÀGÄ=UfïUÀ¤›’ÌVÀŸş GHVÀÒ†òëÕtVÀ¨ïäx¡VÀì8ø/ÎVÀ/BûúVÀškü)Ú'WÀT¹$ÍTWÀÊóÓWÀì÷…î®WÀ(1ÈÜWÀ½°)ª^	XÀœt½´6XÀÀ>dXÀJıZ™‘XÀ¡=K)¿XÀæ&ÍÌìXÀ\A‹‚YÀñ¼oLHYÀ‹nĞ)vYÀßÈ·¤YÀmån0ÒYÀ„0E7 ZÀBÄ$ c.ZÀ¤xl¢\ZÀOÕŸ”õŠZÀpZ<ƒ\¹ZÀÚ7ğB×çZÀqq]Şe[À&`E[ÀÎìÒ¾s[ÀenQA‰¢[ÀÌ?øµgÑ[Àé€‚;Z \À«5’Ü`/\ÀõaÉ£{^\À±	Ê›ª\ÀÆ06Ïí¼\ÀÛ¯HEì\ÀŸÙ±]À6ÉS81K]ÀÅÂÃÅz]À8óÅ¿nª]Àwh7,Ú]Àhx4ş	^Àø&§Áä9^ÀxUêßi^ÀŒoÃ¸ï™^Àb“7Ê^ÀrafqMú^À­cßp›*_Àó @şZ_À0Jëu‹_ÀK¾€{¼_À-°äû£ì_Àß3Œ;­`ÀsôŞû'`ÀÈ›;Dƒ?`ÀĞ+óşW`À¦V‚ƒp`ÀÍ·‚‰`Àªce ®¡`Àª²`Sº`ÀçâïHÓ`À.nŞ½ë`À×3~&ƒaÀÖOq&SaÀf˜ã-6aÀ¡xDcOaÀX‰ÆªhaÀ3šo¿ş€aÀ)­¦šaÀ.Äze³aÀ3á~1ÌaÀ/îWåaÀ5æˆşaÀİoQ9ÅbÀu¸ç~1bÀÖ-¼^JbÀğzrö»cbÀIG÷2$}bÀK/–u—–bÀW?ßÀ°bÀVŸÉbÀ~{3ãbÀ
+ÙÚïÒübÀ“ğv}cÀĞA30cÀåQÇóIcÀñ¥•¿ccÀ¿€–}cÀ€+#‹x—cÀDçT·e±cÀ‡Ğ×^ËcÀqs/aåcÀ\ßpÿcÀµkì‰dÀU/Vç®3dÀ!2$ßMdÀ8«XrhdÀÃ&wa‚dÀŞ0Õ²œdÀ®U€İ·dÀT!r#xÑdÀñ\©ëëdÀªİÁqjeÀ æ&ô eÀöÆÔ‰;eÀÉ
+ır*VeÀB>u^ÖpeÀíú˜‹eÀ¤¤%P¦eÀÒï<ÁeÀ+[ <÷ÛeÀÑrßËÛöeÀèÂ]·ËfÀ×ş Ç,fÀì<F«ÍGfÀ·¸ßbfÀF*Ö+ı}fÀŠÊ%&™fÀ	ì)MZ´fÀêf šÏfÀIã]#åêfÀIÑ”¸;gÀqÂ!gÀ»NÎC=gÀrö×>„XgÀRô.¶tgÀ€ÔV¬˜gÀ#Ó#4«gÀJl'ÛÆgÀ-<× âgÀåf«KşgÀ• WAhÀ\M/eê5hÀa±pËQhÀÂXŸ`·mhÀzàp<¯‰hÀˆ­ª²¥hÀ+Œ%¥ÁÁhÀRÜ=)ÜİhÀûı÷1úhÀQîº3iÀ¡5»¿p2iÀù;¹NiÀÖ2B+kiÀp1‰l‡iÀSõ_Q×£iÀuPiMÀiÀÍ|çÏÜiÀRÚtû[ùiÀıÈ«@ôjÀÂ¨&Ú—2jÀ›ÙÃFOjÀz»Qø ljÀ[®6tÆˆjÀ5É2—¥jÀúF£/sÂjÀ¥¬_fZßjÀ,£˜ÒLüjÀ…ŠèoJkÀ«Âé9S6kÀ«6,gSkÀ*¥iB†pkÀux°kÀgJëÈåªkÀóµn0&ÈkÀ²AªqåkÀÁş1ÈlÀìÛ?Ã) lÀÉŸY–=lÀ¦Ç¸ğ[lÀ"6%„xlÀût–lÀ&äa¶³lÀ ãfüYÑlÀXÓ(UïlÀJB”ÁmÀnMµ…*mÀ¸ä³THmÀ t¡‹.fmÀŸ´8„mÀ&%ù´¢mÀ³%Èıü¿mÀ6'ŞmÀ®V°áümÀGşs,nÀHG«ÀQ8nÀY·QÃVnÀp¯‹w¼tnÀ€/èÖ“nÀNÜ­ÔQ±nÀ?ïb¬ÏnÀûâ¾sînÀ:P/ù€oÀSåú*oÀ"¯<*IoÀ-´ş¹hoÀâ©«†¦†oÀóV‚I¥oÀŸöÃoÀ	íÎ­âoÀ¹Ôÿ· pÀ²,pÀÀ¤£‡pÀÉñ–÷.pÀöİæzk>pÀ#®ÿ¹äMpÀ*§êÑb]pÀä±»ålpÀ*'\pm|pÀÙ7õèù‹pÀÉ„…‹›pÀÔR
+!«pÀÖæ°¤»ºpÀ¦…^çZÊpÀ t(ËşÙpÀ÷I§épÀxS6ZTùpÀÎŒ÷	qÀ°«$¼qÀ>1»v(qÀ”£=Ó58qÀˆGÑ[ùGqÀõaËMÁWqÀ·75¢gqÀ¨R^wqÀ(}V3‡qÀuÍm¨—qÀ
+Aó@ê¦qÀ3ÈÌ¶qÀÍ§á)²ÆqÀ°$]lœÖqÀ¶ƒ’ÙŠæqÀ»	‹j}öqÀ–ûOtrÀ$êÛnrÀ<6d®m&rÀ»Æˆp6rÀÓBLK 0              Ø      Ø      ØjÇ:ş)ÖOíÖ=!ˆş.ÌK`ÙÊ°Ä@MÚZä@Ó¾Áé@î5ù®#@[ªYC@ŸLc@ã{’'­‚@'«7W¢@kÚzFÂ@¯	ïU«á@ó8ceU@7h×tÿ @{—K„©@@¿Æ¿“S`@ö3£ı@G%¨²§Ÿ@‹TÂQ¿@ÏƒÑûŞ@³á¥ş@WâxğO@›íÿù=@ß@a¤]@#pÕN}@gŸI.øœ@«Î½=¢¼@ïı1MLÜ@3-¦\öû@<.6Ğ@ŞEÇ=¥@€]Ez-@"u;MO=@ÄŒõT$M@f¤¯\ù\@¼idÎl@ªÓ#l£|@LëİsxŒ@î˜{Mœ@Rƒ"¬@22‹÷»@ÔIÆ’ÌË@va€š¡Û@y:¢vë@ºô©Kû@\¨®± @ş¿h¹õ@ ×"ÁÊ*@BïÜÈŸ:@ä—ĞtJ@†QØIZ@(6àj@ÊMÅçóy@leïÈ‰@}9÷™@°”óşr©@R¬­H¹@ôÃgÉ@–Û!òØ@8óÛÇè@Ú
+–%œø@|"P-q@:
+5F@ÀQÄ<(@bi~Dğ7@8LÅG@¦˜òSšW@H°¬[og@êÇfcDw@Œß k‡@.÷Úrî–@Ğ•zÃ¦@r&O‚˜¶@>	ŠmÆ@¶UÃ‘BÖ@Xm}™æ@ú„7¡ìõ@œœñ¨Á@>´«°–@àËe¸k%@‚ãÀ@5@$ûÙÇE@Æ”ÏêT@h*N×¿d@
+Bß”t@¬YÂæi„@Nq|î>”@ğˆ6ö¤@’ ğıè³@4¸ª¾Ã@ÖÏd“Ó@xçhã@ÿØ=ó@¼“$@^.M,ç@ F4¼"@¢]Á;‘2@Du{CfB@æŒ5K;R@ˆ¤ïRb@*¼©Zåq@ÌÓcbº@nëj‘@Øqd¡@²’y9±@T2LÁ@öI‰ãĞ@˜aÀ¸à@:yz˜ğ@Ü4 b @~¨î§7@ À¨¯ @Â×b·á/@dï¿¶?@×Æ‹O@¨‘Î`_@J6KÖ5o@ìMŞ
+@e¿åß@0}yí´@Ò”3õ‰®@t¬íü^¾@Ä§4Î@¸Ûa	Ş@ZóŞí@ü
+Ö³ı@"#ˆ@@:J+]@âQ32-@„i¾:=@&xBÜL@È˜2J±\@j°ìQ†l@È¦Y[|@®ß`a0Œ@P÷iœ@òÕpÚ«@”&x¯»@6>I€„Ë@ØUˆYÛ@zm½.ë@…w—û@¾œ1ŸØ
+@`´ë¦­@Ì¥®‚*@¤ã_¶W:@Fû¾,J@èÔÅZ@Š*ÍÖi@,BHÕ«y@ÎYİ€‰@pq¼äU™@‰vì*©@´ 0ôÿ¸@V¸êûÔÈ@øÏ¤ªØ@šç^è@<ÿTø@ŞÓ)@€."ş@"FG*Ó'@Ä]2¨7@fu»9}G@uARW@ª¤/I'g@L¼éPüv@îÓ£XÑ†@ë]`¦–@2h{¦@ÔÒoP¶@v2Œw%Æ@JFúÕ@ºa ‡Ïå@\yº¤õ@şt–y@ ¨.N@BÀè¥#%@ä×¢­ø4@†ï\µÍD@(½¢T@ÊÑÄwd@l6‹ÌLt@NEÔ!„@°eÿÛö“@R}¹ãË£@ô”së ³@–¬-óuÃ@8ÄçúJÓ@ÚÛ¡ ã@|ó[
+õò@Ê@À"ĞŸ@b:Š!t"@RD)I2@¦iş0B@H¸8óQ@ê˜r@Èa@Œ°,Hq@.ÈæOr@Ğß WG‘@r÷Z_¡@gñ°@¶&ÏnÆÀ@X>‰v›Ğ@úUC~pà@œmı…Eğ@>…· @àœq•ï@‚´+Ä@$Ìå¤™/@ÆãŸ¬n?@hûY´CO@
+¼_@¬*ÎÃín@NBˆËÂ~@ğYBÓ—@’qüÚl@4‰¶âA®@Ö pê¾@x¸*òëÍ@ĞäùÀİ@¼ç–í@^ÿX	kı@ @@¢.Í@DF‡ ê,@æ]A(¿<@ˆuû/”L@*µ7i\@Ì¤o?>l@n¼)G|@ÔãNè‹@²ëV½›@TX^’«@öfg»@˜2Ìm<Ë@:J†uÛ@Üa@}æê@~yú„»ú@ ‘´Œ
+@Â¨n”e@dÀ(œ:*@Øâ£:@¨ïœ«äI@JW³¹Y@ì»i@6ËÂcy@0N…Ê8‰@Òe?Ò™@t}ùÙâ¨@•³á·¸@¸¬méŒÈ@ZÄ'ñaØ@üÛáø6è@ó› ø@@Vá@â"¶@„:Ê‹'@&R„`7@Èi>'5G@jø.
+W@™²6ßf@®°l>´v@PÈ&F‰†@òßàM^–@”÷šU3¦@6U]¶@Ø&eİÅ@z>Él²Õ@Vƒt‡å@¾m=|\õ@`…÷ƒ1@±‹@¤´k“Û$@FÌ%›°4@èãß¢…D@Šû™ªZT@,T²/d@Î*ºt@pBÈÁÙƒ@Z‚É®“@´q<Ñƒ£@V‰öØX³@ø °à-Ã@š¸jèÓ@<Ğ$ğ×â@ŞçŞ÷¬ò@ÀÌÿ@ @‘‹©ƒ+	 @b—† @3£c‹  @¯@ë  @Õº“Õ( @¦ÆúÀ0 @wÒ×šª8 @HŞ´•@ @ê‘¢H @êõn&jP @»LªTX @Œ).?` @]²)h @.%ã5p @ÿ0À¹şw @Ğ<=é @¡HzÁÓ‡ @rTWE¾ @C`4É¨— @lM“Ÿ @åwîĞ}§ @¶ƒËTh¯ @‡¨ØR· @X›…\=¿ @)§bà'Ç @ú²?dÏ @Ë¾èüÖ @œÊùkçŞ @mÖÖïÑæ @>â³s¼î @î÷¦ö @àùm{‘ş @±Kÿ{!@‚(ƒf!@SQ!@$)âŠ;!@õ4¿&&!@Æ@œ’.!@—Lyû5!@hXVšå=!@9d3ĞE!@
+p¢ºM!@Û{í%¥U!@¬‡Ê©]!@}“§-ze!@NŸ„±dm!@«a5Ou!@ğ¶>¹9}!@ÁÂ=$…!@’ÎøÀ!@cÚÕDù”!@4æ²Èãœ!@òLÎ¤!@ÖılĞ¸¬!@§	JT£´!@x'Ø¼!@I!\xÄ!@-áßbÌ!@ë8¾cMÔ!@¼D›ç7Ü!@Pxk"ä!@^\Uïì!@/h2s÷ó!@ t÷áû!@ÑìzÌ"@¢‹Éş¶"@s—¦‚¡"@D£ƒŒ"@¯`Šv#"@æº=a+"@·Æ’K3"@ˆÒ÷6;"@YŞÔ™ C"@*ê±K"@ûõ¡õR"@Ìl%àZ"@I©Êb"@n&-µj"@?%±Ÿr"@1à4Šz"@á<½¸t‚"@²Hš<_Š"@ƒTwÀI’"@T`TD4š"@%l1È¢"@öwL	ª"@ÇƒëÏó±"@˜ÈSŞ¹"@i›¥×ÈÁ"@:§‚[³É"@³_ßÑ"@Ü¾<cˆÙ"@­Êçrá"@~Ööj]é"@OâÓîGñ"@ î°r2ù"@ñùö#@Âkz	#@“Hşñ#@d%‚Ü#@5)Ç #@5ß‰±(#@×@¼œ0#@¨L™‘†8#@yXvq@#@JdS™[H#@p0FP#@ì{¡0X#@½‡ê$`#@“Ç¨h#@_Ÿ¤,ğo#@0«°Úw#@·^4Å#@ÒÂ;¸¯‡#@£Î<š#@tÚõ¿„—#@EæÒCoŸ#@ò¯ÇY§#@çıŒKD¯#@¸	jÏ.·#@‰GS¿#@Z!$×Ç#@+-[îÎ#@ü8ŞŞØÖ#@ÍD»bÃŞ#@P˜æ­æ#@o\uj˜î#@@hRî‚ö#@t/rmş#@âöW$@³‹éyB$@„—Æı,$@U££$@&¯€&$@÷º]‰ì-$@ÈÆ:×5$@™Ò‘Á=$@jŞô¬E$@;êÑ˜–M$@ö®U$@İŒ k]$@®i$Ve$@F¨@m$@P%#,+u$@!1 °}$@ò<İ3 …$@ÃHº·êŒ$@”T—;Õ”$@e`t¿¿œ$@6lQCª¤$@x.Ç”¬$@ØƒK´$@©èÎi¼$@z›ÅRTÄ$@K§¢Ö>Ì$@³Z)Ô$@í¾\ŞÜ$@¾Ê9bşã$@Öæèë$@`âóiÓó$@1îĞí½û$@ú­q¨%@Ó‹õ’%@¤hy}%@uEıg%@F)"R#%@5ÿ=+%@è@Üˆ'3%@¹L¹;%@ŠX–üB%@[dsçJ%@,pP˜ÑR%@ı{-¼Z%@Î‡
+ ¦b%@Ÿ“ç#‘j%@pŸÄ§{r%@A«¡+fz%@·~¯P‚%@ãÂ[3;Š%@´Î8·%’%@…Ú;š%@Væò¾ú¡%@'òÏBå©%@øı¬ÆÏ±%@É	ŠJº¹%@šgÎ¤Á%@k!DRÉ%@<-!ÖyÑ%@9şYdÙ%@ŞDÛİNá%@¯P¸a9é%@€\•å#ñ%@Qhriù%@"tOíø &@ó,qã&@Ä‹	õÍ&@•—æx¸&@f£Ãü¢ &@7¯ €(&@»}x0&@ÙÆZˆb8&@ªÒ7M@&@{Ş7H&@Lêñ"P&@öÎ—X&@î¬÷_&@¿‰Ÿág&@f#Ìo&@a%C§¶w&@21 +¡&@=ı®‹‡&@ÔHÚ2v&@¥T·¶`—&@v`”:KŸ&@Glq¾5§&@xNB ¯&@éƒ+Æ
+·&@ºJõ¾&@‹›åÍßÆ&@\§ÂQÊÎ&@-³ŸÕ´Ö&@ş¾|YŸŞ&@ÏÊYİ‰æ&@ Ö6atî&@qâå^ö&@BîğhIş&@úÍì3'@ä«p'@µˆô'@†exó'@W)Büİ%'@(5€È-'@ù@ü³5'@ÊLÙ‡='@›X¶ˆE'@ld“rM'@=pp]U'@|M—G]'@ß‡*2e'@°“Ÿm'@Ÿä"u'@R«Á¦ñ|'@#·*Ü„'@ôÂ{®ÆŒ'@ÅÎX2±”'@–Ú5¶›œ'@gæ:†¤'@8òï½p¬'@	şÌA[´'@Ú	ªÅE¼'@«‡I0Ä'@|!dÍÌ'@M-AQÔ'@9ÕïÛ'@ïDûXÚã'@ÀPØÜÄë'@‘\µ`¯ó'@bh’ä™û'@3toh„(@€Lìn(@Õ‹)pY(@¦—ôC(@w£ãw.#(@H¯Àû+(@»3(@êÆzî:(@»ÒW‡ØB(@ŒŞ4ÃJ(@]ê­R(@.öî˜Z(@ÿÌ–‚b(@Ğ©mj(@¡†Wr(@r%c"Bz(@C1@¦,‚(@=*Š(@åHú­’(@¶T×1ì™(@‡`´µÖ¡(@Xl‘9Á©(@)xn½«±(@úƒKA–¹(@Ë(Å€Á(@œ›IkÉ(@m§âÌUÑ(@>³¿P@Ù(@¿œÔ*á(@àÊyXé(@±ÖVÜÿğ(@‚â3`êø(@SîäÔ )@$úíg¿)@õËë©)@Æ¨o”)@—…ó~ )@h)bwi()@95?ûS0)@
+A>8)@ÛLù)@)@¬XÖ†H)@}d³
+şO)@NpèW)@|mÓ_)@ğ‡J–½g)@Á“'¨o)@’Ÿ’w)@c«á!})@4·¾¥g‡)@Ã›)R)@ÖÎx­<—)@§ÚU1'Ÿ)@xæ2µ§)@Iò9ü®)@şì¼æ¶)@ë	Ê@Ñ¾)@¼§Ä»Æ)@!„H¦Î)@^-aÌÖ)@/9>P{Ş)@ EÔeæ)@ÑPøWPî)@¢\ÕÛ:ö)@sh²_%ş)@Dtã*@€lgú*@æ‹Iëä*@·—&oÏ*@ˆ£ó¹%*@Y¯àv¤-*@*»½ú5*@ûÆš~y=*@ÌÒwdE*@ŞT†NM*@nê1
+9U*@?ö#]*@ìe*@áÉ•øl*@²¦ãt*@ƒ%ƒÍ|*@T1`!¸„*@%==¥¢Œ*@öH)”*@ÇT÷¬wœ*@˜`Ô0b¤*@il±´L¬*@:x87´*@„k¼!¼*@ÜH@Ä*@­›%ÄöË*@~§HáÓ*@O³ßËËÛ*@ ¿¼O¶ã*@ñÊ™Ó ë*@ÂÖvW‹ó*@“âSÛuû*@dî0_`+@5úãJ+@ëf5+@×Èê+@¨¥n
+#+@y)‚òô*+@J5_vß2+@A<úÉ:+@ìL~´B+@½XöŸJ+@dÓ…‰R+@_p°	tZ+@0|^b+@ˆjIj+@Ò“G•3r+@£Ÿ$z+@t«‚+@E·Ş ó‰+@Ã»¤İ‘+@çÎ˜(È™+@¸Úu¬²¡+@‰æR0©+@Zò/´‡±+@+ş8r¹+@ü	ê»\Á+@ÍÇ?GÉ+@!¤Ã1Ñ+@o-GÙ+@@9^Ëá+@E;Oñè+@âPÓÛğ+@³\õVÆø+@„hÒÚ° ,@Ut¯^›,@&€Œâ…,@÷‹ifp,@È—FêZ ,@™£#nE(,@j¯ ò/0,@;»İu8,@Çºù@,@İÒ—}ïG,@®ŞtÚO,@êQ…ÄW,@Pö.	¯_,@!™g,@òé„o,@ÃÆ”nw,@”%£Y,@e1€œC‡,@6=] .,@I:¤—,@ØT(Ÿ,@©`ô«í¦,@zlÑ/Ø®,@Kx®³Â¶,@„‹7­¾,@íh»—Æ,@#ASDF BLOCK INDEX
+%YAML 1.1
+---
+- 35600
+- 35670
+- 35740
+- 35810
+- 35880
+- 36134
+- 36388
+- 36642
+- 36896
+- 36982
+- 37068
+- 40226
+- 43384
+- 49030
+- 54676
+- 54762
+- 54848
+- 55102
+- 55356
+- 55426
+- 55496
+- 61142
+...

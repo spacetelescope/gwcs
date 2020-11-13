@@ -270,7 +270,6 @@ class CoordinateFrame:
 
     def coordinates(self, *args):
         """ Create world coordinates object"""
-        args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
         return coo
 
@@ -279,6 +278,10 @@ class CoordinateFrame:
         Given a rich coordinate object return an astropy quantity object.
         """
         # NoOp leaves it to the model to handle
+        # If coords is a 1-tuple of quantity then return the element of the tuple
+        # This aligns the behavior with the other implementations
+        if not hasattr(coords, 'unit') and len(coords) == 1:
+            return coords[0]
         return coords
 
     @property
@@ -286,12 +289,15 @@ class CoordinateFrame:
         return self._axis_physical_types
 
     @property
-    def _world_axis_object_components(self):
-        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+    def _world_axis_object_classes(self):
+        return {self._axes_type[0]: (
+            u.Quantity,
+            (),
+            {'unit': self.unit[0]})}
 
     @property
-    def _world_axis_object_classes(self):
-        raise NotImplementedError(f"This method is not implemented for {type(self)}")
+    def _world_axis_object_components(self):
+        return [(self._axes_type[0], 0, 'value')]
 
 
 class CelestialFrame(CoordinateFrame):
@@ -501,7 +507,12 @@ class TemporalFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_components(self):
-        return [('temporal', 0, 'value')]
+        if isinstance(self.reference_frame.value, np.ndarray):
+            return [('temporal', 0, 'value')]
+
+        def offset_from_time_and_reference(time):
+            return (time - self.reference_frame).sec
+        return [('temporal', 0, offset_from_time_and_reference)]
 
     def coordinates(self, *args):
         if np.isscalar(args):
@@ -512,13 +523,15 @@ class TemporalFrame(CoordinateFrame):
         return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
-        if not isinstance(self.reference_frame.value, np.ndarray):
-            if not hasattr(dt, 'unit'):
-                dt = dt * unit
-            return self.reference_frame + dt
-
-        else:
+        if (not isinstance(dt, time.TimeDelta) and
+                isinstance(dt, time.Time) or
+                isinstance(self.reference_frame.value, np.ndarray)):
             return time.Time(dt, **kwargs)
+
+        if not hasattr(dt, 'unit'):
+            dt = dt * unit
+
+        return self.reference_frame + dt
 
     def coordinate_to_quantity(self, *coords):
         if isinstance(coords[0], time.Time):
@@ -532,6 +545,8 @@ class TemporalFrame(CoordinateFrame):
         # Is already a quantity
         elif hasattr(coords[0], 'unit'):
             return coords[0]
+        if isinstance(coords[0], np.ndarray):
+            return coords[0] * self.unit[0]
         else:
             raise ValueError("Can not convert {} to Quantity".format(coords[0]))
 
