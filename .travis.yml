@@ -41,7 +41,7 @@ jobs:
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: "3.8"
-          env: 
+          env:
             PIP_DEPENDENCIES=".[docs]"
             TEST_COMMAND="make --directory=docs html"
           addons:
