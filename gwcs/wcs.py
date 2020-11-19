@@ -313,11 +313,11 @@ class WCS(GWCSAPIMixin):
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the ounding_box to it
+            # bounding boxes. Get the forward transform and assign the bounding_box to it
             # before evaluating it. The order Model.bounding_box is reversed.
             axes_ind = self._get_axes_indices()
             if transform.n_inputs > 1:
-                transform.bounding_box = np.array(self.bounding_box)[axes_ind][::-1]
+                transform.bounding_box = [self.bounding_box[ind] for ind in axes_ind][::-1]
             else:
                 transform.bounding_box = self.bounding_box
         result = transform(*args, **kwargs)
@@ -1204,8 +1204,7 @@ class WCS(GWCSAPIMixin):
         except AttributeError:
             axes_order = np.arange(transform_0.n_inputs)
         # Model.bounding_box is in python order, need to reverse it first.
-        bb = np.array(bb[::-1])[np.array(axes_order)]
-        return tuple(tuple(item) for item in bb)
+        return tuple(bb[::-1][i] for i in axes_order)
 
     @bounding_box.setter
     def bounding_box(self, value):
