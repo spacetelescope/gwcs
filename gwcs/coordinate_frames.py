@@ -531,6 +531,9 @@ class TemporalFrame(CoordinateFrame):
         if not hasattr(dt, 'unit'):
             dt = dt * unit
 
+        if np.isnan(dt):
+            return np.zeros_like(dt) * np.nan
+
         return self.reference_frame + dt
 
     def coordinate_to_quantity(self, *coords):
