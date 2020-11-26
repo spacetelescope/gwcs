@@ -200,6 +200,13 @@ def test_temporal_absolute():
     assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00", scale='tai')
 
 
+def test_temporal_nan():
+    t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"), unit=u.s)
+
+    ret = t._convert_to_time([0, np.nan]*u.s, unit=u.s)
+    assert np.allclose(ret.mask, [False, True])
+
+
 @pytest.mark.parametrize('inp', [
     (10 * u.deg, 20 * u.deg),
     ((10 * u.deg, 20 * u.deg),),

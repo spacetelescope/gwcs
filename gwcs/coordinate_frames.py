@@ -531,8 +531,12 @@ class TemporalFrame(CoordinateFrame):
         if not hasattr(dt, 'unit'):
             dt = dt * unit
 
-        if np.isnan(dt):
-            return np.zeros_like(dt) * np.nan
+        is_nan = np.isnan(dt)
+        if is_nan.any():
+            dt[is_nan] = 0
+            out = self.reference_frame + dt
+            out[is_nan] = np.nan
+            return out
 
         return self.reference_frame + dt
 
