@@ -1423,7 +1423,7 @@ class WCS(GWCSAPIMixin):
         if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
                 "The to_fits_sip method only works with celestial frame transforms")
-        if max_pix_error == 0. or max_inv_pix_error == 0:
+        if max_pix_error <= 0. or max_inv_pix_error <= 0:
             raise ValueError(
                 "max_pix_error and max_inv_pix_error must be nonzero")
         transform = self.forward_transform
