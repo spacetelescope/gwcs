@@ -1487,7 +1487,7 @@ class WCS(GWCSAPIMixin):
         Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
-        if inv_degree >= 0 or inv_degree is None:
+        if inv_degree is None or inv_degree > 0 or :
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, None,
                                                             max_inv_pix_error,
