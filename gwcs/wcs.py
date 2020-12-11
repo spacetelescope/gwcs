@@ -1385,12 +1385,12 @@ class WCS(GWCSAPIMixin):
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
-            a nominal plate scale. Must be nonzero.
+            a nominal plate scale. Must be greater than zero.
         degree : int, optional
             Degree of the SIP polynomial.
         max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
-            in pixel units. Must be nonzero.
+            in pixel units. Must be greater than zero.
         inv_degree : int, optional
             Degree of the inverse SIP polynomial. If less than 0, no inverse
             is generated.
@@ -1425,7 +1425,7 @@ class WCS(GWCSAPIMixin):
                 "The to_fits_sip method only works with celestial frame transforms")
         if max_pix_error <= 0. or max_inv_pix_error <= 0:
             raise ValueError(
-                "max_pix_error and max_inv_pix_error must be nonzero")
+                "max_pix_error and max_inv_pix_error must be greater than 0")
         transform = self.forward_transform
         # Determine reference points.
         if bounding_box is None and self.bounding_box is None:
