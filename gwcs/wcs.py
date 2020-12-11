@@ -1385,20 +1385,20 @@ class WCS(GWCSAPIMixin):
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
-            a nominal plate scale.
+            a nominal plate scale. Must be nonzero.
         degree : int, optional
-            Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
-        max_inv_error : float, optional
+            Degree of the SIP polynomial.
+        max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
-            in pixel units. If None, no inverse is generated.
+            in pixel units. Must be nonzero.
         inv_degree : int, optional
-            Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
-            is ignored.
+            Degree of the inverse SIP polynomial. If less than 0, no inverse
+            is generated.
         npoints : int, optional
             The number of points in each dimension to sample the bounding box
             for use in the SIP fit.
         verbose : bool, optional
-            print progress of fits
+            Print progress of fits.
 
         Returns
         -------
@@ -1423,7 +1423,9 @@ class WCS(GWCSAPIMixin):
         if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
                 "The to_fits_sip method only works with celestial frame transforms")
-
+        if max_pix_error == 0. or max_inv_pix_error == 0:
+            raise ValueError(
+                "max_pix_error and max_inv_pix_error must be nonzero")
         transform = self.forward_transform
         # Determine reference points.
         if bounding_box is None and self.bounding_box is None:
@@ -1485,7 +1487,7 @@ class WCS(GWCSAPIMixin):
         Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
-        if max_inv_pix_error:
+        if inv_degree >= 0:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, None,
                                                             max_inv_pix_error,
