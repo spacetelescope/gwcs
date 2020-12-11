@@ -1365,7 +1365,7 @@ class WCS(GWCSAPIMixin):
         return self.__class__(new_pipeline)
 
     def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
-                    max_inv_pix_error=0.25, inv_degree=None,
+                    max_inv_pix_error=0.25, inv_degree=6,
                     npoints=32, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
@@ -1487,7 +1487,7 @@ class WCS(GWCSAPIMixin):
         Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
-        if inv_degree >= 0:
+        if inv_degree >= 0 or inv_degree is None:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, None,
                                                             max_inv_pix_error,
