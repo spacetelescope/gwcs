@@ -1,6 +1,12 @@
 0.16.0 (Unreleased)
 -------------------
 
+Bug Fixes
+^^^^^^^^^
+
+- Fixed documentation errors and added tests against error thresholds
+  for wcs.to_fits_sip [#335]
+
 0.15.0 (2020-11-13)
 -------------------
 New Features
