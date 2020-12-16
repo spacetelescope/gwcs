@@ -1,5 +1,16 @@
-0.16.0 (Unreleased)
+0.15.1 (Unreleased)
 -------------------
+New Features
+^^^^^^^^^^^^
+
+- Added an option to `to_fits_sip()` to be able to specify the reference
+  point (``crpix``) of the FITS WCS. [#337]
+
+Bug Fixes
+^^^^^^^^^
+
+- Fix a formula for estimating ``crpix`` in ``to_fits_sip()`` so that ``crpix``
+  is near the center of the bounding box. [#337]
 
 0.15.0 (2020-11-13)
 -------------------
