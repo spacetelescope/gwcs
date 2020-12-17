@@ -15,7 +15,6 @@ import astropy.io.fits as fits
 from .api import GWCSAPIMixin
 from . import coordinate_frames
 from .utils import CoordinateFrameError
-from .utils import _toindex
 from . import utils
 from gwcs import coordinate_frames as cf
 
@@ -1310,7 +1309,7 @@ class WCS(GWCSAPIMixin):
             vertices = np.array(list(itertools.product(*bb))).T
 
         if center:
-            vertices = _toindex(vertices)
+            vertices = utils._toindex(vertices)
 
         result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
 
@@ -1366,7 +1365,7 @@ class WCS(GWCSAPIMixin):
 
     def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
                     max_inv_pix_error=0.25, inv_degree=None,
-                    npoints=32, verbose=False):
+                    npoints=32, crpix=None, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
 
@@ -1397,6 +1396,10 @@ class WCS(GWCSAPIMixin):
         npoints : int, optional
             The number of points in each dimension to sample the bounding box
             for use in the SIP fit.
+        crpix : list of float, None, optional
+            Coordinates of the reference point for the new FITS WCS. When not
+            provided, i.e., when set to `None` (default) the reference pixel
+            will be chosen near the center of the bounding box.
         verbose : bool, optional
             print progress of fits
 
@@ -1432,13 +1435,18 @@ class WCS(GWCSAPIMixin):
             bounding_box = self.bounding_box
 
         (xmin, xmax), (ymin, ymax) = bounding_box
-        crpix1 = (xmax - xmin) // 2
-        crpix2 = (ymax - ymin) // 2
+        if crpix is None:
+            crpix1 = round((xmax + xmin) / 2, 1)
+            crpix2 = round((ymax + ymin) / 2, 1)
+        else:
+            crpix1 = crpix[0] - 1
+            crpix2 = crpix[1] - 1
+
         crval1, crval2 = transform(crpix1, crpix2)
         hdr = fits.Header()
         hdr['naxis'] = 2
-        hdr['naxis1'] = xmax
-        hdr['naxis2'] = ymax
+        hdr['naxis1'] = int(xmax) + 1
+        hdr['naxis2'] = int(ymax) + 1
         hdr['ctype1'] = 'RA---TAN-SIP'
         hdr['ctype2'] = 'DEC--TAN-SIP'
         hdr['CRPIX1'] = crpix1 + 1
@@ -1678,16 +1686,14 @@ class WCS(GWCSAPIMixin):
             # A bounding_box is needed to proceed.
             return
 
-        (xmin, xmax), (ymin, ymax) = self.bounding_box
-        crpix1 = (xmax - xmin) // 2
-        crpix2 = (ymax - ymin) // 2
-        crval1, crval2 = self.forward_transform(crpix1, crpix2)
+        crpix = np.mean(self.bounding_box, axis=1)
+        crval1, crval2 = self.forward_transform(*crpix)
 
         # Rotate to native system and deproject. Set center of the projection
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
-        ntransform = ((Shift(crpix1) & Shift(crpix2)) | self.forward_transform
+        ntransform = ((Shift(crpix[0]) & Shift(crpix[1])) | self.forward_transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
 
@@ -1710,7 +1716,7 @@ class WCS(GWCSAPIMixin):
         self._approx_inverse = (RotateCelestial2Native(crval1, crval2, 180) |
                                 Sky2Pix_TAN() | Mapping((0, 1, 0, 1)) |
                                 (fit_inv_poly_u & fit_inv_poly_v) |
-                                (Shift(crpix1) & Shift(crpix2)))
+                                (Shift(crpix[0]) & Shift(crpix[1])))
 
 
 def _fit_2D_poly(ntransform, npoints, degree, max_error,
