@@ -269,6 +269,14 @@ def test_bounding_box():
     with pytest.raises(ValueError):
         w.bounding_box = ((1, 5), (2, 6))
 
+    # Test that bounding_box with quantities can be assigned and evaluates
+    bb = ((1 * u.pix, 5 * u.pix), (2 * u.pix, 6 * u.pix))
+    trans = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
+    pipeline = [('detector', trans), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = bb
+    assert_allclose(w(-1*u.pix, -1*u.pix), (np.nan, np.nan))
+
 
 def test_grid_from_bounding_box():
     bb = ((-1, 9.9), (6.5, 15))
@@ -797,3 +805,26 @@ def test_iter_inv():
     xp, yp = e.value.best_solution.T
     assert np.allclose((x[1:], y[1:]), (xp[1:], yp[1:]))
     assert e.value.divergent[0] == 0
+
+
+def test_tabular_2d_quantity():
+    shape = (3, 3)
+    data = np.arange(np.product(shape)).reshape(shape) * u.m / u.s
+
+    # The integer location is at the centre of the pixel.
+    points_unit = u.pix
+    points = [(np.arange(size) - 0) * points_unit for size in shape]
+
+    kwargs = {
+        'bounds_error': False,
+        'fill_value': np.nan,
+        'method': 'nearest',
+    }
+
+    forward = models.Tabular2D(points, data, **kwargs)
+    input_frame = cf.CoordinateFrame(2, ("PIXEL", "PIXEL"), (0,1), unit=(u.pix, u.pix), name="detector")
+    output_frame = cf.CoordinateFrame(1, "CUSTOM", (0,), unit=(u.m/u.s,))
+    w = wcs.WCS(forward_transform=forward, input_frame=input_frame, output_frame=output_frame)
+
+    bb = w.bounding_box
+    assert all(u.allclose(u.Quantity(b), [0, 2] * u.pix) for b in bb)
