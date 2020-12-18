@@ -635,6 +635,73 @@ class WCS(GWCSAPIMixin):
         ValueError
             Invalid argument values.
 
+        Examples
+        --------
+        >>> from astropy.utils.data import get_pkg_data_filename
+        >>> from gwcs import NoConvergence
+        >>> import asdf
+        >>> import numpy as np
+
+        >>> filename = get_pkg_data_filename('data/nircamwcs.asdf', package='gwcs.tests')
+        >>> w = asdf.open(filename).tree['wcs']
+
+        >>> ra, dec = w([1,2,3], [1,1,1])
+        >>> print(ra)  # doctest: +FLOAT_CMP
+        [5.927628   5.92757069 5.92751337]
+        >>> print(dec)  # doctest: +FLOAT_CMP
+        [-72.01341247 -72.01341273 -72.013413  ]
+
+        >>> x, y = w.numerical_inverse(ra, dec)
+        >>> print(x)  # doctest: +FLOAT_CMP
+        [1.00000005 2.00000005 3.00000006]
+        >>> print(y)  # doctest: +FLOAT_CMP
+        [1.00000004 0.99999979 1.00000015]
+
+        >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy after 3 iterations.
+
+        >>> w.numerical_inverse(
+        ...     *w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False),
+        ...     adaptive=False,
+        ...     detect_divergence=True,
+        ...     quiet=False,
+        ...     with_bounding_box=False
+        ... )
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy. After 4 iterations, the solution is diverging at
+        least for one input point.
+
+        >>> # Now try to use some diverging data:
+        >>> divradec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
+        >>> print(divradec)  # doctest: +FLOAT_CMP
+        (array([  5.92762673, 148.21600848,   5.92750827]),
+         array([-72.01339464,  -7.80968079, -72.01334172]))
+        >>> try:  # doctest: +SKIP
+        ...     x, y = w.numerical_inverse(*divradec, maxiter=20,
+        ...                                tolerance=1.0e-4, adaptive=True,
+        ...                                detect_divergence=True,
+        ...                                quiet=False)
+        ... except NoConvergence as e:
+        ...     print(f"Indices of diverging points: {e.divergent}")
+        ...     print(f"Indices of poorly converging points: {e.slow_conv}")
+        ...     print(f"Best solution:\\n{e.best_solution}")
+        ...     print(f"Achieved accuracy:\\n{e.accuracy}")
+        Indices of diverging points: None
+        Indices of poorly converging points: [1]
+        Best solution:
+        [[1.00000040e+00 1.99999841e+00]
+         [6.33507833e+17 3.40118820e+17]
+         [3.00000038e+00 4.99999841e+00]]
+        Achieved accuracy:
+        [[2.75925982e-05 1.18471543e-05]
+         [3.65405005e+04 1.31364188e+04]
+         [2.76552923e-05 1.14789013e-05]]
+
         """
         tolerance = kwargs.get('tolerance', 1e-5)
         maxiter = kwargs.get('maxiter', 50)
@@ -963,14 +1030,14 @@ class WCS(GWCSAPIMixin):
         if (ind is not None or inddiv is not None) and not quiet:
             if inddiv is None:
                 raise NoConvergence(
-                    "'WCS.invert' failed to "
+                    "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy after {:d} "
                     "iterations.".format(k), best_solution=pix,
                     accuracy=np.abs(dpix), niter=k,
                     slow_conv=ind, divergent=None)
             else:
                 raise NoConvergence(
-                    "'WCS.invert' failed to "
+                    "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy.\n"
                     "After {:d} iterations, the solution is diverging "
                     "at least for one input point."

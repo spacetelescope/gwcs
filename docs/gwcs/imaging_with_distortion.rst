@@ -19,14 +19,15 @@ The imaging example without units:
   >>> from gwcs import wcs
   >>> from gwcs import coordinate_frames as cf
 
-  >>> shift_by_crpix = models.Shift(-2048) & models.Shift(-1024)
+  >>> crpix = (2048, 1024)
+  >>> shift_by_crpix = models.Shift(-crpix[0]) & models.Shift(-crpix[1])
   >>> matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
   ...                    [5.0226382102765E-06 , -1.2644844123757E-05]])
   >>> rotation = models.AffineTransformation2D(matrix)
   >>> rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix))
   >>> tan = models.Pix2Sky_TAN()
   >>> celestial_rotation =  models.RotateNative2Celestial(5.63056810618, -72.05457184279, 180)
-  >>> det2sky = shift_by_crpix | rotation | tan | celestial_rotation 
+  >>> det2sky = shift_by_crpix | rotation | tan | celestial_rotation
   >>> det2sky.name = "linear_transform"
   >>> detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
   ...                             unit=(u.pix, u.pix))
@@ -46,20 +47,23 @@ First create distortion corrections represented by a polynomial
 model of fourth degree. The example uses the astropy `~astropy.modeling.polynomial.Polynomial2D`
 and `~astropy.modeling.mappings.Mapping` models.
 
-
   >>> poly_x = models.Polynomial2D(4)
-  >>> poly_x.parameters = np.arange(15) * .1
+  >>> poly_x.parameters = [0, 1, 8.55e-06, -4.73e-10, 2.37e-14, 0, -5.20e-06,
+  ...                      -3.98e-11, 1.97e-15, 2.17e-06, -5.23e-10, 3.47e-14,
+  ...                      1.08e-11, -2.46e-14, 1.49e-14]
   >>> poly_y = models.Polynomial2D(4)
-  >>> poly_y.parameters = np.arange(15) * .2
-  >>> distortion = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y
+  >>> poly_y.parameters = [0, 0, -1.75e-06, 8.57e-11, -1.77e-14, 1, 6.18e-06,
+  ...                      -5.09e-10, -3.78e-15, -7.22e-06, -6.17e-11,
+  ...                      -3.66e-14, -4.18e-10, 1.22e-14, -9.96e-15]
+  >>> distortion = ((models.Shift(-crpix[0]) & models.Shift(-crpix[1])) |
+  ...               models.Mapping((0, 1, 0, 1)) | (poly_x & poly_y) |
+  ...               (models.Shift(crpix[0]) & models.Shift(crpix[1])))
   >>> distortion.name = "distortion"
-  
-Create an intermediate frame for distortion free coordinates.
 
+Create an intermediate frame for distortion free coordinates.
 
   >>> undistorted_frame = cf.Frame2D(name="undistorted_frame", unit=(u.pix, u.pix),
   ...                                axes_names=("undist_x", "undist_y"))
-
 
 Using the example in :ref:`getting-started`, add the distortion correction to
 the WCS pipeline and initialize the WCS.
@@ -70,9 +74,17 @@ the WCS pipeline and initialize the WCS.
   ...             ]
   >>> wcsobj = wcs.WCS(pipeline)
   >>> print(wcsobj)
-         From          Transform    
+         From          Transform
   ----------------- ----------------
            detector       distortion
   undistorted_frame linear_transform
                icrs             None
-  
+
+Finally, save this WCS to an ``ASDF`` file:
+
+.. doctest-skip::
+
+  >>> from asdf import AsdfFile
+  >>> tree = {"wcs": wcsobj}
+  >>> wcs_file = AsdfFile(tree)
+  >>> wcs_file.write_to("imaging_wcs_wdist.asdf")
