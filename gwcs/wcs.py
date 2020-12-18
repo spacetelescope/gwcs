@@ -1219,7 +1219,6 @@ class WCS(GWCSAPIMixin):
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
-        print('IN SETTING BB', value)
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         if value is None:
