@@ -6,6 +6,8 @@ New Features
 - Added an option to `to_fits_sip()` to be able to specify the reference
   point (``crpix``) of the FITS WCS. [#337]
 
+- Added support for providing custom range of degrees in ``to_fits_sip``. [#339]
+
 Bug Fixes
 ^^^^^^^^^
 
@@ -16,6 +18,9 @@ Bug Fixes
 
 - Allow sub-pixel sampling of the WCS model when computing SIP approximation in
   ``to_fits_sip()``. [#338]
+
+- Fixed a bug in ``to_fits_sip`` due to which ``inv_degree`` was ignored. [#339]
+
 
 0.15.0 (2020-11-13)
 -------------------
