@@ -19,7 +19,8 @@ The imaging example without units:
   >>> from gwcs import wcs
   >>> from gwcs import coordinate_frames as cf
 
-  >>> shift_by_crpix = models.Shift(-2048) & models.Shift(-1024)
+  >>> crpix = (2048, 1024)
+  >>> shift_by_crpix = models.Shift(-crpix[0]) & models.Shift(-crpix[1])
   >>> matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
   ...                    [5.0226382102765E-06 , -1.2644844123757E-05]])
   >>> rotation = models.AffineTransformation2D(matrix)
