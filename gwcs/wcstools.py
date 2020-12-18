@@ -8,7 +8,6 @@ from astropy.modeling import models, fitting
 from astropy import coordinates as coord
 from astropy import units as u
 
-from .wcs import WCS
 from .coordinate_frames import * # noqa
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
@@ -53,6 +52,8 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     input_frame : ~gwcs.coordinate_frames.CoordinateFrame`
         The input coordinate frame.
     """
+    from .wcs import WCS
+
     if transform is not None:
         if not isinstance(transform, Model):
             raise UnsupportedTransformError("Expected transform to be an instance"
@@ -252,6 +253,8 @@ def wcs_from_points(xy, world_coordinates, fiducial,
     wcsobj : `~gwcs.wcs.WCS`
         a WCS object for this observation.
     """
+    from .wcs import WCS
+
     supported_poly_types = {"polynomial": models.Polynomial2D,
                             "chebyshev": models.Chebyshev2D,
                             "legendre": models.Legendre2D

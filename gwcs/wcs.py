@@ -13,11 +13,10 @@ from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 
 from .api import GWCSAPIMixin
-from . import coordinate_frames
+from . import coordinate_frames as cf
 from .utils import CoordinateFrameError
-from .utils import _toindex
 from . import utils
-from gwcs import coordinate_frames as cf
+from .wcstools import grid_from_bounding_box
 
 
 try:
@@ -252,7 +251,7 @@ class WCS(GWCSAPIMixin):
         """
         Return the index in the pipeline where this frame is locate.
         """
-        if isinstance(frame, coordinate_frames.CoordinateFrame):
+        if isinstance(frame, cf.CoordinateFrame):
             frame = frame.name
         #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
@@ -314,11 +313,11 @@ class WCS(GWCSAPIMixin):
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the ounding_box to it
+            # bounding boxes. Get the forward transform and assign the bounding_box to it
             # before evaluating it. The order Model.bounding_box is reversed.
             axes_ind = self._get_axes_indices()
             if transform.n_inputs > 1:
-                transform.bounding_box = np.array(self.bounding_box)[axes_ind][::-1]
+                transform.bounding_box = [self.bounding_box[ind] for ind in axes_ind][::-1]
             else:
                 transform.bounding_box = self.bounding_box
         result = transform(*args, **kwargs)
@@ -635,6 +634,73 @@ class WCS(GWCSAPIMixin):
 
         ValueError
             Invalid argument values.
+
+        Examples
+        --------
+        >>> from astropy.utils.data import get_pkg_data_filename
+        >>> from gwcs import NoConvergence
+        >>> import asdf
+        >>> import numpy as np
+
+        >>> filename = get_pkg_data_filename('data/nircamwcs.asdf', package='gwcs.tests')
+        >>> w = asdf.open(filename).tree['wcs']
+
+        >>> ra, dec = w([1,2,3], [1,1,1])
+        >>> print(ra)  # doctest: +FLOAT_CMP
+        [5.927628   5.92757069 5.92751337]
+        >>> print(dec)  # doctest: +FLOAT_CMP
+        [-72.01341247 -72.01341273 -72.013413  ]
+
+        >>> x, y = w.numerical_inverse(ra, dec)
+        >>> print(x)  # doctest: +FLOAT_CMP
+        [1.00000005 2.00000005 3.00000006]
+        >>> print(y)  # doctest: +FLOAT_CMP
+        [1.00000004 0.99999979 1.00000015]
+
+        >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy after 3 iterations.
+
+        >>> w.numerical_inverse(
+        ...     *w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False),
+        ...     adaptive=False,
+        ...     detect_divergence=True,
+        ...     quiet=False,
+        ...     with_bounding_box=False
+        ... )
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy. After 4 iterations, the solution is diverging at
+        least for one input point.
+
+        >>> # Now try to use some diverging data:
+        >>> divradec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
+        >>> print(divradec)  # doctest: +FLOAT_CMP
+        (array([  5.92762673, 148.21600848,   5.92750827]),
+         array([-72.01339464,  -7.80968079, -72.01334172]))
+        >>> try:  # doctest: +SKIP
+        ...     x, y = w.numerical_inverse(*divradec, maxiter=20,
+        ...                                tolerance=1.0e-4, adaptive=True,
+        ...                                detect_divergence=True,
+        ...                                quiet=False)
+        ... except NoConvergence as e:
+        ...     print(f"Indices of diverging points: {e.divergent}")
+        ...     print(f"Indices of poorly converging points: {e.slow_conv}")
+        ...     print(f"Best solution:\\n{e.best_solution}")
+        ...     print(f"Achieved accuracy:\\n{e.accuracy}")
+        Indices of diverging points: None
+        Indices of poorly converging points: [1]
+        Best solution:
+        [[1.00000040e+00 1.99999841e+00]
+         [6.33507833e+17 3.40118820e+17]
+         [3.00000038e+00 4.99999841e+00]]
+        Achieved accuracy:
+        [[2.75925982e-05 1.18471543e-05]
+         [3.65405005e+04 1.31364188e+04]
+         [2.76552923e-05 1.14789013e-05]]
 
         """
         tolerance = kwargs.get('tolerance', 1e-5)
@@ -964,14 +1030,14 @@ class WCS(GWCSAPIMixin):
         if (ind is not None or inddiv is not None) and not quiet:
             if inddiv is None:
                 raise NoConvergence(
-                    "'WCS.invert' failed to "
+                    "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy after {:d} "
                     "iterations.".format(k), best_solution=pix,
                     accuracy=np.abs(dpix), niter=k,
                     slow_conv=ind, divergent=None)
             else:
                 raise NoConvergence(
-                    "'WCS.invert' failed to "
+                    "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy.\n"
                     "After {:d} iterations, the solution is diverging "
                     "at least for one input point."
@@ -1205,8 +1271,7 @@ class WCS(GWCSAPIMixin):
         except AttributeError:
             axes_order = np.arange(transform_0.n_inputs)
         # Model.bounding_box is in python order, need to reverse it first.
-        bb = np.array(bb[::-1])[np.array(axes_order)]
-        return tuple(tuple(item) for item in bb)
+        return tuple(bb[::-1][i] for i in axes_order)
 
     @bounding_box.setter
     def bounding_box(self, value):
@@ -1237,7 +1302,8 @@ class WCS(GWCSAPIMixin):
                 transform_0.bounding_box = value
             else:
                 # The axes in bounding_box in modeling follow python order
-                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+                #transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+                transform_0.bounding_box = [value[ind] for ind in axes_ind][::-1]
         self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
@@ -1310,7 +1376,7 @@ class WCS(GWCSAPIMixin):
             vertices = np.array(list(itertools.product(*bb))).T
 
         if center:
-            vertices = _toindex(vertices)
+            vertices = utils._toindex(vertices)
 
         result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
 
@@ -1366,7 +1432,7 @@ class WCS(GWCSAPIMixin):
 
     def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
                     max_inv_pix_error=0.25, inv_degree=None,
-                    npoints=32, verbose=False):
+                    npoints=32, crpix=None, verbose=False):
         """
         Construct a SIP-based approximation to the WCS in the form of a FITS header
 
@@ -1381,24 +1447,52 @@ class WCS(GWCSAPIMixin):
             A pair of tuples, each consisting of two numbers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
+
         max_pix_error : float, optional
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
             a nominal plate scale.
-        degree : int, optional
-            Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
+
+        degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_pixel_error`` is ignored.
+
         max_inv_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
             in pixel units. If None, no inverse is generated.
-        inv_degree : int, optional
-            Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
-            is ignored.
+
+        inv_degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_inv_pixel_error`` is ignored.
+
         npoints : int, optional
             The number of points in each dimension to sample the bounding box
-            for use in the SIP fit.
+            for use in the SIP fit. Minimum number of points is 3.
+
+        crpix : list of float, None, optional
+            Coordinates (1-based) of the reference point for the new FITS WCS.
+            When not provided, i.e., when set to `None` (default) the reference
+            pixel will be chosen near the center of the bounding box.
+
         verbose : bool, optional
-            print progress of fits
+            Print progress of fits.
 
         Returns
         -------
@@ -1418,13 +1512,16 @@ class WCS(GWCSAPIMixin):
         higher degrees (~7 or higher) will typically fail due floating point problems
         that arise with high powers.
 
-
         """
         if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
                 "The to_fits_sip method only works with celestial frame transforms")
 
+        if npoints < 8:
+            raise ValueError("Number of sampling points is too small. 'npoints' must be >= 8.")
+
         transform = self.forward_transform
+
         # Determine reference points.
         if bounding_box is None and self.bounding_box is None:
             raise ValueError("A bounding_box is needed to proceed.")
@@ -1432,13 +1529,22 @@ class WCS(GWCSAPIMixin):
             bounding_box = self.bounding_box
 
         (xmin, xmax), (ymin, ymax) = bounding_box
-        crpix1 = (xmax - xmin) // 2
-        crpix2 = (ymax - ymin) // 2
+        if crpix is None:
+            crpix1 = round((xmax + xmin) / 2, 1)
+            crpix2 = round((ymax + ymin) / 2, 1)
+        else:
+            crpix1 = crpix[0] - 1
+            crpix2 = crpix[1] - 1
+
+        # check that the bounding box has some reasonable size:
+        if (xmax - xmin) < 1 or (ymax - ymin) < 1:
+            raise ValueError("Bounding box is too small for fitting a SIP polynomial")
+
         crval1, crval2 = transform(crpix1, crpix2)
         hdr = fits.Header()
         hdr['naxis'] = 2
-        hdr['naxis1'] = xmax
-        hdr['naxis2'] = ymax
+        hdr['naxis1'] = int(xmax) + 1
+        hdr['naxis2'] = int(ymax) + 1
         hdr['ctype1'] = 'RA---TAN-SIP'
         hdr['ctype2'] = 'DEC--TAN-SIP'
         hdr['CRPIX1'] = crpix1 + 1
@@ -1455,11 +1561,15 @@ class WCS(GWCSAPIMixin):
         ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
-        u, v = _make_sampling_grid(npoints, bounding_box)
+
+        # standard sampling:
+        u, v = _make_sampling_grid(npoints, bounding_box, crpix=[crpix1, crpix2])
         undist_x, undist_y = ntransform(u, v)
+
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
+        ud, vd = _make_sampling_grid(2 * npoints, bounding_box, crpix=[crpix1, crpix2])
         undist_xd, undist_yd = ntransform(ud, vd)
+
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
         x0, y0 = ntransform(0, 0)
@@ -1468,12 +1578,16 @@ class WCS(GWCSAPIMixin):
         pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
         plate_scale = np.sqrt(pixarea)
         max_error = max_pix_error * plate_scale
+
         # The fitting section.
-        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
-                                                             degree, max_error,
-                                                             u, v, undist_x, undist_y,
-                                                             ud, vd, undist_xd, undist_yd,
-                                                             verbose=verbose)
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
+            ntransform, npoints,
+            degree, max_error,
+            u, v, undist_x, undist_y,
+            ud, vd, undist_xd, undist_yd,
+            verbose=verbose
+        )
+
         # The following is necessary to put the fit into the SIP formalism.
         cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
         # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
@@ -1487,7 +1601,7 @@ class WCS(GWCSAPIMixin):
 
         if max_inv_pix_error:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
-                                                            npoints, None,
+                                                            npoints, inv_degree,
                                                             max_inv_pix_error,
                                                             U, V, u-U, v-V,
                                                             Ud, Vd, ud-Ud, vd-Vd,
@@ -1678,24 +1792,24 @@ class WCS(GWCSAPIMixin):
             # A bounding_box is needed to proceed.
             return
 
-        (xmin, xmax), (ymin, ymax) = self.bounding_box
-        crpix1 = (xmax - xmin) // 2
-        crpix2 = (ymax - ymin) // 2
-        crval1, crval2 = self.forward_transform(crpix1, crpix2)
+        crpix = np.mean(self.bounding_box, axis=1)
+
+        crval1, crval2 = self.forward_transform(*crpix)
 
         # Rotate to native system and deproject. Set center of the projection
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
-        ntransform = ((Shift(crpix1) & Shift(crpix2)) | self.forward_transform
+        ntransform = ((Shift(crpix[0]) & Shift(crpix[1])) | self.forward_transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
 
-        u, v = _make_sampling_grid(npoints, self.bounding_box)
+        # standard sampling:
+        u, v = _make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
         undist_x, undist_y = ntransform(u, v)
 
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(2 * npoints, self.bounding_box)
+        ud, vd = _make_sampling_grid(2 * npoints, self.bounding_box, crpix=crpix)
         undist_xd, undist_yd = ntransform(ud, vd)
 
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
@@ -1710,7 +1824,7 @@ class WCS(GWCSAPIMixin):
         self._approx_inverse = (RotateCelestial2Native(crval1, crval2, 180) |
                                 Sky2Pix_TAN() | Mapping((0, 1, 0, 1)) |
                                 (fit_inv_poly_u & fit_inv_poly_v) |
-                                (Shift(crpix1) & Shift(crpix2)))
+                                (Shift(crpix[0]) & Shift(crpix[1])))
 
 
 def _fit_2D_poly(ntransform, npoints, degree, max_error,
@@ -1724,10 +1838,18 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
     llsqfitter = LinearLSQFitter()
 
     # The case of one pass with the specified polynomial degree
-    if degree:
-        deglist = [degree]
+    if degree is None:
+        deglist = range(1, 10)
+    elif hasattr(degree, '__iter__'):
+        deglist = sorted(map(int, degree))
+        if set(deglist).difference(range(1, 10)):
+            raise ValueError("Allowed values for SIP degree are [1...9]")
     else:
-        deglist = range(10)
+        degree = int(degree)
+        if degree < 1 or degree > 9:
+            raise ValueError("Allowed values for SIP degree are [1...9]")
+        deglist = [degree]
+
     prev_max_error = float(np.inf)
     if verbose:
         print(f'maximum_specified_error: {max_error}')
@@ -1757,21 +1879,10 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
     return fit_poly_x, fit_poly_y, max_resid
 
 
-def _make_sampling_grid(npoints, bounding_box):
-    (xmin, xmax), (ymin, ymax) = bounding_box
-    xsize = xmax - xmin
-    ysize = ymax - ymin
-    crpix1 = int(xsize / 2)
-    crpix2 = int(ysize / 2)
-    stepsize_x = int(xsize / npoints)
-    stepsize_y = int(ysize / npoints)
-    # Ensure last row and column are part of the evaluation grid.
-    y, x = np.mgrid[: ymax + 1: stepsize_y, : xmax + 1: stepsize_x]
-    x[:, -1] = xsize - 1
-    y[-1, :] = ysize - 1
-    u = x - crpix1
-    v = y - crpix2
-    return u, v
+def _make_sampling_grid(npoints, bounding_box, crpix):
+    step = np.subtract.reduce(bounding_box, axis=1) / (1.0 - npoints)
+    crpix = np.asanyarray(crpix)[:, None, None]
+    return grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
 
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):

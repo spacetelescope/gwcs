@@ -15,7 +15,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION="1.16"
+        - NUMPY_VERSION="1.17"
         - ASDF_GIT="git+https://github.com/spacetelescope/asdf.git#egg=asdf"
         - ASTROPY_GIT="git+https://github.com/astropy/astropy.git#egg=astropy"
         - PIP_DEPENDENCIES=.[test]
@@ -41,7 +41,7 @@ jobs:
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
         - python: "3.8"
-          env: 
+          env:
             PIP_DEPENDENCIES=".[docs]"
             TEST_COMMAND="make --directory=docs html"
           addons:
