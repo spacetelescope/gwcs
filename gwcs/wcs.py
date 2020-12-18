@@ -13,10 +13,10 @@ from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 
 from .api import GWCSAPIMixin
-from . import coordinate_frames
+from . import coordinate_frames as cf
 from .utils import CoordinateFrameError
 from . import utils
-from gwcs import coordinate_frames as cf
+from .wcstools import grid_from_bounding_box
 
 
 try:
@@ -251,7 +251,7 @@ class WCS(GWCSAPIMixin):
         """
         Return the index in the pipeline where this frame is locate.
         """
-        if isinstance(frame, coordinate_frames.CoordinateFrame):
+        if isinstance(frame, cf.CoordinateFrame):
             frame = frame.name
         #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
@@ -1395,13 +1395,13 @@ class WCS(GWCSAPIMixin):
             is ignored.
         npoints : int, optional
             The number of points in each dimension to sample the bounding box
-            for use in the SIP fit.
+            for use in the SIP fit. Minimum number of points is 3.
         crpix : list of float, None, optional
-            Coordinates of the reference point for the new FITS WCS. When not
-            provided, i.e., when set to `None` (default) the reference pixel
-            will be chosen near the center of the bounding box.
+            Coordinates (1-based) of the reference point for the new FITS WCS.
+            When not provided, i.e., when set to `None` (default) the reference
+            pixel will be chosen near the center of the bounding box.
         verbose : bool, optional
-            print progress of fits
+            Print progress of fits.
 
         Returns
         -------
@@ -1421,13 +1421,16 @@ class WCS(GWCSAPIMixin):
         higher degrees (~7 or higher) will typically fail due floating point problems
         that arise with high powers.
 
-
         """
         if not isinstance(self.output_frame, cf.CelestialFrame):
             raise ValueError(
                 "The to_fits_sip method only works with celestial frame transforms")
 
+        if npoints < 8:
+            raise ValueError("Number of sampling points is too small. 'npoints' must be >= 8.")
+
         transform = self.forward_transform
+
         # Determine reference points.
         if bounding_box is None and self.bounding_box is None:
             raise ValueError("A bounding_box is needed to proceed.")
@@ -1441,6 +1444,10 @@ class WCS(GWCSAPIMixin):
         else:
             crpix1 = crpix[0] - 1
             crpix2 = crpix[1] - 1
+
+        # check that the bounding box has some reasonable size:
+        if (xmax - xmin) < 1 or (ymax - ymin) < 1:
+            raise ValueError("Bounding box is too small for fitting a SIP polynomial")
 
         crval1, crval2 = transform(crpix1, crpix2)
         hdr = fits.Header()
@@ -1463,11 +1470,15 @@ class WCS(GWCSAPIMixin):
         ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
-        u, v = _make_sampling_grid(npoints, bounding_box)
+
+        # standard sampling:
+        u, v = _make_sampling_grid(npoints, bounding_box, crpix=[crpix1, crpix2])
         undist_x, undist_y = ntransform(u, v)
+
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(2 * npoints, bounding_box)
+        ud, vd = _make_sampling_grid(2 * npoints, bounding_box, crpix=[crpix1, crpix2])
         undist_xd, undist_yd = ntransform(ud, vd)
+
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
         x0, y0 = ntransform(0, 0)
@@ -1476,12 +1487,16 @@ class WCS(GWCSAPIMixin):
         pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
         plate_scale = np.sqrt(pixarea)
         max_error = max_pix_error * plate_scale
+
         # The fitting section.
-        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(ntransform, npoints,
-                                                             degree, max_error,
-                                                             u, v, undist_x, undist_y,
-                                                             ud, vd, undist_xd, undist_yd,
-                                                             verbose=verbose)
+        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
+            ntransform, npoints,
+            degree, max_error,
+            u, v, undist_x, undist_y,
+            ud, vd, undist_xd, undist_yd,
+            verbose=verbose
+        )
+
         # The following is necessary to put the fit into the SIP formalism.
         cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
         # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
@@ -1687,6 +1702,7 @@ class WCS(GWCSAPIMixin):
             return
 
         crpix = np.mean(self.bounding_box, axis=1)
+
         crval1, crval2 = self.forward_transform(*crpix)
 
         # Rotate to native system and deproject. Set center of the projection
@@ -1697,11 +1713,12 @@ class WCS(GWCSAPIMixin):
                       | RotateCelestial2Native(crval1, crval2, 180)
                       | Sky2Pix_TAN())
 
-        u, v = _make_sampling_grid(npoints, self.bounding_box)
+        # standard sampling:
+        u, v = _make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
         undist_x, undist_y = ntransform(u, v)
 
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(2 * npoints, self.bounding_box)
+        ud, vd = _make_sampling_grid(2 * npoints, self.bounding_box, crpix=crpix)
         undist_xd, undist_yd = ntransform(ud, vd)
 
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
@@ -1763,21 +1780,10 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
     return fit_poly_x, fit_poly_y, max_resid
 
 
-def _make_sampling_grid(npoints, bounding_box):
-    (xmin, xmax), (ymin, ymax) = bounding_box
-    xsize = xmax - xmin
-    ysize = ymax - ymin
-    crpix1 = int(xsize / 2)
-    crpix2 = int(ysize / 2)
-    stepsize_x = int(xsize / npoints)
-    stepsize_y = int(ysize / npoints)
-    # Ensure last row and column are part of the evaluation grid.
-    y, x = np.mgrid[: ymax + 1: stepsize_y, : xmax + 1: stepsize_x]
-    x[:, -1] = xsize - 1
-    y[-1, :] = ysize - 1
-    u = x - crpix1
-    v = y - crpix2
-    return u, v
+def _make_sampling_grid(npoints, bounding_box, crpix):
+    step = np.subtract.reduce(bounding_box, axis=1) / (1.0 - npoints)
+    crpix = np.asanyarray(crpix)[:, None, None]
+    return grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
 
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
