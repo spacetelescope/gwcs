@@ -245,6 +245,7 @@ def test_high_level_wrapper(wcsobj, request):
 
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input, with_units=True)
+    wc3 = wcsobj.pixel_to_world(*pixel_input)
 
     assert type(wc1) is type(wc2)
 
@@ -252,7 +253,9 @@ def test_high_level_wrapper(wcsobj, request):
         for w1, w2 in zip(wc1, wc2):
             _compare_frame_output(w1, w2)
     else:
+        _compare_frame_output(wc3, wc2)
         _compare_frame_output(wc1, wc2)
+        _compare_frame_output(wc1, wc3)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):

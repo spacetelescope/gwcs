@@ -259,7 +259,6 @@ class WCS(GWCSAPIMixin):
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         with_units = kwargs.pop("with_units", False)
-        print('with_units', with_units, args)
         if 'with_bounding_box' not in kwargs:
             kwargs['with_bounding_box'] = True
         if 'fill_value' not in kwargs:

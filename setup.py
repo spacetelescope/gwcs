@@ -47,35 +47,11 @@ PACKAGE_DATA ={'gwcs':schemas}
 entry_points = {'asdf_extensions': 'gwcs = gwcs.extension:GWCSExtension',
                 'bandit.formatters': 'bson = bandit_bson:formatter'}
 
-DOCS_REQUIRE = [
-    'sphinx',
-    'sphinx-automodapi',
-    'sphinx-rtd-theme',
-    'stsci-rtd-theme',
-    'sphinx-astropy',
-    'sphinx-asdf',
-]
-
-TESTS_REQUIRE = [
-    'pytest>=4.6,<6',
-    'pytest-doctestplus',
-    'scipy',
-]
 
 setup(name=PACKAGENAME,
       use_scm_version=True,
-      setup_requires=['setuptools_scm'],
       description=DESCRIPTION,
-      install_requires=[
-          'astropy',
-          'numpy',
-          'asdf'],
       packages=find_packages(),
-      extras_require={
-        'test': TESTS_REQUIRE,
-        'docs': DOCS_REQUIRE,
-      },
-      tests_require=TESTS_REQUIRE,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,

@@ -270,7 +270,7 @@ class CoordinateFrame:
 
     def coordinates(self, *args):
         """ Create world coordinates object"""
-        args = [args[i] for i in self.axes_order]
+        #args = [args[i] for i in self.axes_order]
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
         return coo
 
@@ -356,12 +356,11 @@ class CelestialFrame(CoordinateFrame):
             ax_order = [1, 0]
         else:
             ax_order = [0, 1]
-        # return [('celestial', ax_order[0], 'spherical.lon'),
-        #         ('celestial', ax_order[1], 'spherical.lat')]
-        return [('celestial', self.axes_order[0], 'spherical.lon'),
-                ('celestial', self.axes_order[1], 'spherical.lat')]
 
-    def coordinates(self, *args):
+        return [('celestial', 0, 'spherical.lon'),
+                ('celestial', 1, 'spherical.lat')]
+
+    def _coordinates(self, *args):
         """
         Create a SkyCoord object.
 
@@ -370,12 +369,16 @@ class CelestialFrame(CoordinateFrame):
         args : float
             inputs to wcs.input_frame
         """
-        print('cel args', args)
         if isinstance(args[0], coord.SkyCoord):
             return args[0].transform_to(self.reference_frame)
+        # if self._axes_order[0] > self.axes_order[1]:
+        #     args = args[1], args[0]
+        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
+
+    def coordinates(self, *args):
         if self._axes_order[0] > self.axes_order[1]:
             args = args[1], args[0]
-        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
+        return self._coordinates(*args)
 
     def coordinate_to_quantity(self, *coords):
         """ Convert a ``SkyCoord`` object to quantities."""
@@ -448,7 +451,6 @@ class SpectralFrame(CoordinateFrame):
         return [('spectral', 0, 'value')]
 
     def coordinates(self, *args, equivalencies=[]):
-        print('args', args)
         if np.isscalar(args):
             return args * self.unit[0]
         elif hasattr(args[0], 'unit'):
@@ -606,7 +608,10 @@ class CompositeFrame(CoordinateFrame):
             for frame in self.frames:
                 fargs = args[start : start + frame.naxes]
                 start += frame.naxes
-                coo.append(frame.coordinates(*fargs))
+                if isinstance(frame, CelestialFrame):
+                    coo.append(frame._coordinates(*fargs))
+                else:
+                    coo.append(frame.coordinates(*fargs))
         return coo
 
     def coordinate_to_quantity(self, *coords):
@@ -637,12 +642,13 @@ class CompositeFrame(CoordinateFrame):
         """
         We need to generate the components respecting the axes_order.
         """
-        #out = [None] * self.naxes
-        out = []
-        for i, frame in enumerate(self.frames):
-            #for i, ao in enumerate(frame.axes_order):
-            #    out[ao] = frame._world_axis_object_components[i]
-            out.extend(self.frames[i]._world_axis_object_components)
+        out = [None] * self.naxes
+        #out = []
+        #for i, frame in enumerate(self.frames):\
+        for frame in self.frames:
+            for i, ao in enumerate(frame.axes_order):
+                out[ao] = frame._world_axis_object_components[i]
+            #out.extend(self.frames[i]._world_axis_object_components)
 
         if any([o is None for o in out]):
             raise ValueError("axes_order leads to incomplete world_axis_object_components")
