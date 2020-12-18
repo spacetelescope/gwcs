@@ -12,6 +12,8 @@ Bug Fixes
 - Fix a formula for estimating ``crpix`` in ``to_fits_sip()`` so that ``crpix``
   is near the center of the bounding box. [#337]
 
+- ``bounding_box`` now works with tuple of ``Quantities``. [#331]
+
 0.15.0 (2020-11-13)
 -------------------
 New Features

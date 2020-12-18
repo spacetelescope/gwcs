@@ -269,6 +269,14 @@ def test_bounding_box():
     with pytest.raises(ValueError):
         w.bounding_box = ((1, 5), (2, 6))
 
+    # Test that bounding_box with quantities can be assigned and evaluates
+    bb = ((1 * u.pix, 5 * u.pix), (2 * u.pix, 6 * u.pix))
+    trans = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
+    pipeline = [('detector', trans), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = bb
+    assert_allclose(w(-1*u.pix, -1*u.pix), (np.nan, np.nan))
+
 
 def test_grid_from_bounding_box():
     bb = ((-1, 9.9), (6.5, 15))

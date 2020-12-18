@@ -1219,6 +1219,7 @@ class WCS(GWCSAPIMixin):
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
+        print('IN SETTING BB', value)
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         if value is None:
@@ -1235,7 +1236,8 @@ class WCS(GWCSAPIMixin):
                 transform_0.bounding_box = value
             else:
                 # The axes in bounding_box in modeling follow python order
-                transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+                #transform_0.bounding_box = np.array(value)[axes_ind][::-1]
+                transform_0.bounding_box = [value[ind] for ind in axes_ind][::-1]
         self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
