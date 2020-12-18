@@ -1380,26 +1380,50 @@ class WCS(GWCSAPIMixin):
             A pair of tuples, each consisting of two numbers
             Represents the range of pixel values in both dimensions
             ((xmin, xmax), (ymin, ymax))
+
         max_pix_error : float, optional
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
             a nominal plate scale.
-        degree : int, optional
-            Degree of the SIP polynomial. If supplied, max_pixel_error is ignored.
+
+        degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_pixel_error`` is ignored.
+
         max_inv_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
             in pixel units. If None, no inverse is generated.
-        inv_degree : int, optional
-            Degree of the inverse SIP polynomial. If supplied max_inv_pixel_error
-            is ignored.
+
+        inv_degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_inv_pixel_error`` is ignored.
+
         npoints : int, optional
             The number of points in each dimension to sample the bounding box
             for use in the SIP fit. Minimum number of points is 3.
+
         crpix : list of float, None, optional
             Coordinates (1-based) of the reference point for the new FITS WCS.
             When not provided, i.e., when set to `None` (default) the reference
             pixel will be chosen near the center of the bounding box.
+
         verbose : bool, optional
             Print progress of fits.
 
@@ -1510,7 +1534,7 @@ class WCS(GWCSAPIMixin):
 
         if max_inv_pix_error:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
-                                                            npoints, None,
+                                                            npoints, inv_degree,
                                                             max_inv_pix_error,
                                                             U, V, u-U, v-V,
                                                             Ud, Vd, ud-Ud, vd-Vd,
@@ -1747,10 +1771,18 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
     llsqfitter = LinearLSQFitter()
 
     # The case of one pass with the specified polynomial degree
-    if degree:
-        deglist = [degree]
+    if degree is None:
+        deglist = range(1, 10)
+    elif hasattr(degree, '__iter__'):
+        deglist = sorted(map(int, degree))
+        if set(deglist).difference(range(1, 10)):
+            raise ValueError("Allowed values for SIP degree are [1...9]")
     else:
-        deglist = range(10)
+        degree = int(degree)
+        if degree < 1 or degree > 9:
+            raise ValueError("Allowed values for SIP degree are [1...9]")
+        deglist = [degree]
+
     prev_max_error = float(np.inf)
     if verbose:
         print(f'maximum_specified_error: {max_error}')
