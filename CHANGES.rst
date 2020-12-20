@@ -1,3 +1,9 @@
+0.16.1 (2020-12-20)
+-------------------
+Bug Fixes
+^^^^^^^^^
+-Fix a regression with ``pixel_to_world`` for output frames with one axis. [#342]
+
 0.16.0 (2020-12-18)
 -------------------
 New Features
