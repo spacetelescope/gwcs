@@ -296,10 +296,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert pixel values to world coordinates.
         """
         pixels = self._sanitize_pixel_inputs(*pixel_arrays)
-        result = self(*pixels, with_units=True)
-        if self.output_frame.naxes == 1:
-            return result[0]
-        return result
+        return self(*pixels, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
         """
