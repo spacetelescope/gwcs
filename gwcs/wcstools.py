@@ -8,7 +8,7 @@ from astropy.modeling import models, fitting
 from astropy import coordinates as coord
 from astropy import units as u
 
-from .coordinate_frames import * # noqa
+from .coordinate_frames import *  # noqa
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
 
@@ -136,7 +136,7 @@ def _frame2D_transform(fiducial, **kwargs):
 frame2transform = {CelestialFrame: _sky_transform,
                    SpectralFrame: _spectral_transform,
                    Frame2D: _frame2D_transform
-                  }
+                   }
 
 
 def grid_from_bounding_box(bounding_box, step=1, center=True):
@@ -215,38 +215,44 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     return grid
 
 
-def wcs_from_points(xy, world_coordinates, fiducial,
-                    projection=projections.Sky2Pix_TAN(),
-                    degree=4, polynomial_type="polynomial"):
+def wcs_from_points(xy, world_coords, proj_point='center',
+                    projection=projections.Sky2Pix_TAN(), poly_degree=4,
+                    polynomial_type='polynomial'):
     """
     Given two matching sets of coordinates on detector and sky, compute the WCS.
 
     Notes
     -----
     This function implements the following algorithm:
-    ``world_coordinates`` are transformed to a projection plane using the specified projection.
-    A polynomial fits ``xy`` and the projected coordinates.
-    The fitted polynomials and the projection transforms are combined into a tranform
-    from detector to sky.
-    The input coordinate frame is set to ``detector``.
-    The output coordinate frame is initialized based on the frame in the fiducial.
+    ``world_coords`` are transformed to a projection plane using the specified
+    projection. A polynomial fits ``xy`` and the projected coordinates.
+    The fitted polynomials and the projection transforms are combined into a
+    tranform from detector to sky. The input coordinate frame is set to
+    ``detector``. The output coordinate frame is initialized based on the frame
+    in the fiducial.
 
 
     Parameters
     ----------
     xy : tuple of 2 ndarrays
         Points in the input cooridnate frame - x, y inputs.
-    world_coordinates : tuple of 2 ndarrays
+    world_coords : `~astropy.coordinates.SkyCoord`
         Points in the output coordinate frame.
         The order matches the order of ``xy``.
-    fiducial_point : `~astropy.coordinates.SkyCoord`
-        A fiducial point in the output coordinate frame.
+    proj_point : `~astropy.coordinates.SkyCoord`
+        A fiducial point in the output coordinate frame. If set to 'center'
+        (default), the geometric center of input world
+        coordinates will be used as the projection point. To specify an exact
+        point for the projection, a Skycoord object with a coordinate pair can
+        be passed in.
     projection : `~astropy.modeling.projections.Projection`
-        A projection type. One of the projections in `~astropy.modeling.projections.projcode`.
-    degree : int
-        Degree of Polynpomial model to be fit to data.
+        A projection type. One of the projections in
+        `~astropy.modeling.projections.projcode`. Defaults to TAN projection
+        (`projections.Sky2Pix_TAN()`).
+    poly_degree : int
+        Degree of polynomial model to be fit to data. Defaults to 4. 
     polynomial_type : str
-        one of "polynomial", "chebyshev", "legendre"
+        one of "polynomial", "chebyshev", "legendre". Defaults to "polynomial".
 
     Returns
     -------
@@ -258,29 +264,65 @@ def wcs_from_points(xy, world_coordinates, fiducial,
     supported_poly_types = {"polynomial": models.Polynomial2D,
                             "chebyshev": models.Chebyshev2D,
                             "legendre": models.Legendre2D
-                           }
+                            }
+
     x, y = xy
-    lon, lat = world_coordinates
+
+    if not isinstance(world_coords, coord.SkyCoord):
+        raise TypeError('`world_coords` must be an `~astropy.coordinates.SkyCoord`')
+    try:
+        lon, lat = world_coords.data.lon.deg, world_coords.data.lat.deg
+    except AttributeError:
+        unit_sph = world_coords.unit_spherical
+        lon, lat = unit_sph.lon.deg, unit_sph.lat.deg
+
+    if isinstance(proj_point, coord.SkyCoord):
+        assert proj_point.size == 1
+        proj_point.transform_to(world_coords)
+        crval = (proj_point.data.lon, proj_point.data.lat)
+        frame = proj_point.frame
+    elif proj_point == 'center':  # use center of input points
+        sc1 = SkyCoord(lon.min()*u.deg, lat.max()*u.deg)
+        sc2 = SkyCoord(lon.max()*u.deg, lat.min()*u.deg)
+        pa = sc1.position_angle(sc2)
+        sep = sc1.separation(sc2)
+        midpoint_sc = sc1.directional_offset_by(pa, sep/2)
+        crval = (midpoint_sc.data.lon, midpoint_sc.data.lat)
+        frame = sc1.frame
+    else:
+        raise ValueError("`proj_point` must be set to 'center', or an" +
+                         "`~astropy.coordinates.SkyCoord` object with " +
+                         "a pair of points.")
 
     if not isinstance(projection, projections.Projection):
         raise UnsupportedProjectionError("Unsupported projection code {0}".format(projection))
+
     if polynomial_type not in supported_poly_types.keys():
         raise ValueError("Unsupported polynomial_type: {}. "
-                         "Only one of {} is supported.".format(polynomial_type, supported_poly_types.keys()))
-    skyrot = models.RotateCelestial2Native(fiducial.data.lon, fiducial.data.lat, 180*u.deg)
+                         "Only one of {} is supported.".format(polynomial_type,
+                                                               supported_poly_types.keys()))
+
+    skyrot = models.RotateCelestial2Native(crval[0], crval[1], 180*u.deg)
     trans = (skyrot | projection)
     projection_x, projection_y = trans(lon, lat)
-    poly = supported_poly_types[polynomial_type](degree)
+    poly = supported_poly_types[polynomial_type](poly_degree)
+
     fitter = fitting.LevMarLSQFitter()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         poly_x = fitter(poly, x, y, projection_x)
         poly_y = fitter(poly, x, y, projection_y)
-    transform = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y | projection.inverse | skyrot.inverse
+        distortion = models.Mapping((0, 1, 0, 1)) | poly_x & poly_y
 
-    skyframe = CelestialFrame(reference_frame=fiducial.frame)
+        poly_x_inverse = fitter(poly, projection_x, projection_y, x)
+        poly_y_inverse = fitter(poly, projection_x, projection_y, y)
+        distortion.inverse = models.Mapping((0, 1, 0, 1)) | poly_x_inverse & poly_y_inverse
+
+    transform = distortion | projection.inverse | skyrot.inverse
+
+    skyframe = CelestialFrame(reference_frame=frame)
     detector = Frame2D(name="detector")
     pipeline = [(detector, transform),
-                (skyframe, None)
-               ]
+                (skyframe, None)]
+
     return WCS(pipeline)
