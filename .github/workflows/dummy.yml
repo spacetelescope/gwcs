@@ -1,0 +1,17 @@
+name: dummy
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  dummy:
+    name: Dummy job to jump-start actions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo foo
