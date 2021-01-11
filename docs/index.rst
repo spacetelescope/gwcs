@@ -1,7 +1,7 @@
 GWCS Documentation
 ==================
 
-Test 1
+Test 2
 
 `GWCS <https://github.com/spacetelescope/gwcs>`__ is a package for managing
 the World Coordinate System (WCS) of astronomical data.
