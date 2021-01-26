@@ -31,7 +31,7 @@ along with some useful general imports.
   >>> import astropy.units as u
   >>> import numpy as np
   
-A collection of 20 matched coordinate pairs in x, y, RA, and Dec stored in two arrays, will be used to fit the WCS information. The function requires tuples of arrays.
+A collection of 20 matched coordinate pairs in x, y, RA, and Dec will be used to fit the WCS information. The function requires tuples of arrays for x & y, and a `~astropy.coordinates.SkyCoord` object for sky coordinates.
 
   >>> xy = (np.array([2810.156, 2810.156,  650.236, 1820.927, 3425.779, 2750.369,
   ...                 212.422, 1146.91 ,   27.055, 2100.888,  648.149,   22.212,
@@ -41,7 +41,7 @@ A collection of 20 matched coordinate pairs in x, y, RA, and Dec stored in two a
   ...                 1416.235, 1372.364,  398.823,  580.316,  317.952,  733.984,
   ...                 339.024,  234.29 , 1241.608,  293.545, 1794.522, 1365.706,
   ...                 583.135,   25.306]))
-  >>> radec = (np.array([246.75001315, 246.75001315, 246.72033646, 246.72303144,
+  >>> ra, dec = (np.array([246.75001315, 246.75001315, 246.72033646, 246.72303144,
   ...                    246.74164072, 246.73540614, 246.73379121, 246.73761455,
   ...	        	 246.7179495 , 246.73051123, 246.71970072, 246.7228646 ,
   ...			 246.72647213, 246.7188386 , 246.7314031 , 246.71821002,
@@ -51,12 +51,11 @@ A collection of 20 matched coordinate pairs in x, y, RA, and Dec stored in two a
   ...			 43.46132376,  43.48252763,  43.46802566,  43.46035331,
   ...			 43.48218262,  43.46908299,  43.46131665,  43.46560591,
   ...			 43.47791234,  43.45973025,  43.47208325,  43.47779988]))
+  >>> radec = SkyCoord(ra, dec, unit=(u.deg, u.deg))
   
   
-We can now choose the reference point on the sky for the projection. This is passed in 
-as a `~astropy.coordinates.SkyCoord` object so that information about the celestial frame and units is given as well.
-The input world coordinates are passed in as unitless arrays, and so are assumed to be of the same unit and frame 
-as the fiducial point. 
+We can now choose the reference point on the sky for the projection. This can either be an `~astropy.coordinates.SkyCoord` object, or the string 'center' to use the geometric center of input
+points. In this example, we will specify exact coordinates for the fiducial. 
  
  >>> proj_point = SkyCoord(246.7368408, 43.480712949, frame = 'icrs', unit = (u.deg,u.deg))
  

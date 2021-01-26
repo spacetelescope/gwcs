@@ -1,3 +1,14 @@
+0.17.0 (unreleased)
+-------------------
+New Features
+^^^^^^^^^^^^
+-'wcs_from_points' now includes fitting for the inverse transform. [#349]
+
+API Changes
+^^^^^^^^^^^
+-Modified interface to `wcs_from_points` function to better match analogous function
+ in astropy. [#349]
+
 0.16.1 (2020-12-20)
 -------------------
 Bug Fixes

@@ -314,7 +314,8 @@ def test_wcs_from_points():
     y, x = np.mgrid[:2046:20j, :4023:10j]
     ra, dec = w.wcs_pix2world(x, y, 1)
     fiducial = coord.SkyCoord(ra.mean()*u.deg, dec.mean()*u.deg, frame="icrs")
-    w = wcs_from_points(xy=(x, y), world_coordinates=(ra, dec), fiducial=fiducial)
+    world_coords = coord.SkyCoord(ra, dec, unit = (u.deg, u.deg))
+    w = wcs_from_points(xy=(x, y), world_coords=world_coords, proj_point=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra)
     assert_allclose(newdec, dec)
@@ -324,8 +325,8 @@ def test_wcs_from_points():
     nra = n * 10 ** -2
     ndec = n * 10 ** -2
     w = wcs_from_points(xy=(x + nra, y + ndec),
-                        world_coordinates=(ra, dec),
-                        fiducial=fiducial)
+                        world_coords=world_coords,
+                        proj_point=fiducial)
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
     assert_allclose(newdec, dec, atol=10**-6)
