@@ -168,7 +168,7 @@ class Polygon(Region):
             scan_line = Edge('scan_line', start=[self._bbox[0], y],
                              stop=[self._bbox[0] + self._bbox[2], y])
             x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
-            xnew = np.asarray(np.sort(x), dtype=np.int)
+            xnew = np.asarray(np.sort(x), dtype=int)
             for i, j in zip(xnew[::2], xnew[1::2]):
                 data[y][i:j + 1] = self._rid
             y = y + 1
@@ -314,7 +314,7 @@ class Edge:
         u = self._stop - self._start
         v = edge._stop - edge._start
         w = self._start - edge._start
-        eps = 1e2 * np.finfo(np.float).eps
+        eps = 1e2 * np.finfo(float).eps
         if np.allclose(np.cross(u, v), 0, rtol=0, atol=eps):
             return np.array(self._start)
         D = np.cross(u, v)

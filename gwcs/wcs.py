@@ -942,7 +942,7 @@ class WCS(GWCSAPIMixin):
                     # Find indices of pixels that are converging:
                     conv = np.logical_or(dnnew < dnprev[ind], dnnew < tol2)
                     if not np.all(conv):
-                        conv = np.ones_like(dnnew, dtype=np.bool)
+                        conv = np.ones_like(dnnew, dtype=bool)
                     iconv = np.where(conv)
                     iiconv = ind[iconv]
 
@@ -1007,7 +1007,7 @@ class WCS(GWCSAPIMixin):
                     bad.append(idx)
 
             if bad:
-                inddiv = np.array(bad, dtype=np.int)
+                inddiv = np.array(bad, dtype=int)
             else:
                 inddiv = None
 
