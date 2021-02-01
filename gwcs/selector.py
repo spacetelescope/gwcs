@@ -182,7 +182,7 @@ class LabelMapperArray(_LabelMapper):
 
     def __init__(self, mapper, inputs_mapping=None, name=None, **kwargs):
         if mapper.dtype.type is not np.unicode_:
-            mapper = np.asanyarray(mapper, dtype=np.int)
+            mapper = np.asanyarray(mapper, dtype=int)
             _no_label = 0
         else:
             _no_label = ""
