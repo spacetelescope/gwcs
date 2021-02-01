@@ -57,7 +57,7 @@ DOCS_REQUIRE = [
 ]
 
 TESTS_REQUIRE = [
-    'pytest>=4.6,<6',
+    'pytest',
     'pytest-doctestplus',
     'scipy',
 ]
