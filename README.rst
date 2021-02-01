@@ -7,7 +7,7 @@
    <h1 align="center">GWCS - Generalized World Coordinate System </h1>
    <p align="center">
      <a href='https://gwcs.readthedocs.io/en/latest/?badge=latest'><img src='https://readthedocs.org/projects/gwcs/badge/?version=latest' alt='Documentation Status'></a>
-     <a href="https://travis-ci.org/spacetelescope/gwcs"><img src="https://travis-ci.org/spacetelescope/gwcs.svg?branch=master" alt="Build Status"></a>
+     <a href='https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg'><img src='https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg' alt='CI Status'></a>
      <a href="https://coveralls.io/github/spacetelescope/gwcs?branch=master"><img src="https://coveralls.io/repos/github/spacetelescope/gwcs/badge.svg?branch=master" alt="Coverage Status"></a>
      <img src="https://img.shields.io/pypi/l/gwcs.svg" alt="license">
      <a href="http://www.stsci.edu"><img src="https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat" alt="stsci"></a>
