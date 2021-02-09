@@ -9,8 +9,8 @@ GWCS - Generalized World Coordinate System
     :target: https://docs.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
     
-.. image:: https://codecov.io/gh/astropy/asdf-astropy/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/astropy/asdf-astropy/branch=master
+.. image:: https://codecov.io/gh/astropy/gwcs/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/astropy/gwcs/branch=master
     :alt: Code coverage
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
