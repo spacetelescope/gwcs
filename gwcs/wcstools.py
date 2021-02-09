@@ -250,7 +250,7 @@ def wcs_from_points(xy, world_coords, proj_point='center',
         `~astropy.modeling.projections.projcode`. Defaults to TAN projection
         (`projections.Sky2Pix_TAN()`).
     poly_degree : int
-        Degree of polynomial model to be fit to data. Defaults to 4. 
+        Degree of polynomial model to be fit to data. Defaults to 4.
     polynomial_type : str
         one of "polynomial", "chebyshev", "legendre". Defaults to "polynomial".
 

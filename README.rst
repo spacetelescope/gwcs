@@ -1,19 +1,25 @@
-.. 
-   GWCS - Generalized World Coordinate System
-   ==========================================
+GWCS - Generalized World Coordinate System
+==========================================
 
-.. raw:: html
+.. image:: https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg
+    :target: https://github.com/spacetelescope/gwcs/actions
+    :alt: CI Status
+    
+.. image:: https://readthedocs.org/projects/docs/badge/?version=latest
+    :target: https://docs.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+    
+.. image:: https://codecov.io/gh/astropy/asdf-astropy/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/astropy/asdf-astropy/branch=master
+    :alt: Code coverage
 
-   <h1 align="center">GWCS - Generalized World Coordinate System </h1>
-   <p align="center">
-     <a href='https://gwcs.readthedocs.io/en/latest/?badge=latest'><img src='https://readthedocs.org/projects/gwcs/badge/?version=latest' alt='Documentation Status'></a>
-     <a href="https://travis-ci.org/spacetelescope/gwcs"><img src="https://travis-ci.org/spacetelescope/gwcs.svg?branch=master" alt="Build Status"></a>
-     <a href="https://coveralls.io/github/spacetelescope/gwcs?branch=master"><img src="https://coveralls.io/repos/github/spacetelescope/gwcs/badge.svg?branch=master" alt="Coverage Status"></a>
-     <img src="https://img.shields.io/pypi/l/gwcs.svg" alt="license">
-     <a href="http://www.stsci.edu"><img src="https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat" alt="stsci"></a>
-     <a href="http://www.astropy.org/"><img src="http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat" alt="astropy"></a>
-   </p>
-
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
+    :target: http://www.astropy.org
+    :alt: Powered by Astropy Badge
+    
+.. image:: https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat
+    :target: http://www.stsci.edu
+    :alt: Powered by STScI Badge
 
 Generalized World Coordinate System (GWCS) is an `Astropy`_ affiliated package providing tools for managing the World Coordinate System of astronomical data.
 
