@@ -2,7 +2,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 import os
-import sys
 
 from setuptools import setup, find_packages
 from configparser import ConfigParser
@@ -13,12 +12,6 @@ conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
 PACKAGENAME = metadata.get('name', 'packagename')
-# DESCRIPTION = metadata.get('description', 'Astropy affiliated package')
-# AUTHOR = metadata.get('author', '')
-# AUTHOR_EMAIL = metadata.get('author_email', '')
-# LICENSE = metadata.get('license', 'unknown')
-# URL = metadata.get('url', 'http://astropy.org')
-
 
 def get_package_data():
     # Installs the schema files
