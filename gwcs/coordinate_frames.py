@@ -12,39 +12,45 @@ from astropy import utils as astutil
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
-
+from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame']
 
 
-UCD1_TO_CTYPE = {
-    'pos.eq.ra': 'RA',
-    'pos.eq.dec': 'DEC',
-    'pos.galactic.lon': 'GLON',
-    'pos.galactic.lat': 'GLAT',
-    'pos.ecliptic.lon': 'ELON',
-    'pos.ecliptic.lat': 'ELAT',
-    'pos.bodyrc.lon': 'TLON',
-    'pos.bodyrc.lat': 'TLAT',
-    'custom:pos.helioprojective.lat': 'HPLT',
-    'custom:pos.helioprojective.lon': 'HPLN',
-    'custom:pos.heliographic.stonyhurst.lon': 'HGLN',
-    'custom:pos.heliographic.stonyhurst.lat': 'HGLT',
-    'custom:pos.heliographic.carrington.lon': 'CRLN',
-    'custom:pos.heliographic.carrington.lat': 'CRLT',
-    'em.freq': 'FREQ',
-    'em.energy': 'ENER',
-    'em.wavenumber': 'WAVN',
-    'em.wl': 'WAVE',
-    'spect.dopplerVeloc.radio': 'VRAD',
-    'spect.dopplerVeloc.opt': 'VOPT',
-    'src.redshift': 'ZOPT',
-    'spect.dopplerVeloc': 'VELO',
-    'custom:spect.doplerVeloc.beta': 'BETA',
-    'time': 'TIME',
+def _ucd1_to_ctype_name_mapping():
+    # Enter below allowed physical type duplicates and a corresponding CTYPE
+    # to which all duplicates will be mapped to:
+    allowed_duplicates = {
+        'time': 'TIME',
+        'em.wl': 'WAVE',
     }
 
+    inv_map = {}
+    new_ucd = set()
+
+    for kwd, ucd in CTYPE_TO_UCD1.items():
+        if ucd in inv_map:
+            if ucd not in allowed_duplicates:
+                new_ucd.add(ucd)
+            continue
+        elif ucd in allowed_duplicates:
+            inv_map[ucd] = allowed_duplicates[ucd]
+        else:
+            inv_map[ucd] = kwd
+
+    if new_ucd:
+        logging.warning(
+            "Found unsupported duplicate physical type in 'astropy' mapping to CTYPE.\n"
+            "Update 'gwcs' to the latest version or notify 'gwcs' developer.\n"
+            "Duplicate physical types will be mapped to the following CTYPEs:\n" +
+            '\n'.join([f'{repr(ucd):s} --> {repr(inv_map[ucd]):s}' for ucd in new_ucd])
+        )
+
+    return inv_map
+
+
+UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping()
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
