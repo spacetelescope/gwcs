@@ -18,24 +18,17 @@ __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame']
 
 
-def _ucd1_to_ctype_name_mapping():
-    # Enter below allowed physical type duplicates and a corresponding CTYPE
-    # to which all duplicates will be mapped to:
-    allowed_duplicates = {
-        'time': 'TIME',
-        'em.wl': 'WAVE',
-    }
-
+def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
     inv_map = {}
     new_ucd = set()
 
-    for kwd, ucd in CTYPE_TO_UCD1.items():
+    for kwd, ucd in ctype_to_ucd.items():
         if ucd in inv_map:
-            if ucd not in allowed_duplicates:
+            if ucd not in allowed_ucd_duplicates:
                 new_ucd.add(ucd)
             continue
-        elif ucd in allowed_duplicates:
-            inv_map[ucd] = allowed_duplicates[ucd]
+        elif ucd in allowed_ucd_duplicates:
+            inv_map[ucd] = allowed_ucd_duplicates[ucd]
         else:
             inv_map[ucd] = kwd
 
@@ -49,8 +42,17 @@ def _ucd1_to_ctype_name_mapping():
 
     return inv_map
 
+# List below allowed physical type duplicates and a corresponding CTYPE
+# to which all duplicates will be mapped to:
+_ALLOWED_UCD_DUPLICATES = {
+    'time': 'TIME',
+    'em.wl': 'WAVE',
+}
 
-UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping()
+UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping(
+    ctype_to_ucd=CTYPE_TO_UCD1,
+    allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
+)
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
