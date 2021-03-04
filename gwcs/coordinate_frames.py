@@ -298,14 +298,14 @@ class CoordinateFrame:
 
     @property
     def _world_axis_object_classes(self):
-        return {self._axes_type[0]: (
-            u.Quantity,
-            (),
-            {'unit': self.unit[0]})}
+        return {f"{at}{i}": (u.Quantity,
+                     (),
+                     {'unit': unit})
+                for i, (at, unit) in enumerate(zip(self._axes_type, self.unit))}
 
     @property
     def _world_axis_object_components(self):
-        return [(self._axes_type[0], 0, 'value')]
+        return [(f"{at}{i}", 0, 'value') for i, at in enumerate(self._axes_type)]
 
 
 class CelestialFrame(CoordinateFrame):

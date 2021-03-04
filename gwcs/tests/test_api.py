@@ -166,6 +166,12 @@ def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
                     ('celestial', 1, 'spherical.lat')]
 
 
+def test_world_axis_object_components_2d_generic(gwcs_2d_quantity_shift):
+    waoc = gwcs_2d_quantity_shift.world_axis_object_components
+    assert waoc == [('SPATIAL0', 0, 'value'),
+                    ('SPATIAL1', 0, 'value')]
+
+
 def test_world_axis_object_components_1d(gwcs_1d_freq):
     waoc = gwcs_1d_freq.world_axis_object_components
     assert waoc == [('spectral', 0, 'value')]
@@ -187,6 +193,18 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
     assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+
+
+def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
+    waoc = gwcs_2d_quantity_shift.world_axis_object_classes
+    assert waoc['SPATIAL0'][0] is u.Quantity
+    assert waoc['SPATIAL1'][0] is u.Quantity
+    assert waoc['SPATIAL0'][1] == tuple()
+    assert waoc['SPATIAL1'][1] == tuple()
+    assert 'unit' in waoc['SPATIAL0'][2]
+    assert 'unit' in waoc['SPATIAL1'][2]
+    assert waoc['SPATIAL0'][2]['unit'] == u.km
+    assert waoc['SPATIAL1'][2]['unit'] == u.km
 
 
 def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
