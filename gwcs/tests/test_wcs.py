@@ -580,6 +580,63 @@ def test_to_fits_sip():
         mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
 
 
+def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
+    w = gwcs_cube_with_separable_spectral
+
+    fw_hdr = w.to_fits_sip()
+    assert fw_hdr['CTYPE1'] == 'DEC--TAN'
+    assert fw_hdr['CTYPE2'] == 'RA---TAN'
+    assert fw_hdr['WCSAXES'] == 2
+    assert fw_hdr['NAXIS'] == 2
+    assert fw_hdr['NAXIS1'] == 128
+    assert fw_hdr['NAXIS2'] == 64
+
+    fw = astwcs.WCS(fw_hdr)
+    gskyval = w(1, 60, 55, with_units=True)[0]
+    assert np.allclose([gskyval.dec.value, gskyval.ra.value],
+                       fw.all_pix2world(1, 60, 0))
+
+
+def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
+    w = gwcs_3d_galactic_spectral
+
+    fw_hdr = w.to_fits_sip()
+    assert fw_hdr['CTYPE1'] == 'GLAT-TAN'
+
+    fw = astwcs.WCS(fw_hdr)
+    gskyval = w(7, 8, 9, with_units=True)[0]
+    assert np.allclose([gskyval.b.value, gskyval.l.value],
+                       fw.all_pix2world(7, 9, 0), atol=1e-3)
+
+
+def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral):
+    from inspect import signature, Parameter
+    w = gwcs_cube_with_separable_spectral
+
+    pars = signature(w.to_fits_sip).parameters
+    kwargs = {
+        k: v.default for k, v in pars.items() if v.default is not Parameter.empty
+    }
+
+    fw_hdr = w._to_fits_sip(
+        frame=w.output_frame.frames[0],
+        axes_mapping={1: (0, 1), 2: (0, 1)},
+        keep_axis_position=True,
+        **kwargs
+    )
+
+    fw_hdr['CD1_3'] = 1
+    fw_hdr['CRPIX3'] = 1
+
+    assert fw_hdr['CTYPE2'] == 'DEC--TAN'
+    assert fw_hdr['CTYPE3'] == 'RA---TAN'
+    assert fw_hdr['WCSAXES'] == 2
+
+    fw = astwcs.WCS(fw_hdr)
+    gskyval = w(1, 45, 55)[1:]
+    assert np.allclose(gskyval, fw.all_pix2world([[1, 45, 55]], 0)[0][1:])
+
+
 def test_to_fits_tab_no_bb(gwcs_3d_galactic_spectral):
     # gWCS:
     w = gwcs_3d_galactic_spectral
@@ -622,6 +679,153 @@ def test_to_fits_tab_cube(gwcs_3d_galactic_spectral):
                        rtol=1e-6, atol=1e-7)
 
 
+@pytest.mark.skip(reason="Fails round-trip for -TAB axis 5")
+def test_to_fits_tab_7d(gwcs_7d_complex_mapping):
+    # gWCS:
+    w = gwcs_7d_complex_mapping
+
+    # create FITS headers and -TAB headers
+    hdr, bt = w.to_fits(projection='TAN')
+
+    # create FITS WCS object:
+    hdus = [fits.PrimaryHDU(np.zeros(w.array_shape), hdr)]
+    hdus.extend(bt)
+    hdulist = fits.HDUList(hdus)
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    np.random.seed(1)
+    npts = 100
+    pts = np.zeros((len(w.bounding_box) + 1, npts))
+    for k, r in enumerate(w.bounding_box):
+        xmin, xmax = w.bounding_box[k]
+        pts[k, :] = xmin + (xmax - xmin) * np.random.random(npts)
+
+    world_crds = w(*pts[:-1, :])
+
+    # test forward transformation:
+    assert np.allclose(world_crds, fits_wcs.wcs_pix2world(*pts, 0))
+
+    # test round-tripping:
+    pts2 = fits_wcs.wcs_world2pix(*world_crds, 0)
+    assert np.allclose(pts, fits_wcs.wcs_world2pix(*world_crds, 0))
+
+
+@pytest.mark.skip(reason="Fails round-trip for -TAB axis 4")
+def test_to_fits_mixed_4d(gwcs_spec_cel_time_4d):
+    # gWCS:
+    w = gwcs_spec_cel_time_4d
+
+    # create FITS headers and -TAB headers
+    hdr, bt = w.to_fits()
+
+    # create FITS WCS object:
+    hdus = [fits.PrimaryHDU(np.zeros(w.array_shape), hdr)]
+    hdus.extend(bt)
+    hdulist = fits.HDUList(hdus)
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    np.random.seed(1)
+    npts = 100
+    pts = np.zeros((len(w.bounding_box), npts))
+    for k, r in enumerate(w.bounding_box):
+        xmin, xmax = w.bounding_box[k]
+        pts[k, :] = xmin + (xmax - xmin) * np.random.random(npts)
+
+    world_crds = w(*pts)
+
+    # test forward transformation:
+    assert np.allclose(world_crds, fits_wcs.wcs_pix2world(*pts, 0))
+
+    # test round-tripping:
+    pts2 = np.array(fits_wcs.wcs_world2pix(*world_crds, 0))
+    assert np.allclose(pts, pts2, rtol=1e-5, atol=1e-5)
+
+
+def test_to_fits_1D_round_trip(gwcs_1d_spectral):
+    # gWCS:
+    w = gwcs_1d_spectral
+
+    # FITS WCS -SIP (for celestial) and -TAB (for spectral):
+    hdr, bt = w.to_fits()
+    hdulist = fits.HDUList(
+        [fits.PrimaryHDU(np.ones(w.array_shape), hdr), bt[0]]
+    )
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    np.random.seed(1)
+    (xmin, xmax) = w.bounding_box
+    x = xmin + (xmax - xmin) * np.random.random(100)
+
+    # test forward transformation:
+    wt = fits_wcs.wcs_pix2world(x, 0)
+    assert np.allclose(w(x), wt, rtol=1e-6, atol=1e-7)
+
+    # test inverse (round-trip):
+    xinv = fits_wcs.wcs_world2pix(wt[0], 0)[0]
+    assert np.allclose(x, xinv, rtol=1e-6, atol=1e-7)
+
+
+def test_to_fits_sip_tab_cube(gwcs_cube_with_separable_spectral):
+    # gWCS:
+    w = gwcs_cube_with_separable_spectral
+
+    # FITS WCS -SIP (for celestial) and -TAB (for spectral):
+    hdr, bt = w.to_fits(projection=models.Sky2Pix_TAN(name='TAN'))
+
+    # create FITS WCS object:
+    hdus = [fits.PrimaryHDU(np.zeros(w.array_shape), hdr)]
+    hdus.extend(bt)
+    hdulist = fits.HDUList(hdus)
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(100)
+    y = ymin + (ymax - ymin) * np.random.random(100)
+    z = zmin + (zmax - zmin) * np.random.random(100)
+
+    world_crds = w(x, y, z)
+
+    # test forward transformation:
+    assert np.allclose(world_crds, fits_wcs.wcs_pix2world(x, y, z, 0))
+
+    # test round-tripping:
+    assert np.allclose((x, y, z), fits_wcs.wcs_world2pix(*world_crds, 0))
+
+
+def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
+    # gWCS:
+    w = gwcs_cube_with_separable_time
+
+    # FITS WCS -SIP (for celestial) and -TAB (for spectral):
+    hdr, bt = w.to_fits(projection=models.Sky2Pix_TAN(name='TAN'))
+
+    # create FITS WCS object:
+    hdus = [fits.PrimaryHDU(np.zeros(w.array_shape), hdr)]
+    hdus.extend(bt)
+    hdulist = fits.HDUList(hdus)
+    fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
+
+    # test points:
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = w.bounding_box
+    np.random.seed(1)
+    x = xmin + (xmax - xmin) * np.random.random(50)
+    y = ymin + (ymax - ymin) * np.random.random(50)
+    z = zmin + (zmax - zmin) * np.random.random(50)
+
+    world_crds = w(x, y, z)
+
+    # test forward transformation:
+    assert np.allclose(world_crds, fits_wcs.wcs_pix2world(x, y, z, 0))
+
+    # test round-tripping:
+    assert np.allclose((x, y, z), fits_wcs.wcs_world2pix(*world_crds, 0), rtol=1e-5, atol=1e-5)
+
+
 def test_to_fits_tab_miri_image():
     # gWCS:
     af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
@@ -650,9 +854,9 @@ def test_to_fits_tab_miri_lrs():
     w = af.tree['wcs']
 
     # FITS WCS -TAB:
-    hdr, bt = w.to_fits_tab(sampling=0.25)
+    hdr, bt = w.to_fits(sampling=0.25)
     hdulist = fits.HDUList(
-        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt]
+        [fits.PrimaryHDU(np.ones(w.pixel_n_dim * (2, )), hdr), bt[0]]
     )
     fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
 
@@ -666,6 +870,8 @@ def test_to_fits_tab_miri_lrs():
     ref = np.array(w(x, y))
     tab = np.array(fits_wcs.wcs_pix2world(x, y, 0, 0))
     m = np.cumprod(np.isfinite(ref), dtype=np.bool_, axis=0)
+
+    assert hdr['WCSAXES'] == 3
     assert np.allclose(ref[m], tab[m], rtol=5e-6, atol=5e-6, equal_nan=True)
 
 
