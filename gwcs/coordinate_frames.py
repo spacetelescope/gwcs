@@ -2,6 +2,7 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
+from collections import defaultdict
 import logging
 import numpy as np
 
@@ -298,14 +299,14 @@ class CoordinateFrame:
 
     @property
     def _world_axis_object_classes(self):
-        return {f"{at}{i}": (u.Quantity,
+        return {f"{at}{i}" if i != 0 else at: (u.Quantity,
                      (),
                      {'unit': unit})
                 for i, (at, unit) in enumerate(zip(self._axes_type, self.unit))}
 
     @property
     def _world_axis_object_components(self):
-        return [(f"{at}{i}", 0, 'value') for i, at in enumerate(self._axes_type)]
+        return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._axes_type)]
 
 
 class CelestialFrame(CoordinateFrame):
@@ -642,14 +643,51 @@ class CompositeFrame(CoordinateFrame):
         return qs
 
     @property
+    def _wao_classes_rename_map(self):
+        mapper = defaultdict(dict)
+        seen_names = []
+        for frame in self.frames:
+            # ensure the frame is in the mapper
+            mapper[frame]
+            for key in frame._world_axis_object_classes.keys():
+                if key in seen_names:
+                    new_key = f"{key}{seen_names.count(key)}"
+                    mapper[frame][key] = new_key
+                seen_names.append(key)
+        return mapper
+
+    @property
+    def _wao_renamed_components_iter(self):
+        mapper = self._wao_classes_rename_map
+        for frame in self.frames:
+            renamed_components = []
+            for comp in frame._world_axis_object_components:
+                comp = list(comp)
+                rename = mapper[frame].get(comp[0])
+                if rename:
+                    comp[0] = rename
+                renamed_components.append(tuple(comp))
+            yield frame, renamed_components
+
+    @property
+    def _wao_renamed_classes_iter(self):
+        mapper = self._wao_classes_rename_map
+        for frame in self.frames:
+            for key, value in frame._world_axis_object_classes.items():
+                rename = mapper[frame].get(key)
+                if rename:
+                    key = rename
+                yield key, value
+
+    @property
     def _world_axis_object_components(self):
         """
         We need to generate the components respecting the axes_order.
         """
         out = [None] * self.naxes
-        for frame in self.frames:
+        for frame, components in self._wao_renamed_components_iter:
             for i, ao in enumerate(frame.axes_order):
-                out[ao] = frame._world_axis_object_components[i]
+                out[ao] = components[i]
 
         if any([o is None for o in out]):
             raise ValueError("axes_order leads to incomplete world_axis_object_components")
@@ -657,10 +695,7 @@ class CompositeFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_classes(self):
-        out = {}
-        for frame in self.frames:
-            out.update(frame._world_axis_object_classes)
-        return out
+        return dict(self._wao_renamed_classes_iter)
 
 
 class StokesProfile(str):
