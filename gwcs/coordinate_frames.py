@@ -435,6 +435,7 @@ class SpectralFrame(CoordinateFrame):
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
                  axes_names=None, name=None, axis_physical_types=None,
                  reference_position=None):
+
         super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                                             axes_names=axes_names, reference_frame=reference_frame,
                                             unit=unit, name=name,
@@ -444,7 +445,7 @@ class SpectralFrame(CoordinateFrame):
     @property
     def _world_axis_object_classes(self):
         return {'spectral': (
-            u.Quantity,
+            coord.SpectralCoord,
             (),
             {'unit': self.unit[0]})}
 
@@ -452,13 +453,15 @@ class SpectralFrame(CoordinateFrame):
     def _world_axis_object_components(self):
         return [('spectral', 0, 'value')]
 
-    def coordinates(self, *args, equivalencies=[]):
-        if hasattr(args[0], 'unit'):
-            return args[0].to(self.unit[0], equivalencies=equivalencies)
-        if np.isscalar(args):
-            return args * self.unit[0]
+    def coordinates(self, *args):
+        # using SpectralCoord
+        if isinstance(args[0], coord.SpectralCoord):
+            return args[0].to(self.unit[0])
         else:
-            return args[0] * self.unit[0]
+            if hasattr(args[0], 'unit'):
+                return coord.SpectralCoord(*args).to(self.unit[0])
+            else:
+                return coord.SpectralCoord(*args, self.unit[0])
 
     def coordinate_to_quantity(self, *coords):
         if hasattr(coords[0], 'unit'):

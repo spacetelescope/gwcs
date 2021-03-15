@@ -290,7 +290,7 @@ class WCS(GWCSAPIMixin):
             for each dimension.
         with_units : bool
             If ``True`` returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object, by using the units of
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
             the output cooridnate frame.
             Optional, default=False.
         with_bounding_box : bool, optional
@@ -413,7 +413,7 @@ class WCS(GWCSAPIMixin):
 
         with_units : bool, optional
             If ``True`` returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object, by using the units of
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
             the output cooridnate frame. Default is `False`.
 
         Other Parameters
@@ -490,7 +490,7 @@ class WCS(GWCSAPIMixin):
 
         with_units : bool, optional
             If ``True`` returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object, by using the units of
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
             the output cooridnate frame. Default is `False`.
 
         tolerance : float, optional
@@ -1071,7 +1071,7 @@ class WCS(GWCSAPIMixin):
             Inputs in ``from_frame``, separate inputs for each dimension.
         output_with_units : bool
             If ``True`` - returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Quantity` object.
+            `~astropy.coordinates.SpectralCoord` object.
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to any of the inputs being
              outside the bounding_box are set to ``fill_value``.
