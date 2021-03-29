@@ -31,6 +31,14 @@ model_1d_scale = models.Scale(2)
 
 
 @pytest.fixture
+def gwcs_2d_quantity_shift():
+    frame = cf.CoordinateFrame(name="quantity", axes_order=(0, 1), naxes=2, axes_type=("SPATIAL", "SPATIAL"), unit=(u.km, u.km))
+    pipe = [(detector_2d, model_2d_shift), (frame, None)]
+
+    return wcs.WCS(pipe)
+
+
+@pytest.fixture
 def gwcs_2d_spatial_shift():
     """
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
