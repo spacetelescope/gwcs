@@ -1,5 +1,11 @@
 0.17.0 (unreleased)
 -------------------
+Bug Fixes
+^^^^^^^^^
+
+- `world_axis_object_components` and `world_axis_object_classes` now ensure
+  unique keys in `CompositeFrame` and `CoordinateFrame`. [#356]
+
 New Features
 ^^^^^^^^^^^^
 -'wcs_from_points' now includes fitting for the inverse transform. [#349]
