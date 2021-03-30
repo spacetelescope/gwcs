@@ -74,6 +74,40 @@ class NoConvergence(Exception):
         self.slow_conv = slow_conv
 
 
+class _WorldAxisInfo():
+    def __init__(self, axis, frame, world_axis_order, cunit, ctype, input_axes):
+        """
+        A class for holding information about a world axis from an output frame.
+
+        Parameters
+        ----------
+        axis : int
+            Output axis number [in the forward transformation].
+
+        frame : cf.CoordinateFrame
+            Coordinate frame to which this axis belongs.
+
+        world_axis_order : int
+            Index of this axis in `gwcs.WCS.output_frame.axes_order`
+
+        cunit : str
+            Axis unit using FITS convension (``CUNIT``).
+
+        ctype : str
+            Axis FITS type (``CTYPE``).
+
+        input_axes : tuple of int
+            Tuple of input axis indices contributing to this world axis.
+
+        """
+        self.axis = axis
+        self.frame = frame
+        self.world_axis_order = world_axis_order
+        self.cunit = cunit
+        self.ctype = ctype
+        self.input_axes = input_axes
+
+
 class WCS(GWCSAPIMixin):
     """
     Basic WCS class.
@@ -1494,7 +1528,7 @@ class WCS(GWCSAPIMixin):
             from Table 13 in
             `Representations of World Coordinates in FITS \
             <https://doi.org/10.1051/0004-6361:20021326>`_
-            (Paper I), Greisen, E. W., and Calabretta, M. R., A \& A, 395,
+            (Paper I), Greisen, E. W., and Calabretta, M. R., A & A, 395,
             1061-1075, 2002. Alternatively, it can be an instance of one of the
             `astropy's Pix2Sky_* <https://docs.astropy.org/en/stable/modeling/\
             reference_api.html#module-astropy.modeling.projections>`_
@@ -1523,19 +1557,12 @@ class WCS(GWCSAPIMixin):
         floating point problems that arise with high powers.
 
         """
-        sep_frames_axes, axes_mapping = self._separable_frames_and_axes_groups()
-
-        # find CelestialFrame and make sure it has only one group of
-        # two separable axes:
-        for frame, _ in sep_frames_axes:
-            if isinstance(frame, cf.CelestialFrame):
-                break
-        else:
+        _, _, celestial_group = self._separable_groups(detect_celestial=True)
+        if celestial_group is None:
             raise ValueError("The to_fits_sip requires a celestial frame.")
 
         hdr = self._to_fits_sip(
-            frame=frame,
-            axes_mapping=axes_mapping,
+            celestial_group=celestial_group,
             keep_axis_position=False,
             bounding_box=bounding_box,
             max_pix_error=max_pix_error,
@@ -1550,7 +1577,7 @@ class WCS(GWCSAPIMixin):
 
         return hdr
 
-    def _to_fits_sip(self, frame, axes_mapping, keep_axis_position,
+    def _to_fits_sip(self, celestial_group, keep_axis_position,
                      bounding_box, max_pix_error, degree,
                      max_inv_pix_error, inv_degree,
                      npoints, crpix, projection,
@@ -1571,20 +1598,16 @@ class WCS(GWCSAPIMixin):
         frame : gwcs.coordinate_frames.CelestialFrame
             A celestial frame.
 
-        axes_mapping : dict
-            A dictionary that maps output axis index to a tuple of input
-            axis indices. In a typical scenario of two input image axes
-            and two output celestial axes for a FITS-like WCS,
-            this dictionary would look like ``{0: (0, 1), 1: (0, 1)}``
-            with the two non-separable input axes.
+        celestial_group : list of ``_WorldAxisInfo``
+            A group of two celestial axes to be represented using standard
+            image FITS WCS and maybe ``-SIP`` polynomials.
 
         keep_axis_position : bool
-            This parameter controls whether to keep output axes indices in this
-            WCS object when creating FITS WCS and create a FITS header with
-            ``CTYPE`` axes indices preserved from the ``frame`` object or
-            whether to reset the indices of output celestial axes to 1 and 2
-            with ``CTYPE1``, ``CTYPE2``.
-            Default is `False`.
+            This parameter controls whether to keep/preserve output axes
+            indices in this WCS object when creating FITS WCS and create a FITS
+            header with ``CTYPE`` axes indices preserved from the ``frame``
+            object or whether to reset the indices of output celestial axes
+            to 1 and 2 with ``CTYPE1``, ``CTYPE2``. Default is `False`.
 
             .. warning::
                 Returned header will have both ``NAXIS`` and ``WCSAXES`` set
@@ -1633,15 +1656,16 @@ class WCS(GWCSAPIMixin):
                 "'projection' must be either a FITS WCS string projection code "
                 "or an instance of astropy.modeling.projections.Pix2SkyProjection.")
 
+        frame = celestial_group[0].frame
+
         lon_axis = frame.axes_order[0]
         lat_axis = frame.axes_order[1]
 
         # identify input axes:
-        input_axes = set()
-        for ax in frame.axes_order:
-            for ia in axes_mapping[ax]:
-                input_axes.add(ia)
-        input_axes = tuple(sorted(input_axes))
+        input_axes = []
+        for wax in celestial_group:
+            input_axes.extend(wax.input_axes)
+        input_axes = sorted(set(input_axes))
 
         if len(input_axes) != 2:
             raise ValueError("Only CelestialFrame that correspond to two "
@@ -1667,8 +1691,7 @@ class WCS(GWCSAPIMixin):
         bb_center = np.mean(bounding_box, axis=1)
 
         fixi_dict = {
-            # int(k) is a temporary workaround to https://github.com/astropy/astropy/issues/11358
-            int(k): bb_center[k] for k in np.setdiff1d(np.arange(self.pixel_n_dim), input_axes)
+            k: bb_center[k] for k in set(range(self.pixel_n_dim)).difference(input_axes)
         }
 
         # transform = fix_inputs(self.forward_transform, fixi_dict)
@@ -1678,8 +1701,6 @@ class WCS(GWCSAPIMixin):
 
         transform = transform | Mapping((lon_axis, lat_axis),
                                         n_inputs=self.forward_transform.n_outputs)
-
-        crds = [bb_center[k] for k in range(self.forward_transform.n_inputs) if k not in fixi_dict]
 
         (xmin, xmax) = bounding_box[input_axes[0]]
         (ymin, ymax) = bounding_box[input_axes[1]]
@@ -1842,7 +1863,9 @@ class WCS(GWCSAPIMixin):
         hdr['WCSAXES'] = 2
         hdr.insert('WCSAXES', ('WCSNAME', f'{self.output_frame.name}'), after=True)
 
-        # for PC matrix formalism, set diagonal elements to 0 if necessary:
+        # for PC matrix formalism, set diagonal elements to 0 if necessary
+        # (by default, in PC formalism, diagonal matrix elements by default
+        # are 0):
         if mat_kind == 'PC':
             if nlon not in [iax1, iax2]:
                 hdr.insert(
@@ -1859,80 +1882,137 @@ class WCS(GWCSAPIMixin):
 
         return hdr
 
-    def _separable_axes_sets(self):
+    def _separable_groups(self, detect_celestial):
         """
         This method finds sets (groups) of separable axes - axes that are
         dependent on other axes within a set/group but do not depend on
-        other axes from other groups. In other words, axes from different
+        axes from other groups. In other words, axes from different
         groups are separable.
 
-        The second returned quantity is a dictionary that maps output axes to
-        groups of input axes represented as tuples of input axes indices
-        on which each output axis depends.
+        Parameters
+        ----------
+        detect_celestial : bool
+            If `True`, will return, as the third return value, the group of
+            celestial axes separately from all other (groups of) axes. If
+            no celestial frame is detected, then return value for the
+            celestial axes group will be set to `None`.
+
+
+        Returns
+        -------
+        axes_groups : list of lists of ``_WorldAxisInfo``
+            Each inner list represents a group of non-separable (among
+            themselves) axes and each axis in a group is independent of axes
+            in *other* groups. Each axis in a group is represented through
+            the `_WorldAxisInfo` class used to store relevant information about
+            an axis. When ``detect_celestial`` is set to `True`, celestial axes
+            group is not included in this list.
+
+        world_axes : list of ``_WorldAxisInfo``
+            A flattened version of ``axes_groups``. Even though it is not
+            difficult to flatten ``axes_groups``, this list is a by-product
+            of other checks and returned here for efficiency. When
+            ``detect_celestial`` is set to `True`, celestial axes
+            group is not included in this list.
+
+        celestial_group : list of ``_WorldAxisInfo``
+            A group of two celestial axes. This group is returned *only when*
+            ``detect_celestial`` is set to `True`.
 
         """
+        def find_frame(axis_number):
+            for frame in frames:
+                if axis_number in frame.axes_order:
+                    return frame
+            else:
+                raise RuntimeError("Encountered an output axes that does not "
+                                   "belong to any output coordinate frames.")
+
+        # use correlation matrix to find separable axes:
         corr_mat = self.axis_correlation_matrix
-        sets = [set(np.flatnonzero(r)) for r in corr_mat.T]
+        axes_sets = [set(np.flatnonzero(r)) for r in corr_mat.T]
 
         k = 0;
-        while len(sets) - 1 > k:
-            for m in range(len(sets) - 1, k, -1):
-                if sets[k].isdisjoint(sets[m]):
+        while len(axes_sets) - 1 > k:
+            for m in range(len(axes_sets) - 1, k, -1):
+                if axes_sets[k].isdisjoint(axes_sets[m]):
                     continue
-                sets[k] = sets[k].union(sets[m])
-                del sets[m]
+                axes_sets[k] = axes_sets[k].union(axes_sets[m])
+                del axes_sets[m]
             k += 1
 
+        # create a mapping of output axes to input/image axes groups:
         mapping = {k: tuple(np.flatnonzero(r)) for k, r in enumerate(corr_mat)}
 
-        return sets, mapping
-
-    def _separable_frames_and_axes_groups(self):
-        """ Return a list of tuples of coordinate frames, list of tuples
-        of separable output axes groups pairs:
-
-        .. highlight:: python
-           :linenothreshold: 5
-
-           [(cf1, [axes_group1, axes_group2]), (cf2, [axes_group3]), ...]
-
-        where each axes group is itself a tuple of non-separable axes indices
-        that are associated to a specific coordinate frame. Axes in different
-        groups are separable.
-
-        The second returned quantity is a dictionary that maps output axes to
-        groups of input axes represented as tuples of input axes indices
-        on which each output axis depends.
-
-        """
-        axes_sets, mapping = self._separable_axes_sets()
-        frame_axes_groups = []
+        axes_groups = []
+        world_axes = []  # flattened version of axes_groups
+        input_axes = []  # all input axes
 
         if isinstance(self.output_frame, cf.CompositeFrame):
             frames = self.output_frame.frames
         else:
             frames = [self.output_frame]
 
-        for frame in frames:
-            frame_axes = []
-            axes_groups = []
-            nsets = len(axes_sets)
+        celestial_group = None
 
-            for k, axes in enumerate(axes_sets[::-1]):
-                if axes.issubset(frame.axes_order):
-                    ag = axes_sets.pop(nsets - (k + 1))
-                    frame_axes.extend(ag)
-                    axes_groups.append(tuple(sorted(ag)))
+        # identify which separable group of axes belong
+        for s in axes_sets:
+            axis_info_group = []  # group of separable output axes info
 
-            if sorted(frame_axes) == sorted(frame.axes_order):
-                frame_axes_groups.append((frame, sorted(axes_groups)))
+            # Find the frame to which the first axis in the group belongs.
+            # Most likely this frame will be the frame of all other axes in
+            # this group; if not, we will update it later.
+            s = sorted(s)
+            frame = find_frame(s[0])
 
-        if not frame_axes_groups:
-            # No separable groups of axes have been found.
-            # Make a single group with the output frame and all axes:
-            frame_axes_groups = [(self.output_frame, [tuple(sorted(self.output_frame.axes_order))])]
+            celestial = (detect_celestial and len(s) == 2 and
+                         len(frame.axes_order) == 2 and
+                         isinstance(frame, cf.CelestialFrame))
 
-        return frame_axes_groups, mapping
+            for axno in s:
+                if axno not in frame.axes_order:
+                    frame = find_frame(axno)
+                    celestial = False  # Celestial axes must belong to the same frame
+
+                # index of the axis in this frame's
+                fidx = frame.axes_order.index(axno)
+                if hasattr(frame.unit[fidx], 'get_format_name'):
+                    cunit = frame.unit[fidx].get_format_name(u.format.Fits).upper()
+                else:
+                    cunit = ''
+
+                axis_info = _WorldAxisInfo(
+                    axis=axno,
+                    frame=frame,
+                    world_axis_order=self.output_frame.axes_order.index(axno),
+                    cunit=cunit,
+                    ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
+                    input_axes=mapping[axno]
+                )
+                axis_info_group.append(axis_info)
+                input_axes.extend(mapping[axno])
+
+            world_axes.extend(axis_info_group)
+            if celestial:
+                celestial_group = axis_info_group
+            else:
+                axes_groups.append(axis_info_group)
+
+        # sanity check:
+        input_axes = set(sum((ax.input_axes for ax in world_axes),
+                             world_axes[0].input_axes.__class__()))
+        n_inputs = len(input_axes)
+
+        if (n_inputs != self.pixel_n_dim or
+            max(input_axes) + 1 != n_inputs or
+            min(input_axes) < 0):
+            raise ValueError("Input axes indices are inconsistent with the "
+                             "forward transformation.")
+
+        if detect_celestial:
+            return axes_groups, world_axes, celestial_group
+        else:
+            return axes_groups, world_axes
 
     def to_fits_tab(self, bounding_box=None, bin_ext_name='WCS-TABLE',
                     coord_col_name='coordinates', sampling=1):
@@ -1954,7 +2034,10 @@ class WCS(GWCSAPIMixin):
             ``((xmin, xmax), (ymin, ymax))``.
 
         bin_ext_name : str, optional
-            Extension name for the `~astropy.io.fits.BinTableHDU` extension.
+            Extension name for the `~astropy.io.fits.BinTableHDU` HDU for those
+            axes groups that will be converted using FITW WCS' ``-TAB``
+            algorith. Extension version will be determined automatically
+            based on the number of separable group of axes.
 
         coord_col_name : str, optional
             Field name of the coordinate array in the structured array
@@ -2022,38 +2105,11 @@ class WCS(GWCSAPIMixin):
             raise ValueError("Number of sampling values either must be 1 "
                              "or it must match the number of pixel axes.")
 
-        frames_g, axes_mapping = self._separable_frames_and_axes_groups()
-
-        world_axes = []
-        input_axes = set()
-        axes_order = self.output_frame.axes_order
-        for f, groups in frames_g:
-            for group in groups:
-                for axno in group:
-                    iaxf = f.axes_order.index(axno)
-                    world_axes.append(
-                        {
-                            'axis': axno,
-                            'cunit': f.unit[iaxf].get_format_name(u.format.Fits).upper(),
-                            'ctype': cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
-                        }
-                    )
-                    input_axes = input_axes.union(axes_mapping[axno])
-
-        input_axes = sorted(input_axes)
-        n_inputs = len(input_axes)
-
-        if (n_inputs != self.pixel_n_dim or
-            max(input_axes) + 1 != n_inputs or
-            min(input_axes) < 0):
-            raise ValueError("Input axes indices are inconsistent with the "
-                             "forward transformation.")
+        _, world_axes = self._separable_groups(detect_celestial=False)
 
         hdr, bin_table_hdu = self._to_fits_tab(
             hdr=None,
-            world_axes=world_axes,
-            axes_mapping=axes_mapping,
-            fix_axes={},
+            world_axes_group=world_axes,
             use_cd=False,
             bounding_box=bounding_box,
             bin_ext=bin_ext_name,
@@ -2084,8 +2140,68 @@ class WCS(GWCSAPIMixin):
             For two image axes ``bounding_box`` is of the form
             ``((xmin, xmax), (ymin, ymax))``.
 
+        max_pix_error : float, optional
+            Maximum allowed error over the domain of the pixel array. This
+            error is the equivalent pixel error that corresponds to the maximum
+            error in the output coordinate resulting from the fit based on
+            a nominal plate scale.
+
+        degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_pixel_error`` is ignored.
+
+        max_inv_error : float, optional
+            Maximum allowed inverse error over the domain of the pixel array
+            in pixel units. If None, no inverse is generated.
+
+        inv_degree : int, iterable, None, optional
+            Degree of the SIP polynomial. Default value `None` indicates that
+            all allowed degree values (``[1...9]``) will be considered and
+            the lowest degree that meets accuracy requerements set by
+            ``max_pix_error`` will be returned. Alternatively, ``degree`` can be
+            an iterable containing allowed values for the SIP polynomial degree.
+            This option is similar to default `None` but it allows caller to
+            restrict the range of allowed SIP degrees used for fitting.
+            Finally, ``degree`` can be an integer indicating the exact SIP degree
+            to be fit to the WCS transformation. In this case
+            ``max_inv_pixel_error`` is ignored.
+
+        npoints : int, optional
+            The number of points in each dimension to sample the bounding box
+            for use in the SIP fit. Minimum number of points is 3.
+
+        crpix : list of float, None, optional
+            Coordinates (1-based) of the reference point for the new FITS WCS.
+            When not provided, i.e., when set to `None` (default) the reference
+            pixel will be chosen near the center of the bounding box for axes
+            corresponding to the celestial frame.
+
+        projection : str, `~astropy.modeling.projections.Pix2SkyProjection`, optional
+            Projection to be used for the created FITS WCS. It can be specified
+            as a string of three characters specifying a FITS projection code
+            from Table 13 in
+            `Representations of World Coordinates in FITS \
+            <https://doi.org/10.1051/0004-6361:20021326>`_
+            (Paper I), Greisen, E. W., and Calabretta, M. R., A & A, 395,
+            1061-1075, 2002. Alternatively, it can be an instance of one of the
+            `astropy's Pix2Sky_* <https://docs.astropy.org/en/stable/modeling/\
+            reference_api.html#module-astropy.modeling.projections>`_
+            projection models inherited from
+            :py:class:`~astropy.modeling.projections.Pix2SkyProjection`.
+
         bin_ext_name : str, optional
-            Extension name for the `~astropy.io.fits.BinTableHDU` HDU.
+            Extension name for the `~astropy.io.fits.BinTableHDU` HDU for those
+            axes groups that will be converted using FITW WCS' ``-TAB``
+            algorith. Extension version will be determined automatically
+            based on the number of separable group of axes.
 
         coord_col_name : str, optional
             Field name of the coordinate array in the structured array
@@ -2100,14 +2216,18 @@ class WCS(GWCSAPIMixin):
             number to be used for all axes or as a `tuple` of numbers
             that specify the sampling for each image axis.
 
+        verbose : bool, optional
+            Print progress of fits.
+
         Returns
         -------
         hdr : `~astropy.io.fits.Header`
             Header with WCS-TAB information associated (to be used) with image
             data.
 
-        bin_table_hdu : `~astropy.io.fits.BinTableHDU`
-            Binary table extension containing the coordinate array.
+        hdulist : a list of `~astropy.io.fits.BinTableHDU`
+            A Python list of binary table extensions containing the coordinate
+            array for TAB extensions; one extension per separable axes group.
 
         Raises
         ------
@@ -2153,99 +2273,59 @@ class WCS(GWCSAPIMixin):
             raise ValueError("Number of sampling values either must be 1 "
                              "or it must match the number of pixel axes.")
 
-        frames_g, axes_mapping = self._separable_frames_and_axes_groups()
+        world_axes_groups, _, celestial_group = self._separable_groups(
+            detect_celestial=True
+        )
 
-        world_axes = []
-        input_axes = set()
-        axes_order = self.output_frame.axes_order
-        hdr = None
-        use_cd = False
-        hdu_list = []
+        # Find celestial axes group and treat it separately from other axes:
+        if celestial_group:
+            # for celestial axes try to use standard FITS WCS projections:
+            hdr = self._to_fits_sip(
+                celestial_group=celestial_group,
+                keep_axis_position=True,
+                bounding_box=bounding_box,
+                max_pix_error=max_pix_error,
+                degree=degree,
+                max_inv_pix_error=max_inv_pix_error,
+                inv_degree=inv_degree,
+                npoints=npoints,
+                crpix=crpix,
+                projection=projection,
+                verbose=verbose
+            )
+            use_cd = 'A_ORDER' in hdr
 
-        for f, groups in frames_g:
-            if isinstance(f, cf.CelestialFrame):
-                hdr = self._to_fits_sip(
-                    frame=f,
-                    axes_mapping=axes_mapping,
-                    keep_axis_position=True,
-                    bounding_box=bounding_box,
-                    max_pix_error=max_pix_error,
-                    degree=degree,
-                    max_inv_pix_error=max_inv_pix_error,
-                    inv_degree=inv_degree,
-                    npoints=npoints,
-                    crpix=crpix,
-                    projection=projection,
-                    verbose=verbose
-                )
-
-                for axno in groups[0]:
-                    input_axes = input_axes.union(axes_mapping[axno])
-                use_cd = 'A_ORDER' in hdr
-                continue
-
-            for group in groups:
-                for axno in group:
-                    iaxf = f.axes_order.index(axno)
-
-                    if hasattr(f.unit[iaxf], 'get_format_name'):
-                        cunit = f.unit[iaxf].get_format_name(u.format.Fits).upper()
-                    else:
-                        cunit = ''
-
-                    world_axes.append(
-                        {
-                            'axis': axno,
-                            'cunit': cunit,
-                            'ctype': cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
-                        }
-                    )
-                    input_axes = input_axes.union(axes_mapping[axno])
-
-        input_axes = sorted(input_axes)
-        n_inputs = len(input_axes) # + (2 if use_cd else 0)
-
-        if (n_inputs != self.pixel_n_dim or
-            max(input_axes) + 1 != n_inputs or
-            min(input_axes) < 0):
-            raise ValueError("Input axes indices are inconsistent with the "
-                             "forward transformation.")
-
-        if hdr is None:
+        else:
+            use_cd = False
             hdr = fits.Header()
             hdr['NAXIS'] = 0
             hdr['WCSAXES'] = 0
 
-        extver = 1
-        for f, groups in frames_g:
-            for g in groups:
-                world_axes_subset = [w for w in world_axes if w['axis'] in g] # f.axes_order]
-                if not world_axes_subset:
-                    continue
-
-                hdr, bin_table_hdu = self._to_fits_tab(
-                    hdr=hdr,
-                    world_axes=world_axes_subset,
-                    axes_mapping=axes_mapping,
-                    fix_axes={},
-                    use_cd=use_cd,
-                    bounding_box=bounding_box,
-                    bin_ext=(bin_ext_name, extver),
-                    coord_col_name=coord_col_name,
-                    sampling=sampling
-                )
-
-                extver += 1
-
-                hdu_list.append(bin_table_hdu)
+        # now handle non-celestial axes using -TAB convention for each
+        # separable axes group:
+        hdulist = []
+        for extver0, world_axes_group in enumerate(world_axes_groups):
+            # For each subset of separable axes call _to_fits_tab to
+            # convert that group to a single Bin TableHDU with a
+            # coordinate array for this group of axes:
+            hdr, bin_table_hdu = self._to_fits_tab(
+                hdr=hdr,
+                world_axes_group=world_axes_group,
+                use_cd=use_cd,
+                bounding_box=bounding_box,
+                bin_ext=(bin_ext_name, extver0 + 1),
+                coord_col_name=coord_col_name,
+                sampling=sampling
+            )
+            hdulist.append(bin_table_hdu)
 
         hdr.add_comment('FITS WCS created by approximating a gWCS')
 
-        return hdr, hdu_list
+        return hdr, hdulist
 
 
-    def _to_fits_tab(self, hdr, world_axes, axes_mapping, fix_axes, use_cd,
-                     bounding_box, bin_ext, coord_col_name, sampling):
+    def _to_fits_tab(self, hdr, world_axes_group, use_cd, bounding_box,
+                     bin_ext, coord_col_name, sampling):
         """
         Construct a FITS WCS ``-TAB``-based approximation to the WCS
         in the form of a FITS header and a binary table extension. For the
@@ -2272,7 +2352,7 @@ class WCS(GWCSAPIMixin):
             On subsequent calls, updated header from the previous iteration
             should be provided.
 
-        world_axes : tuple of dict
+        world_axes_group : tuple of dict
             A list of world axes to represent through FITS' -TAB convention.
             This is a list of dictionaries with each dicti
 
@@ -2336,18 +2416,15 @@ class WCS(GWCSAPIMixin):
             bin_ext = (bin_ext, 1)
 
         # identify input axes:
-        input_axes = set()
+        input_axes = []
         world_axes_idx = []
-        for ax in world_axes:
-            world_axes_idx.append(ax['axis'])
-            for ia in axes_mapping[ax['axis']]:
-                input_axes.add(ia)
-        input_axes = tuple(sorted(input_axes))
+        for ax in world_axes_group:
+            world_axes_idx.append(ax.axis)
+            input_axes.extend(ax.input_axes)
+        input_axes = sorted(set(input_axes))
         n_inputs = len(input_axes)
-        n_outputs = len(world_axes)
+        n_outputs = len(world_axes_group)
         world_axes_idx.sort()
-
-        hdu_list = []
 
         # Create initial header and deal with non-degenerate axes
         if hdr is None:
@@ -2366,7 +2443,7 @@ class WCS(GWCSAPIMixin):
             try:
                 used_hdr_axes.append(int(v.split('NAXIS')[1]) - 1)
             except ValueError:
-                 continue
+                continue
 
         degenerate_axis_start = max(
             self.pixel_n_dim + 1,
@@ -2376,14 +2453,13 @@ class WCS(GWCSAPIMixin):
         # Deal with non-degenerate axes and add NAXISi to the header:
         offset = hdr.index('NAXIS')
 
-        for iax in sorted(input_axes):
+        for iax in input_axes:
             iiax = int(np.searchsorted(used_hdr_axes, iax))
             hdr.insert(iiax + offset + 1, (f'NAXIS{iax + 1:d}', int(max(bounding_box[iiax])) + 1))
 
         # 1D grid coordinates:
         gcrds = []
         cdelt = []
-        naxisi = []
         bb = [bounding_box[k] for k in input_axes]
         for (xmin, xmax), s in zip(bb, sampling):
             npix = max(2, 1 + int(np.ceil(abs((xmax - xmin) / s))))
@@ -2391,12 +2467,11 @@ class WCS(GWCSAPIMixin):
             cdelt.append((npix - 1) / (xmax - xmin) if xmin != xmax else 1)
 
         # In the forward transformation, select only inputs and outputs
-        # that we need given world_axes parameter:
+        # that we need given world_axes_group parameter:
         bb_center = np.mean(bounding_box, axis=1)
 
         fixi_dict = {
-            # int(k) is a temporary workaround to https://github.com/astropy/astropy/issues/11358
-            int(k): bb_center[k] for k in np.setdiff1d(np.arange(self.pixel_n_dim), input_axes)
+            k: bb_center[k] for k in set(range(self.pixel_n_dim)).difference(input_axes)
         }
 
         transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
@@ -2413,14 +2488,14 @@ class WCS(GWCSAPIMixin):
             axis=-1
         )
 
-        coord = coord.reshape(shape + (len(world_axes), ))
+        coord = coord.reshape(shape + (len(world_axes_group), ))
 
         # create header with WCS info:
         if hdr is None:
             hdr = fits.Header()
 
-        for m, axis_info in enumerate(world_axes):
-            k = axis_info['axis']
+        for m, axis_info in enumerate(world_axes_group):
+            k = axis_info.axis
             widx = world_axes_idx.index(k)
             k1 = k + 1
             ct = cf.get_ctype_from_ucd(self.world_axis_physical_types[k])
@@ -2432,7 +2507,7 @@ class WCS(GWCSAPIMixin):
             hdr[f'PS{k1:d}_0'] = bin_ext[0]
             hdr[f'PV{k1:d}_1'] = bin_ext[1]
             hdr[f'PS{k1:d}_1'] = coord_col_name
-            hdr[f'PV{k1:d}_3'] = widx + 1 #k1 # m + 1
+            hdr[f'PV{k1:d}_3'] = widx + 1
             hdr[f'CRVAL{k1:d}'] = 1
 
             if widx < n_inputs:
@@ -2462,6 +2537,7 @@ class WCS(GWCSAPIMixin):
                 # hdr['NAXIS'] = hdr['NAXIS'] + 1
                 # naxisi_max = max(int(k[5:]) for k in  hdr['naxis*'] if k[5:].strip())
                 # hdr.insert(f'NAXIS{naxisi_max:d}', (f'NAXIS{m1:d}', 1), after=True)
+                # NOTE: in this case make sure NAXIS=WCSAXES
 
                 coord = coord[None, :]
 
@@ -2477,7 +2553,6 @@ class WCS(GWCSAPIMixin):
         bin_table_hdu = fits.BinTableHDU(arr, name=bin_ext[0], ver=bin_ext[1])
 
         return hdr, bin_table_hdu
-
 
     def _calc_approx_inv(self, max_inv_pix_error=5, inv_degree=None, npoints=16):
         """

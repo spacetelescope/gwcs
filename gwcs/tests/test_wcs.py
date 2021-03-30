@@ -581,11 +581,14 @@ def test_to_fits_sip():
 
 
 def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
-    w = gwcs_cube_with_separable_spectral
+    w, axes_order = gwcs_cube_with_separable_spectral
+
+    dec_axis = int(axes_order.index(1) > axes_order.index(0)) + 1
+    ra_axis = 3 - dec_axis
 
     fw_hdr = w.to_fits_sip()
-    assert fw_hdr['CTYPE1'] == 'DEC--TAN'
-    assert fw_hdr['CTYPE2'] == 'RA---TAN'
+    assert fw_hdr[f'CTYPE{dec_axis}'] == 'DEC--TAN'
+    assert fw_hdr[f'CTYPE{ra_axis}'] == 'RA---TAN'
     assert fw_hdr['WCSAXES'] == 2
     assert fw_hdr['NAXIS'] == 2
     assert fw_hdr['NAXIS1'] == 128
@@ -593,8 +596,9 @@ def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
 
     fw = astwcs.WCS(fw_hdr)
     gskyval = w(1, 60, 55, with_units=True)[0]
-    assert np.allclose([gskyval.dec.value, gskyval.ra.value],
-                       fw.all_pix2world(1, 60, 0))
+    fskyval = fw.all_pix2world(1, 60, 0)
+    fskyval = [float(fskyval[ra_axis - 1]), float(fskyval[dec_axis - 1])]
+    assert np.allclose([gskyval.ra.value, gskyval.dec.value], fskyval)
 
 
 def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
@@ -611,7 +615,8 @@ def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
 
 def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral):
     from inspect import signature, Parameter
-    w = gwcs_cube_with_separable_spectral
+    w, axes_order = gwcs_cube_with_separable_spectral
+    _, _, celestial_group = w._separable_groups(detect_celestial=True)
 
     pars = signature(w.to_fits_sip).parameters
     kwargs = {
@@ -619,17 +624,19 @@ def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral
     }
 
     fw_hdr = w._to_fits_sip(
-        frame=w.output_frame.frames[0],
-        axes_mapping={1: (0, 1), 2: (0, 1)},
+        celestial_group=celestial_group,
         keep_axis_position=True,
         **kwargs
     )
 
+    ra_axis = axes_order.index(0) + 1
+    dec_axis = axes_order.index(1) + 1
+
     fw_hdr['CD1_3'] = 1
     fw_hdr['CRPIX3'] = 1
 
-    assert fw_hdr['CTYPE2'] == 'DEC--TAN'
-    assert fw_hdr['CTYPE3'] == 'RA---TAN'
+    assert fw_hdr[f'CTYPE{dec_axis}'] == 'DEC--TAN'
+    assert fw_hdr[f'CTYPE{ra_axis}'] == 'RA---TAN'
     assert fw_hdr['WCSAXES'] == 2
 
     fw = astwcs.WCS(fw_hdr)
@@ -707,7 +714,6 @@ def test_to_fits_tab_7d(gwcs_7d_complex_mapping):
     assert np.allclose(world_crds, fits_wcs.wcs_pix2world(*pts, 0))
 
     # test round-tripping:
-    pts2 = fits_wcs.wcs_world2pix(*world_crds, 0)
     assert np.allclose(pts, fits_wcs.wcs_world2pix(*world_crds, 0))
 
 
@@ -770,7 +776,7 @@ def test_to_fits_1D_round_trip(gwcs_1d_spectral):
 
 def test_to_fits_sip_tab_cube(gwcs_cube_with_separable_spectral):
     # gWCS:
-    w = gwcs_cube_with_separable_spectral
+    w, axes_order = gwcs_cube_with_separable_spectral
 
     # FITS WCS -SIP (for celestial) and -TAB (for spectral):
     hdr, bt = w.to_fits(projection=models.Sky2Pix_TAN(name='TAN'))
@@ -810,12 +816,14 @@ def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
     hdulist = fits.HDUList(hdus)
     fits_wcs = astwcs.WCS(hdulist[0].header, hdulist)
 
+    assert np.allclose(hdulist[1].data['coordinates'].ravel(), np.arange(128))
+
     # test points:
     (xmin, xmax), (ymin, ymax), (zmin, zmax) = w.bounding_box
     np.random.seed(1)
-    x = xmin + (xmax - xmin) * np.random.random(50)
-    y = ymin + (ymax - ymin) * np.random.random(50)
-    z = zmin + (zmax - zmin) * np.random.random(50)
+    x = xmin + (xmax - xmin) * np.random.random(5)
+    y = ymin + (ymax - ymin) * np.random.random(5)
+    z = zmin + (zmax - zmin) * np.random.random(5)
 
     world_crds = w(x, y, z)
 

@@ -9,7 +9,6 @@ import astropy.units as u
 from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.modeling import models
-from astropy.time import Time
 
 from .. import coordinate_frames as cf
 from .. import spectroscopy as sp
@@ -349,8 +348,21 @@ def gwcs_spec_cel_time_4d():
     return w
 
 
-@pytest.fixture(scope="function")
-def gwcs_cube_with_separable_spectral():
+@pytest.fixture(
+    scope="function",
+    params=[
+        (2, 1, 0),
+        (2, 0, 1),
+        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
+    ]
+)
+def gwcs_cube_with_separable_spectral(request):
+    cube_size = (128, 64, 100)
+
+    axes_order = request.param
+    spectral_axes_order = (axes_order.index(2), )
+    cel_axes_order = (axes_order.index(0), axes_order.index(1))
+
     # Values from data/acs.hdr:
     crpix = (64, 32)
     crval = (5.63056810618, -72.0545718428)
@@ -364,13 +376,17 @@ def gwcs_cube_with_separable_spectral():
     wcslin = (offx & offy) | aff
     tan = models.Pix2Sky_TAN(name='tangent_projection')
     n2c = models.RotateNative2Celestial(*crval, 180, name='sky_rotation')
-    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky', axes_order=(2, 1))
-    spec = cf.SpectralFrame(name='wave', unit=[u.m,], axes_order=(0,), axes_names=('lambda',))
+    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky',
+                             axes_order=cel_axes_order)
+    spec = cf.SpectralFrame(
+        name='wave', unit=[u.m,], axes_order=spectral_axes_order,
+        axes_names=('lambda',)
+    )
     comp_frm = cf.CompositeFrame(frames=[icrs, spec], name='TEST 3D FRAME WITH SPECTRAL AXIS')
     wcs_forward = ((wcslin & models.Identity(1)) |
                    (tan & models.Identity(1)) |
                    (n2c & models.Identity(1)) |
-                   models.Mapping((2, 1, 0)))
+                   models.Mapping(axes_order))
 
     detector_frame = cf.CoordinateFrame(name="detector", naxes=3,
                                         axes_order=(0, 1, 2),
@@ -379,22 +395,41 @@ def gwcs_cube_with_separable_spectral():
 
     w = wcs.WCS(forward_transform=wcs_forward, output_frame=comp_frm,
                 input_frame=detector_frame)
-    w.bounding_box = ((0, 127), (0, 63), (0, 99))
-    w.array_shape = (100, 64, 128)
-    w.pixel_shape = (128, 64, 100)
+    w.bounding_box = tuple((0, k - 1) for k in cube_size)
+    w.pixel_shape = cube_size
+    w.array_shape = w.pixel_shape[::-1]
 
-    return w
+    return w, axes_order
 
 
-@pytest.fixture(scope="function")
-def gwcs_cube_with_separable_time():
+@pytest.fixture(
+    scope="function",
+    params=[
+        (2, 0, 1),
+        (2, 1, 0),
+        pytest.param((0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")),
+        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
+    ]
+)
+def gwcs_cube_with_separable_time(request):
     """
     A mixed celestial + time WCS.
     """
+    cube_size = (64, 32, 128)
+
+    axes_order = request.param
+    time_axes_order = (axes_order.index(2), )
+    cel_axes_order = (axes_order.index(0), axes_order.index(1))
+
+    detector_frame = cf.CoordinateFrame(
+        name="detector", naxes=3, axes_order=(0, 1, 2),
+        axes_type=("pixel", "pixel", "pixel"), unit=(u.pix, u.pix, u.pix)
+    )
+
     # time frame:
     time_model = models.Identity(1)  # models.Linear1D(10, 0)
     time_frame = cf.TemporalFrame(Time("2010-01-01T00:00"), name='time',
-                                  unit=u.s, axes_order=(0,))
+                                  unit=u.s, axes_order=time_axes_order)
 
     # Values from data/acs.hdr:
     crpix = (12, 13)
@@ -408,24 +443,19 @@ def gwcs_cube_with_separable_time():
     n2c = models.RotateNative2Celestial(*crval, 180, name='sky_rotation')
     cel_model = wcslin | tan | n2c
     icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky',
-                             axes_order=(2, 1))
+                             axes_order=cel_axes_order)
 
-    wcs_forward = (cel_model & time_model) | models.Mapping((0, 2, 1))
+    wcs_forward = (cel_model & time_model) | models.Mapping(axes_order)
 
     comp_frm = cf.CompositeFrame(frames=[icrs, time_frame],
                                  name='TEST 3D FRAME WITH TIME')
 
-    detector_frame = cf.CoordinateFrame(
-        name="detector", naxes=3, axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"), unit=(u.pix, u.pix, u.pix)
-    )
-
     w = wcs.WCS(forward_transform=wcs_forward, output_frame=comp_frm,
                 input_frame=detector_frame)
 
-    w.bounding_box = ((0, 9), (0, 127), (0, 63))
-    w.array_shape = (10, 64, 128)
-    w.pixel_shape = (128, 64, 10)
+    w.bounding_box = tuple((0, k - 1) for k in cube_size)
+    w.pixel_shape = cube_size
+    w.array_shape = w.pixel_shape[::-1]
     return w
 
 
