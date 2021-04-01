@@ -749,6 +749,21 @@ def test_to_fits_mixed_4d(gwcs_spec_cel_time_4d):
     assert np.allclose(pts, pts2, rtol=1e-5, atol=1e-5)
 
 
+def test_to_fits_no_sip_used(gwcs_spec_cel_time_4d):
+    # gWCS:
+    w = gwcs_spec_cel_time_4d
+
+    # create FITS headers and -TAB headers
+    hdr, _ = w.to_fits(degree=3)
+
+    # check that FITS WCS is not using SIP
+    assert not hdr['?_ORDER']
+    assert not hdr['?P_ORDER']
+    assert not hdr['A_?_?']
+    assert not hdr['B_?_?']
+    assert not any(s.endswith('-SIP') for s in hdr['CTYPE?'].values())
+
+
 def test_to_fits_1D_round_trip(gwcs_1d_spectral):
     # gWCS:
     w = gwcs_1d_spectral

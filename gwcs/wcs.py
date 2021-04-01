@@ -1496,7 +1496,7 @@ class WCS(GWCSAPIMixin):
             to be fit to the WCS transformation. In this case
             ``max_pixel_error`` is ignored.
 
-        max_inv_error : float, optional
+        max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
             in pixel units. If None, no inverse is generated.
 
@@ -1545,21 +1545,21 @@ class WCS(GWCSAPIMixin):
         Raises
         ------
         ValueError
-            If the WCS is not 2D, an exception will be raised. If the specified
-            accuracy (both forward and inverse, both rms and maximum) is not
-            achieved an exception will be raised.
+            If the WCS is not at least 2D, an exception will be raised. If the
+            specified accuracy (both forward and inverse, both rms and maximum)
+            is not achieved an exception will be raised.
 
         Notes
         -----
 
         Use of this requires a judicious choice of required accuracies.
         Attempts to use higher degrees (~7 or higher) will typically fail due
-        floating point problems that arise with high powers.
+        to floating point problems that arise with high powers.
 
         """
         _, _, celestial_group = self._separable_groups(detect_celestial=True)
         if celestial_group is None:
-            raise ValueError("The to_fits_sip requires a celestial frame.")
+            raise ValueError("The to_fits_sip requires an output celestial frame.")
 
         hdr = self._to_fits_sip(
             celestial_group=celestial_group,
@@ -1626,9 +1626,9 @@ class WCS(GWCSAPIMixin):
         Raises
         ------
         ValueError
-            If the WCS is not 2D, an exception will be raised. If the specified
-            accuracy (both forward and inverse, both rms and maximum) is not
-            achieved an exception will be raised.
+            If the WCS is not at least 2D, an exception will be raised. If the
+            specified accuracy (both forward and inverse, both rms and maximum)
+            is not achieved an exception will be raised.
 
         """
         if npoints < 8:
@@ -1696,7 +1696,8 @@ class WCS(GWCSAPIMixin):
 
         # transform = fix_inputs(self.forward_transform, fixi_dict)
         # This is a workaround to the bug in https://github.com/astropy/astropy/issues/11360
-        # Once that bug is fixed, the code below can be replaced with fix_inputs above
+        # Once that bug is fixed, the code below can be replaced with fix_inputs
+        # statement commented out immediately above.
         transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
 
         transform = transform | Mapping((lon_axis, lat_axis),
@@ -1897,7 +1898,6 @@ class WCS(GWCSAPIMixin):
             no celestial frame is detected, then return value for the
             celestial axes group will be set to `None`.
 
-
         Returns
         -------
         axes_groups : list of lists of ``_WorldAxisInfo``
@@ -1932,7 +1932,7 @@ class WCS(GWCSAPIMixin):
         corr_mat = self.axis_correlation_matrix
         axes_sets = [set(np.flatnonzero(r)) for r in corr_mat.T]
 
-        k = 0;
+        k = 0
         while len(axes_sets) - 1 > k:
             for m in range(len(axes_sets) - 1, k, -1):
                 if axes_sets[k].isdisjoint(axes_sets[m]):
@@ -2129,7 +2129,17 @@ class WCS(GWCSAPIMixin):
         description of the FITS WCS ``-TAB`` convention, see
         "Representations of spectral coordinates in FITS" in
         `Greisen, E. W. et al. A&A 446 (2) 747-771 (2006)
-        <https://doi.org/10.1051/0004-6361:20053818>`_ .
+        <https://doi.org/10.1051/0004-6361:20053818>`_ . If WCS contains
+        celestial frame, PC/CD formalism will be used for the celestial axes.
+
+        .. note::
+            SIP distortion fitting requires that the WCS object has only two
+            celestial axes. When WCS does not contain celestial axes,
+            SIP fitting parameters (``max_pix_error``, ``degree``,
+            ``max_inv_pix_error``, ``inv_degree``, and ``projection``)
+            are ignored. When a WCS, in addition to celestial
+            frame, contains other types of axes, SIP distortion fitting is
+            disabled (ony linear terms are fitted for celestial frame).
 
         Parameters
         ----------
@@ -2158,7 +2168,10 @@ class WCS(GWCSAPIMixin):
             to be fit to the WCS transformation. In this case
             ``max_pixel_error`` is ignored.
 
-        max_inv_error : float, optional
+            .. note::
+                When WCS object has When ``degree`` is `None` and the WCS object has
+
+        max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
             in pixel units. If None, no inverse is generated.
 
@@ -2279,7 +2292,21 @@ class WCS(GWCSAPIMixin):
 
         # Find celestial axes group and treat it separately from other axes:
         if celestial_group:
-            # for celestial axes try to use standard FITS WCS projections:
+            # if world_axes_groups is empty, then we have only celestial axes
+            # and so we can allow arbitrary degree for SIP. When there are
+            # other axes types present, issue a warning and set 'degree' to 1
+            # because use of SIP when world_n_dim > 2 currently is not supported by
+            # astropy.wcs.WCS - see https://github.com/astropy/astropy/pull/11452
+            if world_axes_groups and (degree is None or np.max(degree) != 2):
+                if degree is not None:
+                    warnings.warn(
+                        "SIP distortion is not supported when the number\n"
+                        "of axes in WCS is larger than 2. Setting 'degree'\n"
+                        "to 1 and 'max_inv_pix_error' to None."
+                    )
+                degree = 1
+                max_inv_pix_error = None
+
             hdr = self._to_fits_sip(
                 celestial_group=celestial_group,
                 keep_axis_position=True,
