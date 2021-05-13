@@ -144,7 +144,7 @@ class WCS(GWCSAPIMixin):
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
                 if output_frame is None:
-                    raise CoordinateFrameError("An output_frame must be specified"
+                    raise CoordinateFrameError("An output_frame must be specified "
                                                "if forward_transform is a model.")
 
                 _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
@@ -167,7 +167,7 @@ class WCS(GWCSAPIMixin):
         else:
             # Initialize a WCS without a forward_transform - allows building a WCS programmatically.
             if output_frame is None:
-                raise CoordinateFrameError("An output_frame must be specified"
+                raise CoordinateFrameError("An output_frame must be specified "
                                            "if forward_transform is None.")
             _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
             _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
