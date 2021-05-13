@@ -280,6 +280,8 @@ class CoordinateFrame:
     def coordinates(self, *args):
         """ Create world coordinates object"""
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
+        if self.reference_frame is not None:
+            return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
         return coo
 
     def coordinate_to_quantity(self, *coords):
