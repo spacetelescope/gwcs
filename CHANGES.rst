@@ -6,6 +6,9 @@ Bug Fixes
 - `world_axis_object_components` and `world_axis_object_classes` now ensure
   unique keys in `CompositeFrame` and `CoordinateFrame`. [#356]
 
+- Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
+  in angle wrapping code [#367]
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
