@@ -144,7 +144,14 @@ class WCS(GWCSAPIMixin):
         self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
-        self._pipeline = [Step(*step) for step in self._pipeline]
+
+        pipe = []
+        for step in self._pipeline:
+            if isinstance(step, Step):
+                pipe.append(Step(step.frame, step.transform))
+            else:
+                pipe.append(Step(*step))
+        self._pipeline = pipe
 
     def _initialize_wcs(self, forward_transform, input_frame, output_frame):
         if forward_transform is not None:
@@ -162,7 +169,10 @@ class WCS(GWCSAPIMixin):
                                   (output_frame, None)]
             elif isinstance(forward_transform, list):
                 for item in forward_transform:
-                    name, frame_obj = self._get_frame_name(item[0])
+                    if isinstance(item, Step):
+                        name, frame_obj = self._get_frame_name(item.frame)
+                    else:
+                        name, frame_obj = self._get_frame_name(item[0])
                     super(WCS, self).__setattr__(name, frame_obj)
                     #self._pipeline.append((name, item[1]))
                     self._pipeline = forward_transform

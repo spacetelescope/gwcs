@@ -9,6 +9,8 @@ Bug Fixes
 - Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
   in angle wrapping code [#367]
 
+- Fix deprecation warning when wcs is initialized with a pipeline [#368]
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]

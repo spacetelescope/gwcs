@@ -1064,3 +1064,20 @@ def test_tabular_2d_quantity():
 
     bb = w.bounding_box
     assert all(u.allclose(u.Quantity(b), [0, 2] * u.pix) for b in bb)
+
+
+@pytest.mark.filterwarnings("error:.*Indexing a WCS.pipeline step is deprecated.*:DeprecationWarning")
+def test_initialize_wcs_with_list():
+    # test that you can initialize a wcs with a pipeline that is a list
+    # containing both Step() and (frame, transform) tuples
+
+    # make pipline consisting of tuples and Steps
+    shift1 = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
+    shift2 = models.Shift(3 * u.pix)
+    pipeline = [('detector', shift1), wcs.Step('extra_step', shift2)]
+
+    extra_step = ('extra_step', None)
+    pipeline.append(extra_step)
+
+    # make sure no warnings occur when creating wcs with this pipeline
+    wcs.WCS(pipeline)
