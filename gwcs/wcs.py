@@ -12,6 +12,7 @@ from astropy.modeling.models import (
     Identity, Mapping, Const1D, Shift, Polynomial2D,
     Sky2Pix_TAN, RotateCelestial2Native
 )
+from astropy.modeling.bounding_box import BoundingBox
 from astropy.modeling import projections, fix_inputs
 from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
@@ -348,10 +349,11 @@ class WCS(GWCSAPIMixin):
             # bounding boxes. Get the forward transform and assign the bounding_box to it
             # before evaluating it. The order Model.bounding_box is reversed.
             axes_ind = self._get_axes_indices()
-            if transform.n_inputs > 1:
-                transform.bounding_box = [self.bounding_box[ind] for ind in axes_ind][::-1]
-            else:
-                transform.bounding_box = self.bounding_box
+            transform.bounding_box = self.bounding_box
+            # if transform.n_inputs > 1:
+            #     transform.bounding_box = [self.bounding_box[ind] for ind in axes_ind][::-1]
+            # else:
+            #     transform.bounding_box = self.bounding_box
         result = transform(*args, **kwargs)
 
         if with_units:
@@ -402,7 +404,7 @@ class WCS(GWCSAPIMixin):
             return result
 
         if self.input_frame.naxes == 1:
-            x1, x2 = self.bounding_box
+            x1, x2 = self.bounding_box[0]
 
             if len(np.shape(args[0])) > 0:
                 result[result] = (coords[result] >= x1) & (coords[result] <= x2)
@@ -1296,14 +1298,15 @@ class WCS(GWCSAPIMixin):
             bb = transform_0.bounding_box
         except NotImplementedError:
             return None
-        if transform_0.n_inputs == 1:
-            return bb
-        try:
-            axes_order = self.input_frame.axes_order
-        except AttributeError:
-            axes_order = np.arange(transform_0.n_inputs)
+        # if transform_0.n_inputs == 1:
+        #     return bb
+        # try:
+        #     axes_order = self.input_frame.axes_order
+        # except AttributeError:
+        #     axes_order = np.arange(transform_0.n_inputs)
         # Model.bounding_box is in python order, need to reverse it first.
-        return tuple(bb[::-1][i] for i in axes_order)
+        # return tuple(bb[::-1][i] for i in axes_order)
+        return bb
 
     @bounding_box.setter
     def bounding_box(self, value):
@@ -1325,17 +1328,18 @@ class WCS(GWCSAPIMixin):
         else:
             try:
                 # Make sure the dimensions of the new bbox are correct.
-                mutils._BoundingBox.validate(transform_0, value)
+                bbox = BoundingBox.validate(transform_0, value, ordering = 'Fortran')
             except Exception:
                 raise
             # get the sorted order of axes' indices
             axes_ind = self._get_axes_indices()
             if transform_0.n_inputs == 1:
-                transform_0.bounding_box = value
+                transform_0.bounding_box = bbox
             else:
                 # The axes in bounding_box in modeling follow python order
                 #transform_0.bounding_box = np.array(value)[axes_ind][::-1]
-                transform_0.bounding_box = [value[ind] for ind in axes_ind][::-1]
+                # transform_0.bounding_box = [value[ind] for ind in axes_ind][::-1]
+                transform_0.bounding_box = bbox
         self.set_transform(frames[0], frames[1], transform_0)
 
     def _get_axes_indices(self):
@@ -2088,7 +2092,7 @@ class WCS(GWCSAPIMixin):
             # validate user-supplied bounding box:
             frames = self.available_frames
             transform_0 = self.get_transform(frames[0], frames[1])
-            mutils._BoundingBox.validate(transform_0, bounding_box)
+            BoundingBox.validate(transform_0, bounding_box)
 
         if self.forward_transform.n_inputs == 1:
             bounding_box = [bounding_box]
@@ -2269,7 +2273,7 @@ class WCS(GWCSAPIMixin):
             # validate user-supplied bounding box:
             frames = self.available_frames
             transform_0 = self.get_transform(frames[0], frames[1])
-            mutils._BoundingBox.validate(transform_0, bounding_box)
+            BoundingBox.validate(transform_0, bounding_box)
 
         if self.forward_transform.n_inputs == 1:
             bounding_box = [bounding_box]
@@ -2441,6 +2445,13 @@ class WCS(GWCSAPIMixin):
         """
         if isinstance(bin_ext, str):
             bin_ext = (bin_ext, 1)
+
+        if isinstance(bounding_box, BoundingBox):
+            bounding_box = bounding_box.bounding_box(ordering='Fortran')
+        if isinstance(bounding_box, list):
+            for index, bbox in enumerate(bounding_box):
+                if isinstance(bbox, BoundingBox):
+                    bounding_box[index] = bbox.bounding_box(ordering='Fortran')
 
         # identify input axes:
         input_axes = []
