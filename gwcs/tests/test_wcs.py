@@ -260,7 +260,7 @@ def test_bounding_box():
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
-    assert w.bounding_box == w.forward_transform.bounding_box[::-1]
+    assert w.bounding_box == w.forward_transform.bounding_box
 
     pipeline = [("detector", models.Shift(2)), ("sky", None)]
     w = wcs.WCS(pipeline)
@@ -777,7 +777,7 @@ def test_to_fits_1D_round_trip(gwcs_1d_spectral):
 
     # test points:
     np.random.seed(1)
-    (xmin, xmax) = w.bounding_box
+    (xmin, xmax) = w.bounding_box[0]
     x = xmin + (xmax - xmin) * np.random.random(100)
 
     # test forward transformation:
