@@ -1328,7 +1328,7 @@ class WCS(GWCSAPIMixin):
         else:
             try:
                 # Make sure the dimensions of the new bbox are correct.
-                bbox = BoundingBox.validate(transform_0, value, ordering = 'Fortran')
+                bbox = BoundingBox.validate(transform_0, value, order='F')
             except Exception:
                 raise
             # get the sorted order of axes' indices
@@ -2447,11 +2447,11 @@ class WCS(GWCSAPIMixin):
             bin_ext = (bin_ext, 1)
 
         if isinstance(bounding_box, BoundingBox):
-            bounding_box = bounding_box.bounding_box(ordering='Fortran')
+            bounding_box = bounding_box.bounding_box(order='F')
         if isinstance(bounding_box, list):
             for index, bbox in enumerate(bounding_box):
                 if isinstance(bbox, BoundingBox):
-                    bounding_box[index] = bbox.bounding_box(ordering='Fortran')
+                    bounding_box[index] = bbox.bounding_box(order='F')
 
         # identify input axes:
         input_axes = []
