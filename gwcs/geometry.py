@@ -53,7 +53,6 @@ class FromDirectionCosines(Model):
         self.outputs = ('x', 'y', 'z')
 
     def evaluate(self, cosa, cosb, cosc, length):
-
         return cosa * length, cosb * length, cosc * length
 
     def inverse(self):

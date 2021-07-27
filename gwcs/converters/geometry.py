@@ -1,22 +1,20 @@
 """
 ASDF tags for geometry related models.
+
 """
-from asdf import yamlutil
-from ..gwcs_types import GWCSTransformType
-from .. geometry import (ToDirectionCosines, FromDirectionCosines,
-                         SphericalToCartesian, CartesianToSpherical)
+from asdf_astropy.converters.transform.core import TransformConverterBase
 
 
-__all__ = ['DirectionCosinesType', 'SphericalCartesianType']
+__all__ = ['DirectionCosinesConverter', 'SphericalCartesianConverter']
 
 
-class DirectionCosinesType(GWCSTransformType):
-    name = "direction_cosines"
-    types = [ToDirectionCosines, FromDirectionCosines]
-    version = "1.1.0"
+class DirectionCosinesConverter(TransformConverterBase):
+    tags = ["tag:stsci.edu:gwcs/direction_cosines-*"]
+    types = ["gwcs.geometry.ToDirectionCosines",
+             "gwcs.geometry.FromDirectionCosines"]
 
-    @classmethod
-    def from_tree_transform(cls, node, ctx):
+    def from_yaml_tree_transform(self, node, tag, ctx):
+        from ..geometry import ToDirectionCosines, FromDirectionCosines
         transform_type = node['transform_type']
         if transform_type == 'to_direction_cosines':
             return ToDirectionCosines()
@@ -25,8 +23,8 @@ class DirectionCosinesType(GWCSTransformType):
         else:
             raise TypeError(f"Unknown model_type {transform_type}")
 
-    @classmethod
-    def to_tree_transform(cls, model, ctx):
+    def to_yaml_tree_transform(self, model, tag, ctx):
+        from ..geometry import ToDirectionCosines, FromDirectionCosines
         if isinstance(model, FromDirectionCosines):
             transform_type = 'from_direction_cosines'
         elif isinstance(model, ToDirectionCosines):
@@ -34,16 +32,16 @@ class DirectionCosinesType(GWCSTransformType):
         else:
             raise TypeError(f"Model of type {model.__class__} is not supported.")
         node = {'transform_type': transform_type}
-        return yamlutil.custom_tree_to_tagged_tree(node, ctx)
+        return node
 
 
-class SphericalCartesianType(GWCSTransformType):
-    name = "spherical_cartesian"
-    types = [SphericalToCartesian, CartesianToSpherical]
-    version = "1.1.0"
+class SphericalCartesianConverter(TransformConverterBase):
+    tags = ["tag:stsci.edu:gwcs/spherical_cartesian-*"]
+    types = ["gwcs.geometry.SphericalToCartesian",
+             "gwcs.geometry.CartesianToSpherical"]
 
-    @classmethod
-    def from_tree_transform(cls, node, ctx):
+    def from_yaml_tree_transform(self, node, tag, ctx):
+        from ..geometry import SphericalToCartesian, CartesianToSpherical
         transform_type = node['transform_type']
         wrap_lon_at = node['wrap_lon_at']
         if transform_type == 'spherical_to_cartesian':
@@ -53,8 +51,8 @@ class SphericalCartesianType(GWCSTransformType):
         else:
             raise TypeError(f"Unknown model_type {transform_type}")
 
-    @classmethod
-    def to_tree_transform(cls, model, ctx):
+    def to_yaml_tree_transform(self, model, tag, ctx):
+        from ..geometry import SphericalToCartesian, CartesianToSpherical
         if isinstance(model, SphericalToCartesian):
             transform_type = 'spherical_to_cartesian'
         elif isinstance(model, CartesianToSpherical):
@@ -66,4 +64,4 @@ class SphericalCartesianType(GWCSTransformType):
             'transform_type': transform_type,
             'wrap_lon_at': model.wrap_lon_at
         }
-        return yamlutil.custom_tree_to_tagged_tree(node, ctx)
+        return node
