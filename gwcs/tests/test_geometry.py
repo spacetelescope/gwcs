@@ -5,9 +5,10 @@ import io
 import pytest
 
 import asdf
-from asdf.tests.helpers import assert_roundtrip_tree
 import numpy as np
 from astropy import units as u
+from asdf_astropy.converters.transform.tests.test_transform import (
+     assert_model_roundtrip)
 
 from .. import geometry
 
@@ -185,7 +186,8 @@ def test_cartesian_spherical_asdf(tmpdir):
     c2s0 = geometry.CartesianToSpherical(wrap_lon_at=180)
 
     # asdf round-trip test:
-    assert_roundtrip_tree({'c2s': c2s0, 's2c': s2c0}, tmpdir)
+    assert_model_roundtrip(c2s0, tmpdir)
+    assert_model_roundtrip(s2c0, tmpdir)
 
     # create file object
     f = asdf.AsdfFile({'c2s': c2s0, 's2c': s2c0})

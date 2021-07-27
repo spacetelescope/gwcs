@@ -6,34 +6,80 @@ import warnings
 
 astropy = pytest.importorskip('astropy', minversion='3.0')
 
-from astropy.modeling import models
-from astropy import coordinates as coord
-from astropy import units as u
-from astropy import time
+from astropy.modeling import models  # noqa: E402
+from astropy import coordinates as coord  # noqa: E402
+from astropy import units as u  # noqa: E402
+from astropy import time  # noqa: E402
 
-import asdf
-from asdf.tests import helpers
+import asdf  # noqa: E402
+from asdf_astropy.converters.transform.tests.test_transform import (  # noqa: E402
+     assert_models_equal)
 
-from ... import coordinate_frames as cf
-from ... import wcs
+from ... import coordinate_frames as cf  # noqa: E402
+from ... import wcs  # noqa: E402
+
+
+def _assert_frame_equal(a, b):
+    __tracebackhide__ = True
+
+    assert type(a) is type(b)
+
+    if a is None:
+        return
+
+    if not isinstance(a, cf.CoordinateFrame):
+        return a == b
+
+    assert a.name == b.name  # nosec
+    assert a.axes_order == b.axes_order  # nosec
+    assert a.axes_names == b.axes_names  # nosec
+    assert a.unit == b.unit  # nosec
+    assert a.reference_frame == b.reference_frame  # nosec
+
+
+def assert_frame_roundtrip(frame, tmpdir, version=None):
+    """
+    Assert that a frame can be written to an ASDF file and read back
+    in without losing any of its essential properties.
+    """
+    path = str(tmpdir / "test.asdf")
+
+    with asdf.AsdfFile({"frame": frame}, version=version) as af:
+        af.write_to(path)
+
+    with asdf.open(path) as af:
+        _assert_frame_equal(frame, af["frame"])
+
+
+def _assert_wcs_equal(a, b):
+    assert a.name == b.name # nosec
+    assert len(a.available_frames) == len(b.available_frames) # nosec
+    for a_step, b_step in zip(a.pipeline, b.pipeline):
+        _assert_frame_equal(a_step.frame, b_step.frame)
+        assert_models_equal(a_step.transform, b_step.transform)
+
+
+def assert_wcs_roundtrip(wcs, tmpdir, version=None):
+    path = str(tmpdir / "test.asdf")
+
+    with asdf.AsdfFile({"wcs": wcs}, version=version) as af:
+        af.write_to(path)
+
+    with asdf.open(path) as af:
+        _assert_wcs_equal(wcs, af["wcs"])
 
 
 def test_create_wcs(tmpdir):
     m1 = models.Shift(12.4) & models.Shift(-2)
-    m2 = models.Scale(2) & models.Scale(-2)
     icrs = cf.CelestialFrame(name='icrs', reference_frame=coord.ICRS())
     det = cf.Frame2D(name='detector', axes_order=(0, 1))
     gw1 = wcs.WCS(output_frame='icrs', input_frame='detector', forward_transform=m1)
     gw2 = wcs.WCS(output_frame='icrs', forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
 
-    tree = {
-        'gw1': gw1,
-        'gw2': gw2,
-        'gw3': gw3
-    }
-
-    helpers.assert_roundtrip_tree(tree, tmpdir)
+    assert_wcs_roundtrip(gw1, tmpdir)
+    assert_wcs_roundtrip(gw2, tmpdir)
+    assert_wcs_roundtrip(gw3, tmpdir)
 
 
 def test_composite_frame(tmpdir):
@@ -49,13 +95,10 @@ def test_composite_frame(tmpdir):
     comp2 = cf.CompositeFrame([cel2, spec2])
     comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3, ), unit=(u.m, ))])
 
-    tree = {
-        'comp1': comp1,
-        'comp2': comp2,
-        'comp': comp
-    }
+    assert_frame_roundtrip(comp, tmpdir)
+    assert_frame_roundtrip(comp1, tmpdir)
+    assert_frame_roundtrip(comp2, tmpdir)
 
-    helpers.assert_roundtrip_tree(tree, tmpdir)
 
 def create_test_frames():
     """Creates an array of frames to be used for testing."""
@@ -124,12 +167,9 @@ def create_test_frames():
 
 
 def test_frames(tmpdir):
-
-    tree = {
-        'frames': create_test_frames()
-    }
-
-    helpers.assert_roundtrip_tree(tree, tmpdir)
+    frames = create_test_frames()
+    for f in frames:
+        assert_frame_roundtrip(f, tmpdir)
 
 
 def test_references(tmpdir):
