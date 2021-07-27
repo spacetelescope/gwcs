@@ -30,7 +30,7 @@ except ImportError:
     new_bbox = False
 
 
-__all__ = ['WCS', 'NoConvergence']
+__all__ = ['WCS', 'Step', 'NoConvergence']
 
 _ITER_INV_KWARGS = ['tolerance', 'maxiter', 'adaptive', 'detect_divergence', 'quiet']
 
