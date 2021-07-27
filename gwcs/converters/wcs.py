@@ -4,6 +4,12 @@
 from asdf.extension import Converter
 
 
+<<<<<<< HEAD
+=======
+_REQUIRES = ['astropy']
+
+
+>>>>>>> Convert to asdf Converters
 __all__ = ["WCSConverter", "CelestialFrameConverter", "CompositeFrameConverter",
            "FrameConverter", "SpectralFrameConverter", "StepConverter",
            "TemporalFrameConverter", "StokesFrameConverter"]
@@ -15,7 +21,13 @@ class WCSConverter(Converter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..wcs import WCS
+<<<<<<< HEAD
         return WCS(node['steps'], name=node['name'])
+=======
+        name = node['name']
+        steps = [(x.frame, x.transform) for x in node['steps']]
+        return WCS(steps, name=name)
+>>>>>>> Convert to asdf Converters
 
     def to_yaml_tree(self, gwcsobj, tag, ctx):
         return {
@@ -125,6 +137,12 @@ class CelestialFrameConverter(FrameConverter):
         node = self._from_yaml_tree(node, tag, ctx)
         return CelestialFrame(**node)
 
+<<<<<<< HEAD
+=======
+    def to_yaml_tree(self, frame, tag, ctx):
+        return self._to_yaml_tree(frame, tag, ctx)
+
+>>>>>>> Convert to asdf Converters
 
 class SpectralFrameConverter(FrameConverter):
     tags = ["tag:stsci.edu:gwcs/spectral_frame-*"]
@@ -173,11 +191,21 @@ class TemporalFrameConverter(FrameConverter):
     tags = ["tag:stsci.edu:gwcs/temporal_frame-*"]
     types = ["gwcs.coordinate_frames.TemporalFrame"]
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Convert to asdf Converters
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import TemporalFrame
         node = self._from_yaml_tree(node, tag, ctx)
         return TemporalFrame(**node)
 
+<<<<<<< HEAD
+=======
+    def to_yaml_tree(self, frame, tag, ctx):
+        return self._to_yaml_tree(frame, tag, ctx)
+
+>>>>>>> Convert to asdf Converters
 
 class StokesFrameConverter(FrameConverter):
     tags = ["tag:stsci.edu:gwcs/stokes_frame-*"]
