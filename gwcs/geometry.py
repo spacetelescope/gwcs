@@ -7,7 +7,7 @@ import numbers
 import numpy as np
 from astropy.modeling.core import Model
 from astropy import units as u
-import warnings
+
 
 __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'SphericalToCartesian', 'CartesianToSpherical']
