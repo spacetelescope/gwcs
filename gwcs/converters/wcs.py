@@ -18,9 +18,7 @@ class WCSConverter(Converter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..wcs import WCS
-        name = node['name']
-        steps = [(x.frame, x.transform) for x in node['steps']]
-        return WCS(steps, name=name)
+        return WCS(node['steps'], name=node['name'])
 
     def to_yaml_tree(self, gwcsobj, tag, ctx):
         return {
@@ -130,9 +128,6 @@ class CelestialFrameConverter(FrameConverter):
         node = self._from_yaml_tree(node, tag, ctx)
         return CelestialFrame(**node)
 
-    def to_yaml_tree(self, frame, tag, ctx):
-        return self._to_yaml_tree(frame, tag, ctx)
-
 
 class SpectralFrameConverter(FrameConverter):
     tags = ["tag:stsci.edu:gwcs/spectral_frame-*"]
@@ -181,14 +176,10 @@ class TemporalFrameConverter(FrameConverter):
     tags = ["tag:stsci.edu:gwcs/temporal_frame-*"]
     types = ["gwcs.coordinate_frames.TemporalFrame"]
 
-
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import TemporalFrame
         node = self._from_yaml_tree(node, tag, ctx)
         return TemporalFrame(**node)
-
-    def to_yaml_tree(self, frame, tag, ctx):
-        return self._to_yaml_tree(frame, tag, ctx)
 
 
 class StokesFrameConverter(FrameConverter):
