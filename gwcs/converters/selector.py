@@ -32,8 +32,7 @@ class LabelMapperConverter(TransformConverterBase):
 
         if isinstance(mapper, NDArrayType):
             if mapper.ndim != 2:
-                raise NotImplementedError(
-                    "GWCS currently only supports 2x2 masks ")
+                raise NotImplementedError("GWCS currently only supports 2D masks.")
             return LabelMapperArray(mapper, inputs_mapping)
         elif isinstance(mapper, Model):
             inputs = node.get('inputs')
