@@ -12,6 +12,8 @@ from astropy import wcs as astwcs
 from astropy.wcs import wcsapi
 from astropy.time import Time
 
+from gwcs.wcs import new_bbox
+
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from .. import coordinate_frames as cf
@@ -260,7 +262,10 @@ def test_bounding_box():
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
-    assert w.bounding_box == w.forward_transform.bounding_box
+    if new_bbox:
+        assert w.bounding_box == w.forward_transform.bounding_box
+    else:
+        assert w.bounding_box == w.forward_transform.bounding_box[::-1]
 
     pipeline = [("detector", models.Shift(2)), ("sky", None)]
     w = wcs.WCS(pipeline)
@@ -777,7 +782,10 @@ def test_to_fits_1D_round_trip(gwcs_1d_spectral):
 
     # test points:
     np.random.seed(1)
-    (xmin, xmax) = w.bounding_box.bounding_box()
+    if new_bbox:
+        (xmin, xmax) = w.bounding_box.bounding_box()
+    else:
+        (xmin, xmax) = w.bounding_box
     x = xmin + (xmax - xmin) * np.random.random(100)
 
     # test forward transformation:
