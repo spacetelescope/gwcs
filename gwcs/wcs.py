@@ -7,7 +7,6 @@ import numpy.linalg as npla
 from scipy import optimize
 from astropy import units as u
 from astropy.modeling.core import Model
-from astropy.modeling import utils as mutils
 from astropy.modeling.models import (
     Identity, Mapping, Const1D, Shift, Polynomial2D,
     Sky2Pix_TAN, RotateCelestial2Native
@@ -400,7 +399,7 @@ class WCS(GWCSAPIMixin):
             return result
 
         if self.input_frame.naxes == 1:
-            x1, x2 = self.bounding_box[0]
+            x1, x2 = self.bounding_box.bounding_box()
 
             if len(np.shape(args[0])) > 0:
                 result[result] = (coords[result] >= x1) & (coords[result] <= x2)
@@ -1320,11 +1319,8 @@ class WCS(GWCSAPIMixin):
                 bbox = BoundingBox.validate(transform_0, value, order='F')
             except Exception:
                 raise
-            # get the sorted order of axes' indices
-            if transform_0.n_inputs == 1:
-                transform_0.bounding_box = bbox
-            else:
-                transform_0.bounding_box = bbox
+
+            transform_0.bounding_box = bbox
 
         self.set_transform(frames[0], frames[1], transform_0)
 
