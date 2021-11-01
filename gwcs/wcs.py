@@ -23,7 +23,7 @@ from . import utils
 from .wcstools import grid_from_bounding_box
 
 try:
-    from astropy.modeling.bounding_box import BoundingBox as Bbox
+    from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
     new_bbox = True
 except ImportError:
     from astropy.modeling.utils import _BoundingBox as Bbox
