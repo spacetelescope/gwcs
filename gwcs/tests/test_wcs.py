@@ -496,6 +496,7 @@ class TestImaging(object):
         self.wcs = wcs.WCS(input_frame=det,
                            output_frame=sky_cs,
                            forward_transform=pipeline)
+
         self.xv, self.yv = xv, yv
 
     @pytest.mark.filterwarnings('ignore')
@@ -577,12 +578,69 @@ def test_to_fits_sip():
     mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
     fitssip = astwcs.WCS(mirisip)
     fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
-    assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
-    assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
+    assert_allclose(gwcsvalx, fitsvalx, atol=4e-11, rtol=0)
+    assert_allclose(gwcsvaly, fitsvaly, atol=4e-11, rtol=0)
 
     with pytest.raises(ValueError):
         miriwcs.bounding_box = None
         mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+
+@pytest.mark.parametrize('matrix_type', ['CD', 'PC-CDELT1', 'PC-SUM1', 'PC-DET1', 'PC-SCALE'])
+def test_to_fits_sip_pc_normalization(gwcs_simple_imaging_units, matrix_type):
+    y, x = np.mgrid[:1024:10, :1024:10]
+    xflat = np.ravel(x[1:-1, 1:-1])
+    yflat = np.ravel(y[1:-1, 1:-1])
+    bounding_box = ((0, 1024), (0, 1024))
+
+    # create a simple imaging WCS without distortions:
+    cdmat = np.array([[1.29e-5, 5.95e-6], [5.02e-6, -1.26e-5]])
+    aff = models.AffineTransformation2D(matrix=cdmat, name='rotation')
+
+    offx = models.Shift(-501, name='x_translation')
+    offy = models.Shift(-501, name='y_translation')
+
+    wcslin = (offx & offy) | aff
+
+    n2c = models.RotateNative2Celestial(5.63, -72.05, 180, name='sky_rotation')
+    tan = models.Pix2Sky_TAN(name='tangent_projection')
+
+    wcs_forward = wcslin | tan | n2c
+
+    sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
+    pipeline = [('detector', wcs_forward), (sky_cs, None)]
+
+    wcs_lin = wcs.WCS(
+        input_frame=cf.Frame2D(name='detector'),
+        output_frame=sky_cs,
+        forward_transform=pipeline
+    )
+
+    _, _, celestial_group = wcs_lin._separable_groups(detect_celestial=True)
+    fits_wcs = wcs_lin._to_fits_sip(
+        celestial_group=celestial_group,
+        keep_axis_position=False,
+        bounding_box=bounding_box,
+        max_pix_error=0.1,
+        degree=None,
+        max_inv_pix_error=0.1,
+        inv_degree=None,
+        npoints=32,
+        crpix=None,
+        projection='TAN',
+        matrix_type=matrix_type,
+        verbose=False
+    )
+    fitssip = astwcs.WCS(fits_wcs)
+
+    fitsvalx, fitsvaly = fitssip.wcs_pix2world(xflat, yflat, 0)
+    inv_fitsvalx, inv_fitsvaly = fitssip.wcs_world2pix(fitsvalx, fitsvaly, 0)
+    gwcsvalx, gwcsvaly = wcs_lin(xflat, yflat)
+
+    assert_allclose(gwcsvalx, fitsvalx, atol=4e-11, rtol=0)
+    assert_allclose(gwcsvaly, fitsvaly, atol=4e-11, rtol=0)
+
+    assert_allclose(xflat, inv_fitsvalx, atol=5e-9, rtol=0)
+    assert_allclose(yflat, inv_fitsvaly, atol=5e-9, rtol=0)
 
 
 def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
@@ -627,6 +685,7 @@ def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral
     kwargs = {
         k: v.default for k, v in pars.items() if v.default is not Parameter.empty
     }
+    kwargs['matrix_type'] = 'CD'
 
     fw_hdr = w._to_fits_sip(
         celestial_group=celestial_group,

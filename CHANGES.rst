@@ -9,6 +9,8 @@ Bug Fixes
 - Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
   in angle wrapping code [#367]
 
+- Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
