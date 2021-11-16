@@ -14,7 +14,7 @@ from astropy.modeling.models import (
 from astropy.modeling import projections, fix_inputs
 from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
-from astropy.wcs.utils import celestial_frame_to_wcs
+from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
 
 from .api import GWCSAPIMixin
 from . import coordinate_frames as cf
@@ -1607,6 +1607,7 @@ class WCS(GWCSAPIMixin):
             npoints=npoints,
             crpix=crpix,
             projection=projection,
+            matrix_type='CD',
             verbose=verbose
         )
 
@@ -1615,9 +1616,9 @@ class WCS(GWCSAPIMixin):
     def _to_fits_sip(self, celestial_group, keep_axis_position,
                      bounding_box, max_pix_error, degree,
                      max_inv_pix_error, inv_degree,
-                     npoints, crpix, projection,
+                     npoints, crpix, projection, matrix_type,
                      verbose):
-        """
+        r"""
         Construct a SIP-based approximation to the WCS for the axes
         corresponding to the `~gwcs.coordinate_frames.CelestialFrame`
         in the form of a FITS header.
@@ -1654,6 +1655,30 @@ class WCS(GWCSAPIMixin):
                 The ``lon``/``lat`` order is still preserved regardless of this
                 setting.
 
+        matrix_type : {'CD', 'PC-CDELT1', 'PC-SUM1', 'PC-DET1', 'PC-SCALE'}
+            Specifies formalism (``PC`` or ``CD``) to be used for the linear
+            transformation matrix and normalization for the ``PC`` matrix
+            *when non-linear polynomial terms are not required to achieve
+            requested accuracy*.
+
+            .. note:: ``CD`` matrix is always used when requested SIP
+                approximation accuracy requires non-linear terms (when
+                ``CTYPE`` ends in ``-SIP``). This parameter is ignored when
+                non-linear polynomial terms are used.
+
+            - ``'CD'``: use ``CD`` matrix;
+
+            - ``'PC-CDELT1'``: set ``PC=CD`` and ``CDELTi=1``. This is the
+              behavior of `~astropy.wcs.WCS.to_header` method;
+
+            - ``'PC-SUM1'``: normalize ``PC`` matrix such that sum
+              of its squared elements is 1: :math:`\Sigma PC_{ij}^2=1`;
+
+            - ``'PC-DET1'``: normalize ``PC`` matrix such that :math:`|\det(PC)|=1`;
+
+            - ``'PC-SCALE'``: normalize ``PC`` matrix such that ``CDELTi``
+              are estimates of the linear pixel scales.
+
         Returns
         -------
         FITS header with all SIP WCS keywords
@@ -1666,6 +1691,12 @@ class WCS(GWCSAPIMixin):
             is not achieved an exception will be raised.
 
         """
+        if isinstance(matrix_type, str):
+            matrix_type = matrix_type.upper()
+
+        if matrix_type not in ['CD', 'PC-CDELT1', 'PC-SUM1', 'PC-DET1', 'PC-SCALE']:
+            raise ValueError(f"Unsupported 'matrix_type' value: {repr(matrix_type)}.")
+
         if npoints < 8:
             raise ValueError("Number of sampling points is too small. 'npoints' must be >= 8.")
 
@@ -1854,8 +1885,37 @@ class WCS(GWCSAPIMixin):
                 hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
 
         else:
-            mat_kind = 'PC'
-            cel_kwd.append('CDELT')
+            if matrix_type.startswith('PC'):
+                mat_kind = 'PC'
+                cel_kwd.append('CDELT')
+
+                if matrix_type == 'PC-CDELT1':
+                    cdelt = [1.0, 1.0]
+
+                elif matrix_type == 'PC-SUM1':
+                    norm = np.sqrt(np.sum(w.wcs.pc**2))
+                    cdelt = [norm, norm]
+
+                elif matrix_type == 'PC-DET1':
+                    det_pc = np.linalg.det(w.wcs.pc)
+                    norm = np.sqrt(np.abs(det_pc))
+                    cdelt = [norm, np.sign(det_pc) * norm]
+
+                elif matrix_type == 'PC-SCALE':
+                    cdelt = proj_plane_pixel_scales(w)
+
+                for i in range(1, 3):
+                    s = cdelt[i - 1]
+                    hdr[f'CDELT{i}'] = s
+                    for j in range(1, 3):
+                        pc_kwd = f'PC{i}_{j}'
+                        if pc_kwd in hdr:
+                            hdr[pc_kwd] = w.wcs.pc[i - 1, j - 1] / s
+
+            else:
+                mat_kind = 'CD'
+                del hdr['CDELT?']
+
             hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
 
         # Construct CD matrix while remapping input axes.
@@ -2353,6 +2413,7 @@ class WCS(GWCSAPIMixin):
                 npoints=npoints,
                 crpix=crpix,
                 projection=projection,
+                matrix_type='PC-CDELT1',
                 verbose=verbose
             )
             use_cd = 'A_ORDER' in hdr

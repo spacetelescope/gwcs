@@ -11,6 +11,8 @@ Bug Fixes
 
 - Fix deprecation warning when wcs is initialized with a pipeline [#368]
 
+- Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
