@@ -1,8 +1,39 @@
+0.17.0 (2021-11-17)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- `world_axis_object_components` and `world_axis_object_classes` now ensure
+  unique keys in `CompositeFrame` and `CoordinateFrame`. [#356]
+
+- Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
+  in angle wrapping code [#367]
+
+- Fix deprecation warning when wcs is initialized with a pipeline [#368]
+
+- Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
+
+New Features
+^^^^^^^^^^^^
+- ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
+
+- Generalized ``WCS.to_fits_sip`` to be able to create a 2D celestial FITS WCS
+  from celestial subspace of the ``WCS``. Also, now `WCS.to_fits_sip``
+  supports arbitrary order of output axes. [#357]
+
+
+API Changes
+^^^^^^^^^^^
+- Modified interface to ``wcs_from_points`` function to better match analogous function
+  in astropy. [#349]
+
+- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox`. [#376, #377]
+
 0.16.1 (2020-12-20)
 -------------------
 Bug Fixes
 ^^^^^^^^^
--Fix a regression with ``pixel_to_world`` for output frames with one axis. [#342]
+- Fix a regression with ``pixel_to_world`` for output frames with one axis. [#342]
 
 0.16.0 (2020-12-18)
 -------------------

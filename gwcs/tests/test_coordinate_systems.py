@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import pytest
+import logging
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -8,6 +9,7 @@ from astropy.time import Time, TimeDelta
 from astropy import coordinates as coord
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.modeling import models as m
+from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 
 from .. import WCS
 from .. import coordinate_frames as cf
@@ -393,8 +395,59 @@ def test_base_frame():
                            axes_type=("SPATIAL",),
                            naxes=1, axes_order=(0,),
                            axes_names=("x", "y"))
-    frame = cf.CoordinateFrame(name='custom_frame', axes_type=("SPATIAL",), axes_order=(0,), axes_names="x", naxes=1)
+    frame = cf.CoordinateFrame(
+        name='custom_frame',
+        axes_type=("SPATIAL",),
+        axes_order=(0,),
+        axes_names="x",
+        naxes=1
+    )
     assert frame.naxes == 1
     assert frame.axes_names == ("x",)
 
     frame.coordinate_to_quantity(1, 2)
+
+
+def test_ucd1_to_ctype_not_out_of_sync(caplog):
+    """
+    Test that our code is not out-of-sync with ``astropy``'s definition of
+    ``CTYPE_TO_UCD1`` and our dictionary of allowed duplicates.
+
+    If this test is failing, update ``coordinate_frames._ALLOWED_UCD_DUPLICATES``
+    dictionary with new types defined in ``astropy``'s ``CTYPE_TO_UCD1``.
+
+    """
+    cf._ucd1_to_ctype_name_mapping(
+        ctype_to_ucd=CTYPE_TO_UCD1,
+        allowed_ucd_duplicates=cf._ALLOWED_UCD_DUPLICATES
+    )
+
+    assert len(caplog.record_tuples) == 0
+
+
+def test_ucd1_to_ctype(caplog):
+    new_ctype_to_ucd = {
+        'RPT1': 'new.repeated.type',
+        'RPT2': 'new.repeated.type',
+        'RPT3': 'new.repeated.type',
+    }
+
+    ctype_to_ucd = dict(**CTYPE_TO_UCD1, **new_ctype_to_ucd)
+
+    inv_map = cf._ucd1_to_ctype_name_mapping(
+        ctype_to_ucd=ctype_to_ucd,
+        allowed_ucd_duplicates=cf._ALLOWED_UCD_DUPLICATES
+    )
+
+    assert caplog.record_tuples[-1][1] == logging.WARNING and \
+            caplog.record_tuples[-1][2].startswith(
+                "Found unsupported duplicate physical type"
+            )
+
+    for k, v in cf._ALLOWED_UCD_DUPLICATES.items():
+        assert inv_map.get(k, '') == v
+
+    for k, v in inv_map.items():
+        assert ctype_to_ucd[v] == k
+
+    assert inv_map['new.repeated.type'] in new_ctype_to_ucd
