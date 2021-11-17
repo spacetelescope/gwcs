@@ -1,4 +1,4 @@
-0.17.0 (unreleased)
+0.17.0 (2021-11-17)
 -------------------
 Bug Fixes
 ^^^^^^^^^
@@ -21,12 +21,13 @@ New Features
   from celestial subspace of the ``WCS``. Also, now `WCS.to_fits_sip``
   supports arbitrary order of output axes. [#357]
 
-- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox`. [#376, #377]
 
 API Changes
 ^^^^^^^^^^^
 - Modified interface to ``wcs_from_points`` function to better match analogous function
   in astropy. [#349]
+
+- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox`. [#376, #377]
 
 0.16.1 (2020-12-20)
 -------------------
