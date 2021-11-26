@@ -735,7 +735,7 @@ class StokesProfile(str):
         out = np.empty_like(indexes, dtype=object)
 
         for profile, index in cls.profiles.items():
-            out[indexes == index] = profile
+            out[indexes == index] = cls(profile)
 
         out[nans] = np.nan
 
