@@ -286,6 +286,9 @@ def test_stokes_frame():
     assert sf.coordinate_to_quantity('I') == 0 * u.one
     assert sf.coordinate_to_quantity(0) == 0
 
+def test_stokes_profile():
+    assert (cf.StokesProfile.from_index(np.arange(-8, 4) * u.one) == np.array(['YX', 'XY', 'YY,', 'XX', 'LR', 'RL', 'LL', 'RR', 'I', 'Q', 'U', 'V'], dtype="U2")).all()
+
 
 @pytest.mark.parametrize('inp', [
     (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one),
