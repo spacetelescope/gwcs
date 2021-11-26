@@ -732,7 +732,7 @@ class StokesProfile(str):
 
         nans = np.isnan(indexes)
         indexes = np.asarray(indexes, dtype=int)
-        out = np.empty_like(indexes, dtype="U2")
+        out = np.empty_like(indexes, dtype=object)
 
         for profile, index in cls.profiles.items():
             out[indexes == index] = profile
