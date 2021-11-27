@@ -1,11 +1,11 @@
-0.17.1 (Unreleased)
+0.17.1 (2021-11-27)
 -------------------
-
-New Features
-^^^^^^^^^^^^
 
 Bug Fixes
 ^^^^^^^^^
+
+- Fixed a bug with StokesProfile and array types. [#384]
+
 
 0.17.0 (2021-11-17)
 -------------------
