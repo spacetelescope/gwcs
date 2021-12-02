@@ -254,7 +254,7 @@ Save a WCS object as an ASDF extension in a FITS file
   1  SCI           1 ImageHDU        71   (600, 550)   float32
   >>> tree = {"sci": hdul[1].data,
   ...         "wcs": wcsobj}
-  >>> fa = fits.embed.AsdfInFits(hdul, tree)
+  >>> fa = fits_embed.AsdfInFits(hdul, tree)
   >>> fa.write_to("imaging_with_wcs_in_asdf.fits")
   >>> fits.info("imaging_with_wcs_in_asdf.fits")
   Filename: example_with_wcs.asdf
