@@ -4,9 +4,6 @@
 from asdf.extension import Converter
 
 
-_REQUIRES = ['astropy']
-
-
 __all__ = ["WCSConverter", "CelestialFrameConverter", "CompositeFrameConverter",
            "FrameConverter", "SpectralFrameConverter", "StepConverter",
            "TemporalFrameConverter", "StokesFrameConverter"]
