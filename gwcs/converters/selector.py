@@ -27,7 +27,7 @@ class LabelMapperConverter(TransformConverterBase):
             raise TypeError("inputs_mapping must be an instance"
                             "of astropy.modeling.models.Mapping.")
         mapper = node['mapper']
-        atol = node.get('atol', 10e-8)
+        atol = node.get('atol', 1e-8)
         no_label = node.get('no_label', np.nan)
 
         if isinstance(mapper, NDArrayType):

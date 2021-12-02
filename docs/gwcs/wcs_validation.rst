@@ -15,11 +15,11 @@ GWCS uses the
 and frames) and to provide validation that the serialization is correct.
 ASDF makes use of abstract data type definitions called ``schemas``.
 The serialization and deserialization happens in classes, referred to as
-``convertors`` defined in ``gwcs.converters.*`` modules. Most of the schemas
+``converters`` defined in ``gwcs.converters.*`` modules. Most of the schemas
 available for the WCS object, coordinate frames and some WCS specific transforms
 live in the
 `asdf-wcs-schemas package <http://asdf-wcs-schemas.readthedocs.io/en/latest>`_.
 
 Packages using GWCS may create their own transforms and schemas and register
 them as an ``Asdf Extension``. If those are of general use, it is recommended
-they be included in astropy.
+they be included in `asdf-astropy <https://github.com/astropy/asdf-astropy>`_.
