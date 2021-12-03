@@ -40,7 +40,7 @@ WCS_MODEL_CONVERTERS = [
 # The order here is important; asdf will prefer to use extensions
 # that occur earlier in the list.
 WCS_MANIFEST_URIS = [
-    "asdf://stsci.edu/schemas/gwcs/manifests/gwcs-schemas-1.0",
+    "asdf://asdf-format.org/astronomy/gwcs/manifests/gwcs-1.0.0",
 ]
 
 
