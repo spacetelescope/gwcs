@@ -31,6 +31,9 @@ Bug Fixes
 
 - Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
 
+- Updated code in ``region.py`` with latest improvements and bug fixes
+  from ``stsci.skypac.regions.py`` [#382]
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
