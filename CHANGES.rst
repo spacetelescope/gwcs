@@ -3,9 +3,15 @@
 Bug Fixes
 ^^^^^^^^^
 
+- Updated code in ``region.py`` with latest improvements and bug fixes
+  from ``stsci.skypac.regions.py`` [#382]
+
+
 New Features
 ^^^^^^^^^^^^
 
+- Moved schemas to standalone package ``asdf-wcs-schemas``.
+  Reqorked the serialization code to use ASDF converters. [#371]
 
 0.17.1 (2021-11-27)
 -------------------
@@ -31,8 +37,6 @@ Bug Fixes
 
 - Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
 
-- Updated code in ``region.py`` with latest improvements and bug fixes
-  from ``stsci.skypac.regions.py`` [#382]
 
 New Features
 ^^^^^^^^^^^^
