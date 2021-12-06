@@ -3,41 +3,36 @@
 
 from collections import OrderedDict
 import numpy as np
-from numpy.testing import assert_array_equal
 from astropy.modeling import models
 from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
 
-from asdf import yamlutil
 from asdf.tags.core.ndarray import NDArrayType
-from ..gwcs_types import GWCSTransformType
+from asdf_astropy.converters.transform.core import TransformConverterBase
 
 
-from ..selector import *
+__all__ = ['LabelMapperConverter', 'RegionsSelectorConverter']
 
 
-__all__ = ['LabelMapperType', 'RegionsSelectorType']
+class LabelMapperConverter(TransformConverterBase):
+    tags = ["tag:stsci.edu:gwcs/label_mapper-*"]
+    types = ["gwcs.selector.LabelMapperArray", "gwcs.selector.LabelMapperDict",
+             "gwcs.selector.LabelMapperRange", "gwcs.selector.LabelMapper"]
 
-
-class LabelMapperType(GWCSTransformType):
-    name = "label_mapper"
-    types = [LabelMapperArray, LabelMapperDict, LabelMapperRange, LabelMapper]
-    version = "1.1.0"
-
-    @classmethod
-    def from_tree_transform(cls, node, ctx):
+    def from_yaml_tree_transform(self, node, tag, ctx):
+        from ..selector import (LabelMapperArray, LabelMapperDict,
+                                LabelMapperRange, LabelMapper)
         inputs_mapping = node.get('inputs_mapping', None)
         if inputs_mapping is not None and not isinstance(inputs_mapping, models.Mapping):
             raise TypeError("inputs_mapping must be an instance"
                             "of astropy.modeling.models.Mapping.")
         mapper = node['mapper']
-        atol = node.get('atol', 10**-8)
+        atol = node.get('atol', 1e-8)
         no_label = node.get('no_label', np.nan)
 
         if isinstance(mapper, NDArrayType):
             if mapper.ndim != 2:
-                raise NotImplementedError(
-                    "GWCS currently only supports 2x2 masks ")
+                raise NotImplementedError("GWCS currently only supports 2D masks.")
             return LabelMapperArray(mapper, inputs_mapping)
         elif isinstance(mapper, Model):
             inputs = node.get('inputs')
@@ -56,8 +51,9 @@ class LabelMapperType(GWCSTransformType):
                 dict_mapper = dict(zip(labels, transforms))
                 return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
 
-    @classmethod
-    def to_tree_transform(cls, model, ctx):
+    def to_yaml_tree_transform(self, model, tag, ctx):
+        from ..selector import (LabelMapperArray, LabelMapperDict,
+                                LabelMapperRange, LabelMapper)
         node = OrderedDict()
         node['no_label'] = model.no_label
         if model.inputs_mapping is not None:
@@ -86,31 +82,15 @@ class LabelMapperType(GWCSTransformType):
         else:
             raise TypeError("Unrecognized type of LabelMapper - {0}".format(model))
 
-        return yamlutil.custom_tree_to_tagged_tree(node, ctx)
-
-    @classmethod
-    def assert_equal(cls, a, b):
-        # TODO: If models become comparable themselves, remove this.
-        assert (a.__class__ == b.__class__) # nosec
-        if isinstance(a.mapper, dict):
-            assert(a.mapper.__class__ == b.mapper.__class__) # nosec
-            assert(all(np.in1d(list(a.mapper), list(b.mapper)))) # nosec
-            for k in a.mapper:
-                assert (a.mapper[k].__class__ == b.mapper[k].__class__) # nosec
-                assert(all(a.mapper[k].parameters == b.mapper[k].parameters))  # nosec
-            assert (a.inputs == b.inputs) # nosec
-            assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping) # nosec
-        else:
-            assert_array_equal(a.mapper, b.mapper)
+        return node
 
 
-class RegionsSelectorType(GWCSTransformType):
-    name = "regions_selector"
-    types = [RegionsSelector]
-    version = "1.1.0"
+class RegionsSelectorConverter(TransformConverterBase):
+    tags = ["tag:stsci.edu:gwcs/regions_selector-*"]
+    types = ["gwcs.selector.RegionsSelector"]
 
-    @classmethod
-    def from_tree_transform(cls, node, ctx):
+    def from_yaml_tree_transform(self, node, tag, ctx):
+        from ..selector import RegionsSelector
         inputs = node['inputs']
         outputs = node['outputs']
         label_mapper = node['label_mapper']
@@ -120,8 +100,7 @@ class RegionsSelectorType(GWCSTransformType):
         return RegionsSelector(inputs, outputs,
                                sel, label_mapper, undefined_transform_value)
 
-    @classmethod
-    def to_tree_transform(cls, model, ctx):
+    def to_yaml_tree_transform(self, model, tag, ctx):
         selector = OrderedDict()
         node = OrderedDict()
         labels = list(model.selector)
@@ -135,16 +114,4 @@ class RegionsSelectorType(GWCSTransformType):
         node['selector'] = selector
         node['label_mapper'] = model.label_mapper
         node['undefined_transform_value'] = model.undefined_transform_value
-        return yamlutil.custom_tree_to_tagged_tree(node, ctx)
-
-    @classmethod
-    def assert_equal(cls, a, b):
-        # TODO: If models become comparable themselves, remove this.
-        assert (a.__class__ == b.__class__) # nosec
-        LabelMapperType.assert_equal(a.label_mapper, b.label_mapper)
-        assert_array_equal(a.inputs, b.inputs)
-        assert_array_equal(a.outputs, b.outputs)
-        assert_array_equal(a.selector.keys(), b.selector.keys())
-        for key in a.selector:
-            assert_array_equal(a.selector[key].parameters, b.selector[key].parameters)
-        assert_array_equal(a.undefined_transform_value, b.undefined_transform_value)
+        return node

@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-import numpy as np
-
 from astropy.modeling.models import Identity
 from astropy import units as u
-from asdf.tests import helpers
+from asdf_astropy.converters.transform.tests.test_transform import (
+     assert_model_roundtrip)
 
 from ... import spectroscopy as sp
 from ... import geometry
@@ -39,5 +38,4 @@ transforms = [todircos,
 
 @pytest.mark.parametrize(('model'), transforms)
 def test_transforms(tmpdir, model):
-    tree = {'model': model}
-    helpers.assert_roundtrip_tree(tree, tmpdir)
+    assert_model_roundtrip(model, tmpdir)
