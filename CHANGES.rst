@@ -23,6 +23,10 @@ Bug Fixes
 - Updated code in ``region.py`` with latest improvements and bug fixes
   from ``stsci.skypac.regions.py`` [#382]
 
+- Added support to ``_compute_lon_pole()`` for computation of ``lonpole``
+  for all projections from ``astropy.modeling.projections``. This also
+  extends support for different projections in ``wcs_from_fiducial()``. [#389]
+
 New Features
 ^^^^^^^^^^^^
 
