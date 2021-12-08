@@ -11,7 +11,7 @@ New Features
 ^^^^^^^^^^^^
 
 - Moved schemas to standalone package ``asdf-wcs-schemas``.
-  Reqorked the serialization code to use ASDF converters. [#371]
+  Reworked the serialization code to use ASDF converters. [#388]
 
 0.17.1 (2021-11-27)
 -------------------

@@ -1,34 +1,64 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import os
-from asdf import util
-from asdf.extension import BuiltinExtension
-from .tags.wcs import *  # noqa
-from .tags.selectortags import *  # noqa
-from .tags.spectroscopy_models import * # noqa
-from .tags.geometry_models import * # noqa
+from asdf.extension import ManifestExtension
+from .converters.wcs import (
+    CelestialFrameConverter, CompositeFrameConverter, FrameConverter,
+    Frame2DConverter, SpectralFrameConverter, StepConverter,
+    StokesFrameConverter, TemporalFrameConverter, WCSConverter,
+)
+from .converters.selector import (
+    LabelMapperConverter, RegionsSelectorConverter
+)
+from .converters.spectroscopy import (
+    GratingEquationConverter, SellmeierGlassConverter, SellmeierZemaxConverter,
+    Snell3DConverter
+)
+from .converters.geometry import (
+    DirectionCosinesConverter, SphericalCartesianConverter
+)
 
-# Make sure that all tag implementations are imported by the time we create
-# the extension class so that _gwcs_types is populated correctly.
-from .tags import *  # noqa
-from .gwcs_types import _gwcs_types
+
+WCS_MODEL_CONVERTERS = [
+    CelestialFrameConverter(),
+    CompositeFrameConverter(),
+    FrameConverter(),
+    Frame2DConverter(),
+    SpectralFrameConverter(),
+    StepConverter(),
+    StokesFrameConverter(),
+    TemporalFrameConverter(),
+    WCSConverter(),
+    LabelMapperConverter(),
+    RegionsSelectorConverter(),
+    GratingEquationConverter(),
+    SellmeierGlassConverter(),
+    SellmeierZemaxConverter(),
+    Snell3DConverter(),
+    DirectionCosinesConverter(),
+    SphericalCartesianConverter(),
+]
+
+# The order here is important; asdf will prefer to use extensions
+# that occur earlier in the list.
+WCS_MANIFEST_URIS = [
+    "asdf://asdf-format.org/astronomy/gwcs/manifests/gwcs-1.0.0",
+]
 
 
-SCHEMA_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), 'schemas'))
+TRANSFORM_EXTENSIONS = [
+    ManifestExtension.from_uri(
+        uri,
+        legacy_class_names=["gwcs.extension.GWCSExtension"],
+        converters=WCS_MODEL_CONVERTERS,
+    )
+    for uri in WCS_MANIFEST_URIS
+]
 
-
-class GWCSExtension(BuiltinExtension):
-    @property
-    def types(self):
-        return _gwcs_types
-
-    @property
-    def tag_mapping(self):
-        return [('tag:stsci.edu:gwcs',
-                 'http://stsci.edu/schemas/gwcs{tag_suffix}')]
-
-    @property
-    def url_mapping(self):
-        return [('http://stsci.edu/schemas/gwcs',
-                 util.filepath_to_url(os.path.join(SCHEMA_PATH, "stsci.edu")) +
-                 '/gwcs{url_suffix}.yaml')]
+def get_extensions():
+    """
+    Get the gwcs.converters extension.
+    This method is registered with the asdf.extensions entry point.
+    Returns
+    -------
+    list of asdf.extension.Extension
+    """
+    return TRANSFORM_EXTENSIONS

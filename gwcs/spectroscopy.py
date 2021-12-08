@@ -140,9 +140,11 @@ class AnglesFromGratingEquation3D(Model):
     def input_units(self):
         if self.groove_density.unit is None:
             return None
-        return {'wavelength': 1 / self.groove_density.unit,
-                'alpha_in': u.Unit(1),
-                'beta_in': u.Unit(1)}
+        return {
+            'wavelength': 1 / self.groove_density.unit,
+            'alpha_in': u.Unit(1),
+            'beta_in': u.Unit(1)
+        }
 
 
 class Snell3D(Model):
