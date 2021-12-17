@@ -6,6 +6,8 @@ Bug Fixes
 - Updated code in ``region.py`` with latest improvements and bug fixes
   from ``stsci.skypac.regions.py`` [#382]
 
+- Enabled ``CompoundBoundingBox`` support for wcs. [#375]
+
 
 New Features
 ^^^^^^^^^^^^
@@ -52,7 +54,7 @@ API Changes
 - Modified interface to ``wcs_from_points`` function to better match analogous function
   in astropy. [#349]
 
-- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox`. [#376, #377]
+- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox``. [#376, #377]
 
 0.16.1 (2020-12-20)
 -------------------

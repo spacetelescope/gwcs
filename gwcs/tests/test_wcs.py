@@ -283,6 +283,62 @@ def test_bounding_box():
     assert_allclose(w(-1*u.pix, -1*u.pix), (np.nan, np.nan))
 
 
+def test_compound_bounding_box():
+    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+    pipeline = [('detector', trans3), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    cbb = {
+        1: ((-1, 10), (6, 15)),
+        2: ((-1, 5), (3, 17)),
+        3: ((-3, 7), (1, 27)),
+    }
+    if new_bbox:
+        # Test attaching a valid bounding box (ignoring input 'x')
+        w.attach_compound_bounding_box(cbb, [('x',)])
+        from astropy.modeling.bounding_box import CompoundBoundingBox
+        cbb = CompoundBoundingBox.validate(trans3, cbb, selector_args=[('x',)], order='F')
+        assert w.bounding_box == cbb
+        assert w.bounding_box is trans3.bounding_box
+
+        # Test evaluating
+        assert_allclose(w(13, 2, 1), (np.nan, np.nan, np.nan))
+        assert_allclose(w(13, 2, 2), (np.nan, np.nan, np.nan))
+        assert_allclose(w(13, 0, 3), (np.nan, np.nan, np.nan))
+        # No bounding box for selector
+        with pytest.raises(RuntimeError):
+            w(13, 13, 4)
+
+        # Test attaching a invalid bounding box (not ignoring input 'x')
+        with pytest.raises(ValueError):
+            w.attach_compound_bounding_box(cbb, [('x', False)])
+    else:
+        with pytest.raises(NotImplementedError) as err:
+            w.attach_compound_bounding_box(cbb, [('x',)])
+        assert str(err.value) == 'Compound bounding box is not supported for your version of astropy'
+
+    # Test that bounding_box with quantities can be assigned and evaluates
+    trans = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
+    pipeline = [('detector', trans), ('sky', None)]
+    w = wcs.WCS(pipeline)
+    cbb = {
+        1 * u.pix: (1 * u.pix, 5 * u.pix),
+        2 * u.pix: (2 * u.pix, 6 * u.pix)
+    }
+    if new_bbox:
+        w.attach_compound_bounding_box(cbb, [('x1',)])
+
+        from astropy.modeling.bounding_box import CompoundBoundingBox
+        cbb = CompoundBoundingBox.validate(trans, cbb, selector_args=[('x1',)], order='F')
+        assert w.bounding_box == cbb
+        assert w.bounding_box is trans.bounding_box
+
+        assert_allclose(w(-1*u.pix, 1*u.pix), (np.nan, np.nan))
+        assert_allclose(w(7*u.pix, 2*u.pix), (np.nan, np.nan))
+    else:
+        with pytest.raises(NotImplementedError) as err:
+            w.attach_compound_bounding_box(cbb, [('x1',)])
+
+
 def test_grid_from_bounding_box():
     bb = ((-1, 9.9), (6.5, 15))
     x, y = grid_from_bounding_box(bb, step=[.1, .5], center=False)
