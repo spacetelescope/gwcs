@@ -24,13 +24,14 @@ from .wcstools import grid_from_bounding_box
 
 try:
     from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
+    from astropy.modeling.bounding_box import CompoundBoundingBox
     new_bbox = True
 except ImportError:
     from astropy.modeling.utils import _BoundingBox as Bbox
     new_bbox = False
 
 
-__all__ = ['WCS', 'NoConvergence']
+__all__ = ['WCS', 'Step', 'NoConvergence']
 
 _ITER_INV_KWARGS = ['tolerance', 'maxiter', 'adaptive', 'detect_divergence', 'quiet']
 
@@ -1313,6 +1314,7 @@ class WCS(GWCSAPIMixin):
         Return the range of acceptable values for each input axis.
         The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
         """
+
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
         try:
@@ -1353,7 +1355,10 @@ class WCS(GWCSAPIMixin):
             try:
                 # Make sure the dimensions of the new bbox are correct.
                 if new_bbox:
-                    bbox = Bbox.validate(transform_0, value, order='F')
+                    if isinstance(value, CompoundBoundingBox):
+                        bbox = CompoundBoundingBox.validate(transform_0, value, order='F')
+                    else:
+                        bbox = Bbox.validate(transform_0, value, order='F')
                 else:
                     Bbox.validate(transform_0, value)
             except Exception:
@@ -1372,6 +1377,16 @@ class WCS(GWCSAPIMixin):
                     transform_0.bounding_box = [value[ind] for ind in axes_ind][::-1]
 
         self.set_transform(frames[0], frames[1], transform_0)
+
+    def attach_compound_bounding_box(self, cbbox, selector_args):
+        if new_bbox:
+            frames = self.available_frames
+            transform_0 = self.get_transform(frames[0], frames[1])
+
+            self.bounding_box = CompoundBoundingBox.validate(transform_0, cbbox, selector_args=selector_args,
+                                                             order='F')
+        else:
+            raise NotImplementedError('Compound bounding box is not supported for your version of astropy')
 
     def _get_axes_indices(self):
         try:

@@ -1,3 +1,20 @@
+0.18.0 (2021-12-22)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Updated code in ``region.py`` with latest improvements and bug fixes
+  from ``stsci.skypac.regions.py`` [#382]
+
+
+New Features
+^^^^^^^^^^^^
+
+- Enabled ``CompoundBoundingBox`` support for wcs. [#375]
+  
+- Moved schemas to standalone package ``asdf-wcs-schemas``.
+  Reworked the serialization code to use ASDF converters. [#388]
+
 0.17.1 (2021-11-27)
 -------------------
 
@@ -22,6 +39,7 @@ Bug Fixes
 
 - Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
 
+
 New Features
 ^^^^^^^^^^^^
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
@@ -36,7 +54,7 @@ API Changes
 - Modified interface to ``wcs_from_points`` function to better match analogous function
   in astropy. [#349]
 
-- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox`. [#376, #377]
+- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox``. [#376, #377]
 
 0.16.1 (2020-12-20)
 -------------------

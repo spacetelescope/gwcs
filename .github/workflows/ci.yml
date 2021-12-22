@@ -33,16 +33,6 @@ jobs:
             python-version: 3.9
             toxenv: py39
 
-          - name: Python 3.7
-            runs-on: ubuntu-latest
-            python-version: 3.7
-            toxenv: py37
-
-          - name: Python 3.6
-            runs-on: ubuntu-latest
-            python-version: 3.6
-            toxenv: py36
-
           - name: Python 3.8 with coverage
             runs-on: ubuntu-latest
             python-version: 3.8
