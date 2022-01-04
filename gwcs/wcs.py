@@ -702,16 +702,12 @@ class WCS(GWCSAPIMixin):
         >>> w = asdf.open(filename).tree['wcs']
 
         >>> ra, dec = w([1,2,3], [1,1,1])
-        >>> print(ra)  # doctest: +FLOAT_CMP
-        [5.927628   5.92757069 5.92751337]
-        >>> print(dec)  # doctest: +FLOAT_CMP
-        [-72.01341247 -72.01341273 -72.013413  ]
+        >>> assert np.allclose(ra, [5.927628, 5.92757069, 5.92751337]);
+        >>> assert np.allclose(dec, [-72.01341247, -72.01341273, -72.013413])
 
         >>> x, y = w.numerical_inverse(ra, dec)
-        >>> print(x)  # doctest: +FLOAT_CMP
-        [1.00000005 2.00000005 3.00000006]
-        >>> print(y)  # doctest: +FLOAT_CMP
-        [1.00000004 0.99999979 1.00000015]
+        >>> assert np.allclose(x, [1.00000005, 2.00000005, 3.00000006]);
+        >>> assert np.allclose(y, [1.00000004, 0.99999979, 1.00000015]);
 
         >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
         Traceback (most recent call last):
@@ -733,12 +729,11 @@ class WCS(GWCSAPIMixin):
         least for one input point.
 
         >>> # Now try to use some diverging data:
-        >>> divradec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
-        >>> print(divradec)  # doctest: +FLOAT_CMP
-        (array([  5.92762673, 148.21600848,   5.92750827]),
-         array([-72.01339464,  -7.80968079, -72.01334172]))
+        >>> divra, divdec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
+        >>> assert np.allclose(divra, [5.92762673, 148.21600848, 5.92750827])
+        >>> assert np.allclose(divdec, [-72.01339464, -7.80968079, -72.01334172])
         >>> try:  # doctest: +SKIP
-        ...     x, y = w.numerical_inverse(*divradec, maxiter=20,
+        ...     x, y = w.numerical_inverse(divra, divdec, maxiter=20,
         ...                                tolerance=1.0e-4, adaptive=True,
         ...                                detect_divergence=True,
         ...                                quiet=False)
