@@ -12,8 +12,8 @@ from astropy import units as u  # noqa: E402
 from astropy import time  # noqa: E402
 
 import asdf  # noqa: E402
-from asdf_astropy.converters.transform.tests.test_transform import (  # noqa: E402
-     assert_models_equal)
+from asdf_astropy.testing.helpers import (  # noqa: E402
+     assert_model_equal)
 
 from ... import coordinate_frames as cf  # noqa: E402
 from ... import wcs  # noqa: E402
@@ -56,7 +56,7 @@ def _assert_wcs_equal(a, b):
     assert len(a.available_frames) == len(b.available_frames) # nosec
     for a_step, b_step in zip(a.pipeline, b.pipeline):
         _assert_frame_equal(a_step.frame, b_step.frame)
-        assert_models_equal(a_step.transform, b_step.transform)
+        assert_model_equal(a_step.transform, b_step.transform)
 
 
 def assert_wcs_roundtrip(wcs, tmpdir, version=None):

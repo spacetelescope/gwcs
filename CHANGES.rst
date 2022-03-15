@@ -1,3 +1,10 @@
+0.18.1 (2022-03-15)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Remove references to the ``six`` package. [#402]
+
 0.18.0 (2021-12-22)
 -------------------
 Bug Fixes
@@ -6,12 +13,11 @@ Bug Fixes
 - Updated code in ``region.py`` with latest improvements and bug fixes
   from ``stsci.skypac.regions.py`` [#382]
 
-
 New Features
 ^^^^^^^^^^^^
 
 - Enabled ``CompoundBoundingBox`` support for wcs. [#375]
-  
+
 - Moved schemas to standalone package ``asdf-wcs-schemas``.
   Reworked the serialization code to use ASDF converters. [#388]
 

@@ -6,8 +6,6 @@ All types are added automatically to ``_gwcs_types`` and the GWCSExtension.
 
 """
 
-import six
-
 from astropy.io.misc.asdf.tags.transform.basic import TransformType
 from asdf.types import ExtensionTypeMeta, CustomType
 from astropy.io.misc.asdf.types import AstropyTypeMeta
@@ -49,8 +47,7 @@ class GWCSTypeMeta(ExtensionTypeMeta):
         return cls
 
 
-@six.add_metaclass(GWCSTypeMeta)
-class GWCSType(CustomType):
+class GWCSType(CustomType, metaclass=GWCSTypeMeta):
     """
     This class represents types that have schemas and tags
     implemented within GWCS.
@@ -60,8 +57,7 @@ class GWCSType(CustomType):
     standard = 'gwcs'
 
 
-@six.add_metaclass(GWCSTransformTypeMeta)
-class GWCSTransformType(TransformType):
+class GWCSTransformType(TransformType, metaclass=GWCSTransformTypeMeta):
     """
     This class represents transform types that have schemas and tags
     implemented within GWCS.
