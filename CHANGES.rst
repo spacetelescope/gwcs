@@ -3,6 +3,8 @@
 Bug Fixes
 ^^^^^^^^^
 
+- Pin astropy min version to 5.0.4. [#404]
+
 New Features
 ^^^^^^^^^^^^
 
