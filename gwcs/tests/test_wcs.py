@@ -176,6 +176,16 @@ def test_backward_transform():
     assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
+def test_backward_transform_has_inverse():
+    """
+    Test that backward transform has an inverse, which is the forward transform
+    """
+    poly = models.Polynomial1D(1, c0=4)
+    poly.inverse = models.Polynomial1D(1, c0=-3)  # this is NOT the actual inverse of poly
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame='sky')
+    assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
+
+
 def test_return_coordinates():
     """Test converting to coordinate objects or quantities."""
     w = wcs.WCS(pipe[:])

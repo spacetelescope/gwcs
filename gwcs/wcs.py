@@ -294,6 +294,10 @@ class WCS(GWCSAPIMixin):
             backward = self.forward_transform.inverse
         except NotImplementedError as err:
             raise NotImplementedError("Could not construct backward transform. \n{0}".format(err))
+        try:
+            backward.inverse
+        except NotImplementedError:  # means "hasattr" won't work
+            backward.inverse = self.forward_transform
         return backward
 
     def _get_frame_index(self, frame):
