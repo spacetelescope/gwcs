@@ -280,6 +280,8 @@ class CoordinateFrame:
     def coordinates(self, *args):
         """ Create world coordinates object"""
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
+        if self.naxes == 1:
+            return coo[0]
         return coo
 
     def coordinate_to_quantity(self, *coords):
