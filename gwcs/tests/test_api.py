@@ -10,7 +10,9 @@ import astropy.units as u
 from astropy import time
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
+import astropy.modeling.models as m
 import gwcs.coordinate_frames as cf
+import gwcs
 
 
 # Shorthand the name of the 2d gwcs fixture
@@ -492,3 +494,15 @@ def test_composite_many_base_frame():
 
     assert len(wao_components) == 2
     assert not {c[0] for c in wao_components}.difference({"SPATIAL", "SPATIAL1"})
+
+
+def test_coordinate_frame_api():
+    forward = m.Linear1D(slope=0.1*u.deg/u.pix, intercept=0*u.deg)
+
+    output_frame = cf.CoordinateFrame(1, "SPATIAL", (0,), unit=(u.deg,), name="sepframe")
+    input_frame = cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,))
+
+    wcs = gwcs.WCS(forward_transform=forward, input_frame=input_frame, output_frame=output_frame)
+
+    world = wcs.pixel_to_world(0)
+    assert isinstance(world, u.Quantity)
