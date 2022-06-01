@@ -506,3 +506,9 @@ def test_coordinate_frame_api():
 
     world = wcs.pixel_to_world(0)
     assert isinstance(world, u.Quantity)
+
+    pixel = wcs.world_to_pixel(world)
+    assert isinstance(pixel, float)
+
+    pixel2 = wcs.invert(world)
+    assert u.allclose(pixel2, 0*u.pix)
