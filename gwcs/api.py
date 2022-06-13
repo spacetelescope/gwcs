@@ -312,10 +312,15 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert world coordinates to pixel values.
         """
         result = self.invert(*world_objects, with_units=True)
-        if not utils.isnumerical(result[0]):
-            result = [i.value for i in result]
-        if self.input_frame.naxes == 1:
-            return result[0]
+
+        if self.input_frame.naxes > 1:
+            first_res = result[0]
+            if not utils.isnumerical(first_res):
+                result = [i.value for i in result]
+        else:
+            if not utils.isnumerical(result):
+                result = result.value
+
         return result
 
     def world_to_array_index(self, *world_objects):

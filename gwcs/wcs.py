@@ -480,8 +480,9 @@ class WCS(GWCSAPIMixin):
 
         Returns
         -------
-        result : tuple
-            Returns a tuple of scalar or array values for each axis.
+        result : tuple or value
+            Returns a tuple of scalar or array values for each axis. Unless
+            ``input_frame.naxes == 1`` when it shall return the value.
 
         """
         with_units = kwargs.pop('with_units', False)
