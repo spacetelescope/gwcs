@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os.path
 import pytest
-import warnings
 
 astropy = pytest.importorskip('astropy', minversion='3.0')
 
@@ -102,12 +101,6 @@ def test_composite_frame(tmpdir):
 
 def create_test_frames():
     """Creates an array of frames to be used for testing."""
-
-    # Suppress warnings from astropy that are caused by having 'dubious' dates
-    # that are too far in the future. It's not a concern for the purposes of
-    # unit tests. See issue #5809 on the astropy GitHub for discussion.
-    from astropy._erfa import ErfaWarning
-    warnings.simplefilter("ignore", ErfaWarning)
 
     frames = [
         cf.CelestialFrame(reference_frame=coord.ICRS()),
