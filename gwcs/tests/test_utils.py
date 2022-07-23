@@ -35,13 +35,15 @@ def test_fits_transform():
 def test_lon_pole():
     tan = models.Pix2Sky_TAN()
     car = models.Pix2Sky_CAR()
+    azp = models.Pix2Sky_AZP(mu=-1.35, gamma=25.8458)
     sky_positive_lat = coord.SkyCoord(3 * u.deg, 1 * u.deg)
     sky_negative_lat = coord.SkyCoord(3 * u.deg, -1 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, tan), 180 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, tan), 180 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, car), 0 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, car), 180 * u.deg)
-    assert_quantity_allclose(gwutils._compute_lon_pole((0, 34 * u.rad), tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole((0, 0.34 * u.rad), tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole((1 * u.rad, 0.34 * u.rad), azp), 180 * u.deg)
     assert_allclose(gwutils._compute_lon_pole((1, -34), tan), 180)
 
 
