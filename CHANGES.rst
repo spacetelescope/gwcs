@@ -5,6 +5,9 @@ Bug Fixes
 
 - Pin astropy min version to 5.0.4. [#404]
 
+- Fixed a bug due to which the check for divercence in ``_fit_2D_poly()`` and
+  hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
+
 New Features
 ^^^^^^^^^^^^
 
