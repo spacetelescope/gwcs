@@ -1827,12 +1827,11 @@ class WCS(GWCSAPIMixin):
         yx, yy = ntransform(0, 1)
         pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
         plate_scale = np.sqrt(pixarea)
-        max_error = max_pix_error * plate_scale
 
         # The fitting section.
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
             ntransform, npoints,
-            degree, max_error,
+            degree, max_pix_error, plate_scale,
             u, v, undist_x, undist_y,
             ud, vd, undist_xd, undist_yd,
             verbose=verbose
@@ -1852,7 +1851,7 @@ class WCS(GWCSAPIMixin):
         if max_inv_pix_error:
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
                                                             npoints, inv_degree,
-                                                            max_inv_pix_error,
+                                                            max_inv_pix_error, 1,
                                                             U, V, u-U, v-V,
                                                             Ud, Vd, ud-Ud, vd-Vd,
                                                             verbose=verbose)
@@ -1886,7 +1885,7 @@ class WCS(GWCSAPIMixin):
             hdr['B_ORDER'] = fit_poly_x.degree
             _store_2D_coefficients(hdr, sip_poly_x, 'A')
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
-            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid / plate_scale, 'Max diff from GWCS (equiv pix).')
 
             if max_inv_pix_error:
                 hdr['AP_ORDER'] = fit_inv_poly_u.degree
@@ -1927,7 +1926,7 @@ class WCS(GWCSAPIMixin):
                 mat_kind = 'CD'
                 del hdr['CDELT?']
 
-            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid / plate_scale, 'Max diff from GWCS (equiv pix).')
 
         # Construct CD matrix while remapping input axes.
         # We do not update comments to typical comments for CD matrix elements
@@ -2743,7 +2742,7 @@ class WCS(GWCSAPIMixin):
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
             ntransform,
             npoints, None,
-            max_inv_pix_error,
+            max_inv_pix_error, 1,
             undist_x, undist_y, u, v,
             undist_xd, undist_yd, ud, vd,
             verbose=True
@@ -2755,7 +2754,7 @@ class WCS(GWCSAPIMixin):
                                 (Shift(crpix[0]) & Shift(crpix[1])))
 
 
-def _fit_2D_poly(ntransform, npoints, degree, max_error,
+def _fit_2D_poly(ntransform, npoints, degree, max_error, plate_scale,
                  xin, yin, xout, yout,
                  xind, yind, xoutd, youtd,
                  verbose=False):
@@ -2780,7 +2779,9 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
 
     prev_max_error = float(np.inf)
     if verbose:
-        print(f'maximum_specified_error: {max_error}')
+        print(f'Maximum_specified_error: {max_error}')
+    max_error *= plate_scale
+
     for deg in deglist:
         poly_x = Polynomial2D(degree=deg)
         poly_y = Polynomial2D(degree=deg)
@@ -2794,20 +2795,20 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
         prev_max_error = max_resid
 
         if verbose:
-            print(f'Degree = {deg}, max_resid = {max_resid}')
+            print(f'Degree = {deg}, max_resid = {max_resid / plate_scale}')
         if max_resid < max_error:
             # Check to see if double sampling meets error requirement.
             max_resid = _compute_distance_residual(xoutd, youtd,
                                                    fit_poly_x(xind, yind),
                                                    fit_poly_y(xind, yind))
             if verbose:
-                print(f'Double sampling check: maximum residual={max_resid}')
+                print(f'Double sampling check: maximum residual={max_resid / plate_scale}')
             if max_resid < max_error:
                 if verbose:
-                    print('terminating condition met')
+                    print('Terminating condition met')
                 break
 
-    return fit_poly_x, fit_poly_y, max_resid
+    return fit_poly_x, fit_poly_y, max_resid / plate_scale
 
 
 def _make_sampling_grid(npoints, bounding_box, crpix):
