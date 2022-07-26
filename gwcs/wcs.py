@@ -2791,6 +2791,8 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
                                                fit_poly_y(xin, yin))
         if max_resid > prev_max_error:
             raise RuntimeError('Failed to achieve required error tolerance')
+        prev_max_error = max_resid
+
         if verbose:
             print(f'Degree = {deg}, max_resid = {max_resid}')
         if max_resid < max_error:
@@ -2804,6 +2806,7 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
                 if verbose:
                     print('terminating condition met')
                 break
+
     return fit_poly_x, fit_poly_y, max_resid
 
 
