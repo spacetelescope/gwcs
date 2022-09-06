@@ -1885,7 +1885,7 @@ class WCS(GWCSAPIMixin):
             hdr['B_ORDER'] = fit_poly_x.degree
             _store_2D_coefficients(hdr, sip_poly_x, 'A')
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
-            hdr['sipmxerr'] = (max_resid / plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
 
             if max_inv_pix_error:
                 hdr['AP_ORDER'] = fit_inv_poly_u.degree
@@ -1926,7 +1926,7 @@ class WCS(GWCSAPIMixin):
                 mat_kind = 'CD'
                 del hdr['CDELT?']
 
-            hdr['sipmxerr'] = (max_resid / plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
 
         # Construct CD matrix while remapping input axes.
         # We do not update comments to typical comments for CD matrix elements
