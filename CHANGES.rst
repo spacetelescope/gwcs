@@ -1,3 +1,17 @@
+0.18.2 (2022-09-07)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Corrected the reported requested forward SIP accuracy and reported fit
+  residuals by ``to_fits_sip()`` and ``to_fits()``. [#413, #419]
+
+- Fixed a bug due to which the check for divergence in ``_fit_2D_poly()`` and
+  hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
+
+New Features
+^^^^^^^^^^^^
+
 0.18.1 (2022-03-15)
 -------------------
 Bug Fixes
@@ -12,6 +26,10 @@ Bug Fixes
 
 - Updated code in ``region.py`` with latest improvements and bug fixes
   from ``stsci.skypac.regions.py`` [#382]
+
+- Added support to ``_compute_lon_pole()`` for computation of ``lonpole``
+  for all projections from ``astropy.modeling.projections``. This also
+  extends support for different projections in ``wcs_from_fiducial()``. [#389]
 
 New Features
 ^^^^^^^^^^^^
