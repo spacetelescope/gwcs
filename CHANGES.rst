@@ -1,14 +1,12 @@
-0.18.2 (Unreleased)
+0.18.2 (2022-09-07)
 -------------------
 Bug Fixes
 ^^^^^^^^^
 
-- Pin astropy min version to 5.0.4. [#404]
-
 - Corrected the reported requested forward SIP accuracy and reported fit
   residuals by ``to_fits_sip()`` and ``to_fits()``. [#413, #419]
 
-- Fixed a bug due to which the check for divercence in ``_fit_2D_poly()`` and
+- Fixed a bug due to which the check for divergence in ``_fit_2D_poly()`` and
   hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
 
 New Features
