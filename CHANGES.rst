@@ -3,6 +3,9 @@
 Bug Fixes
 ^^^^^^^^^
 
+- Fixed a bug in the estimate of pixel scale in the iterative inverse
+  code. [#423]
+
 
 0.18.2 (2022-09-07)
 -------------------

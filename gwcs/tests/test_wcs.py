@@ -605,8 +605,8 @@ class TestImaging(object):
         assert_allclose(footprint, fits_footprint)
 
     def test_inverse(self):
-        sky_coord = self.wcs(1, 2, with_units=True)
-        assert np.allclose(self.wcs.invert(sky_coord), (1, 2))
+        sky_coord = self.wcs(10, 20, with_units=True)
+        assert np.allclose(self.wcs.invert(sky_coord), (10, 20))
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
