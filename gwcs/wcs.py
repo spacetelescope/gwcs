@@ -871,10 +871,8 @@ class WCS(GWCSAPIMixin):
         l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))
         l3, phi3 = np.deg2rad(self.__call__(*(crpix + 0.5)))
         l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))
-        area = np.abs(0.5 * ((l4 - l2) * np.sin(phi1) +
-                             (l1 - l3) * np.sin(phi2) +
-                             (l2 - l4) * np.sin(phi3) +
-                             (l3 - l2) * np.sin(phi4)))
+        area = np.abs(0.5 * ((l4 - l2) * (np.sin(phi1) - np.sin(phi3)) +
+                             (l1 - l3) * (np.sin(phi2) - np.sin(phi4))))
         inv_pscale = 1 / np.rad2deg(np.sqrt(area))
 
         # form equation:
