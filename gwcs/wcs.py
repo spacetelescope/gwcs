@@ -733,11 +733,11 @@ class WCS(GWCSAPIMixin):
         >>> divra, divdec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
         >>> assert np.allclose(divra, [5.92762673, 148.21600848, 5.92750827])
         >>> assert np.allclose(divdec, [-72.01339464, -7.80968079, -72.01334172])
-        >>> try:  # doctest: +SKIP
+        >>> try:
         ...     x, y = w.numerical_inverse(divra, divdec, maxiter=20,
         ...                                tolerance=1.0e-4, adaptive=True,
         ...                                detect_divergence=True,
-        ...                                quiet=False)
+        ...                                quiet=False)  # doctest: +FLOAT_CMP
         ... except NoConvergence as e:
         ...     print(f"Indices of diverging points: {e.divergent}")
         ...     print(f"Indices of poorly converging points: {e.slow_conv}")
@@ -750,8 +750,8 @@ class WCS(GWCSAPIMixin):
          [6.33507833e+17 3.40118820e+17]
          [3.00000038e+00 4.99999841e+00]]
         Achieved accuracy:
-        [[2.75925982e-05 1.18471543e-05]
-         [3.65405005e+04 1.31364188e+04]
+        [[2.75878040e-05 1.16619263e-05]
+         [9.16724833e+06 1.63643914e+06]
          [2.76552923e-05 1.14789013e-05]]
 
         """
