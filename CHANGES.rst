@@ -6,6 +6,8 @@ Bug Fixes
 - Fixed a bug in the estimate of pixel scale in the iterative inverse
   code. [#423]
 
+- Fixed constant term in the polynomial used for SIP fitting. [#426]
+
 
 0.18.2 (2022-09-07)
 -------------------
@@ -17,6 +19,7 @@ Bug Fixes
 
 - Fixed a bug due to which the check for divergence in ``_fit_2D_poly()`` and
   hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
+
 
 New Features
 ^^^^^^^^^^^^

@@ -15,6 +15,7 @@ from astropy.modeling import projections, fix_inputs
 from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
+from astropy.utils.exceptions import AstropyUserWarning
 
 from .api import GWCSAPIMixin
 from . import coordinate_frames as cf
@@ -1580,7 +1581,7 @@ class WCS(GWCSAPIMixin):
             :py:class:`~astropy.modeling.projections.Pix2SkyProjection`.
 
         verbose : bool, optional
-            Print progress of fits.
+            Print progress of SIP fits.
 
         Returns
         -------
@@ -2775,21 +2776,36 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error, plate_scale,
             raise ValueError("Allowed values for SIP degree are [1...9]")
         deglist = [degree]
 
-    prev_max_error = float(np.inf)
+    prev_max_error = np.inf
     if verbose:
         print(f'Maximum_specified_error: {max_error}')
     max_error *= plate_scale
 
     for deg in deglist:
-        poly_x = Polynomial2D(degree=deg)
-        poly_y = Polynomial2D(degree=deg)
-        fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
-        fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
+        poly_x = Polynomial2D(degree=deg, fixed={'c0_0': True})
+        poly_y = Polynomial2D(degree=deg, fixed={'c0_0': True})
+        poly_x.c0_0 = 0
+        poly_y.c0_0 = 0
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
+            rank_x = llsqfitter.fit_info['rank']
+            fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
+            rank_y = llsqfitter.fit_info['rank']
+
+        poor_cond = rank_x < int(poly_x._order) - 1 or rank_y < int(poly_y._order) - 1
+
         max_resid = _compute_distance_residual(xout, yout,
                                                fit_poly_x(xin, yin),
                                                fit_poly_y(xin, yin))
-        if max_resid > prev_max_error:
+
+        if poor_cond and len(deglist) == 1:
+            warnings.warn("The fit may be poorly conditioned\n", AstropyUserWarning)
+
+        if max_resid > prev_max_error or (poor_cond and len(deglist) > 1):
             raise RuntimeError('Failed to achieve required error tolerance')
+
         prev_max_error = max_resid
 
         if verbose:
