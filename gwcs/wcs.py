@@ -4,7 +4,7 @@ import itertools
 import warnings
 import numpy as np
 import numpy.linalg as npla
-from scipy import optimize
+from scipy import optimize, linalg
 from astropy import units as u
 from astropy.modeling.core import Model
 from astropy.modeling.models import (
@@ -12,7 +12,6 @@ from astropy.modeling.models import (
     Sky2Pix_TAN, RotateCelestial2Native
 )
 from astropy.modeling import projections, fix_inputs
-from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
 
@@ -1526,7 +1525,8 @@ class WCS(GWCSAPIMixin):
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
-            a nominal plate scale.
+            a nominal plate scale. Ignored when ``degree`` is an integer or
+            a list with a single degree.
 
         degree : int, iterable, None, optional
             Degree of the SIP polynomial. Default value `None` indicates that
@@ -1542,7 +1542,8 @@ class WCS(GWCSAPIMixin):
 
         max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
-            in pixel units. If None, no inverse is generated.
+            in pixel units. If None, no inverse is generated. Ignored when
+            ``degree`` is an integer or a list with a single degree.
 
         inv_degree : int, iterable, None, optional
             Degree of the SIP polynomial. Default value `None` indicates that
@@ -1827,8 +1828,9 @@ class WCS(GWCSAPIMixin):
         plate_scale = np.sqrt(pixarea)
 
         # The fitting section.
+        if verbose:
+            print("\nFitting forward SIP ...")
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
-            ntransform, npoints,
             degree, max_pix_error, plate_scale,
             u, v, undist_x, undist_y,
             ud, vd, undist_xd, undist_yd,
@@ -1847,12 +1849,15 @@ class WCS(GWCSAPIMixin):
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
         if max_inv_pix_error:
-            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
-                                                            npoints, inv_degree,
-                                                            max_inv_pix_error, 1,
-                                                            U, V, u-U, v-V,
-                                                            Ud, Vd, ud-Ud, vd-Vd,
-                                                            verbose=verbose)
+            if verbose:
+                print("\nFitting inverse SIP ...")
+            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
+                inv_degree,
+                max_inv_pix_error, 1,
+                U, V, u-U, v-V,
+                Ud, Vd, ud-Ud, vd-Vd,
+                verbose=verbose
+        )
 
         # create header with WCS info:
         w = celestial_frame_to_wcs(frame.reference_frame, projection=projection)
@@ -2738,8 +2743,7 @@ class WCS(GWCSAPIMixin):
         undist_xd, undist_yd = ntransform(ud, vd)
 
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
-            ntransform,
-            npoints, None,
+            None,
             max_inv_pix_error, 1,
             undist_x, undist_y, u, v,
             undist_xd, undist_yd, ud, vd,
@@ -2752,7 +2756,83 @@ class WCS(GWCSAPIMixin):
                                 (Shift(crpix[0]) & Shift(crpix[1])))
 
 
-def _fit_2D_poly(ntransform, npoints, degree, max_error, plate_scale,
+def _poly_fit_lu(xin, yin, xout, yout, degree):
+    powers = [
+        (i, j)
+        for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
+    ]
+
+    nterms = len(powers)
+
+    flt_type = np.longdouble
+
+    # allocate array for the coefficients of the system of equations (a*x=b):
+    a = np.empty((nterms, nterms), dtype=flt_type)
+    bx = np.empty(nterms, dtype=flt_type)
+    by = np.empty(nterms, dtype=flt_type)
+
+    xout = xout.ravel()
+    yout = yout.ravel()
+
+    x = np.asarray(xin.ravel(), dtype=flt_type)
+    y = np.asarray(yin.ravel(), dtype=flt_type)
+
+    # pseudo_vander - a reduced Vandermonde matrix for 2D polynomials
+    # that has only terms x^i * y^j with powers i, j that satisfy:
+    # 0 < i + j <= degree.
+    pseudo_vander = np.empty((x.size, nterms), dtype=float)
+
+    def crd_pwr(p, q):
+        if p == 0:
+            return y**q if q > 1 else y
+        elif q == 0:
+            return x**p if p > 1 else x
+        else:
+            xp = x if p == 1 else x**p
+            yq = y if q == 1 else y**q
+            return xp * yq
+
+    for i in range(nterms):
+        pi, qi = powers[i]
+        coord_pq = crd_pwr(pi, qi)
+        pseudo_vander[:, i] = coord_pq
+        bx[i] = np.sum(xout * coord_pq, dtype=flt_type)
+        by[i] = np.sum(yout * coord_pq, dtype=flt_type)
+
+        for j in range(i, nterms):
+            pj, qj = powers[j]
+            coord_pq = crd_pwr(pi + pj, qi + qj)
+            a[i, j] = np.sum(coord_pq, dtype=flt_type)
+            a[j, i] = a[i, j]
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter('error', category=linalg.LinAlgWarning)
+        try:
+            lu_piv = linalg.lu_factor(a)
+            poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
+            poly_coeff_y = linalg.lu_solve(lu_piv, by).astype(float)
+        except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
+            raise np.linalg.LinAlgError(
+                f"Failed to fit SIP. Reported error:\n{e.args[0]}"
+            )
+
+    if not np.all(np.isfinite([poly_coeff_x, poly_coeff_y])):
+        raise np.linalg.LinAlgError(
+            "Failed to fit SIP. Computed coefficients are not finite."
+        )
+
+    cond = np.linalg.cond(a.astype(float))
+
+    fitx = np.dot(pseudo_vander, poly_coeff_x)
+    fity = np.dot(pseudo_vander, poly_coeff_y)
+
+    dist = np.sqrt((xout - fitx)**2 + (yout - fity)**2)
+    max_resid = dist.max()
+
+    return poly_coeff_x, poly_coeff_y, max_resid, powers, cond
+
+
+def _fit_2D_poly(degree, max_error, plate_scale,
                  xin, yin, xout, yout,
                  xind, yind, xoutd, youtd,
                  verbose=False):
@@ -2760,14 +2840,12 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error, plate_scale,
     Fit a pair of ordinary 2D polynomials to the supplied transform.
 
     """
-    llsqfitter = LinearLSQFitter()
-
     # The case of one pass with the specified polynomial degree
     if degree is None:
-        deglist = range(1, 10)
+        deglist = list(range(1, 10))
     elif hasattr(degree, '__iter__'):
         deglist = sorted(map(int, degree))
-        if set(deglist).difference(range(1, 10)):
+        if deglist[0] < 1 or deglist[-1] > 9:
             raise ValueError("Allowed values for SIP degree are [1...9]")
     else:
         degree = int(degree)
@@ -2775,44 +2853,115 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error, plate_scale,
             raise ValueError("Allowed values for SIP degree are [1...9]")
         deglist = [degree]
 
-    prev_max_error = float(np.inf)
-    if verbose:
-        print(f'Maximum_specified_error: {max_error}')
+    single_degree = len(deglist) == 1
+
+    fit_error = np.inf
+    if verbose and not single_degree:
+        print(f'Maximum specified SIP approximation error: {max_error}')
     max_error *= plate_scale
 
-    for deg in deglist:
-        poly_x = Polynomial2D(degree=deg)
-        poly_y = Polynomial2D(degree=deg)
-        fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
-        fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
-        max_resid = _compute_distance_residual(xout, yout,
-                                               fit_poly_x(xin, yin),
-                                               fit_poly_y(xin, yin))
-        if max_resid > prev_max_error:
-            raise RuntimeError('Failed to achieve required error tolerance')
-        prev_max_error = max_resid
+    fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
 
-        if verbose:
-            print(f'Degree = {deg}, max_resid = {max_resid / plate_scale}')
-        if max_resid < max_error:
-            # Check to see if double sampling meets error requirement.
-            max_resid = _compute_distance_residual(xoutd, youtd,
-                                                   fit_poly_x(xind, yind),
-                                                   fit_poly_y(xind, yind))
-            if verbose:
-                print(f'Double sampling check: maximum residual={max_resid / plate_scale}')
-            if max_resid < max_error:
-                if verbose:
-                    print('Terminating condition met')
+    # Fit lowest degree SIP first.
+    for deg in deglist:
+        try:
+            cfx_i, cfy_i, fit_error_i, powers_i, cond = _poly_fit_lu(
+                xin, yin, xout, yout, degree=deg
+            )
+            if verbose and not single_degree:
+                print(
+                    f"   - SIP degree: {deg}. "
+                    f"Maximum residual: {fit_error_i / plate_scale:.5g}"
+                )
+
+        except np.linalg.LinAlgError as e:
+            if single_degree:
+                # Nothing to do if failure is for the lowest degree
+                raise e
+            else:
+                # Keep results from the previous iteration. Discard current fit
                 break
 
-    return fit_poly_x, fit_poly_y, max_resid / plate_scale
+        if not np.isfinite(cond):
+            # Ill-conditioned system
+            if single_degree:
+                warnings.warn("The fit may be poorly conditioned.")
+                cfx = cfx_i
+                cfy = cfy_i
+                fit_error = fit_error_i
+                powers = powers_i
+            break
+
+        if fit_error_i >= fit_error:
+            # Accuracy does not improve. Likely ill-conditioned system
+            break
+
+        cfx = cfx_i
+        cfy = cfy_i
+        powers = powers_i
+
+        fit_error = fit_error_i
+
+        if fit_error <= max_error:
+            # Requested accuracy has been achieved
+            fit_warning_msg = None
+            break
+
+        # Continue to the next degree
+
+    fit_poly_x = Polynomial2D(degree=deg, c0_0=0.0)
+    fit_poly_y = Polynomial2D(degree=deg, c0_0=0.0)
+    for cx, cy, (p, q) in zip(cfx, cfy, powers):
+        setattr(fit_poly_x, f'c{p:1d}_{q:1d}', cx)
+        setattr(fit_poly_y, f'c{p:1d}_{q:1d}', cy)
+
+    if fit_warning_msg:
+        warnings.warn(fit_warning_msg, linalg.LinAlgWarning)
+
+    if fit_error <= max_error or single_degree:
+        # Check to see if double sampling meets error requirement.
+        max_resid = _compute_distance_residual(
+            xoutd,
+            youtd,
+            fit_poly_x(xind, yind),
+            fit_poly_y(xind, yind)
+        )
+        if verbose:
+            print(
+                "* Maximum residual, double sampled grid: "
+                f"{max_resid / plate_scale:.5g}"
+            )
+
+        if max_resid > min(5.0 * fit_error, max_error):
+            warnings.warn(
+                "Double sampling check FAILED: Sampling may be too coarse for "
+                "the distortion model being fitted."
+            )
+
+        # Residuals on the double-dense grid may be better estimates
+        # of the accuracy of the fit. So we report the largest of
+        # the residuals (on single- and double-sampled grid) as the fit error:
+        fit_error = max(max_resid, fit_error)
+
+    if verbose:
+        if single_degree:
+            print(
+                f"Maximum residual: {fit_error / plate_scale:.5g}"
+            )
+        else:
+            print(
+                f"* Final SIP degree: {deg}. "
+                f"Maximum residual: {fit_error / plate_scale:.5g}"
+            )
+
+    return fit_poly_x, fit_poly_y, fit_error / plate_scale
 
 
 def _make_sampling_grid(npoints, bounding_box, crpix):
     step = np.subtract.reduce(bounding_box, axis=1) / (1.0 - npoints)
     crpix = np.asanyarray(crpix)[:, None, None]
-    return grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
+    x, y = grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
+    return x.flatten(), y.flatten()
 
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):

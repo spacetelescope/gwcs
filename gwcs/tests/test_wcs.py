@@ -636,9 +636,9 @@ def test_to_fits_sip():
     af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
     miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
-    mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1)
+    mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1, verbose=True)
     fitssip = astwcs.WCS(mirisip)
-    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
+    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat + 1, yflat + 1, 1)
     gwcsvalx, gwcsvaly = miriwcs(xflat, yflat)
     assert_allclose(gwcsvalx, fitsvalx, atol=1e-10, rtol=0)
     assert_allclose(gwcsvaly, fitsvaly, atol=1e-10, rtol=0)
@@ -648,7 +648,7 @@ def test_to_fits_sip():
 
     mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
     fitssip = astwcs.WCS(mirisip)
-    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat+1, yflat+1, 1)
+    fitsvalx, fitsvaly = fitssip.all_pix2world(xflat + 1, yflat + 1, 1)
     assert_allclose(gwcsvalx, fitsvalx, atol=4e-11, rtol=0)
     assert_allclose(gwcsvaly, fitsvaly, atol=4e-11, rtol=0)
 
@@ -699,7 +699,7 @@ def test_to_fits_sip_pc_normalization(gwcs_simple_imaging_units, matrix_type):
         crpix=None,
         projection='TAN',
         matrix_type=matrix_type,
-        verbose=False
+        verbose=True
     )
     fitssip = astwcs.WCS(fits_wcs)
 

@@ -6,6 +6,9 @@ Bug Fixes
 - Fixed a bug in the estimate of pixel scale in the iterative inverse
   code. [#423]
 
+- Fixed constant term in the polynomial used for SIP fitting.
+  Improved stability and accuracy of the SIP fitting code. [#427]
+
 
 0.18.2 (2022-09-07)
 -------------------
