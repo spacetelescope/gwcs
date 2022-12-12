@@ -40,14 +40,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toxenv: [ test-xdist, test-dev ]
+        toxenv: [ test ]
         python-version: [ '3.8', '3.9', '3.10', '3.11' ]
         os: [ ubuntu-latest, macos-latest ]
         include:
           - toxenv: test-dev
             os: ubuntu-latest
             python-version: '3.x'
-          - toxenv: test-pyargs-xdist
+          - toxenv: test-pyargs
             os: ubuntu-latest
             python-version: '3.11'
           - toxenv: test-cov
