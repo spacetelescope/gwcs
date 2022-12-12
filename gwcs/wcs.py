@@ -2756,11 +2756,27 @@ class WCS(GWCSAPIMixin):
                                 (Shift(crpix[0]) & Shift(crpix[1])))
 
 
-def _poly_fit_lu(xin, yin, xout, yout, degree):
+def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
+    # This function fits 2D polynomials to data by writing the normal system
+    # of equations and solving it using LU-decomposition. In theory this
+    # should be less stable than the SVD method used by numpy's lstsq or
+    # astropy's LinearLSQFitter because the condition of the normal matrix
+    # is squared compared to the direct matrix. However, in practice,
+    # in our (Mihai Cara) tests of fitting WCS distortions, solving the
+    # normal system proved to be significantly more accurate, efficient,
+    # and stable than SVD.
+    #
+    # coord_pow - a dictionary used to store powers of coordinate arrays
+    #    of the form x**p * y**q used to build the pseudo-Vandermonde matrix.
+    #    This improves efficiency especially when fitting multiple degrees
+    #    on the same coordinate grid in _fit_2D_poly by reusing computed
+    #    powers.
     powers = [
         (i, j)
         for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
     ]
+    if coord_pow is None:
+        coord_pow = {}
 
     nterms = len(powers)
 
@@ -2782,26 +2798,33 @@ def _poly_fit_lu(xin, yin, xout, yout, degree):
     # 0 < i + j <= degree.
     pseudo_vander = np.empty((x.size, nterms), dtype=float)
 
-    def crd_pwr(p, q):
+    def pow2(p, q):
+        # computes product of powers of coordinate arrays (x**p) * (y**q)
+        # in an efficient way avoiding unnecessary array copying
+        # and/or raising to power
+        if (p, q) in coord_pow:
+            return coord_pow[(p, q)]
         if p == 0:
-            return y**q if q > 1 else y
+            arr = y**q if q > 1 else y
         elif q == 0:
-            return x**p if p > 1 else x
+            arr = x**p if p > 1 else x
         else:
             xp = x if p == 1 else x**p
             yq = y if q == 1 else y**q
-            return xp * yq
+            arr = xp * yq
+        coord_pow[(p, q)] = arr
+        return arr
 
     for i in range(nterms):
         pi, qi = powers[i]
-        coord_pq = crd_pwr(pi, qi)
+        coord_pq = pow2(pi, qi)
         pseudo_vander[:, i] = coord_pq
         bx[i] = np.sum(xout * coord_pq, dtype=flt_type)
         by[i] = np.sum(yout * coord_pq, dtype=flt_type)
 
         for j in range(i, nterms):
             pj, qj = powers[j]
-            coord_pq = crd_pwr(pi + pj, qi + qj)
+            coord_pq = pow2(pi + pj, qi + qj)
             a[i, j] = np.sum(coord_pq, dtype=flt_type)
             a[j, i] = a[i, j]
 
@@ -2863,10 +2886,11 @@ def _fit_2D_poly(degree, max_error, plate_scale,
     fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
 
     # Fit lowest degree SIP first.
+    coord_pow = {}  # hold coordinate arrays powers for optimization purpose
     for deg in deglist:
         try:
             cfx_i, cfy_i, fit_error_i, powers_i, cond = _poly_fit_lu(
-                xin, yin, xout, yout, degree=deg
+                xin, yin, xout, yout, degree=deg, coord_pow=coord_pow
             )
             if verbose and not single_degree:
                 print(
