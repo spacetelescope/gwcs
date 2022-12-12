@@ -19,6 +19,7 @@ from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_poin
 from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
+from .utils import _gwcs_from_hst_fits_wcs
 import asdf
 
 
@@ -1224,3 +1225,38 @@ def test_initialize_wcs_with_list():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         wcs.WCS(pipeline)
+
+
+def test_sip_roundtrip():
+    hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"),
+                                   endcard=False)
+    nx = ny = 1024
+    hdr['naxis'] = 2
+    hdr['naxis1'] = nx
+    hdr['naxis2'] = ny
+    gw = _gwcs_from_hst_fits_wcs(hdr)
+    hdr_back = gw.to_fits_sip(
+        max_pix_error=1e-6,
+        max_inv_pix_error=None,
+        npoints=64,
+        crpix=(hdr['crpix1'], hdr['crpix2'])
+    )
+
+    for k in ['naxis', 'naxis1', 'naxis2', 'ctype1', 'ctype2', 'a_order', 'b_order']:
+        assert hdr[k] == hdr_back[k]
+
+    for k in ['cd1_1', 'cd1_2', 'cd2_1', 'cd2_2']:
+        assert np.allclose(hdr[k], hdr_back[k], atol=0, rtol=1e-9)
+
+    for t in ('a', 'b'):
+        order = hdr[f'{t}_order']
+        for i in range(order + 1):
+            for j in range(order + 1):
+                if 1 < i + j <= order:
+                    k = f'{t}_{i}_{j}'
+                    assert np.allclose(
+                        hdr[k],
+                        hdr_back[k],
+                        atol=0.0,
+                        rtol=1.0e-8 * 10**(i + j)
+                    )
