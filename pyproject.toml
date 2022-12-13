@@ -1,9 +1,9 @@
 [project]
 name = 'gwcs'
 description = 'Generalized World Coordinate System - Tools for managing the WCS of astronomical observations in a general (non-FITS) way'
-readme = 'README.md'
+readme = { file = 'README.rst', content-type = 'text/x-rst' }
 requires-python = '>=3.8'
-license = { file = 'LICENSE' }
+license = { file = 'licenses/LICENSE.rst' }
 authors = [{ name = 'STScI', email = 'help@stsci.edu' }]
 dependencies = [
     'asdf >= 2.8.1',
