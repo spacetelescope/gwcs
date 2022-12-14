@@ -4,6 +4,9 @@ description = 'Generalized World Coordinate System - Tools for managing the WCS 
 readme = { file = 'README.rst', content-type = 'text/x-rst' }
 requires-python = '>=3.8'
 license = { file = 'licenses/LICENSE.rst' }
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+]
 authors = [{ name = 'STScI', email = 'help@stsci.edu' }]
 dependencies = [
     'asdf >= 2.8.1',
