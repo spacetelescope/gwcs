@@ -198,9 +198,9 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame name of object.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             End coordinate frame name or object.
 
         Returns
@@ -236,9 +236,9 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             End coordinate frame.
         transform : `~astropy.modeling.Model`
             Transform between ``from_frame`` and ``to_frame``.
@@ -1114,7 +1114,7 @@ class WCS(GWCSAPIMixin):
         ----------
         from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame into which to transform.
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
@@ -1179,7 +1179,7 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame which sets the point of insertion.
         transform : `~astropy.modeling.Model`
             New transform to be inserted in the pipeline
@@ -1201,17 +1201,17 @@ class WCS(GWCSAPIMixin):
         Insert a new frame into an existing pipeline. This frame must be
         anchored to a frame already in the pipeline by a transform. This
         existing frame is identified solely by its name, although an entire
-        `~gwcs.coordinate_frame.CoordinateFrame` can be passed (e.g., the
+        `~gwcs.coordinate_frames.CoordinateFrame` can be passed (e.g., the
         `input_frame` or `output_frame` attribute). This frame is never
         modified.
 
         Parameters
         ----------
-        input_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        input_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame at start of new transform
         transform : `~astropy.modeling.Model`
             New transform to be inserted in the pipeline
-        output_frame: str or `~gwcs.coordinate_frame.CoordinateFrame`
+        output_frame: str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame at end of new transform
         """
         input_name, input_frame_obj = self._get_frame_name(input_frame)
@@ -1417,12 +1417,12 @@ class WCS(GWCSAPIMixin):
         Parameters
         ----------
         bounding_box : tuple of floats: (start, stop)
-            `prop: bounding_box`
+            ``prop: bounding_box``
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
         axis_type : str
-            A supported ``output_frame.axes_type`` or "all" (default).
-            One of ['spatial', 'spectral', 'temporal'] or a custom type.
+            A supported ``output_frame.axes_type`` or ``"all"`` (default).
+            One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
 
         Returns
         -------
@@ -1480,12 +1480,12 @@ class WCS(GWCSAPIMixin):
         Parameters
         ----------
         fixed : dict
-            Keyword arguments with fixed values corresponding to `self.selector`.
+            Keyword arguments with fixed values corresponding to ``self.selector``.
 
         Returns
         -------
         new_wcs : `WCS`
-            A new unique WCS corresponding to the values in `fixed`.
+            A new unique WCS corresponding to the values in ``fixed``.
 
         Examples
         --------
@@ -2181,8 +2181,8 @@ class WCS(GWCSAPIMixin):
             does not match the number of image axes.
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if bounding_box is None:
@@ -2362,8 +2362,8 @@ class WCS(GWCSAPIMixin):
             does not match the number of image axes.
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if bounding_box is None:
@@ -2544,8 +2544,8 @@ class WCS(GWCSAPIMixin):
         TypeError
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if isinstance(bin_ext, str):
@@ -3084,9 +3084,9 @@ class Step:
     ----------
     frame : `~gwcs.coordinate_frames.CoordinateFrame`
         A gwcs coordinate frame object.
-    transform : `~astropy.modeling.core.Model` or None
+    transform : `~astropy.modeling.Model` or None
         A transform from this step's frame to next step's frame.
-        The transform of the last step should be ``None``.
+        The transform of the last step should be `None`.
     """
     def __init__(self, frame, transform=None):
         self.frame = frame

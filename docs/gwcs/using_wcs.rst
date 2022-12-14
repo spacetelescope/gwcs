@@ -145,7 +145,7 @@ of accuracy or about divergence of the iterative process.
 
 In order to catch these kind of errors that can occur during numerical
 inversion, we need to turn off ``quiet`` mode and be prepared to catch
-`gwcs.wcs.WCS.NoConvergence` exceptions. In the next example, let's also add a
+`gwcs.wcs.NoConvergence` exceptions. In the next example, let's also add a
 point far away from the image for which numerical inverse fails.
 
 .. doctest-skip::

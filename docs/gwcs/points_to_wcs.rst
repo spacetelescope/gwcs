@@ -12,7 +12,7 @@ between pixel and sky.
 This example shows how to use the `~gwcs.wcstools.wcs_from_points` tool to fit a WCS to a matched set of 
 pixel and sky positions.  Along with arrays of the (x,y) pixel position in the image and the matched sky coordinates,
 the fiducial point for the projection must be supplied as a `~astropy.coordinates.SkyCoord` object. Additionally,
-the projection type must be specified from the available projections in `~astropy.modeling.projections.projcode`.
+the projection type must be specified from the available projections in `~astropy.modeling.projections.projcodes`.
 
 Geometric distortion can also be fit to the input coordinates - the distortion type (2D polynomial, chebyshev, legendre) and 
 the degree can be supplied to fit this component of the model.

@@ -46,7 +46,7 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
     bounding_box : tuple
         The bounding box over which the WCS is valid.
         It is a tuple of tuples of size 2 where each tuple
-        represents a range of (low, high) values. The `bounding_box` is in the order of
+        represents a range of (low, high) values. The ``bounding_box`` is in the order of
         the axes, `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
         For two inputs and axes_order(0, 1) the bounding box is ((xlow, xhigh), (ylow, yhigh)).
     input_frame : ~gwcs.coordinate_frames.CoordinateFrame`
@@ -247,8 +247,8 @@ def wcs_from_points(xy, world_coords, proj_point='center',
         be passed in.
     projection : `~astropy.modeling.projections.Projection`
         A projection type. One of the projections in
-        `~astropy.modeling.projections.projcode`. Defaults to TAN projection
-        (`projections.Sky2Pix_TAN()`).
+        `~astropy.modeling.projections.projcodes`. Defaults to TAN projection
+        (`astropy.modeling.projections.Sky2Pix_TAN`).
     poly_degree : int
         Degree of polynomial model to be fit to data. Defaults to 4.
     polynomial_type : str
