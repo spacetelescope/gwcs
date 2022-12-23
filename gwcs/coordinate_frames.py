@@ -94,7 +94,7 @@ class CoordinateFrame:
     reference_frame : astropy.coordinates.builtin_frames
         Reference frame (usually used with output_frame to convert to world coordinate objects).
     reference_position : str
-        Reference position - one of `STANDARD_REFERENCE_POSITION`
+        Reference position - one of ``STANDARD_REFERENCE_POSITION``
     unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
@@ -431,7 +431,7 @@ class SpectralFrame(CoordinateFrame):
     name : str
         Name for this frame.
     reference_position : str
-        Reference position - one of `STANDARD_REFERENCE_POSITION`
+        Reference position - one of ``STANDARD_REFERENCE_POSITION``
 
     """
 
@@ -481,7 +481,7 @@ class TemporalFrame(CoordinateFrame):
     reference_frame : `~astropy.time.Time`
         A Time object which holds the time scale and format.
         If data is provided, it is the time zero point.
-        To not set a zero point for the frame initialize `reference_frame`
+        To not set a zero point for the frame initialize ``reference_frame``
         with an empty list.
     unit : str or `~astropy.units.Unit`
         Time unit.

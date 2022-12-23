@@ -307,7 +307,7 @@ Bug Fixes
 - Replace ``domain`` with ``bounding_box``. [#74]
 
 - Added a ``LabelMapper`` model where ``mapper`` is an instance of
-  `~astropy.modeling.core.Model`. [#78]
+  `~astropy.modeling.Model`. [#78]
 
 - Evaluating a WCS with bounding box was moved to ``astropy.modeling``. [#86]
 

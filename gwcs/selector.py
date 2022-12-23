@@ -13,7 +13,7 @@ An example is the location of IFU slices in the detector frame.
   - A mapping of inputs to labels - "label_mapper"
   - A mapping of labels to transforms - "transform_selector"
 
-A "label_mapper" is also a transform, a subclass of `astropy.modeling.core.Model`,
+A "label_mapper" is also a transform, a subclass of `astropy.modeling.Model`,
 which returns the labels corresponding to the inputs.
 
 An instance of a ``LabelMapper`` class is passed to `RegionsSelector`.
@@ -504,7 +504,7 @@ class RegionsSelector(Model):
     selector : dict
         Mapping of region labels to transforms.
         Labels can be of type int or str, transforms are of type
-        `~astropy.modeling.core.Model`.
+        `~astropy.modeling.Model`.
     label_mapper : a subclass of `~gwcs.selector._LabelMapper`
         A model which maps locations to region labels.
     undefined_transform_value : float, np.nan (default)
@@ -651,7 +651,7 @@ class LabelMapper(_LabelMapper):
 
     Parameters
     ----------
-    mapper : `~astropy.modeling.core.Model`
+    mapper : `~astropy.modeling.Model`
         A function which returns a region.
     no_label : str or int
         "" or 0
