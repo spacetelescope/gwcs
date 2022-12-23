@@ -12,11 +12,6 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: '0 9 * * 1'
 
-env:
-  CRDS_PATH: $HOME/crds_cache
-  CRDS_CLIENT_RETRY_COUNT: 3
-  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-
 jobs:
   check:
     name: ${{ matrix.toxenv }}
@@ -88,6 +83,7 @@ jobs:
             os: ubuntu-latest
             python-version: '3.x'
     steps:
+      - run: echo "HOME=$HOME" >> $GITHUB_ENV
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
