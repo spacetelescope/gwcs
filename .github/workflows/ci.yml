@@ -12,6 +12,10 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: '0 9 * * 1'
 
+env:
+  CRDS_PATH: $HOME/crds_cache
+  CRDS_CLIENT_RETRY_COUNT: 3
+  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
 
 jobs:
   check:
@@ -77,6 +81,12 @@ jobs:
           - toxenv: test-numpy120
             os: ubuntu-latest
             python-version: '3.8'
+          - toxenv: test-jwst-xdist
+            os: ubuntu-latest
+            python-version: '3.x'
+          - toxenv: test-romancal-xdist
+            os: ubuntu-latest
+            python-version: '3.x'
     steps:
       - uses: actions/checkout@v3
         with:
