@@ -39,11 +39,6 @@ except ImportError:
     print('ERROR: the documentation requires the sphinx-astropy package to be installed')
     sys.exit(1)
 
-# Get configuration information from .flake8
-with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as configuration_file:
-    conf = tomli.load(configuration_file)
-setup_cfg = conf['project']
-
 # -- General configuration ----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -74,9 +69,11 @@ asdf_schema_reference_mappings = [
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg['name']
-author = setup_cfg['authors'][0]['name']
-copyright = f'{datetime.today().year}, {author}'
+with open(Path(__file__).parent.parent.parent / "pyproject.toml", "rb") as metadata_file:
+    metadata = tomli.load(metadata_file)['project']
+project = metadata['name']
+author = metadata["authors"][0]["name"]
+copyright = f'{datetime.now().year}, {author}'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
