@@ -1,9 +1,31 @@
-0.18.2 (Unreleased)
+0.18.4 (unreleased)
+-------------------
+
+Bug Fixes
+^^^^^^^^^
+
+0.18.3 (2022-12-23)
 -------------------
 Bug Fixes
 ^^^^^^^^^
 
-- Pin astropy min version to 5.0.4. [#404]
+- Fixed a bug in the estimate of pixel scale in the iterative inverse
+  code. [#423]
+
+- Fixed constant term in the polynomial used for SIP fitting.
+  Improved stability and accuracy of the SIP fitting code. [#427]
+
+
+0.18.2 (2022-09-07)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Corrected the reported requested forward SIP accuracy and reported fit
+  residuals by ``to_fits_sip()`` and ``to_fits()``. [#413, #419]
+
+- Fixed a bug due to which the check for divergence in ``_fit_2D_poly()`` and
+  hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
 
 New Features
 ^^^^^^^^^^^^
@@ -22,6 +44,10 @@ Bug Fixes
 
 - Updated code in ``region.py`` with latest improvements and bug fixes
   from ``stsci.skypac.regions.py`` [#382]
+
+- Added support to ``_compute_lon_pole()`` for computation of ``lonpole``
+  for all projections from ``astropy.modeling.projections``. This also
+  extends support for different projections in ``wcs_from_fiducial()``. [#389]
 
 New Features
 ^^^^^^^^^^^^
@@ -287,7 +313,7 @@ Bug Fixes
 - Replace ``domain`` with ``bounding_box``. [#74]
 
 - Added a ``LabelMapper`` model where ``mapper`` is an instance of
-  `~astropy.modeling.core.Model`. [#78]
+  `~astropy.modeling.Model`. [#78]
 
 - Evaluating a WCS with bounding box was moved to ``astropy.modeling``. [#86]
 

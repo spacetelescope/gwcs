@@ -297,8 +297,8 @@ Other Examples
 
 
 
-Using `gwcs`
-------------
+Using ``gwcs``
+--------------
 
 .. toctree::
   :maxdepth: 2

@@ -4,7 +4,7 @@ import itertools
 import warnings
 import numpy as np
 import numpy.linalg as npla
-from scipy import optimize
+from scipy import optimize, linalg
 from astropy import units as u
 from astropy.modeling.core import Model
 from astropy.modeling.models import (
@@ -12,7 +12,6 @@ from astropy.modeling.models import (
     Sky2Pix_TAN, RotateCelestial2Native
 )
 from astropy.modeling import projections, fix_inputs
-from astropy.modeling.fitting import LinearLSQFitter
 import astropy.io.fits as fits
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
 
@@ -199,9 +198,9 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame name of object.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             End coordinate frame name or object.
 
         Returns
@@ -237,9 +236,9 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             End coordinate frame.
         transform : `~astropy.modeling.Model`
             Transform between ``from_frame`` and ``to_frame``.
@@ -484,8 +483,9 @@ class WCS(GWCSAPIMixin):
 
         Returns
         -------
-        result : tuple
-            Returns a tuple of scalar or array values for each axis.
+        result : tuple or value
+            Returns a tuple of scalar or array values for each axis. Unless
+            ``input_frame.naxes == 1`` when it shall return the value.
 
         """
         with_units = kwargs.pop('with_units', False)
@@ -874,10 +874,8 @@ class WCS(GWCSAPIMixin):
         l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))
         l3, phi3 = np.deg2rad(self.__call__(*(crpix + 0.5)))
         l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))
-        area = np.abs(0.5 * ((l4 - l2) * np.sin(phi1) +
-                             (l1 - l3) * np.sin(phi2) +
-                             (l2 - l4) * np.sin(phi3) +
-                             (l3 - l2) * np.sin(phi4)))
+        area = np.abs(0.5 * ((l4 - l2) * (np.sin(phi1) - np.sin(phi3)) +
+                             (l1 - l3) * (np.sin(phi2) - np.sin(phi4))))
         inv_pscale = 1 / np.rad2deg(np.sqrt(area))
 
         # form equation:
@@ -1120,7 +1118,7 @@ class WCS(GWCSAPIMixin):
         ----------
         from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.cordinate_frames.CoordinateFrame`
+        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame into which to transform.
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
@@ -1185,7 +1183,7 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame which sets the point of insertion.
         transform : `~astropy.modeling.Model`
             New transform to be inserted in the pipeline
@@ -1207,17 +1205,17 @@ class WCS(GWCSAPIMixin):
         Insert a new frame into an existing pipeline. This frame must be
         anchored to a frame already in the pipeline by a transform. This
         existing frame is identified solely by its name, although an entire
-        `~gwcs.coordinate_frame.CoordinateFrame` can be passed (e.g., the
+        `~gwcs.coordinate_frames.CoordinateFrame` can be passed (e.g., the
         `input_frame` or `output_frame` attribute). This frame is never
         modified.
 
         Parameters
         ----------
-        input_frame : str or `~gwcs.coordinate_frame.CoordinateFrame`
+        input_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame at start of new transform
         transform : `~astropy.modeling.Model`
             New transform to be inserted in the pipeline
-        output_frame: str or `~gwcs.coordinate_frame.CoordinateFrame`
+        output_frame: str or `~gwcs.coordinate_frames.CoordinateFrame`
             Coordinate frame at end of new transform
         """
         input_name, input_frame_obj = self._get_frame_name(input_frame)
@@ -1423,12 +1421,12 @@ class WCS(GWCSAPIMixin):
         Parameters
         ----------
         bounding_box : tuple of floats: (start, stop)
-            `prop: bounding_box`
+            ``prop: bounding_box``
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
         axis_type : str
-            A supported ``output_frame.axes_type`` or "all" (default).
-            One of ['spatial', 'spectral', 'temporal'] or a custom type.
+            A supported ``output_frame.axes_type`` or ``"all"`` (default).
+            One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
 
         Returns
         -------
@@ -1486,12 +1484,12 @@ class WCS(GWCSAPIMixin):
         Parameters
         ----------
         fixed : dict
-            Keyword arguments with fixed values corresponding to `self.selector`.
+            Keyword arguments with fixed values corresponding to ``self.selector``.
 
         Returns
         -------
         new_wcs : `WCS`
-            A new unique WCS corresponding to the values in `fixed`.
+            A new unique WCS corresponding to the values in ``fixed``.
 
         Examples
         --------
@@ -1531,7 +1529,8 @@ class WCS(GWCSAPIMixin):
             Maximum allowed error over the domain of the pixel array. This
             error is the equivalent pixel error that corresponds to the maximum
             error in the output coordinate resulting from the fit based on
-            a nominal plate scale.
+            a nominal plate scale. Ignored when ``degree`` is an integer or
+            a list with a single degree.
 
         degree : int, iterable, None, optional
             Degree of the SIP polynomial. Default value `None` indicates that
@@ -1547,7 +1546,8 @@ class WCS(GWCSAPIMixin):
 
         max_inv_pix_error : float, optional
             Maximum allowed inverse error over the domain of the pixel array
-            in pixel units. If None, no inverse is generated.
+            in pixel units. If None, no inverse is generated. Ignored when
+            ``degree`` is an integer or a list with a single degree.
 
         inv_degree : int, iterable, None, optional
             Degree of the SIP polynomial. Default value `None` indicates that
@@ -1830,12 +1830,12 @@ class WCS(GWCSAPIMixin):
         yx, yy = ntransform(0, 1)
         pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
         plate_scale = np.sqrt(pixarea)
-        max_error = max_pix_error * plate_scale
 
         # The fitting section.
+        if verbose:
+            print("\nFitting forward SIP ...")
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
-            ntransform, npoints,
-            degree, max_error,
+            degree, max_pix_error, plate_scale,
             u, v, undist_x, undist_y,
             ud, vd, undist_xd, undist_yd,
             verbose=verbose
@@ -1853,12 +1853,15 @@ class WCS(GWCSAPIMixin):
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
         if max_inv_pix_error:
-            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(ntransform,
-                                                            npoints, inv_degree,
-                                                            max_inv_pix_error,
-                                                            U, V, u-U, v-V,
-                                                            Ud, Vd, ud-Ud, vd-Vd,
-                                                            verbose=verbose)
+            if verbose:
+                print("\nFitting inverse SIP ...")
+            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
+                inv_degree,
+                max_inv_pix_error, 1,
+                U, V, u-U, v-V,
+                Ud, Vd, ud-Ud, vd-Vd,
+                verbose=verbose
+        )
 
         # create header with WCS info:
         w = celestial_frame_to_wcs(frame.reference_frame, projection=projection)
@@ -1889,7 +1892,7 @@ class WCS(GWCSAPIMixin):
             hdr['B_ORDER'] = fit_poly_x.degree
             _store_2D_coefficients(hdr, sip_poly_x, 'A')
             _store_2D_coefficients(hdr, sip_poly_y, 'B')
-            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
 
             if max_inv_pix_error:
                 hdr['AP_ORDER'] = fit_inv_poly_u.degree
@@ -1930,7 +1933,7 @@ class WCS(GWCSAPIMixin):
                 mat_kind = 'CD'
                 del hdr['CDELT?']
 
-            hdr['sipmxerr'] = (max_resid * plate_scale, 'Max diff from GWCS (equiv pix).')
+            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
 
         # Construct CD matrix while remapping input axes.
         # We do not update comments to typical comments for CD matrix elements
@@ -2182,8 +2185,8 @@ class WCS(GWCSAPIMixin):
             does not match the number of image axes.
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if bounding_box is None:
@@ -2363,8 +2366,8 @@ class WCS(GWCSAPIMixin):
             does not match the number of image axes.
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if bounding_box is None:
@@ -2545,8 +2548,8 @@ class WCS(GWCSAPIMixin):
         TypeError
 
         RuntimeError
-            If the number of image axes (`~gwcs.WCS.pixel_n_dim`) is larger
-            than the number of world axes (`~gwcs.WCS.world_n_dim`).
+            If the number of image axes (``~gwcs.WCS.pixel_n_dim``) is larger
+            than the number of world axes (``~gwcs.WCS.world_n_dim``).
 
         """
         if isinstance(bin_ext, str):
@@ -2744,9 +2747,8 @@ class WCS(GWCSAPIMixin):
         undist_xd, undist_yd = ntransform(ud, vd)
 
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
-            ntransform,
-            npoints, None,
-            max_inv_pix_error,
+            None,
+            max_inv_pix_error, 1,
             undist_x, undist_y, u, v,
             undist_xd, undist_yd, ud, vd,
             verbose=True
@@ -2758,7 +2760,106 @@ class WCS(GWCSAPIMixin):
                                 (Shift(crpix[0]) & Shift(crpix[1])))
 
 
-def _fit_2D_poly(ntransform, npoints, degree, max_error,
+def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
+    # This function fits 2D polynomials to data by writing the normal system
+    # of equations and solving it using LU-decomposition. In theory this
+    # should be less stable than the SVD method used by numpy's lstsq or
+    # astropy's LinearLSQFitter because the condition of the normal matrix
+    # is squared compared to the direct matrix. However, in practice,
+    # in our (Mihai Cara) tests of fitting WCS distortions, solving the
+    # normal system proved to be significantly more accurate, efficient,
+    # and stable than SVD.
+    #
+    # coord_pow - a dictionary used to store powers of coordinate arrays
+    #    of the form x**p * y**q used to build the pseudo-Vandermonde matrix.
+    #    This improves efficiency especially when fitting multiple degrees
+    #    on the same coordinate grid in _fit_2D_poly by reusing computed
+    #    powers.
+    powers = [
+        (i, j)
+        for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
+    ]
+    if coord_pow is None:
+        coord_pow = {}
+
+    nterms = len(powers)
+
+    flt_type = np.longdouble
+
+    # allocate array for the coefficients of the system of equations (a*x=b):
+    a = np.empty((nterms, nterms), dtype=flt_type)
+    bx = np.empty(nterms, dtype=flt_type)
+    by = np.empty(nterms, dtype=flt_type)
+
+    xout = xout.ravel()
+    yout = yout.ravel()
+
+    x = np.asarray(xin.ravel(), dtype=flt_type)
+    y = np.asarray(yin.ravel(), dtype=flt_type)
+
+    # pseudo_vander - a reduced Vandermonde matrix for 2D polynomials
+    # that has only terms x^i * y^j with powers i, j that satisfy:
+    # 0 < i + j <= degree.
+    pseudo_vander = np.empty((x.size, nterms), dtype=float)
+
+    def pow2(p, q):
+        # computes product of powers of coordinate arrays (x**p) * (y**q)
+        # in an efficient way avoiding unnecessary array copying
+        # and/or raising to power
+        if (p, q) in coord_pow:
+            return coord_pow[(p, q)]
+        if p == 0:
+            arr = y**q if q > 1 else y
+        elif q == 0:
+            arr = x**p if p > 1 else x
+        else:
+            xp = x if p == 1 else x**p
+            yq = y if q == 1 else y**q
+            arr = xp * yq
+        coord_pow[(p, q)] = arr
+        return arr
+
+    for i in range(nterms):
+        pi, qi = powers[i]
+        coord_pq = pow2(pi, qi)
+        pseudo_vander[:, i] = coord_pq
+        bx[i] = np.sum(xout * coord_pq, dtype=flt_type)
+        by[i] = np.sum(yout * coord_pq, dtype=flt_type)
+
+        for j in range(i, nterms):
+            pj, qj = powers[j]
+            coord_pq = pow2(pi + pj, qi + qj)
+            a[i, j] = np.sum(coord_pq, dtype=flt_type)
+            a[j, i] = a[i, j]
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter('error', category=linalg.LinAlgWarning)
+        try:
+            lu_piv = linalg.lu_factor(a)
+            poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
+            poly_coeff_y = linalg.lu_solve(lu_piv, by).astype(float)
+        except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
+            raise np.linalg.LinAlgError(
+                f"Failed to fit SIP. Reported error:\n{e.args[0]}"
+            )
+
+    if not np.all(np.isfinite([poly_coeff_x, poly_coeff_y])):
+        raise np.linalg.LinAlgError(
+            "Failed to fit SIP. Computed coefficients are not finite."
+        )
+
+    cond = np.linalg.cond(a.astype(float))
+
+    fitx = np.dot(pseudo_vander, poly_coeff_x)
+    fity = np.dot(pseudo_vander, poly_coeff_y)
+
+    dist = np.sqrt((xout - fitx)**2 + (yout - fity)**2)
+    max_resid = dist.max()
+
+    return poly_coeff_x, poly_coeff_y, max_resid, powers, cond
+
+
+def _fit_2D_poly(degree, max_error, plate_scale,
                  xin, yin, xout, yout,
                  xind, yind, xoutd, youtd,
                  verbose=False):
@@ -2766,14 +2867,12 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
     Fit a pair of ordinary 2D polynomials to the supplied transform.
 
     """
-    llsqfitter = LinearLSQFitter()
-
     # The case of one pass with the specified polynomial degree
     if degree is None:
-        deglist = range(1, 10)
+        deglist = list(range(1, 10))
     elif hasattr(degree, '__iter__'):
         deglist = sorted(map(int, degree))
-        if set(deglist).difference(range(1, 10)):
+        if deglist[0] < 1 or deglist[-1] > 9:
             raise ValueError("Allowed values for SIP degree are [1...9]")
     else:
         degree = int(degree)
@@ -2781,39 +2880,116 @@ def _fit_2D_poly(ntransform, npoints, degree, max_error,
             raise ValueError("Allowed values for SIP degree are [1...9]")
         deglist = [degree]
 
-    prev_max_error = float(np.inf)
-    if verbose:
-        print(f'maximum_specified_error: {max_error}')
+    single_degree = len(deglist) == 1
+
+    fit_error = np.inf
+    if verbose and not single_degree:
+        print(f'Maximum specified SIP approximation error: {max_error}')
+    max_error *= plate_scale
+
+    fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
+
+    # Fit lowest degree SIP first.
+    coord_pow = {}  # hold coordinate arrays powers for optimization purpose
     for deg in deglist:
-        poly_x = Polynomial2D(degree=deg)
-        poly_y = Polynomial2D(degree=deg)
-        fit_poly_x = llsqfitter(poly_x, xin, yin, xout)
-        fit_poly_y = llsqfitter(poly_y, xin, yin, yout)
-        max_resid = _compute_distance_residual(xout, yout,
-                                               fit_poly_x(xin, yin),
-                                               fit_poly_y(xin, yin))
-        if max_resid > prev_max_error:
-            raise RuntimeError('Failed to achieve required error tolerance')
-        if verbose:
-            print(f'Degree = {deg}, max_resid = {max_resid}')
-        if max_resid < max_error:
-            # Check to see if double sampling meets error requirement.
-            max_resid = _compute_distance_residual(xoutd, youtd,
-                                                   fit_poly_x(xind, yind),
-                                                   fit_poly_y(xind, yind))
-            if verbose:
-                print(f'Double sampling check: maximum residual={max_resid}')
-            if max_resid < max_error:
-                if verbose:
-                    print('terminating condition met')
+        try:
+            cfx_i, cfy_i, fit_error_i, powers_i, cond = _poly_fit_lu(
+                xin, yin, xout, yout, degree=deg, coord_pow=coord_pow
+            )
+            if verbose and not single_degree:
+                print(
+                    f"   - SIP degree: {deg}. "
+                    f"Maximum residual: {fit_error_i / plate_scale:.5g}"
+                )
+
+        except np.linalg.LinAlgError as e:
+            if single_degree:
+                # Nothing to do if failure is for the lowest degree
+                raise e
+            else:
+                # Keep results from the previous iteration. Discard current fit
                 break
-    return fit_poly_x, fit_poly_y, max_resid
+
+        if not np.isfinite(cond):
+            # Ill-conditioned system
+            if single_degree:
+                warnings.warn("The fit may be poorly conditioned.")
+                cfx = cfx_i
+                cfy = cfy_i
+                fit_error = fit_error_i
+                powers = powers_i
+            break
+
+        if fit_error_i >= fit_error:
+            # Accuracy does not improve. Likely ill-conditioned system
+            break
+
+        cfx = cfx_i
+        cfy = cfy_i
+        powers = powers_i
+
+        fit_error = fit_error_i
+
+        if fit_error <= max_error:
+            # Requested accuracy has been achieved
+            fit_warning_msg = None
+            break
+
+        # Continue to the next degree
+
+    fit_poly_x = Polynomial2D(degree=deg, c0_0=0.0)
+    fit_poly_y = Polynomial2D(degree=deg, c0_0=0.0)
+    for cx, cy, (p, q) in zip(cfx, cfy, powers):
+        setattr(fit_poly_x, f'c{p:1d}_{q:1d}', cx)
+        setattr(fit_poly_y, f'c{p:1d}_{q:1d}', cy)
+
+    if fit_warning_msg:
+        warnings.warn(fit_warning_msg, linalg.LinAlgWarning)
+
+    if fit_error <= max_error or single_degree:
+        # Check to see if double sampling meets error requirement.
+        max_resid = _compute_distance_residual(
+            xoutd,
+            youtd,
+            fit_poly_x(xind, yind),
+            fit_poly_y(xind, yind)
+        )
+        if verbose:
+            print(
+                "* Maximum residual, double sampled grid: "
+                f"{max_resid / plate_scale:.5g}"
+            )
+
+        if max_resid > min(5.0 * fit_error, max_error):
+            warnings.warn(
+                "Double sampling check FAILED: Sampling may be too coarse for "
+                "the distortion model being fitted."
+            )
+
+        # Residuals on the double-dense grid may be better estimates
+        # of the accuracy of the fit. So we report the largest of
+        # the residuals (on single- and double-sampled grid) as the fit error:
+        fit_error = max(max_resid, fit_error)
+
+    if verbose:
+        if single_degree:
+            print(
+                f"Maximum residual: {fit_error / plate_scale:.5g}"
+            )
+        else:
+            print(
+                f"* Final SIP degree: {deg}. "
+                f"Maximum residual: {fit_error / plate_scale:.5g}"
+            )
+
+    return fit_poly_x, fit_poly_y, fit_error / plate_scale
 
 
 def _make_sampling_grid(npoints, bounding_box, crpix):
     step = np.subtract.reduce(bounding_box, axis=1) / (1.0 - npoints)
     crpix = np.asanyarray(crpix)[:, None, None]
-    return grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
+    x, y = grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
+    return x.flatten(), y.flatten()
 
 
 def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
@@ -2912,9 +3088,9 @@ class Step:
     ----------
     frame : `~gwcs.coordinate_frames.CoordinateFrame`
         A gwcs coordinate frame object.
-    transform : `~astropy.modeling.core.Model` or None
+    transform : `~astropy.modeling.Model` or None
         A transform from this step's frame to next step's frame.
-        The transform of the last step should be ``None``.
+        The transform of the last step should be `None`.
     """
     def __init__(self, frame, transform=None):
         self.frame = frame

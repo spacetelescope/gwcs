@@ -165,3 +165,12 @@ if eval(setup_cfg.get('edit_on_github')):
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
 extensions += ['sphinx_asdf']
+
+# Enable nitpicky mode - which ensures that all references in the docs resolve.
+nitpicky = True
+nitpick_ignore = [
+    ('py:class', 'gwcs.api.GWCSAPIMixin'),
+    ('py:obj', 'astropy.modeling.projections.projcodes'),
+    ('py:attr', 'gwcs.WCS.bounding_box'),
+    ('py:meth', 'gwcs.WCS.footprint')
+]

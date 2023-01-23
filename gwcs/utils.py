@@ -12,6 +12,7 @@ from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.time import Time, TimeDelta
+from astropy.wcs import Celprm
 
 
 # these ctype values do not include yzLN and yzLT pairs
@@ -94,50 +95,61 @@ def get_values(units, *args):
 
 def _compute_lon_pole(skycoord, projection):
     """
-    Compute the longitude of the celestial pole of a standard frame in the
-    native frame.
+    Compute the longitude of the celestial pole of a standard
+    frame in the native frame.
 
-    This angle then can be used as one of the Euler angles (the other two being skyccord)
-    to rotate the native frame into the standard frame ``skycoord.frame``.
+    This angle then can be used as one of the Euler angles
+    (the other two being skycoord) to rotate the native frame into the
+    standard frame ``skycoord.frame``.
 
     Parameters
     ----------
     skycoord : `astropy.coordinates.SkyCoord`, or
                sequence of floats or `~astropy.units.Quantity` of length 2
-        The fiducial point of the native coordinate system.
-        If tuple, its length is 2
+        The celestial longitude and latitude of the fiducial point - typically
+        right ascension and declination. These are given by the ``CRVALia``
+        keywords in ``FITS``.
+
     projection : `astropy.modeling.projections.Projection`
-        A Projection instance.
+        A `~astropy.modeling.projections.Projection` model instance.
 
     Returns
     -------
-    lon_pole : float or `~astropy/units.Quantity`
-        Native longitude of the celestial pole [deg].
+    lonpole : float or `~astropy/units.Quantity`
+        Native longitude of the celestial pole in degrees.
 
-    TODO: Implement all projections
-        Currently this only supports Zenithal and Cylindrical.
     """
     if isinstance(skycoord, coords.SkyCoord):
-        lat = skycoord.spherical.lat
+        lon = skycoord.spherical.lon.value
+        lat = skycoord.spherical.lat.value
         unit = u.deg
+
     else:
         lon, lat = skycoord
-        if isinstance(lat, u.Quantity):
+        unit = None
+        if isinstance(lon, u.Quantity):
+            lon = lon.to(u.deg).to_value()
             unit = u.deg
-        else:
-            unit = None
-    if isinstance(projection, projections.Zenithal):
-        lon_pole = 180
-    elif isinstance(projection, projections.Cylindrical):
-        if lat >= 0:
-            lon_pole = 0
-        else:
-            lon_pole = 180
-    else:
-        raise UnsupportedProjectionError("Projection {0} is not supported.".format(projection))
+
+        if isinstance(lat, u.Quantity):
+            lat = lat.to(u.deg).to_value()
+            unit = u.deg
+
+    cel = Celprm()
+    cel.ref = [lon, lat]
+    cel.prj.code = projection.prjprm.code
+    pvrange = projection.prjprm.pvrange
+    if pvrange:
+        i1 = pvrange // 100
+        i2 = i1 + (pvrange % 100) + 1
+        cel.prj.pv = i1 * [None] + list(projection.prjprm.pv[i1:i2])
+    cel.set()
+
+    lonpole = cel.ref[2]
     if unit is not None:
-        lon_pole = lon_pole * unit
-    return lon_pole
+        lonpole = lonpole * unit
+
+    return lonpole
 
 
 def get_projcode(wcs_info):
