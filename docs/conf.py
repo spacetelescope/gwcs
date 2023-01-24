@@ -25,7 +25,6 @@
 # Thus, any C-extensions that are needed to build the documentation will *not*
 # be accessible, and the documentation will not build correctly.
 
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -70,7 +69,8 @@ asdf_schema_reference_mappings = [
 
 # This does not *have* to match the package name, but typically does
 with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as metadata_file:
-    metadata = tomli.load(metadata_file)['project']
+    configuration = tomli.load(metadata_file)
+    metadata = configuration['project']
 project = metadata['name']
 author = metadata["authors"][0]["name"]
 copyright = f'{datetime.now().year}, {author}'
@@ -145,18 +145,20 @@ man_pages = [('index', project.lower(), project + u' Documentation',
 
 ## -- Options for the edit_on_github extension ----------------------------------------
 
-if eval(setup_cfg.get('edit_on_github')):
-    extensions += ['astropy.sphinx.ext.edit_on_github']
+if 'build_sphinx' in configuration['tool']:
+    if 'edit-on-github' in configuration['tool']['build_sphinx']:
+        if configuration['tool']['build_sphinx']['edit-on-github']:
+            extensions += ['astropy.sphinx.ext.edit_on_github']
 
-    versionmod = __import__(setup_cfg['name'] + '.version')
-    edit_on_github_project = setup_cfg['github_project']
-    if versionmod.version.release:
-        edit_on_github_branch = "v" + versionmod.version.version
-    else:
-        edit_on_github_branch = "master"
+            versionmod = __import__(metadata['name'] + '.version')
+            edit_on_github_project = metadata['urls']['Source Code']
+            if versionmod.version.release:
+                edit_on_github_branch = "v" + versionmod.version.version
+            else:
+                edit_on_github_branch = "master"
 
-    edit_on_github_source_root = ""
-    edit_on_github_doc_root = "docs"
+            edit_on_github_source_root = ""
+            edit_on_github_doc_root = "docs"
 
 sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
 extensions += ['sphinx_asdf']
