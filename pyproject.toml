@@ -42,7 +42,7 @@ docs = [
     "stsci-rtd-theme",
     "sphinx-astropy",
     "sphinx-asdf",
-    "tomli; python_version <\"3.11\"",
+    "tomli; python_version <'3.11'",
 ]
 test = [
     "ci-watson>=0.3.0",
