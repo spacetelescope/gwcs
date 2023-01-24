@@ -1,18 +1,15 @@
 [project]
 name = "gwcs"
-description = "Generalized World Coordinate System - Tools for managing the WCS of astronomical observations in a general (non-FITS) way"
+description = "Generalized World Coordinate System"
 requires-python = ">=3.8"
 authors = [
-    { name = "STScI", email = "help@stsci.edu" },
-]
-classifiers = [
-    "License :: OSI Approved :: MIT License",
+    { name = "gwcs developers", email = "help@stsci.edu" },
 ]
 dependencies = [
     "asdf >= 2.8.1",
     "astropy >= 5.1",
     "numpy",
-    "scipy",
+    "scipy < 1.10.0",
     "asdf_wcs_schemas",
     "asdf-astropy >= 0.2.0",
 ]
@@ -26,24 +23,19 @@ file = "README.rst"
 content-type = "text/x-rst"
 
 [project.license]
-file = "licenses"
-content-type = "text/plain"
+file = "licenses/LICENSE.rst"
+content-type = "text/x-rst"
 
 [project.urls]
-Documentation = "https://gwcs.readthedocs.io/en/stable/"
+Homepage = "https://github.com/spacetelescope/gwcs"
 Tracker = "https://github.com/spacetelescope/gwcs/issues"
+Documentation = "https://gwcs.readthedocs.io/en/stable/"
 "Source Code" = "https://github.com/spacetelescope/jwst"
 
 [project.entry-points."asdf.extensions"]
 gwcs = "gwcs.extension:get_extensions"
 
 [project.optional-dependencies]
-test = [
-    "ci-watson >=0.3.0",
-    "pytest>=4.6.0",
-    "pytest-astropy",
-    "codecov",
-]
 docs = [
     "sphinx",
     "sphinx-automodapi",
@@ -51,26 +43,28 @@ docs = [
     "stsci-rtd-theme",
     "sphinx-astropy",
     "sphinx-asdf",
-    "tomli; python_version <\"3.11\"",
 ]
-aws = [
-    "stsci-aws-utils >=0.1.2",
+test = [
+    "ci-watson>=0.3.0",
+    "pytest>=4.6.0",
+    "pytest-astropy",
+    "codecov",
 ]
 
 [build-system]
 requires = [
-    "setuptools >=61",
-    "setuptools_scm[toml] >=3.4",
+    "setuptools>=61.2",
+    "setuptools_scm[toml]>=3.4",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 zip-safe = false
+include-package-data = false
 
 [tool.setuptools.packages.find]
-
-[tool.setuptools_scm]
+namespaces = false
 
 [tool.build_sphinx]
 source-dir = "docs"
@@ -82,42 +76,36 @@ upload-dir = "docs/_build/html"
 show-response = 1
 
 [tool.pytest.ini_options]
-minversion = 4.6
+minversion = "4.6"
 norecursedirs = [
     "build",
     "docs/_build",
     ".tox",
-    ".eggs",
-    "build",
 ]
-doctest_plus = true
-doctest_rst = true
-text_file_format = "rst"
+doctest_plus = "enabled"
 addopts = "--doctest-rst"
 filterwarnings = [
-    "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
+    "ignore:Models",
+    "in",
+    "math_functions:astropy.utils.exceptions.AstropyUserWarning",
 ]
 
 [tool.coverage.run]
 omit = [
-    'gwcs/tests/test_*',
-    'gwcs/tags/tests/test_*',
-    # And list these again for running against installed version
-    '*/gwcs/tests/test_*',
-    '*/gwcs/tags/tests/test_*',
+    "gwcs/tests/test_*",
+    "gwcs/tags/tests/test_*",
+    "*/gwcs/tests/test_*",
+    "*/gwcs/tags/tests/test_*",
 ]
 
 [tool.coverage.report]
 exclude_lines = [
-    # Have to re-enable the standard pragma
-    'pragma: no cover',
-    # Don't complain about packages we have installed
-    'except ImportError',
-    # Don't complain if tests don't hit assertions
-    'raise AssertionError',
-    'raise NotImplementedError',
-    # Don't complain about script hooks
-    'def main\(.*\):',
-    # Ignore branches that don't pertain to this version of Python
-    'pragma: py{ignore_python_version}',
+    "pragma: no cover",
+    "except ImportError",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "def main\\(.*\\):",
+    "pragma: py{ignore_python_version}",
 ]
+
+[tool.setuptools_scm]
