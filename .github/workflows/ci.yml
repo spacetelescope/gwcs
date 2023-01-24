@@ -110,7 +110,7 @@ jobs:
           key: crds-${{ steps.crds-context.outputs.pmap }}
         if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
       - run: crds sync --contexts ${{ steps.crds-context.outputs.pmap }}
-        if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
+        if: contains(matrix.toxenv, '-jwst') #|| contains(matrix.toxenv, '-roman')
       - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
       - if: contains(matrix.toxenv,'-cov')
