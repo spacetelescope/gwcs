@@ -16,7 +16,6 @@ dependencies = [
 dynamic = [
     "version",
 ]
-edit-on-github = "False"
 
 [project.readme]
 file = "README.rst"
