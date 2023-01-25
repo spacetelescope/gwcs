@@ -327,6 +327,11 @@ def test_array_shape(wcsobj):
     wcsobj.array_shape = (2040, 1020)
     assert_array_equal(wcsobj.array_shape, (2040, 1020))
 
+    assert wcsobj.array_shape == wcsobj.pixel_shape[::-1]
+
+    wcsobj.pixel_shape = (1111, 2222)
+    assert wcsobj.array_shape == (2222, 1111)
+
 
 @wcs_objs
 def test_pixel_bounds(wcsobj):

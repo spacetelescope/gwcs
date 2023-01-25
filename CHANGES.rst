@@ -4,6 +4,10 @@
 Bug Fixes
 ^^^^^^^^^
 
+- Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
+  objects. [#439]
+
+
 0.18.3 (2022-12-23)
 -------------------
 Bug Fixes
