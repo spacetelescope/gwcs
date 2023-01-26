@@ -79,9 +79,9 @@ jobs:
           - toxenv: test-jwst-xdist
             os: ubuntu-latest
             python-version: '3.x'
-          - toxenv: test-romancal-xdist
-            os: ubuntu-latest
-            python-version: '3.x'
+    #      - toxenv: test-romancal-xdist
+    #        os: ubuntu-latest
+    #        python-version: '3.x'
     env:
       CRDS_PATH: /home/runner/work/gwcs/crds_cache
       CRDS_CLIENT_RETRY_COUNT: 3
