@@ -6,7 +6,7 @@ GWCS - Generalized World Coordinate System
     :alt: CI Status
     
 .. image:: https://readthedocs.org/projects/docs/badge/?version=latest
-    :target: https://docs.readthedocs.io/en/latest/?badge=latest
+    :target: https://gwcs.readthedocs.io/en/latest/
     :alt: Documentation Status
 
 .. image:: https://codecov.io/gh/spacetelescope/gwcs/branch/master/graph/badge.svg?token=JtHal6Jbta
