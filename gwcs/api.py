@@ -170,11 +170,17 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         The shape should be given in ``(row, column)`` order (the convention
         for arrays in Python).
         """
-        return self._array_shape
+        if self._pixel_shape is None:
+            return None
+        else:
+            return self._pixel_shape[::-1]
 
     @array_shape.setter
     def array_shape(self, value):
-        self._array_shape = value
+        if value is None:
+            self._pixel_shape = None
+        else:
+            self._pixel_shape = value[::-1]
 
     @property
     def pixel_bounds(self):

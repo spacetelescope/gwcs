@@ -141,7 +141,6 @@ class WCS(GWCSAPIMixin):
         self._available_frames = []
         self._pipeline = []
         self._name = name
-        self._array_shape = None
         self._initialize_wcs(forward_transform, input_frame, output_frame)
         self._pixel_shape = None
 
