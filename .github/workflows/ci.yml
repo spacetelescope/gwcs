@@ -1,9 +1,9 @@
-name: CI
+name: 'CI'
 
 on:
   push:
     branches:
-      - master
+      - 'master'
     tags:
       - '*'
   pull_request:
@@ -34,8 +34,49 @@ jobs:
       - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
   test:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    uses: 'OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1'
+    with:
+      envs: |
+        - linux: check-style
+        - linux: check-security
+        - linux: check-build
+        - linux: test
+          python-version: 3.9
+        - macos: test
+          python-version: 3.9
+        - linux: test
+          python-version: 3.10
+        - macos: test
+          python-version: 3.10
+        - linux: test
+          python-version: 3.11
+        - macos: test
+          python-version: 3.11
+        - linux: test-dev
+        - linux: test-pyargs
+          python-version: 3.11
+        - linux: test-cov
+          python-version: 3.11
+          coverage: codecov
+        - linux: test-numpy122
+          python-version: 3.10
+        - linux: test-numpy121
+          python-version: 3.10
+        - linux: test-numpy122
+          python-version: 3.9
+        - linux: test-numpy121
+          python-version: 3.9
+        - linux: test-numpy120
+          python-version: 3.9
+        - linux: test-numpy122
+          python-version: 3.8
+        - linux: test-numpy121
+          python-version: 3.8
+        - linux: test-numpy120
+          python-version: 3.8
+  downstream:
+    name: '${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})'
+    runs-on: '${{ matrix.runs-on }}'
     strategy:
       fail-fast: false
       matrix:
@@ -69,42 +110,3 @@ jobs:
             python-version: '3.9'
           - toxenv: test-jwst-xdist
             os: ubuntu-latest
-            python-version: '3.x'
-    #      - toxenv: test-romancal-xdist
-    #        os: ubuntu-latest
-    #        python-version: '3.x'
-    env:
-      CRDS_PATH: /home/runner/work/gwcs/crds_cache
-      CRDS_CLIENT_RETRY_COUNT: 3
-      CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-    steps:
-      - run: echo "HOME=$HOME" >> $GITHUB_ENV
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - if: contains( matrix.toxenv, '-jwst')
-        run: echo "CRDS_SERVER_URL=https://jwst-crds.stsci.edu" >> $GITHUB_ENV
-      - if: contains(matrix.toxenv, '-roman')
-        run: echo "CRDS_SERVER_URL=https://roman-crds.stsci.edu" >> $GITHUB_ENV
-      - if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
-        run: pip install crds
-      - run: echo "pmap=$(crds list --operational-context)" >> $GITHUB_OUTPUT
-        id: crds-context
-      - if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.CRDS_PATH }}
-          key: crds-${{ steps.crds-context.outputs.pmap }}
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
-      - if: contains(matrix.toxenv, '-cov')
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unit
-          fail_ci_if_error: true
