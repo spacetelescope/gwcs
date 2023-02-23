@@ -87,21 +87,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: pyproject.toml
-      - run: echo "CRDS_SERVER_URL=https://jwst-crds.stsci.edu" >> $GITHUB_ENV
-        if: contains( matrix.toxenv, '-jwst')
-      - run: echo "CRDS_SERVER_URL=https://roman-crds.stsci.edu" >> $GITHUB_ENV
-        if: contains(matrix.toxenv, '-roman')
-      - run: pip install crds
-        if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
+      - if: contains( matrix.toxenv, '-jwst')
+        run: echo "CRDS_SERVER_URL=https://jwst-crds.stsci.edu" >> $GITHUB_ENV
+      - if: contains(matrix.toxenv, '-roman')
+        run: echo "CRDS_SERVER_URL=https://roman-crds.stsci.edu" >> $GITHUB_ENV
+      - if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
+        run: pip install crds
       - run: echo "pmap=$(crds list --operational-context)" >> $GITHUB_OUTPUT
         id: crds-context
-      - uses: actions/cache@v3
+      - if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
+        uses: actions/cache@v3
         with:
           path: ${{ env.CRDS_PATH }}
           key: crds-${{ steps.crds-context.outputs.pmap }}
-        if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
-      - run: crds sync --contexts ${{ steps.crds-context.outputs.pmap }}
-        if: contains(matrix.toxenv, '-jwst') #|| contains(matrix.toxenv, '-roman')
       - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
       - if: contains(matrix.toxenv, '-cov')
