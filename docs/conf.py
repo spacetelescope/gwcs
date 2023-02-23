@@ -143,24 +143,7 @@ htmlhelp_basename = project + 'doc'
 man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
-## -- Options for the edit_on_github extension ----------------------------------------
-
-if 'build_sphinx' in configuration['tool']:
-    if 'edit-on-github' in configuration['tool']['build_sphinx']:
-        if configuration['tool']['build_sphinx']['edit-on-github']:
-            extensions += ['astropy.sphinx.ext.edit_on_github']
-
-            versionmod = __import__(metadata['name'] + '.version')
-            edit_on_github_project = metadata['urls']['Source Code']
-            if versionmod.version.release:
-                edit_on_github_branch = "v" + versionmod.version.version
-            else:
-                edit_on_github_branch = "master"
-
-            edit_on_github_source_root = ""
-            edit_on_github_doc_root = "docs"
-
-sys.path.insert(0, os.path.join(os.path.dirname('__file__'), 'sphinxext'))
+sys.path.insert(0, str(Path(__file__).parent / 'sphinxext'))
 extensions += ['sphinx_asdf']
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
