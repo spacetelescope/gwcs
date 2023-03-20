@@ -282,8 +282,8 @@ def wcs_from_points(xy, world_coords, proj_point='center',
         crval = (proj_point.data.lon, proj_point.data.lat)
         frame = proj_point.frame
     elif proj_point == 'center':  # use center of input points
-        sc1 = SkyCoord(lon.min()*u.deg, lat.max()*u.deg)
-        sc2 = SkyCoord(lon.max()*u.deg, lat.min()*u.deg)
+        sc1 = coord.SkyCoord(lon.min()*u.deg, lat.max()*u.deg)
+        sc2 = coord.SkyCoord(lon.max()*u.deg, lat.min()*u.deg)
         pa = sc1.position_angle(sc2)
         sep = sc1.separation(sc2)
         midpoint_sc = sc1.directional_offset_by(pa, sep/2)
