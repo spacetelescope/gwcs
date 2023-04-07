@@ -1,6 +1,4 @@
-import os
 import pkg_resources
-
 
 entry_points = []
 for entry_point in pkg_resources.iter_entry_points('pytest11'):

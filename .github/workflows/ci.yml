@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
       - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
   test:
@@ -95,7 +95,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-          cache-dependency-path: setup.cfg
+          cache-dependency-path: pyproject.toml
       - run: echo "CRDS_SERVER_URL=https://jwst-crds.stsci.edu" >> $GITHUB_ENV
         if: contains( matrix.toxenv, '-jwst')
       - run: echo "CRDS_SERVER_URL=https://roman-crds.stsci.edu" >> $GITHUB_ENV
@@ -113,7 +113,7 @@ jobs:
         if: contains(matrix.toxenv, '-jwst') #|| contains(matrix.toxenv, '-roman')
       - run: pip install "tox>=4.0"
       - run: tox -e ${{ matrix.toxenv }}
-      - if: contains(matrix.toxenv,'-cov')
+      - if: contains(matrix.toxenv, '-cov')
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
