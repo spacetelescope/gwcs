@@ -48,7 +48,6 @@ test = [
     "ci-watson>=0.3.0",
     "pytest>=4.6.0",
     "pytest-astropy",
-    "codecov",
 ]
 
 [build-system]
