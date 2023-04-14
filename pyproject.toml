@@ -1,7 +1,7 @@
 [project]
 name = "gwcs"
 description = "Generalized World Coordinate System"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "gwcs developers", email = "help@stsci.edu" },
 ]
