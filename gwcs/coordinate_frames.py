@@ -14,6 +14,7 @@ from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
+from astropy.coordinates import StokesCoord
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame']
@@ -703,60 +704,6 @@ class CompositeFrame(CoordinateFrame):
         return dict(self._wao_renamed_classes_iter)
 
 
-class StokesProfile(str):
-    # This list of profiles in Table 7 in Greisen & Calabretta (2002)
-    # modified to be 0 indexed
-    profiles = {
-        'I': 0,
-        'Q': 1,
-        'U': 2,
-        'V': 3,
-        'RR': -1,
-        'LL': -2,
-        'RL': -3,
-        'LR': -4,
-        'XX': -5,
-        'YY': -6,
-        'XY': -7,
-        'YX': -8,
-    }
-
-    @classmethod
-    def from_index(cls, indexes):
-        """
-        Construct a StokesProfile object from a numerical index.
-
-        Parameters
-        ----------
-        indexes : `int`, `numpy.ndarray`
-            An index or array of indices to construct StokesProfile objects from.
-        """
-
-        nans = np.isnan(indexes)
-        indexes = np.asarray(indexes, dtype=int)
-        out = np.empty_like(indexes, dtype=object)
-
-        for profile, index in cls.profiles.items():
-            out[indexes == index] = cls(profile)
-
-        out[nans] = np.nan
-
-        if out.size == 1 and not nans:
-            return StokesProfile(out.item())
-        elif nans.all():
-            return np.array(out, dtype=float)
-        return out
-
-    def __new__(cls, content):
-        content = str(content)
-        if content not in cls.profiles.keys():
-            raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
-        return str.__new__(cls, content)
-
-    def value(self):
-        return self.profiles[self]
-
-
 class StokesFrame(CoordinateFrame):
     """
     A coordinate frame for representing stokes polarisation states
@@ -775,10 +722,10 @@ class StokesFrame(CoordinateFrame):
     @property
     def _world_axis_object_classes(self):
         return {'stokes': (
-            StokesProfile,
+            StokesCoord,
             (),
             {},
-            StokesProfile.from_index)}
+        )}
 
     @property
     def _world_axis_object_components(self):
@@ -790,14 +737,12 @@ class StokesFrame(CoordinateFrame):
         else:
             arg = args[0]
 
-        return StokesProfile.from_index(arg)
+        return StokesCoord(arg)
 
     def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], str):
-            if coords[0] in StokesProfile.profiles.keys():
-                return StokesProfile.profiles[coords[0]] * u.one
-        else:
-            return coords[0]
+        if isinstance(coords[0], StokesCoord):
+            return coords[0].value << u.one
+        return coords[0]
 
 
 class Frame2D(CoordinateFrame):
