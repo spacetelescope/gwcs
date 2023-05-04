@@ -9,7 +9,7 @@ dependencies = [
     "asdf >= 2.8.1",
     "astropy >= 5.1",
     "numpy",
-    "scipy < 1.10.0",
+    "scipy",
     "asdf_wcs_schemas",
     "asdf-astropy >= 0.2.0",
 ]
