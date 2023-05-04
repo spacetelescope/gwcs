@@ -1,9 +1,9 @@
-name: CI
+name: 'CI'
 
 on:
   push:
     branches:
-      - master
+      - 'master'
     tags:
       - '*'
   pull_request:
@@ -12,101 +12,84 @@ on:
     # * is a special character in YAML so you have to quote this string
     - cron: '0 9 * * 1'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
-    name: ${{ matrix.toxenv }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ check-style, check-security, check-build ]
-        python-version: [ '3.11' ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
+    name: 
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - linux: check-style
+        - linux: check-security
+        - linux: check-build
   test:
-    name: ${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ test ]
-        python-version: [ '3.9', '3.10', '3.11' ]
-        os: [ ubuntu-latest, macos-latest ]
-        include:
-          - toxenv: test-dev
-            os: ubuntu-latest
-            python-version: '3.x'
-          - toxenv: test-pyargs
-            os: ubuntu-latest
-            python-version: '3.11'
-          - toxenv: test-cov
-            os: ubuntu-latest
-            python-version: '3.11'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.10'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-numpy120
-            os: ubuntu-latest
-            python-version: '3.9'
-          - toxenv: test-jwst-xdist
-            os: ubuntu-latest
-            python-version: '3.x'
-    #      - toxenv: test-romancal-xdist
-    #        os: ubuntu-latest
-    #        python-version: '3.x'
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    with:
+      envs: |
+        - linux: test
+          python-version: 3.9
+        - linux: test-numpy120
+          python-version: 3.9
+        - linux: test-numpy121
+          python-version: 3.9
+        - linux: test-numpy122
+          python-version: 3.9
+        - linux: test
+          python-version: 3.10
+        - linux: test-numpy121
+          python-version: 3.10
+        - linux: test-numpy122
+          python-version: 3.10
+        - linux: test
+          python-version: 3.11
+          pytest-results-summary: true
+        - macos: test
+          python-version: 3.11
+          pytest-results-summary: true
+        - linux: test-dev
+        - linux: test-pyargs
+          python-version: 3.11
+        - linux: test-cov
+          python-version: 3.11
+          coverage: codecov
+          pytest-results-summary: true
+  crds:
+    name: retrieve current CRDS context
+    runs-on: ubuntu-latest
     env:
-      CRDS_PATH: /home/runner/work/gwcs/crds_cache
-      CRDS_CLIENT_RETRY_COUNT: 3
-      CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      OBSERVATORY: jwst
+      CRDS_PATH: /tmp/crds_cache
+      CRDS_SERVER_URL: https://jwst-crds.stsci.edu
     steps:
-      - run: echo "HOME=$HOME" >> $GITHUB_ENV
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - run: echo "CRDS_SERVER_URL=https://jwst-crds.stsci.edu" >> $GITHUB_ENV
-        if: contains( matrix.toxenv, '-jwst')
-      - run: echo "CRDS_SERVER_URL=https://roman-crds.stsci.edu" >> $GITHUB_ENV
-        if: contains(matrix.toxenv, '-roman')
-      - run: pip install crds
-        if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
-      - run: echo "pmap=$(crds list --operational-context)" >> $GITHUB_OUTPUT
-        id: crds-context
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.CRDS_PATH }}
-          key: crds-${{ steps.crds-context.outputs.pmap }}
-        if: contains(matrix.toxenv, '-jwst') || contains(matrix.toxenv, '-roman')
-      - run: crds sync --contexts ${{ steps.crds-context.outputs.pmap }}
-        if: contains(matrix.toxenv, '-jwst') #|| contains(matrix.toxenv, '-roman')
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
-      - if: contains(matrix.toxenv, '-cov')
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unit
-          fail_ci_if_error: true
+      - id: context
+        run: >
+          echo "pmap=$(
+          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
+          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          )" >> $GITHUB_OUTPUT
+        # Get default CRDS_CONTEXT without installing crds client
+        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
+      - id: path
+        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
+      - id: server
+        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
+    outputs:
+      context: ${{ steps.context.outputs.pmap }}
+      path: ${{ steps.path.outputs.path }}
+      server: ${{ steps.server.outputs.url }}
+  test_downstream:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    needs: [ crds ]
+    with:
+      setenv: |
+        CRDS_PATH: ${{ needs.crds.outputs.path }}
+        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      cache-path: ${{ needs.crds.outputs.path }}
+      cache-key: crds-${{ needs.crds.outputs.context }}
+      envs: |
+        - linux: test-jwst-cov-xdist
