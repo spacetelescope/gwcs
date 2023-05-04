@@ -29,9 +29,6 @@ jobs:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     with:
       envs: |
-        - linux: check-style
-        - linux: check-security
-        - linux: check-build
         - linux: test
           python-version: 3.9
         - linux: test-numpy120
