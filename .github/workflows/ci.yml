@@ -96,4 +96,3 @@ jobs:
       cache-key: crds-${{ needs.crds.outputs.context }}
       envs: |
         - linux: test-jwst-cov-xdist
-        - linux: test-romancal-cov-xdist
