@@ -10,6 +10,9 @@ import astropy.units as u
 from astropy import time
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
+import astropy.modeling.models as m
+import gwcs.coordinate_frames as cf
+import gwcs
 
 
 # Shorthand the name of the 2d gwcs fixture
@@ -166,6 +169,12 @@ def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
                     ('celestial', 1, 'spherical.lat')]
 
 
+def test_world_axis_object_components_2d_generic(gwcs_2d_quantity_shift):
+    waoc = gwcs_2d_quantity_shift.world_axis_object_components
+    assert waoc == [('SPATIAL', 0, 'value'),
+                    ('SPATIAL1', 0, 'value')]
+
+
 def test_world_axis_object_components_1d(gwcs_1d_freq):
     waoc = gwcs_1d_freq.world_axis_object_components
     assert waoc == [('spectral', 0, 'value')]
@@ -187,6 +196,18 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
     assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+
+
+def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
+    waoc = gwcs_2d_quantity_shift.world_axis_object_classes
+    assert waoc['SPATIAL'][0] is u.Quantity
+    assert waoc['SPATIAL1'][0] is u.Quantity
+    assert waoc['SPATIAL'][1] == tuple()
+    assert waoc['SPATIAL1'][1] == tuple()
+    assert 'unit' in waoc['SPATIAL'][2]
+    assert 'unit' in waoc['SPATIAL1'][2]
+    assert waoc['SPATIAL'][2]['unit'] == u.km
+    assert waoc['SPATIAL1'][2]['unit'] == u.km
 
 
 def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
@@ -305,6 +326,11 @@ def test_array_shape(wcsobj):
 
     wcsobj.array_shape = (2040, 1020)
     assert_array_equal(wcsobj.array_shape, (2040, 1020))
+
+    assert wcsobj.array_shape == wcsobj.pixel_shape[::-1]
+
+    wcsobj.pixel_shape = (1111, 2222)
+    assert wcsobj.array_shape == (2222, 1111)
 
 
 @wcs_objs
@@ -458,3 +484,36 @@ def test_ndim_str_frames(gwcs_with_frames_strings):
     wcsobj = gwcs_with_frames_strings
     assert wcsobj.pixel_n_dim == 4
     assert wcsobj.world_n_dim == 3
+
+def test_composite_many_base_frame():
+    q_frame_1 = cf.CoordinateFrame(name='distance', axes_order=(0,), naxes=1, axes_type="SPATIAL", unit=(u.m,))
+    q_frame_2 = cf.CoordinateFrame(name='distance', axes_order=(1,), naxes=1, axes_type="SPATIAL", unit=(u.m,))
+    frame = cf.CompositeFrame([q_frame_1, q_frame_2])
+
+    wao_classes = frame._world_axis_object_classes
+
+    assert len(wao_classes) == 2
+    assert not set(wao_classes.keys()).difference({"SPATIAL", "SPATIAL1"})
+
+    wao_components = frame._world_axis_object_components
+
+    assert len(wao_components) == 2
+    assert not {c[0] for c in wao_components}.difference({"SPATIAL", "SPATIAL1"})
+
+
+def test_coordinate_frame_api():
+    forward = m.Linear1D(slope=0.1*u.deg/u.pix, intercept=0*u.deg)
+
+    output_frame = cf.CoordinateFrame(1, "SPATIAL", (0,), unit=(u.deg,), name="sepframe")
+    input_frame = cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,))
+
+    wcs = gwcs.WCS(forward_transform=forward, input_frame=input_frame, output_frame=output_frame)
+
+    world = wcs.pixel_to_world(0)
+    assert isinstance(world, u.Quantity)
+
+    pixel = wcs.world_to_pixel(world)
+    assert isinstance(pixel, float)
+
+    pixel2 = wcs.invert(world)
+    assert u.allclose(pixel2, 0*u.pix)

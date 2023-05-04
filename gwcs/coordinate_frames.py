@@ -2,6 +2,7 @@
 """
 Defines coordinate frames and ties them to data axes.
 """
+from collections import defaultdict
 import logging
 import numpy as np
 
@@ -12,39 +13,47 @@ from astropy import utils as astutil
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
-
+from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame']
 
 
-UCD1_TO_CTYPE = {
-    'pos.eq.ra': 'RA',
-    'pos.eq.dec': 'DEC',
-    'pos.galactic.lon': 'GLON',
-    'pos.galactic.lat': 'GLAT',
-    'pos.ecliptic.lon': 'ELON',
-    'pos.ecliptic.lat': 'ELAT',
-    'pos.bodyrc.lon': 'TLON',
-    'pos.bodyrc.lat': 'TLAT',
-    'custom:pos.helioprojective.lat': 'HPLT',
-    'custom:pos.helioprojective.lon': 'HPLN',
-    'custom:pos.heliographic.stonyhurst.lon': 'HGLN',
-    'custom:pos.heliographic.stonyhurst.lat': 'HGLT',
-    'custom:pos.heliographic.carrington.lon': 'CRLN',
-    'custom:pos.heliographic.carrington.lat': 'CRLT',
-    'em.freq': 'FREQ',
-    'em.energy': 'ENER',
-    'em.wavenumber': 'WAVN',
-    'em.wl': 'WAVE',
-    'spect.dopplerVeloc.radio': 'VRAD',
-    'spect.dopplerVeloc.opt': 'VOPT',
-    'src.redshift': 'ZOPT',
-    'spect.dopplerVeloc': 'VELO',
-    'custom:spect.doplerVeloc.beta': 'BETA',
-    'time': 'TIME',
-    }
+def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
+    inv_map = {}
+    new_ucd = set()
 
+    for kwd, ucd in ctype_to_ucd.items():
+        if ucd in inv_map:
+            if ucd not in allowed_ucd_duplicates:
+                new_ucd.add(ucd)
+            continue
+        elif ucd in allowed_ucd_duplicates:
+            inv_map[ucd] = allowed_ucd_duplicates[ucd]
+        else:
+            inv_map[ucd] = kwd
+
+    if new_ucd:
+        logging.warning(
+            "Found unsupported duplicate physical type in 'astropy' mapping to CTYPE.\n"
+            "Update 'gwcs' to the latest version or notify 'gwcs' developer.\n"
+            "Duplicate physical types will be mapped to the following CTYPEs:\n" +
+            '\n'.join([f'{repr(ucd):s} --> {repr(inv_map[ucd]):s}' for ucd in new_ucd])
+        )
+
+    return inv_map
+
+# List below allowed physical type duplicates and a corresponding CTYPE
+# to which all duplicates will be mapped to:
+_ALLOWED_UCD_DUPLICATES = {
+    'time': 'TIME',
+    'em.wl': 'WAVE',
+}
+
+UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping(
+    ctype_to_ucd=CTYPE_TO_UCD1,
+    allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
+)
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
@@ -85,7 +94,7 @@ class CoordinateFrame:
     reference_frame : astropy.coordinates.builtin_frames
         Reference frame (usually used with output_frame to convert to world coordinate objects).
     reference_position : str
-        Reference position - one of `STANDARD_REFERENCE_POSITION`
+        Reference position - one of ``STANDARD_REFERENCE_POSITION``
     unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
@@ -271,6 +280,8 @@ class CoordinateFrame:
     def coordinates(self, *args):
         """ Create world coordinates object"""
         coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
+        if self.naxes == 1:
+            return coo[0]
         return coo
 
     def coordinate_to_quantity(self, *coords):
@@ -290,14 +301,14 @@ class CoordinateFrame:
 
     @property
     def _world_axis_object_classes(self):
-        return {self._axes_type[0]: (
-            u.Quantity,
-            (),
-            {'unit': self.unit[0]})}
+        return {f"{at}{i}" if i != 0 else at: (u.Quantity,
+                     (),
+                     {'unit': unit})
+                for i, (at, unit) in enumerate(zip(self._axes_type, self.unit))}
 
     @property
     def _world_axis_object_components(self):
-        return [(self._axes_type[0], 0, 'value')]
+        return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._axes_type)]
 
 
 class CelestialFrame(CoordinateFrame):
@@ -420,13 +431,14 @@ class SpectralFrame(CoordinateFrame):
     name : str
         Name for this frame.
     reference_position : str
-        Reference position - one of `STANDARD_REFERENCE_POSITION`
+        Reference position - one of ``STANDARD_REFERENCE_POSITION``
 
     """
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
                  axes_names=None, name=None, axis_physical_types=None,
                  reference_position=None):
+
         super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                                             axes_names=axes_names, reference_frame=reference_frame,
                                             unit=unit, name=name,
@@ -436,7 +448,7 @@ class SpectralFrame(CoordinateFrame):
     @property
     def _world_axis_object_classes(self):
         return {'spectral': (
-            u.Quantity,
+            coord.SpectralCoord,
             (),
             {'unit': self.unit[0]})}
 
@@ -444,13 +456,15 @@ class SpectralFrame(CoordinateFrame):
     def _world_axis_object_components(self):
         return [('spectral', 0, 'value')]
 
-    def coordinates(self, *args, equivalencies=[]):
-        if hasattr(args[0], 'unit'):
-            return args[0].to(self.unit[0], equivalencies=equivalencies)
-        if np.isscalar(args):
-            return args * self.unit[0]
+    def coordinates(self, *args):
+        # using SpectralCoord
+        if isinstance(args[0], coord.SpectralCoord):
+            return args[0].to(self.unit[0])
         else:
-            return args[0] * self.unit[0]
+            if hasattr(args[0], 'unit'):
+                return coord.SpectralCoord(*args).to(self.unit[0])
+            else:
+                return coord.SpectralCoord(*args, self.unit[0])
 
     def coordinate_to_quantity(self, *coords):
         if hasattr(coords[0], 'unit'):
@@ -467,7 +481,7 @@ class TemporalFrame(CoordinateFrame):
     reference_frame : `~astropy.time.Time`
         A Time object which holds the time scale and format.
         If data is provided, it is the time zero point.
-        To not set a zero point for the frame initialize `reference_frame`
+        To not set a zero point for the frame initialize ``reference_frame``
         with an empty list.
     unit : str or `~astropy.units.Unit`
         Time unit.
@@ -641,14 +655,51 @@ class CompositeFrame(CoordinateFrame):
         return qs
 
     @property
+    def _wao_classes_rename_map(self):
+        mapper = defaultdict(dict)
+        seen_names = []
+        for frame in self.frames:
+            # ensure the frame is in the mapper
+            mapper[frame]
+            for key in frame._world_axis_object_classes.keys():
+                if key in seen_names:
+                    new_key = f"{key}{seen_names.count(key)}"
+                    mapper[frame][key] = new_key
+                seen_names.append(key)
+        return mapper
+
+    @property
+    def _wao_renamed_components_iter(self):
+        mapper = self._wao_classes_rename_map
+        for frame in self.frames:
+            renamed_components = []
+            for comp in frame._world_axis_object_components:
+                comp = list(comp)
+                rename = mapper[frame].get(comp[0])
+                if rename:
+                    comp[0] = rename
+                renamed_components.append(tuple(comp))
+            yield frame, renamed_components
+
+    @property
+    def _wao_renamed_classes_iter(self):
+        mapper = self._wao_classes_rename_map
+        for frame in self.frames:
+            for key, value in frame._world_axis_object_classes.items():
+                rename = mapper[frame].get(key)
+                if rename:
+                    key = rename
+                yield key, value
+
+    @property
     def _world_axis_object_components(self):
         """
         We need to generate the components respecting the axes_order.
         """
         out = [None] * self.naxes
-        for frame in self.frames:
+        for frame, components in self._wao_renamed_components_iter:
             for i, ao in enumerate(frame.axes_order):
-                out[ao] = frame._world_axis_object_components[i]
+                out[ao] = components[i]
 
         if any([o is None for o in out]):
             raise ValueError("axes_order leads to incomplete world_axis_object_components")
@@ -656,10 +707,7 @@ class CompositeFrame(CoordinateFrame):
 
     @property
     def _world_axis_object_classes(self):
-        out = {}
-        for frame in self.frames:
-            out.update(frame._world_axis_object_classes)
-        return out
+        return dict(self._wao_renamed_classes_iter)
 
 
 class StokesProfile(str):
@@ -692,11 +740,11 @@ class StokesProfile(str):
         """
 
         nans = np.isnan(indexes)
-        indexes = np.asanyarray(indexes, dtype=int)
+        indexes = np.asarray(indexes, dtype=int)
         out = np.empty_like(indexes, dtype=object)
 
         for profile, index in cls.profiles.items():
-            out[indexes == index] = profile
+            out[indexes == index] = cls(profile)
 
         out[nans] = np.nan
 

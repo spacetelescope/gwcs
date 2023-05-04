@@ -8,6 +8,7 @@ import numpy as np
 from astropy.modeling.core import Model
 from astropy import units as u
 
+
 __all__ = ['ToDirectionCosines', 'FromDirectionCosines',
            'SphericalToCartesian', 'CartesianToSpherical']
 
@@ -52,7 +53,6 @@ class FromDirectionCosines(Model):
         self.outputs = ('x', 'y', 'z')
 
     def evaluate(self, cosa, cosb, cosc, length):
-
         return cosa * length, cosb * length, cosc * length
 
     def inverse(self):
@@ -200,7 +200,7 @@ class CartesianToSpherical(Model):
         lon[h == 0] *= 0
 
         if self._wrap_lon_at != 180:
-            lon = np.mod(lon, 360.0 * u.deg if nquant else 360.0)
+            lon = np.mod(lon, 360.0 * u.deg if nquant else 360.0, where=np.isfinite(lon), out=lon)
 
         return lon, lat
 

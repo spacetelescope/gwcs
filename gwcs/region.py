@@ -1,7 +1,18 @@
+"""
+Polygon filling algorithm.
+
+"""
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+# NOTE: Algorithm description can be found, e.g., here:
+#    http://www.cs.rit.edu/~icss571/filling/how_to.html
+#    http://www.cs.uic.edu/~jbell/CourseNotes/ComputerGraphics/PolygonFilling.html
+
 import abc
 from collections import OrderedDict
 import numpy as np
+
+__all__ = ['Region', 'Edge', 'Polygon']
 
 
 class Region(metaclass=abc.ABCMeta):
@@ -81,9 +92,30 @@ class Polygon(Region):
                              "a list of minimum 4 tuples (x,y)")
         super(Polygon, self).__init__(rid, coord_frame)
 
-        self._vertices = np.asarray(vertices)
+        # self._shiftx & self._shifty are introduced to shift the bottom-left
+        # corner of the polygon's bounding box to (0,0) as a (hopefully
+        # temporary) workaround to a limitation of the original code that the
+        # polygon must be completely contained in the image. It seems that the
+        # code works fine if we make sure that the bottom-left corner of the
+        # polygon's bounding box has non-negative coordinates.
+        self._shiftx = 0
+        self._shifty = 0
+        for vertex in vertices:
+            x, y = vertex
+            if x < self._shiftx:
+                self._shiftx = x
+            if y < self._shifty:
+                self._shifty = y
+        v = [(i - self._shiftx, j - self._shifty) for i, j in vertices]
+
+        # convert to integer coordinates:
+        self._vertices = np.asarray(list(map(_round_vertex, v)))
+        self._shiftx = int(round(self._shiftx))
+        self._shifty = int(round(self._shifty))
+
         self._bbox = self._get_bounding_box()
-        self._scan_line_range = list(range(self._bbox[1], self._bbox[3] + self._bbox[1] + 1))
+        self._scan_line_range = \
+            list(range(self._bbox[1], self._bbox[3] + self._bbox[1] + 1))
         # constructs a Global Edge Table (GET) in bbox coordinates
         self._GET = self._construct_ordered_GET()
 
@@ -115,7 +147,10 @@ class Polygon(Region):
         ymin = np.asarray([e._ymin for e in edges])
         for i in self._scan_line_range:
             ymin_ind = (ymin == i).nonzero()[0]
-            if ymin_ind.any():
+            # a hack for incomplete filling .any() fails if 0 is in ymin_ind
+            # if ymin_ind.any():
+            yminindlen, = ymin_ind.shape
+            if yminindlen:
                 GET[i] = [edges[ymin_ind[0]]]
                 for j in ymin_ind[1:]:
                     GET[i].append(edges[j])
@@ -125,9 +160,8 @@ class Polygon(Region):
         """
         Create a list of Edge objects from vertices
         """
-        return [Edge(name='E{}'.format(i - 1), start=self._vertices[i - 1], stop=self._vertices[i])
-                for i in range(1, len(self._vertices))
-                ]
+        return [Edge(name=f'E{i - 1}', start=self._vertices[i - 1], stop=self._vertices[i])
+                for i in range(1, len(self._vertices))]
 
     def scan(self, data):
         """
@@ -157,21 +191,45 @@ class Polygon(Region):
         # 2. Currently it uses intersection of the scan line with edges. If this is
         # too slow it should use the 1/m increment (replace 3 above) (or the increment
         # should be removed from the GET entry).
-        if self._bbox[2] <= 0:
-            return data
+
+        # see comments in the __init__ function for the reason of introducing
+        # polygon shifts (self._shiftx & self._shifty). Here we need to shift
+        # it back.
+
+        (ny, nx) = data.shape
 
         y = np.min(list(self._GET.keys()))
+
         AET = []
         scline = self._scan_line_range[-1]
+
         while y <= scline:
-            AET = self.update_AET(y, AET)
+
+            if y < scline:
+                AET = self.update_AET(y, AET)
+
+            if self._bbox[2] <= 0:
+                y += 1
+                continue
+
             scan_line = Edge('scan_line', start=[self._bbox[0], y],
                              stop=[self._bbox[0] + self._bbox[2], y])
-            x = [np.ceil(e.compute_AET_entry(scan_line)[1]) for e in AET if e is not None]
-            xnew = np.asarray(np.sort(x), dtype=np.int)
+            x = [int(np.ceil(e.compute_AET_entry(scan_line)[1]))
+                 for e in AET if e is not None]
+            xnew = np.sort(x)
+            ysh = y + self._shifty
+
+            if ysh < 0 or ysh >= ny:
+                y += 1
+                continue
+
             for i, j in zip(xnew[::2], xnew[1::2]):
-                data[y][i:j + 1] = self._rid
-            y = y + 1
+                xstart = max(0, i + self._shiftx)
+                xend = min(j + self._shiftx, nx - 1)
+                data[ysh][xstart:xend + 1] = self._rid
+
+            y += 1
+
         return data
 
     def update_AET(self, y, AET):
@@ -314,16 +372,21 @@ class Edge:
         u = self._stop - self._start
         v = edge._stop - edge._start
         w = self._start - edge._start
-        eps = 1e2 * np.finfo(np.float).eps
-        if np.allclose(np.cross(u, v), 0, rtol=0, atol=eps):
-            return np.array(self._start)
         D = np.cross(u, v)
+
+        if np.allclose(np.cross(u, v), 0, rtol=0,
+                       atol=1e2 * np.finfo(float).eps):
+            return np.array(self._start)
+
         return np.cross(v, w) / D * u + self._start
 
     def is_parallel(self, edge):
         u = self._stop - self._start
         v = edge._stop - edge._start
-        if np.cross(u, v):
-            return False
-        else:
-            return True
+        return np.allclose(np.cross(u, v), 0, rtol=0,
+                           atol=1e2 * np.finfo(float).eps)
+
+
+def _round_vertex(v):
+    x, y = v
+    return (int(round(x)), int(round(y)))

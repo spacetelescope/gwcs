@@ -140,9 +140,11 @@ class AnglesFromGratingEquation3D(Model):
     def input_units(self):
         if self.groove_density.unit is None:
             return None
-        return {'wavelength': 1 / self.groove_density.unit,
-                'alpha_in': u.Unit(1),
-                'beta_in': u.Unit(1)}
+        return {
+            'wavelength': 1 / self.groove_density.unit,
+            'alpha_in': u.Unit(1),
+            'beta_in': u.Unit(1)
+        }
 
 
 class Snell3D(Model):
@@ -187,7 +189,7 @@ class SellmeierGlass(Model):
         Iterable of size 3 containing B coefficients.
     C_coef : ndarray
         Iterable of size 3 containing c coefficients in
-        units of `u.um**2`.
+        units of ``u.um**2``.
 
     Returns
     -------
@@ -262,9 +264,9 @@ class SellmeierZemax(Model):
     Parameters
     ----------
     temperature : float
-        Temperature of the material in `u.Kelvin`.
+        Temperature of the material in ``u.Kelvin``.
     ref_temperature : float
-        Reference emperature of the glass in `u.Kelvin`.
+        Reference emperature of the glass in ``u.Kelvin``.
     ref_pressure : float
         Reference pressure in ATM.
     pressure : float
@@ -273,7 +275,7 @@ class SellmeierZemax(Model):
         Iterable of size 3 containing B coefficients.
     C_coef : ndarray
         Iterable of size 3 containing C coefficients in
-        units of `u.um**2`.
+        units of ``u.um**2``.
     D_coef : ndarray
         Iterable of size 3 containing constants to describe the
         behavior of the material.

@@ -1,5 +1,136 @@
-0.16.0 (Unreleased)
+0.18.4 (unreleased)
 -------------------
+
+Bug Fixes
+^^^^^^^^^
+
+- Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
+  objects. [#439]
+
+
+0.18.3 (2022-12-23)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Fixed a bug in the estimate of pixel scale in the iterative inverse
+  code. [#423]
+
+- Fixed constant term in the polynomial used for SIP fitting.
+  Improved stability and accuracy of the SIP fitting code. [#427]
+
+
+0.18.2 (2022-09-07)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Corrected the reported requested forward SIP accuracy and reported fit
+  residuals by ``to_fits_sip()`` and ``to_fits()``. [#413, #419]
+
+- Fixed a bug due to which the check for divergence in ``_fit_2D_poly()`` and
+  hence in ``to_fits()`` and ``to_fits_sip()`` was ignored. [#414]
+
+New Features
+^^^^^^^^^^^^
+
+0.18.1 (2022-03-15)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Remove references to the ``six`` package. [#402]
+
+0.18.0 (2021-12-22)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- Updated code in ``region.py`` with latest improvements and bug fixes
+  from ``stsci.skypac.regions.py`` [#382]
+
+- Added support to ``_compute_lon_pole()`` for computation of ``lonpole``
+  for all projections from ``astropy.modeling.projections``. This also
+  extends support for different projections in ``wcs_from_fiducial()``. [#389]
+
+New Features
+^^^^^^^^^^^^
+
+- Enabled ``CompoundBoundingBox`` support for wcs. [#375]
+
+- Moved schemas to standalone package ``asdf-wcs-schemas``.
+  Reworked the serialization code to use ASDF converters. [#388]
+
+0.17.1 (2021-11-27)
+-------------------
+
+Bug Fixes
+^^^^^^^^^
+
+- Fixed a bug with StokesProfile and array types. [#384]
+
+
+0.17.0 (2021-11-17)
+-------------------
+Bug Fixes
+^^^^^^^^^
+
+- `world_axis_object_components` and `world_axis_object_classes` now ensure
+  unique keys in `CompositeFrame` and `CoordinateFrame`. [#356]
+
+- Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
+  in angle wrapping code [#367]
+
+- Fix deprecation warning when wcs is initialized with a pipeline [#368]
+
+- Use ``CD`` formalism in ``WCS.to_fits_sip()``. [#380]
+
+
+New Features
+^^^^^^^^^^^^
+- ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
+
+- Generalized ``WCS.to_fits_sip`` to be able to create a 2D celestial FITS WCS
+  from celestial subspace of the ``WCS``. Also, now `WCS.to_fits_sip``
+  supports arbitrary order of output axes. [#357]
+
+
+API Changes
+^^^^^^^^^^^
+- Modified interface to ``wcs_from_points`` function to better match analogous function
+  in astropy. [#349]
+
+- ``Model._BoundingBox`` was renamed to ``Model.ModelBoundingBox``. [#376, #377]
+
+0.16.1 (2020-12-20)
+-------------------
+Bug Fixes
+^^^^^^^^^
+- Fix a regression with ``pixel_to_world`` for output frames with one axis. [#342]
+
+0.16.0 (2020-12-18)
+-------------------
+New Features
+^^^^^^^^^^^^
+
+- Added an option to `to_fits_sip()` to be able to specify the reference
+  point (``crpix``) of the FITS WCS. [#337]
+
+- Added support for providing custom range of degrees in ``to_fits_sip``. [#339]
+
+Bug Fixes
+^^^^^^^^^
+
+- ``bounding_box`` now works with tuple of ``Quantities``. [#331]
+
+- Fix a formula for estimating ``crpix`` in ``to_fits_sip()`` so that ``crpix``
+  is near the center of the bounding box. [#337]
+
+- Allow sub-pixel sampling of the WCS model when computing SIP approximation in
+  ``to_fits_sip()``. [#338]
+
+- Fixed a bug in ``to_fits_sip`` due to which ``inv_degree`` was ignored. [#339]
+
 
 0.15.0 (2020-11-13)
 -------------------
@@ -186,7 +317,7 @@ Bug Fixes
 - Replace ``domain`` with ``bounding_box``. [#74]
 
 - Added a ``LabelMapper`` model where ``mapper`` is an instance of
-  `~astropy.modeling.core.Model`. [#78]
+  `~astropy.modeling.Model`. [#78]
 
 - Evaluating a WCS with bounding box was moved to ``astropy.modeling``. [#86]
 

@@ -170,11 +170,17 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         The shape should be given in ``(row, column)`` order (the convention
         for arrays in Python).
         """
-        return self._array_shape
+        if self._pixel_shape is None:
+            return None
+        else:
+            return self._pixel_shape[::-1]
 
     @array_shape.setter
     def array_shape(self, value):
-        self._array_shape = value
+        if value is None:
+            self._pixel_shape = None
+        else:
+            self._pixel_shape = value[::-1]
 
     @property
     def pixel_bounds(self):
@@ -296,10 +302,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert pixel values to world coordinates.
         """
         pixels = self._sanitize_pixel_inputs(*pixel_arrays)
-        result = self(*pixels, with_units=True)
-        if self.output_frame.naxes == 1:
-            return result[0]
-        return result
+        return self(*pixels, with_units=True)
 
     def array_index_to_world(self, *index_arrays):
         """
@@ -315,10 +318,15 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert world coordinates to pixel values.
         """
         result = self.invert(*world_objects, with_units=True)
-        if not utils.isnumerical(result[0]):
-            result = [i.value for i in result]
-        if self.input_frame.naxes == 1:
-            return result[0]
+
+        if self.input_frame.naxes > 1:
+            first_res = result[0]
+            if not utils.isnumerical(first_res):
+                result = [i.value for i in result]
+        else:
+            if not utils.isnumerical(result):
+                result = result.value
+
         return result
 
     def world_to_array_index(self, *world_objects):

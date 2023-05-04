@@ -16,6 +16,7 @@ htmlcov
 .coverage
 MANIFEST
 .pytest_cache
+.tox
 
 # Sphinx
 docs/api

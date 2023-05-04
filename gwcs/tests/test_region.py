@@ -40,7 +40,7 @@ def test_LabelMapperArray_from_vertices_string():
 
 # These tests below check the scanning algorithm for two shapes
 def polygon1(shape=(9, 9)):
-    ar = np.zeros(shape)
+    ar = np.zeros(shape, dtype=int)
     ar[1, 2] = 1
     ar[2][2:4] = 1
     ar[3][1:4] = 1
@@ -48,12 +48,12 @@ def polygon1(shape=(9, 9)):
     ar[5][1:4] = 1
     ar[6][2:7] = 1
     ar[7][3:6] = 1
-    # ar[8][3:4] =1 ##need to include this in the future if padding top and left
+    ar[8][3:4] = 1
     return ar
 
 
 def two_polygons():
-    ar = np.zeros((301, 301))
+    ar = np.zeros((301, 301), dtype=int)
     ar[1, 2] = 1
     ar[2][2:4] = 1
     ar[3][1:4] = 1
@@ -61,14 +61,15 @@ def two_polygons():
     ar[5][1:4] = 1
     ar[6][2:7] = 1
     ar[7][3:6] = 1
-    ar[:30, 10:31] = 2
+    ar[8][3:4] = 1
+    ar[:31, 10:31] = 2
     return ar
 
 
 def test_polygon1():
     vert = [(2, 1), (3, 5), (6, 6), (3, 8), (0, 4), (2, 1)]
     pol = region.Polygon('1', vert)
-    mask = np.zeros((9, 9), dtype=np.int)
+    mask = np.zeros((9, 9), dtype=int)
     mask = pol.scan(mask)
     pol1 = polygon1()
     assert_equal(mask, pol1)
@@ -77,7 +78,7 @@ def test_polygon1():
 def test_polygon_zero_width_bbox():
     vert = [(1, 1), (1, 3), (1, 6), (1, 1)]
     pol = region.Polygon('1', vert)
-    mask = np.zeros((9, 9), dtype=np.int)
+    mask = np.zeros((9, 9), dtype=int)
     mask = pol.scan(mask)
     assert not np.any(mask)
 

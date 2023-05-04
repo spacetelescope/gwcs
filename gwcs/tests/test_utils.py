@@ -25,7 +25,6 @@ def test_wrong_projcode2():
         gwutils.create_projection_transform("TAM")
 
 
-@pytest.mark.remote_data
 def test_fits_transform():
     hdr = fits.Header.fromfile(get_pkg_data_filename('data/simple_wcs2.hdr'))
     gw1 = gwutils.make_fitswcs_transform(hdr)
@@ -36,13 +35,15 @@ def test_fits_transform():
 def test_lon_pole():
     tan = models.Pix2Sky_TAN()
     car = models.Pix2Sky_CAR()
+    azp = models.Pix2Sky_AZP(mu=-1.35, gamma=25.8458)
     sky_positive_lat = coord.SkyCoord(3 * u.deg, 1 * u.deg)
     sky_negative_lat = coord.SkyCoord(3 * u.deg, -1 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, tan), 180 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, tan), 180 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_positive_lat, car), 0 * u.deg)
     assert_quantity_allclose(gwutils._compute_lon_pole(sky_negative_lat, car), 180 * u.deg)
-    assert_quantity_allclose(gwutils._compute_lon_pole((0, 34 * u.rad), tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole((0, 0.34 * u.rad), tan), 180 * u.deg)
+    assert_quantity_allclose(gwutils._compute_lon_pole((1 * u.rad, 0.34 * u.rad), azp), 180 * u.deg)
     assert_allclose(gwutils._compute_lon_pole((1, -34), tan), 180)
 
 
@@ -90,7 +91,7 @@ def test_isnumerical():
 
     assert not gwutils.isnumerical(2 * u.m)
 
-    assert gwutils.isnumerical(np.float(0))
+    assert gwutils.isnumerical(float(0))
     assert gwutils.isnumerical(np.array(0))
 
     assert not gwutils.isnumerical(np.array(['s200', '234']))
