@@ -14,27 +14,15 @@ on:
 
 jobs:
   check:
-    name: ${{ matrix.toxenv }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        toxenv: [ check-style, check-security, check-build ]
-        python-version: [ '3.11' ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
-      - run: pip install "tox>=4.0"
-      - run: tox -e ${{ matrix.toxenv }}
+    name: 
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    with:
+      envs: |
+        - linux: check-style
+        - linux: check-security
+        - linux: check-build
   test:
-    uses: 'OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1'
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
     with:
       envs: |
         - linux: check-style
@@ -42,38 +30,31 @@ jobs:
         - linux: check-build
         - linux: test
           python-version: 3.9
-        - macos: test
+        - linux: test-numpy120
+          python-version: 3.9
+        - linux: test-numpy121
+          python-version: 3.9
+        - linux: test-numpy122
           python-version: 3.9
         - linux: test
           python-version: 3.10
-        - macos: test
+        - linux: test-numpy121
+          python-version: 3.10
+        - linux: test-numpy122
           python-version: 3.10
         - linux: test
           python-version: 3.11
+          pytest-results-summary: true
         - macos: test
           python-version: 3.11
+          pytest-results-summary: true
         - linux: test-dev
         - linux: test-pyargs
           python-version: 3.11
         - linux: test-cov
           python-version: 3.11
           coverage: codecov
-        - linux: test-numpy122
-          python-version: 3.10
-        - linux: test-numpy121
-          python-version: 3.10
-        - linux: test-numpy122
-          python-version: 3.9
-        - linux: test-numpy121
-          python-version: 3.9
-        - linux: test-numpy120
-          python-version: 3.9
-        - linux: test-numpy122
-          python-version: 3.8
-        - linux: test-numpy121
-          python-version: 3.8
-        - linux: test-numpy120
-          python-version: 3.8
+          pytest-results-summary: true
   downstream:
     name: '${{ matrix.toxenv }} (Python ${{ matrix.python-version }}, ${{ matrix.runs-on }})'
     runs-on: '${{ matrix.runs-on }}'
