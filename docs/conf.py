@@ -29,7 +29,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import tomli
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+    
 from pkg_resources import get_distribution
 
 try:
@@ -69,7 +73,7 @@ asdf_schema_reference_mappings = [
 
 # This does not *have* to match the package name, but typically does
 with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as metadata_file:
-    configuration = tomli.load(metadata_file)
+    configuration = tomllib.load(metadata_file)
     metadata = configuration['project']
 project = metadata['name']
 author = metadata["authors"][0]["name"]
