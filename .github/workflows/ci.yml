@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         toxenv: [ test ]
-        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+        python-version: [ '3.9', '3.10', '3.11' ]
         os: [ ubuntu-latest, macos-latest ]
         include:
           - toxenv: test-dev
@@ -67,15 +67,6 @@ jobs:
           - toxenv: test-numpy120
             os: ubuntu-latest
             python-version: '3.9'
-          - toxenv: test-numpy122
-            os: ubuntu-latest
-            python-version: '3.8'
-          - toxenv: test-numpy121
-            os: ubuntu-latest
-            python-version: '3.8'
-          - toxenv: test-numpy120
-            os: ubuntu-latest
-            python-version: '3.8'
           - toxenv: test-jwst-xdist
             os: ubuntu-latest
             python-version: '3.x'

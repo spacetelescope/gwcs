@@ -1,7 +1,7 @@
 [project]
 name = "gwcs"
 description = "Generalized World Coordinate System"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 authors = [
     { name = "gwcs developers", email = "help@stsci.edu" },
 ]
@@ -9,7 +9,7 @@ dependencies = [
     "asdf >= 2.8.1",
     "astropy >= 5.1",
     "numpy",
-    "scipy < 1.10.0",
+    "scipy",
     "asdf_wcs_schemas",
     "asdf-astropy >= 0.2.0",
 ]
