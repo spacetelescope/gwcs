@@ -32,6 +32,7 @@ detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
 time = cf.TemporalFrame(name='time', unit=[u.s, ], axes_order=(3, ), axes_names=('time', ), reference_frame=Time("2020-01-01"))
+stokes = cf.StokesFrame(axes_order=(2,))
 
 pipe = [wcs.Step(detector, m1),
         wcs.Step(focal, m2),
@@ -217,6 +218,15 @@ def test_return_coordinates():
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
     transform = m1 & poly
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+    numerical_result = transform(x, y, y)
+    num_plus_output = w(x, y, y, with_units=True)
+    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
+
+    # CompositeFrame - [celestial, Stokes]
+    output_frame = cf.CompositeFrame(frames=[icrs, stokes])
+    transform = m1 & models.Identity(1)
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
     numerical_result = transform(x, y, y)
     num_plus_output = w(x, y, y, with_units=True)
