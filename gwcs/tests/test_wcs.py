@@ -1289,7 +1289,6 @@ def test_spatial_spectral_stokes():
     crpix = aw.wcs.crpix
     crval = aw.wcs.crval
     cdelt = aw.wcs.cdelt
-    cunit = aw.wcs.cunit
 
     fk5 = cf.CelestialFrame(reference_frame=coord.FK5(), name='FK5')
     detector = cf.Frame2D(name='detector', axes_order=(0, 1))
@@ -1310,11 +1309,10 @@ def test_spatial_spectral_stokes():
     x1 = np.array([0, 0, 0, 0, 0])
     x2 = np.array([0, 1, 2, 3, 4])
 
-    gw_sky, gw_spec, gw_stokes = gw.pixel_to_world(x1+1, x1+1, x1, x2)
+    gw_sky, gw_spec, gw_stokes = gw.pixel_to_world(x1+1, x1+1, x1+1, x2+1)
     aw_sky, aw_spec, aw_stokes = aw.pixel_to_world(x1, x1, x1, x2)
 
     assert_allclose(gw_sky.data.lon, aw_sky.data.lon)
     assert_allclose(gw_sky.data.lat, aw_sky.data.lat)
-    # Spectral Coordinate is not fully implemented yet, do not compare
-    #assert_allclose(gw_spec.value, aw_spec.value)
+    assert_allclose(gw_spec.value, aw_spec.value)
     assert_allclose(gw_stokes.value, aw_stokes.value)
