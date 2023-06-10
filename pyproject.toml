@@ -7,7 +7,7 @@ authors = [
 ]
 dependencies = [
     "asdf >= 2.8.1",
-    "astropy >= 5.3,
+    "astropy >= 5.3",
     "numpy",
     "scipy",
     "asdf_wcs_schemas",
