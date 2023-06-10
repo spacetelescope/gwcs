@@ -17,7 +17,7 @@ from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 from astropy.coordinates import StokesCoord
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame', 'TemporalFrame']
+           'CoordinateFrame', 'TemporalFrame', 'StokesFrame']
 
 
 def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
@@ -706,12 +706,14 @@ class CompositeFrame(CoordinateFrame):
 
 class StokesFrame(CoordinateFrame):
     """
-    A coordinate frame for representing stokes polarisation states
+    A coordinate frame for representing Stokes polarisation states.
 
     Parameters
     ----------
     name : str
         Name of this frame.
+    axes_order : tuple
+        A dimension in the data that corresponds to this axis.
     """
 
     def __init__(self, axes_order=(0,), name=None):
