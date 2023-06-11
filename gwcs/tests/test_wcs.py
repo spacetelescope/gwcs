@@ -32,6 +32,7 @@ detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
 time = cf.TemporalFrame(name='time', unit=[u.s, ], axes_order=(3, ), axes_names=('time', ), reference_frame=Time("2020-01-01"))
+stokes = cf.StokesFrame(axes_order=(2,))
 
 pipe = [wcs.Step(detector, m1),
         wcs.Step(focal, m2),
@@ -217,6 +218,15 @@ def test_return_coordinates():
     # CompositeFrame - [celestial, spectral]
     output_frame = cf.CompositeFrame(frames=[icrs, spec])
     transform = m1 & poly
+    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
+    numerical_result = transform(x, y, y)
+    num_plus_output = w(x, y, y, with_units=True)
+    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
+    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
+
+    # CompositeFrame - [celestial, Stokes]
+    output_frame = cf.CompositeFrame(frames=[icrs, stokes])
+    transform = m1 & models.Identity(1)
     w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
     numerical_result = transform(x, y, y)
     num_plus_output = w(x, y, y, with_units=True)
@@ -1270,3 +1280,39 @@ def test_sip_roundtrip():
                         atol=0.0,
                         rtol=1.0e-8 * 10**(i + j)
                     )
+
+
+def test_spatial_spectral_stokes():
+    """ Converts a FITS WCS to GWCS and compares results."""
+    hdr = fits.Header.fromfile(get_pkg_data_filename("data/stokes.txt"))
+    aw = astwcs.WCS(hdr)
+    crpix = aw.wcs.crpix
+    crval = aw.wcs.crval
+    cdelt = aw.wcs.cdelt
+
+    fk5 = cf.CelestialFrame(reference_frame=coord.FK5(), name='FK5')
+    detector = cf.Frame2D(name='detector', axes_order=(0, 1))
+    spec = cf.SpectralFrame(name='FREQ', unit=[u.Hz, ], axes_order=(2, ), axes_names=('freq', ))
+    stokes = cf.StokesFrame(axes_order=(3,))
+    world = cf.CompositeFrame(frames=[fk5, spec, stokes])
+
+    det2sky = (models.Shift(-crpix[0]) & models.Shift(-crpix[1]) |
+               models.Scale(cdelt[0]) & models.Scale(cdelt[1]) |
+               models.Pix2Sky_SIN() | models.RotateNative2Celestial(crval[0], crval[1], 180))
+    det2freq = models.Shift(-crpix[2]) | models.Scale(cdelt[2]) | models.Shift(crval[2])
+    det2stokes = models.Shift(-crpix[3]) | models.Scale(cdelt[3]) | models.Shift(crval[3])
+
+    gw = wcs.WCS([wcs.Step(detector, det2sky & det2freq & det2stokes),
+                  wcs.Step(world, None)]
+                )
+
+    x1 = np.array([0, 0, 0, 0, 0])
+    x2 = np.array([0, 1, 2, 3, 4])
+
+    gw_sky, gw_spec, gw_stokes = gw.pixel_to_world(x1+1, x1+1, x1+1, x2+1)
+    aw_sky, aw_spec, aw_stokes = aw.pixel_to_world(x1, x1, x1, x2)
+
+    assert_allclose(gw_sky.data.lon, aw_sky.data.lon)
+    assert_allclose(gw_sky.data.lat, aw_sky.data.lat)
+    assert_allclose(gw_spec.value, aw_spec.value)
+    assert_allclose(gw_stokes.value, aw_stokes.value)

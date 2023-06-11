@@ -193,7 +193,7 @@ def gwcs_simple_imaging_units():
 
 @pytest.fixture
 def gwcs_stokes_lookup():
-    transform = models.Tabular1D([0, 1, 2, 3] * u.pix, [0, 1, 2, 3] * u.one,
+    transform = models.Tabular1D([0, 1, 2, 3] * u.pix, [1, 2, 3, 4] * u.one,
                                  method="nearest", fill_value=np.nan, bounds_error=False)
     frame = cf.StokesFrame()
 
