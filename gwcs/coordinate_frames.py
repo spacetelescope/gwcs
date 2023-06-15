@@ -1,7 +1,107 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-Defines coordinate frames and ties them to data axes.
+This module defines coordinate frames for describing the inputs and/or outputs of a transform.
+
+In the following example, we have a two stage transform, with an input frame, an
+output frame and an intermediate frame.
+
+.. code-block::
+
+    ┌───────────────┐
+    │               │
+    │     Input     │
+    │     Frame     │
+    │               │
+    └───────┬───────┘
+            │
+      ┌─────▼─────┐
+      │ Transform │
+      └─────┬─────┘
+            │
+    ┌───────▼───────┐
+    │               │
+    │  Intermediate │
+    │     Frame     │
+    │               │
+    └───────┬───────┘
+            │
+      ┌─────▼─────┐
+      │ Transform │
+      └─────┬─────┘
+            │
+    ┌───────▼───────┐
+    │               │
+    │    Output     │
+    │     Frame     │
+    │               │
+    └───────────────┘
+
+
+Each frame instance is both metadata for the inputs/outputs of a transform and
+also a converter between those inputs/outputs and richer coordinate
+representations of those inputs/ouputs.
+
+For example, an output frame of type `~astropy.coordinates.SpectralCoord`
+provides metadata to the `.WCS` object such as the ``axes_type`` being
+``"SPECTRAL"`` and the unit of the output etc.  The output frame also provides a
+converter of the numeric output of the transform to a
+`~astropy.coordinates.SpectralCoord` object, by combining this metadata with the
+numerical values.
+
+``axes_order`` and conversion between objects and arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One of the key concepts regarding coordinate frames is the ``axes_order`` argument.
+This argument is used to map from the components of the frame to the inputs/outputs of the transform.
+To illustrate this consider this situation where you have a forward transform
+which outputs three coordinates ``[lat, lambda, lon]``.  These would be
+represented as a `.SpectralFrame` and a `.CelestialFrame`, however, the axes of
+a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two frames as
+
+.. code-block:: python
+
+  [SpectralCoord(axes_order=(1,)), CelestialCoord(axes_order=(2, 0))]
+
+we would map the outputs of this transform into the correct positions in the
+frames. As shown below, this is also used when constructing the inputs to the inverse transform.
+
+.. code-block::
+
+                   lat, lambda, lon
+                   │      │     │
+                   └──────┼─────┼────────┐
+              ┌───────────┘     └──┐     │
+              │                    │     │
+    ┌─────────▼────────┐    ┌──────▼─────▼─────┐
+    │                  │    │                  │
+    │  SpectralFrame   │    │  CelestialFrame  │
+    │                  │    │                  │
+    │       (1,)       │    │      (2, 0)      │
+    │                  │    │                  │
+    └─────────┬────────┘    └──────────┬────┬──┘
+              │                        │    │
+              │                        │    │
+              ▼                        ▼    ▼
+   SpectralCoord(lambda)    SkyCoord((lon, lat))
+              │                        │    │
+              └─────┐     ┌────────────┘    │
+                    │     │    ┌────────────┘
+                    ▼     ▼    ▼
+                [lambda, lon, lat]
+                    │     │    │
+                    │     │    │
+             ┌──────▼─────▼────▼────┐
+             │                      │
+             │  Sort by axes_order  │
+             │                      │
+             └────┬──────┬─────┬────┘
+                  │      │     │
+                  ▼      ▼     ▼
+                 lat, lambda, lon
+
 """
+
+import abc
 from collections import defaultdict
 import logging
 import numpy as np
@@ -10,14 +110,15 @@ from astropy.utils.misc import isiterable
 from astropy import time
 from astropy import units as u
 from astropy import utils as astutil
+from astropy.utils.decorators import deprecated
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 from astropy.coordinates import StokesCoord
 
-__all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame', 'TemporalFrame', 'StokesFrame']
+__all__ = ['BaseCoordinateFrame', 'Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
+           'CoordinateFrame', 'TemporalFrame', 'StokesFrame', 'PixelFrame']
 
 
 def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
@@ -80,7 +181,137 @@ def get_ctype_from_ucd(ucd):
     return UCD1_TO_CTYPE.get(ucd, "")
 
 
-class CoordinateFrame:
+
+class BaseCoordinateFrame(abc.ABC):
+    """
+    API Definition for a Coordinate frame
+    """
+    @property
+    @abc.abstractmethod
+    def naxes(self) -> int:
+        """
+        The number of axes described by this frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """
+        The name of the coordinate frame.
+        """
+
+    # TODO: Why is this not `units`?
+    @property
+    @abc.abstractmethod
+    def unit(self) -> tuple[u.Unit, ...]:
+        """
+        The units of the axes in this frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_names(self) -> tuple[str, ...]:
+        """
+        Names describing the axes of the frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_order(self) -> tuple[int, ...]:
+        """
+        The position of the axes in the frame in the transform.
+        """
+
+    @property
+    @abc.abstractmethod
+    def reference_frame(self):
+        """
+        The reference frame of the coordinates described by this frame.
+
+        This is usually an Astropy object such as ``SkyCoord`` or ``Time``.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_type(self):
+        """
+        An upcase string describing the type of the axis.
+
+        Known values are ``"SPATIAL", "TEMPORAL", "STOKES", "SPECTRAL", "PIXEL"``.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axis_physical_types(self):
+        """
+        The UCD 1+ physical types for the axes, in frame order.
+        """
+
+    @property
+    @abc.abstractmethod
+    def _world_axis_object_classes(self):
+        """
+        The APE 14 object classes for this frame.
+
+        See Also
+        --------
+        `astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_classes`
+        """
+
+    @property
+    @abc.abstractmethod
+    def _world_axis_object_components(self):
+        """
+        The APE 14 object components for this frame.
+
+        See Also
+        --------
+        `astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components`
+        """
+
+    # TODO: What order are args in here?
+    # Are they in transform order so we should use `axes_order` to reorder them?
+    @abc.abstractmethod
+    def coordinates(self, *args) -> object:
+        """
+        Construct a rich coordinate object from the output of a transform.
+
+        The object returned by this method must match the structures returned by
+        ``_world_axis_object_classes`` and ``_world_axis_object_components``.
+
+        Parameters
+        ----------
+        args : `~numbers.Number` or .Quantity`
+            The numberical objects returned by a transform (or user input).
+
+        Returns
+        ```````
+        coord : `object`
+            A single "rich" coordinate object such as `~astropy.coordinates.SkyCoord`.
+        """
+
+    # TODO: What are inputs, shouldn't this only be one single rich coordinate
+    # object? It seems the current implementation also handles not-that? i.e.
+    # CelestialCoord also accepts two quantity objects?
+    # TODO: Again what are the order of the return values here?
+    @abc.abstractmethod
+    def coordinate_to_quantity(self, *coords) -> tuple[u.Quantity, ...]:
+        """
+        Construct `~astropy.units.Quantity` objects from the rich coordinate objects.
+
+        Parameters
+        ----------
+        coord : `object`
+            The rich coordinate object to convert.
+
+        Returns
+        -------
+        args: iterable of `~astropy.units.Quantity` objects.
+            The numerical values to pass to the transform.
+        """
+
+
+class CoordinateFrame(BaseCoordinateFrame):
     """
     Base class for Coordinate Frames.
 
@@ -225,6 +456,7 @@ class CoordinateFrame:
         """ Reference frame, used to convert to world coordinate objects. """
         return self._reference_frame
 
+    # TODO: This seems to be spectral specific, should it be moved to SpectralFrame?
     @property
     def reference_position(self):
         """ Reference Position. """
