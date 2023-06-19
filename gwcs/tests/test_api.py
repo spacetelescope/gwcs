@@ -106,7 +106,7 @@ def test_world_axis_units(wcs_ndim_types_units):
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
 def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
-    assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y, with_units=False))
+    assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y))
 
 
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
@@ -116,7 +116,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     call_pixel = x*u.pix, y*u.pix
     api_pixel = x, y
 
-    call_world = wcsobj(*call_pixel, with_units=False)
+    call_world = wcsobj(*call_pixel)
     api_world = wcsobj.pixel_to_world_values(*api_pixel)
 
     # Check that call returns quantities and api dosen't
@@ -126,7 +126,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
 
-    new_call_pixel = wcsobj.invert(*call_world, with_units=False)
+    new_call_pixel = wcsobj.invert(*call_world)
     [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel)]
 
     new_api_pixel = wcsobj.world_to_pixel_values(*api_world)
@@ -140,7 +140,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     call_pixel = x * u.pix
     api_pixel = x
 
-    call_world = wcsobj(call_pixel, with_units=False)
+    call_world = wcsobj(call_pixel)
     api_world = wcsobj.pixel_to_world_values(api_pixel)
 
     # Check that call returns quantities and api dosen't
@@ -150,7 +150,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
 
-    new_call_pixel = wcsobj.invert(call_world, with_units=False)
+    new_call_pixel = wcsobj.invert(call_world)
     assert_allclose(new_call_pixel, call_pixel)
 
     new_api_pixel = wcsobj.world_to_pixel_values(api_world)
@@ -160,7 +160,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
 def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
-    assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x, with_units=False))
+    assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x))
 
 
 def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
@@ -273,8 +273,9 @@ def test_high_level_wrapper(wcsobj, request):
     if wcsobj.forward_transform.uses_quantity:
         pixel_input *= u.pix
 
+    # The wrapper and the raw gwcs class can take different paths
     wc1 = hlvl.pixel_to_world(*pixel_input)
-    wc2 = wcsobj(*pixel_input, with_units=True)
+    wc2 = wcsobj.pixel_to_world(*pixel_input)
 
     assert type(wc1) is type(wc2)
 
@@ -368,24 +369,20 @@ def test_low_level_wcs(wcsobj):
 
 @wcs_objs
 def test_pixel_to_world(wcsobj):
-    comp = wcsobj(x, y, with_units=True)
-    comp = wcsobj.output_frame.coordinates(comp)
+    values = wcsobj(x, y)
     result = wcsobj.pixel_to_world(x, y)
-    assert isinstance(comp, coord.SkyCoord)
     assert isinstance(result, coord.SkyCoord)
-    assert_allclose(comp.data.lon, result.data.lon)
-    assert_allclose(comp.data.lat, result.data.lat)
+    assert_allclose(values[0] * u.deg, result.data.lon)
+    assert_allclose(values[1] * u.deg, result.data.lat)
 
 
 @wcs_objs
 def test_array_index_to_world(wcsobj):
-    comp = wcsobj(x, y, with_units=True)
-    comp = wcsobj.output_frame.coordinates(comp)
+    values = wcsobj(x, y)
     result = wcsobj.array_index_to_world(y, x)
-    assert isinstance(comp, coord.SkyCoord)
     assert isinstance(result, coord.SkyCoord)
-    assert_allclose(comp.data.lon, result.data.lon)
-    assert_allclose(comp.data.lat, result.data.lat)
+    assert_allclose(values[0] * u.deg, result.data.lon)
+    assert_allclose(values[1] * u.deg, result.data.lat)
 
 
 def test_pixel_to_world_quantity(gwcs_2d_shift_scale, gwcs_2d_shift_scale_quantity):
@@ -466,28 +463,28 @@ def sky_ra_dec(request, gwcs_2d_spatial_shift):
 def test_world_to_pixel(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec, with_units=False))
+    assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec))
 
 
 def test_world_to_array_index(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec, with_units=False)[::-1])
+    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec)[::-1])
 
 
 def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_pixel_values(sky), wcsobj.invert(ra, dec, with_units=False))
+    assert_allclose(wcsobj.world_to_pixel_values(ra, dec), wcsobj.invert(ra, dec))
 
 
 def test_world_to_array_index_values(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_array_index_values(sky),
-                    wcsobj.invert(ra, dec, with_units=False)[::-1])
+    assert_allclose(wcsobj.world_to_array_index_values(ra, dec),
+                    wcsobj.invert(ra, dec)[::-1])
 
 
 def test_ndim_str_frames(gwcs_with_frames_strings):
