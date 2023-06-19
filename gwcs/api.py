@@ -5,7 +5,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
 
-from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
+from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 from astropy.modeling import separable
 import astropy.units as u
 
@@ -15,7 +15,7 @@ from . import coordinate_frames as cf
 __all__ = ["GWCSAPIMixin"]
 
 
-class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
+class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     """
     A mix-in class that is intended to be inherited by the
     :class:`~gwcs.wcs.WCS` class and provides the low- and high-level
@@ -78,18 +78,13 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
             if self.output_frame.naxes == 1:
                 result = [result]
 
-            result = tuple(r.to_value(unit) for r, unit in zip(result, frame.unit))
+            result = tuple(r.to_value(unit) if isinstance(r, u.Quantity) else r
+                           for r, unit in zip(result, frame.unit))
 
         # If we only have one output axes, we shouldn't return a tuple.
         if self.output_frame.naxes == 1 and isinstance(result, tuple):
             return result[0]
         return result
-
-    def _add_units_input(self, arrays, transform, frame):
-        if transform.uses_quantity:
-            return tuple(u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit))
-
-        return arrays
 
     def pixel_to_world_values(self, *pixel_arrays):
         """
@@ -104,8 +99,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         order, where for an image, ``x`` is the horizontal coordinate and ``y``
         is the vertical coordinate.
         """
-        pixel_arrays = self._add_units_input(pixel_arrays, self.forward_transform, self.input_frame)
-        result = self(*pixel_arrays, with_units=False)
+        if self.forward_transform.uses_quantity:
+            pixel_arrays = self._add_units_input(pixel_arrays, self.input_frame)
+        result = self._call_forward(*pixel_arrays)
 
         return self._remove_quantity_output(result, self.output_frame)
 
@@ -132,9 +128,10 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
-        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
+        if self.backward_transform.uses_quantity:
+            world_arrays = self._add_units_input(world_arrays, self.output_frame)
 
-        result = self.invert(*world_arrays, with_units=False)
+        result = self._call_backward(*world_arrays)
 
         return self._remove_quantity_output(result, self.input_frame)
 
@@ -268,73 +265,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
     @property
     def world_axis_object_components(self):
         return self.output_frame._world_axis_object_components
-
-    # High level APE 14 API
-
-    @property
-    def low_level_wcs(self):
-        """
-        Returns a reference to the underlying low-level WCS object.
-        """
-        return self
-
-    def _sanitize_pixel_inputs(self, *pixel_arrays):
-        pixels = []
-        if self.forward_transform.uses_quantity:
-            for i, pixel in enumerate(pixel_arrays):
-                if not isinstance(pixel, u.Quantity):
-                    pixel = u.Quantity(value=pixel, unit=self.input_frame.unit[i])
-                pixels.append(pixel)
-        else:
-            for i, pixel in enumerate(pixel_arrays):
-                if isinstance(pixel, u.Quantity):
-                    if pixel.unit != self.input_frame.unit[i]:
-                        raise ValueError('Quantity input does not match the '
-                                         'input_frame unit.')
-                    pixel = pixel.value
-                pixels.append(pixel)
-
-        return pixels
-
-    def pixel_to_world(self, *pixel_arrays):
-        """
-        Convert pixel values to world coordinates.
-        """
-        pixels = self._sanitize_pixel_inputs(*pixel_arrays)
-        return self(*pixels, with_units=True)
-
-    def array_index_to_world(self, *index_arrays):
-        """
-        Convert array indices to world coordinates (represented by Astropy
-        objects).
-        """
-        pixel_arrays = index_arrays[::-1]
-        pixels = self._sanitize_pixel_inputs(*pixel_arrays)
-        return self(*pixels, with_units=True)
-
-    def world_to_pixel(self, *world_objects):
-        """
-        Convert world coordinates to pixel values.
-        """
-        result = self.invert(*world_objects, with_units=True)
-
-        if self.input_frame.naxes > 1:
-            first_res = result[0]
-            if not utils.isnumerical(first_res):
-                result = [i.value for i in result]
-        else:
-            if not utils.isnumerical(result):
-                result = result.value
-
-        return result
-
-    def world_to_array_index(self, *world_objects):
-        """
-        Convert world coordinates (represented by Astropy objects) to array
-        indices.
-        """
-        result = self.invert(*world_objects, with_units=True)[::-1]
-        return tuple([utils._toindex(r) for r in result])
 
     @property
     def pixel_axis_names(self):
