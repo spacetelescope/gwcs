@@ -202,15 +202,9 @@ class WCS(GWCSAPIMixin):
         """
         if not self._pipeline:
             return None
-        try:
-            from_ind = self._get_frame_index(from_frame)
-        except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available "
-                                       "frames".format(from_frame))
-        try:
-            to_ind = self._get_frame_index(to_frame)
-        except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
+
+        from_ind = self._get_frame_index(from_frame)
+        to_ind = self._get_frame_index(to_frame)
         if to_ind < from_ind:
             #transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
             transforms = [step.transform for step in self._pipeline[to_ind: from_ind]]
@@ -299,7 +293,10 @@ class WCS(GWCSAPIMixin):
             frame = frame.name
         #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
-        return frame_names.index(frame)
+        try:
+            return frame_names.index(frame)
+        except ValueError as e:
+            raise CoordinateFrameError(f"Frame {frame} is not in the available frames") from e
 
     def _get_frame_name(self, frame):
         """
@@ -1204,14 +1201,14 @@ class WCS(GWCSAPIMixin):
         output_name, output_frame_obj = self._get_frame_name(output_frame)
         try:
             input_index = self._get_frame_index(input_frame)
-        except ValueError:
+        except CoordinateFrameError:
             input_index = None
             if input_frame_obj is None:
                 raise ValueError(f"New coordinate frame {input_name} must "
                                  "be defined")
         try:
             output_index = self._get_frame_index(output_frame)
-        except ValueError:
+        except CoordinateFrameError:
             output_index = None
             if output_frame_obj is None:
                 raise ValueError(f"New coordinate frame {output_name} must "
