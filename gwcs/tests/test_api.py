@@ -491,12 +491,12 @@ def test_composite_many_base_frame():
     q_frame_2 = cf.CoordinateFrame(name='distance', axes_order=(1,), naxes=1, axes_type="SPATIAL", unit=(u.m,))
     frame = cf.CompositeFrame([q_frame_1, q_frame_2])
 
-    wao_classes = frame._world_axis_object_classes
+    wao_classes = frame.world_axis_object_classes
 
     assert len(wao_classes) == 2
     assert not set(wao_classes.keys()).difference({"SPATIAL", "SPATIAL1"})
 
-    wao_components = frame._world_axis_object_components
+    wao_components = frame.world_axis_object_components
 
     assert len(wao_components) == 2
     assert not {c[0] for c in wao_components}.difference({"SPATIAL", "SPATIAL1"})
