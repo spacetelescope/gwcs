@@ -269,47 +269,6 @@ class BaseCoordinateFrame(abc.ABC):
         `astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components`
         """
 
-    # TODO: What order are args in here?
-    # Are they in transform order so we should use `axes_order` to reorder them?
-    @abc.abstractmethod
-    def coordinates(self, *args) -> object:
-        """
-        Construct a rich coordinate object from the output of a transform.
-
-        The object returned by this method must match the structures returned by
-        ``_world_axis_object_classes`` and ``_world_axis_object_components``.
-
-        Parameters
-        ----------
-        args : `~numbers.Number` or .Quantity`
-            The numberical objects returned by a transform (or user input).
-
-        Returns
-        ```````
-        coord : `object`
-            A single "rich" coordinate object such as `~astropy.coordinates.SkyCoord`.
-        """
-
-    # TODO: What are inputs, shouldn't this only be one single rich coordinate
-    # object? It seems the current implementation also handles not-that? i.e.
-    # CelestialCoord also accepts two quantity objects?
-    # TODO: Again what are the order of the return values here?
-    @abc.abstractmethod
-    def coordinate_to_quantity(self, *coords) -> tuple[u.Quantity, ...]:
-        """
-        Construct `~astropy.units.Quantity` objects from the rich coordinate objects.
-
-        Parameters
-        ----------
-        coord : `object`
-            The rich coordinate object to convert.
-
-        Returns
-        -------
-        args: iterable of `~astropy.units.Quantity` objects.
-            The numerical values to pass to the transform.
-        """
-
 
 class CoordinateFrame(BaseCoordinateFrame):
     """
@@ -467,24 +426,6 @@ class CoordinateFrame(BaseCoordinateFrame):
         """ Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'. """
         return self._axes_type
 
-    def coordinates(self, *args):
-        """ Create world coordinates object"""
-        coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
-        if self.naxes == 1:
-            return coo[0]
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        """
-        Given a rich coordinate object return an astropy quantity object.
-        """
-        # NoOp leaves it to the model to handle
-        # If coords is a 1-tuple of quantity then return the element of the tuple
-        # This aligns the behavior with the other implementations
-        if not hasattr(coords, 'unit') and len(coords) == 1:
-            return coords[0]
-        return coords
-
     @property
     def _default_axis_physical_types(self):
         """
@@ -590,47 +531,6 @@ class CelestialFrame(CoordinateFrame):
         return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self.unit[0])),
                 ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self.unit[1]))]
 
-    def coordinates(self, *args):
-        """
-        Create a SkyCoord object.
-
-        Parameters
-        ----------
-        args : float
-            inputs to wcs.input_frame
-        """
-        if isinstance(args[0], coord.SkyCoord):
-            return args[0].transform_to(self.reference_frame)
-        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
-
-    def coordinate_to_quantity(self, *coords):
-        """ Convert a ``SkyCoord`` object to quantities."""
-        if len(coords) == 2:
-            arg = coords
-        elif len(coords) == 1:
-            arg = coords[0]
-        else:
-            raise ValueError("Unexpected number of coordinates in "
-                             "input to frame {} : "
-                             "expected 2, got  {}".format(self.name, len(coords)))
-
-        if isinstance(arg, coord.SkyCoord):
-            arg = arg.transform_to(self._reference_frame)
-            try:
-                lon = arg.data.lon
-                lat = arg.data.lat
-            except AttributeError:
-                lon = arg.spherical.lon
-                lat = arg.spherical.lat
-
-            return lon, lat
-
-        elif all(isinstance(a, u.Quantity) for a in arg):
-            return tuple(arg)
-
-        else:
-            raise ValueError("Could not convert input {} to lon and lat quantities.".format(arg))
-
 
 class SpectralFrame(CoordinateFrame):
     """
@@ -690,21 +590,6 @@ class SpectralFrame(CoordinateFrame):
     @property
     def _world_axis_object_components(self):
         return [('spectral', 0, lambda sc: sc.to_value(self.unit[0]))]
-
-    def coordinates(self, *args):
-        # using SpectralCoord
-        if isinstance(args[0], coord.SpectralCoord):
-            return args[0].to(self.unit[0])
-        else:
-            if hasattr(args[0], 'unit'):
-                return coord.SpectralCoord(*args).to(self.unit[0])
-            else:
-                return coord.SpectralCoord(*args, self.unit[0])
-
-    def coordinate_to_quantity(self, *coords):
-        if hasattr(coords[0], 'unit'):
-            return coords[0]
-        return coords[0] * self.unit[0]
 
 
 class TemporalFrame(CoordinateFrame):
@@ -767,14 +652,6 @@ class TemporalFrame(CoordinateFrame):
             return (time - self.reference_frame).sec
         return [('temporal', 0, offset_from_time_and_reference)]
 
-    def coordinates(self, *args):
-        if np.isscalar(args):
-            dt = args
-        else:
-            dt = args[0]
-
-        return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
-
     def _convert_to_time(self, dt, *, unit, **kwargs):
         if (not isinstance(dt, time.TimeDelta) and
                 isinstance(dt, time.Time) or
@@ -785,23 +662,6 @@ class TemporalFrame(CoordinateFrame):
             dt = dt * unit
 
         return self.reference_frame + dt
-
-    def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], time.Time):
-            ref_value = self.reference_frame.value
-            if not isinstance(ref_value, np.ndarray):
-                return (coords[0] - self.reference_frame).to(self.unit[0])
-            else:
-                # If we can't convert to a quantity just drop the object out
-                # and hope the transform can cope.
-                return coords[0]
-        # Is already a quantity
-        elif hasattr(coords[0], 'unit'):
-            return coords[0]
-        if isinstance(coords[0], np.ndarray):
-            return coords[0] * self.unit[0]
-        else:
-            raise ValueError("Can not convert {} to Quantity".format(coords[0]))
 
 
 class CompositeFrame(CoordinateFrame):
@@ -851,40 +711,6 @@ class CompositeFrame(CoordinateFrame):
 
     def __repr__(self):
         return repr(self.frames)
-
-    def coordinates(self, *args):
-        coo = []
-        if len(args) == len(self.frames):
-            for frame, arg in zip(self.frames, args):
-                coo.append(frame.coordinates(arg))
-        else:
-            for frame in self.frames:
-                fargs = [args[i] for i in frame.axes_order]
-                coo.append(frame.coordinates(*fargs))
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        if len(coords) == len(self.frames):
-            args = coords
-        elif len(coords) == self.naxes:
-            args = []
-            for _frame in self.frames:
-                if _frame.naxes > 1:
-                    # Collect the arguments for this frame based on axes_order
-                    args.append([coords[i] for i in _frame.axes_order])
-                else:
-                    args.append(coords[_frame.axes_order[0]])
-        else:
-            raise ValueError("Incorrect number of arguments")
-
-        qs = []
-        for _frame, arg in zip(self.frames, args):
-            ret = _frame.coordinate_to_quantity(arg)
-            if isinstance(ret, tuple):
-                qs += list(ret)
-            else:
-                qs.append(ret)
-        return qs
 
     @property
     def _wao_classes_rename_map(self):
@@ -975,19 +801,6 @@ class StokesFrame(CoordinateFrame):
     def _world_axis_object_components(self):
         return [('stokes', 0, 'value')]
 
-    def coordinates(self, *args):
-        if isinstance(args[0], u.Quantity):
-            arg = args[0].value
-        else:
-            arg = args[0]
-
-        return StokesCoord(arg)
-
-    def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], StokesCoord):
-            return coords[0].value << u.one
-        return coords[0]
-
 
 class Frame2D(CoordinateFrame):
     """
@@ -1020,24 +833,3 @@ class Frame2D(CoordinateFrame):
         else:
             ph_type = self.axes_type
         return tuple("custom:{}".format(t) for t in ph_type)
-
-    def coordinates(self, *args):
-        args = [args[i] for i in self.axes_order]
-        coo = tuple([arg * un for arg, un in zip(args, self.unit)])
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        # list or tuple
-        if len(coords) == 1 and astutil.isiterable(coords[0]):
-            coords = list(coords[0])
-        elif len(coords) == 2:
-            coords = list(coords)
-        else:
-            raise ValueError("Unexpected number of coordinates in "
-                             "input to frame {} : "
-                             "expected 2, got  {}".format(self.name, len(coords)))
-
-        for i in range(2):
-            if not hasattr(coords[i], 'unit'):
-                coords[i] = coords[i] * self.unit[i]
-        return tuple(coords)
