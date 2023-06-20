@@ -206,13 +206,11 @@ class WCS(GWCSAPIMixin):
         from_ind = self._get_frame_index(from_frame)
         to_ind = self._get_frame_index(to_frame)
         if to_ind < from_ind:
-            #transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
             transforms = [step.transform for step in self._pipeline[to_ind: from_ind]]
             transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
-            #transforms = np.array(self._pipeline[from_ind: to_ind], dtype="object")[:, 1].copy()
             transforms = [step.transform for step in self._pipeline[from_ind: to_ind]]
         return functools.reduce(lambda x, y: x | y, transforms)
 
@@ -291,7 +289,6 @@ class WCS(GWCSAPIMixin):
         """
         if isinstance(frame, cf.CoordinateFrame):
             frame = frame.name
-        #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
         try:
             return frame_names.index(frame)
