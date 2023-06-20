@@ -256,11 +256,11 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
 
     @property
     def world_axis_object_classes(self):
-        return self.output_frame._world_axis_object_classes
+        return self.output_frame.world_axis_object_classes
 
     @property
     def world_axis_object_components(self):
-        return self.output_frame._world_axis_object_components
+        return self.output_frame.world_axis_object_components
 
     @property
     def pixel_axis_names(self):
