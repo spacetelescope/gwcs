@@ -249,7 +249,7 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         """
         The APE 14 object classes for this frame.
 
@@ -260,7 +260,7 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def _world_axis_object_components(self):
+    def world_axis_object_components(self):
         """
         The APE 14 object components for this frame.
 
@@ -444,14 +444,14 @@ class CoordinateFrame(BaseCoordinateFrame):
         return self._axis_physical_types or self._default_axis_physical_types
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {f"{at}{i}" if i != 0 else at: (u.Quantity,
                      (),
                      {'unit': unit})
                 for i, (at, unit) in enumerate(zip(self._axes_type, self.unit))}
 
     @property
-    def _world_axis_object_components(self):
+    def world_axis_object_components(self):
         return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._axes_type)]
 
 
@@ -519,7 +519,7 @@ class CelestialFrame(CoordinateFrame):
             return tuple("custom:{}".format(t) for t in self.axes_names)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'celestial': (
             coord.SkyCoord,
             (),
@@ -581,7 +581,7 @@ class SpectralFrame(CoordinateFrame):
             return ("custom:{}".format(self.unit[0].physical_type),)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'spectral': (
             coord.SpectralCoord,
             (),
@@ -633,25 +633,6 @@ class TemporalFrame(CoordinateFrame):
     def _default_axis_physical_types(self):
         return ("time",)
 
-    @property
-    def _world_axis_object_classes(self):
-        comp = (
-            time.Time,
-            (),
-            {'unit': self.unit[0], **self._attrs},
-            self._convert_to_time)
-
-        return {'temporal': comp}
-
-    @property
-    def _world_axis_object_components(self):
-        if isinstance(self.reference_frame.value, np.ndarray):
-            return [('temporal', 0, 'value')]
-
-        def offset_from_time_and_reference(time):
-            return (time - self.reference_frame).sec
-        return [('temporal', 0, offset_from_time_and_reference)]
-
     def _convert_to_time(self, dt, *, unit, **kwargs):
         if (not isinstance(dt, time.TimeDelta) and
                 isinstance(dt, time.Time) or
@@ -662,6 +643,25 @@ class TemporalFrame(CoordinateFrame):
             dt = dt * unit
 
         return self.reference_frame + dt
+
+    @property
+    def world_axis_object_classes(self):
+        comp = (
+            time.Time,
+            (),
+            {'unit': self.unit[0], **self._attrs},
+            self._convert_to_time)
+
+        return {'temporal': comp}
+
+    @property
+    def world_axis_object_components(self):
+        if isinstance(self.reference_frame.value, np.ndarray):
+            return [('temporal', 0, 'value')]
+
+        def offset_from_time_and_reference(time):
+            return (time - self.reference_frame).sec
+        return [('temporal', 0, offset_from_time_and_reference)]
 
 
 class CompositeFrame(CoordinateFrame):
@@ -699,10 +699,10 @@ class CompositeFrame(CoordinateFrame):
                              "axes_order should contain unique numbers, "
                              "got {}.".format(axes_order))
 
-        super(CompositeFrame, self).__init__(naxes, axes_type=axes_type,
-                                             axes_order=axes_order,
-                                             unit=unit, axes_names=axes_names,
-                                             name=name)
+        super().__init__(naxes, axes_type=axes_type,
+                         axes_order=axes_order,
+                         unit=unit, axes_names=axes_names,
+                         name=name)
         self._axis_physical_types = tuple(ph_type)
 
     @property
@@ -719,7 +719,7 @@ class CompositeFrame(CoordinateFrame):
         for frame in self.frames:
             # ensure the frame is in the mapper
             mapper[frame]
-            for key in frame._world_axis_object_classes.keys():
+            for key in frame.world_axis_object_classes.keys():
                 if key in seen_names:
                     new_key = f"{key}{seen_names.count(key)}"
                     mapper[frame][key] = new_key
@@ -731,7 +731,7 @@ class CompositeFrame(CoordinateFrame):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
             renamed_components = []
-            for comp in frame._world_axis_object_components:
+            for comp in frame.world_axis_object_components:
                 comp = list(comp)
                 rename = mapper[frame].get(comp[0])
                 if rename:
@@ -743,14 +743,14 @@ class CompositeFrame(CoordinateFrame):
     def _wao_renamed_classes_iter(self):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
-            for key, value in frame._world_axis_object_classes.items():
+            for key, value in frame.world_axis_object_classes.items():
                 rename = mapper[frame].get(key)
                 if rename:
                     key = rename
                 yield key, value
 
     @property
-    def _world_axis_object_components(self):
+    def world_axis_object_components(self):
         """
         We need to generate the components respecting the axes_order.
         """
@@ -764,7 +764,7 @@ class CompositeFrame(CoordinateFrame):
         return out
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return dict(self._wao_renamed_classes_iter)
 
 
@@ -790,7 +790,7 @@ class StokesFrame(CoordinateFrame):
         return ("phys.polarization.stokes",)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'stokes': (
             StokesCoord,
             (),
@@ -798,7 +798,7 @@ class StokesFrame(CoordinateFrame):
         )}
 
     @property
-    def _world_axis_object_components(self):
+    def world_axis_object_components(self):
         return [('stokes', 0, 'value')]
 
 
