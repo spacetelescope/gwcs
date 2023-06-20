@@ -500,7 +500,9 @@ class WCS(GWCSAPIMixin):
         else:
             return result
 
-    def numerical_inverse(self, *args, **kwargs):
+    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
+                          detect_divergence=True, quiet=True, with_bounding_box=True,
+                          fill_value=np.nan, with_units=False, **kwargs):
         """
         Invert coordinates from output frame to input frame using numerical
         inverse.
@@ -737,15 +739,6 @@ class WCS(GWCSAPIMixin):
          [2.76552923e-05 1.14789013e-05]]
 
         """
-        tolerance = kwargs.get('tolerance', 1e-5)
-        maxiter = kwargs.get('maxiter', 50)
-        adaptive = kwargs.get('adaptive', True)
-        detect_divergence = kwargs.get('detect_divergence', True)
-        quiet = kwargs.get('quiet', True)
-        with_bounding_box = kwargs.get('with_bounding_box', True)
-        fill_value = kwargs.get('fill_value', np.nan)
-        with_units = kwargs.pop('with_units', False)
-
         if not utils.isnumerical(args[0]):
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
