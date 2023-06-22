@@ -12,8 +12,6 @@ from astropy import wcs as astwcs
 from astropy.wcs import wcsapi
 from astropy.time import Time
 
-from gwcs.wcs import new_bbox
-
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from .. import coordinate_frames as cf
@@ -287,10 +285,7 @@ def test_bounding_box():
     pipeline = [('detector', trans2), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
-    if new_bbox:
-        assert w.bounding_box == w.forward_transform.bounding_box
-    else:
-        assert w.bounding_box == w.forward_transform.bounding_box[::-1]
+    assert w.bounding_box == w.forward_transform.bounding_box
 
     pipeline = [("detector", models.Shift(2)), ("sky", None)]
     w = wcs.WCS(pipeline)
@@ -317,29 +312,24 @@ def test_compound_bounding_box():
         2: ((-1, 5), (3, 17)),
         3: ((-3, 7), (1, 27)),
     }
-    if new_bbox:
-        # Test attaching a valid bounding box (ignoring input 'x')
-        w.attach_compound_bounding_box(cbb, [('x',)])
-        from astropy.modeling.bounding_box import CompoundBoundingBox
-        cbb = CompoundBoundingBox.validate(trans3, cbb, selector_args=[('x',)], order='F')
-        assert w.bounding_box == cbb
-        assert w.bounding_box is trans3.bounding_box
+    # Test attaching a valid bounding box (ignoring input 'x')
+    w.attach_compound_bounding_box(cbb, [('x',)])
+    from astropy.modeling.bounding_box import CompoundBoundingBox
+    cbb = CompoundBoundingBox.validate(trans3, cbb, selector_args=[('x',)], order='F')
+    assert w.bounding_box == cbb
+    assert w.bounding_box is trans3.bounding_box
 
-        # Test evaluating
-        assert_allclose(w(13, 2, 1), (np.nan, np.nan, np.nan))
-        assert_allclose(w(13, 2, 2), (np.nan, np.nan, np.nan))
-        assert_allclose(w(13, 0, 3), (np.nan, np.nan, np.nan))
-        # No bounding box for selector
-        with pytest.raises(RuntimeError):
-            w(13, 13, 4)
+    # Test evaluating
+    assert_allclose(w(13, 2, 1), (np.nan, np.nan, np.nan))
+    assert_allclose(w(13, 2, 2), (np.nan, np.nan, np.nan))
+    assert_allclose(w(13, 0, 3), (np.nan, np.nan, np.nan))
+    # No bounding box for selector
+    with pytest.raises(RuntimeError):
+        w(13, 13, 4)
 
-        # Test attaching a invalid bounding box (not ignoring input 'x')
-        with pytest.raises(ValueError):
-            w.attach_compound_bounding_box(cbb, [('x', False)])
-    else:
-        with pytest.raises(NotImplementedError) as err:
-            w.attach_compound_bounding_box(cbb, [('x',)])
-        assert str(err.value) == 'Compound bounding box is not supported for your version of astropy'
+    # Test attaching a invalid bounding box (not ignoring input 'x')
+    with pytest.raises(ValueError):
+        w.attach_compound_bounding_box(cbb, [('x', False)])
 
     # Test that bounding_box with quantities can be assigned and evaluates
     trans = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
@@ -349,19 +339,15 @@ def test_compound_bounding_box():
         1 * u.pix: (1 * u.pix, 5 * u.pix),
         2 * u.pix: (2 * u.pix, 6 * u.pix)
     }
-    if new_bbox:
-        w.attach_compound_bounding_box(cbb, [('x1',)])
+    w.attach_compound_bounding_box(cbb, [('x1',)])
 
-        from astropy.modeling.bounding_box import CompoundBoundingBox
-        cbb = CompoundBoundingBox.validate(trans, cbb, selector_args=[('x1',)], order='F')
-        assert w.bounding_box == cbb
-        assert w.bounding_box is trans.bounding_box
+    from astropy.modeling.bounding_box import CompoundBoundingBox
+    cbb = CompoundBoundingBox.validate(trans, cbb, selector_args=[('x1',)], order='F')
+    assert w.bounding_box == cbb
+    assert w.bounding_box is trans.bounding_box
 
-        assert_allclose(w(-1*u.pix, 1*u.pix), (np.nan, np.nan))
-        assert_allclose(w(7*u.pix, 2*u.pix), (np.nan, np.nan))
-    else:
-        with pytest.raises(NotImplementedError) as err:
-            w.attach_compound_bounding_box(cbb, [('x1',)])
+    assert_allclose(w(-1*u.pix, 1*u.pix), (np.nan, np.nan))
+    assert_allclose(w(7*u.pix, 2*u.pix), (np.nan, np.nan))
 
 
 def test_grid_from_bounding_box():
@@ -940,10 +926,7 @@ def test_to_fits_1D_round_trip(gwcs_1d_spectral):
 
     # test points:
     np.random.seed(1)
-    if new_bbox:
-        (xmin, xmax) = w.bounding_box.bounding_box()
-    else:
-        (xmin, xmax) = w.bounding_box
+    (xmin, xmax) = w.bounding_box.bounding_box()
     x = xmin + (xmax - xmin) * np.random.random(100)
 
     # test forward transformation:
