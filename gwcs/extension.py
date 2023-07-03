@@ -1,4 +1,5 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Licensed under a 4-clause BSD style license - see LICENSE.rst
+from astropy.utils import minversion
 from asdf.extension import ManifestExtension
 from .converters.wcs import (
     CelestialFrameConverter, CompositeFrameConverter, FrameConverter,
@@ -42,6 +43,9 @@ WCS_MODEL_CONVERTERS = [
 WCS_MANIFEST_URIS = [
     "asdf://asdf-format.org/astronomy/gwcs/manifests/gwcs-1.0.0",
 ]
+
+if minversion("asdf_wcs_schemas", "0.1.2.dev"):
+    WCS_MANIFEST_URIS.append("asdf://asdf-format.org/astronomy/gwcs/manifests/gwcs-1.1.0")
 
 
 TRANSFORM_EXTENSIONS = [
