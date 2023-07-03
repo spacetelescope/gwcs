@@ -10,6 +10,7 @@ from astropy import coordinates as coord
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.modeling import models as m
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
+from astropy.coordinates import StokesCoord
 
 from .. import WCS
 from .. import coordinate_frames as cf
@@ -288,13 +289,10 @@ def test_coordinate_to_quantity_composite(inp):
 def test_stokes_frame():
     sf = cf.StokesFrame()
 
-    assert sf.coordinates(0) == 'I'
-    assert sf.coordinates(0 * u.pix) == 'I'
-    assert sf.coordinate_to_quantity('I') == 0 * u.one
-    assert sf.coordinate_to_quantity(0) == 0
-
-def test_stokes_profile():
-    assert (cf.StokesProfile.from_index(np.arange(-8, 4) * u.one) == np.array(['YX', 'XY', 'YY,', 'XX', 'LR', 'RL', 'LL', 'RR', 'I', 'Q', 'U', 'V'], dtype="U2")).all()
+    assert sf.coordinates(1) == 'I'
+    assert sf.coordinates(1 * u.pix) == 'I'
+    assert sf.coordinate_to_quantity(StokesCoord('I')) == 1 * u.one
+    assert sf.coordinate_to_quantity(1) == 1
 
 
 @pytest.mark.parametrize('inp', [
