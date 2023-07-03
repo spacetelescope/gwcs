@@ -118,7 +118,7 @@ from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 from astropy.coordinates import StokesCoord
 
 __all__ = ['BaseCoordinateFrame', 'Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame', 'TemporalFrame', 'StokesFrame', 'PixelFrame']
+           'CoordinateFrame', 'TemporalFrame', 'StokesFrame']
 
 
 def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
