@@ -243,6 +243,9 @@ def _compare_frame_output(wc1, wc2):
     elif isinstance(wc1, str):
         assert wc1 == wc2
 
+    elif isinstance(wc1, coord.StokesCoord):
+        assert wc1 == wc2
+
     else:
         assert False, f"Can't Compare {type(wc1)}"
 
@@ -294,10 +297,10 @@ def test_stokes_wrapper(gwcs_stokes_lookup):
 
     out = hlvl.pixel_to_world(pixel_input*u.pix)
 
-    expected = np.array([['I', 'Q', 'U', 'V'],
-                         ['I', 'Q', 'U', 'V'],
-                         ['I', 'Q', 'U', 'V'],
-                         ['I', 'Q', 'U', 'V']], dtype=object)
+    expected = coord.StokesCoord([['I', 'Q', 'U', 'V'],
+                                  ['I', 'Q', 'U', 'V'],
+                                  ['I', 'Q', 'U', 'V'],
+                                  ['I', 'Q', 'U', 'V']])
 
     assert (out == expected).all()
 
@@ -305,18 +308,19 @@ def test_stokes_wrapper(gwcs_stokes_lookup):
 
     out = hlvl.pixel_to_world(pixel_input*u.pix)
 
-    assert np.isnan(out).all()
+    assert np.isnan(out.value).all()
 
     pixel_input = [[-1, 4],
                    [1, 2]]
 
     out = hlvl.pixel_to_world(pixel_input*u.pix)
 
-    assert np.isnan(np.array(out[0], dtype=float)).all()
-    assert (out[1] == np.array(['Q', 'U'], dtype=object)).all()
+    assert np.isnan(out[0].value).all()
+    assert (out[1] == ['Q', 'U']).all()
 
     out = hlvl.pixel_to_world(1*u.pix)
 
+    assert isinstance(out, coord.StokesCoord)
     assert out == 'Q'
 
 

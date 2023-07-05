@@ -14,9 +14,10 @@ from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
+from astropy.coordinates import StokesCoord
 
 __all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
-           'CoordinateFrame', 'TemporalFrame']
+           'CoordinateFrame', 'TemporalFrame', 'StokesFrame']
 
 
 def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
@@ -149,12 +150,12 @@ class CoordinateFrame:
             raise ValueError("Length of axes_order does not match number of axes.")
 
         super(CoordinateFrame, self).__init__()
+        # _axis_physical_types holds any user supplied physical types
         self._axis_physical_types = self._set_axis_physical_types(axis_physical_types)
 
-    def _set_axis_physical_types(self, pht=None):
+    def _set_axis_physical_types(self, pht):
         """
         Set the physical type of the coordinate axes using VO UCD1+ v1.23 definitions.
-
         """
         if pht is not None:
             if isinstance(pht, str):
@@ -170,51 +171,8 @@ class CoordinateFrame:
                 else:
                     ph_type.append(axt)
 
-        elif isinstance(self, CelestialFrame):
-            if isinstance(self.reference_frame, coord.Galactic):
-                ph_type = "pos.galactic.lon", "pos.galactic.lat"
-            elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
-                                                   coord.GCRS,
-                                                   coord.PrecessedGeocentric)):
-                ph_type = "pos.bodyrc.lon", "pos.bodyrc.lat"
-            elif isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
-                ph_type = "pos.eq.ra", "pos.eq.dec"
-            elif isinstance(self.reference_frame, coord.builtin_frames.BaseEclipticFrame):
-                ph_type = "pos.ecliptic.lon", "pos.ecliptic.lat"
-            else:
-                ph_type = tuple("custom:{}".format(t) for t in self.axes_names)
-
-        elif isinstance(self, SpectralFrame):
-            if self.unit[0].physical_type == "frequency":
-                ph_type = ("em.freq",)
-            elif self.unit[0].physical_type == "length":
-                ph_type = ("em.wl",)
-            elif self.unit[0].physical_type == "energy":
-                ph_type = ("em.energy",)
-            elif self.unit[0].physical_type == "speed":
-                ph_type = ("spect.dopplerVeloc",)
-                logging.warning("Physical type may be ambiguous. Consider "
-                                "setting the physical type explicitly as "
-                                "either 'spect.dopplerVeloc.optical' or "
-                                "'spect.dopplerVeloc.radio'.")
-            else:
-                ph_type = ("custom:{}".format(self.unit[0].physical_type),)
-
-        elif isinstance(self, TemporalFrame):
-            ph_type = ("time",)
-
-        elif isinstance(self, Frame2D):
-            if all(self.axes_names):
-                ph_type = self.axes_names
-            else:
-                ph_type = self.axes_type
-            ph_type = tuple("custom:{}".format(t) for t in ph_type)
-
-        else:
-            ph_type = tuple("custom:{}".format(t) for t in self.axes_type)
-
-        validate_physical_types(ph_type)
-        return tuple(ph_type)
+            validate_physical_types(ph_type)
+            return tuple(ph_type)
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
@@ -296,8 +254,21 @@ class CoordinateFrame:
         return coords
 
     @property
+    def _default_axis_physical_types(self):
+        """
+        The default physical types to use for this frame if none are specified
+        by the user.
+        """
+        return tuple("custom:{}".format(t) for t in self.axes_type)
+
+    @property
     def axis_physical_types(self):
-        return self._axis_physical_types
+        """
+        The axis physical types for this frame.
+
+        These physical types are the types in frame order, not transform order.
+        """
+        return self._axis_physical_types or self._default_axis_physical_types
 
     @property
     def _world_axis_object_classes(self):
@@ -358,6 +329,21 @@ class CelestialFrame(CoordinateFrame):
                                              unit=unit,
                                              axes_names=axes_names,
                                              name=name, axis_physical_types=axis_physical_types)
+
+    @property
+    def _default_axis_physical_types(self):
+        if isinstance(self.reference_frame, coord.Galactic):
+            return "pos.galactic.lon", "pos.galactic.lat"
+        elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
+                                                coord.GCRS,
+                                                coord.PrecessedGeocentric)):
+            return "pos.bodyrc.lon", "pos.bodyrc.lat"
+        elif isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
+            return "pos.eq.ra", "pos.eq.dec"
+        elif isinstance(self.reference_frame, coord.builtin_frames.BaseEclipticFrame):
+            return "pos.ecliptic.lon", "pos.ecliptic.lat"
+        else:
+            return tuple("custom:{}".format(t) for t in self.axes_names)
 
     @property
     def _world_axis_object_classes(self):
@@ -446,6 +432,23 @@ class SpectralFrame(CoordinateFrame):
                                             axis_physical_types=axis_physical_types)
 
     @property
+    def _default_axis_physical_types(self):
+        if self.unit[0].physical_type == "frequency":
+            return ("em.freq",)
+        elif self.unit[0].physical_type == "length":
+            return ("em.wl",)
+        elif self.unit[0].physical_type == "energy":
+            return ("em.energy",)
+        elif self.unit[0].physical_type == "speed":
+            return ("spect.dopplerVeloc",)
+            logging.warning("Physical type may be ambiguous. Consider "
+                            "setting the physical type explicitly as "
+                            "either 'spect.dopplerVeloc.optical' or "
+                            "'spect.dopplerVeloc.radio'.")
+        else:
+            return ("custom:{}".format(self.unit[0].physical_type),)
+
+    @property
     def _world_axis_object_classes(self):
         return {'spectral': (
             coord.SpectralCoord,
@@ -508,6 +511,10 @@ class TemporalFrame(CoordinateFrame):
                 self._attrs[a] = getattr(self.reference_frame, a)
             except AttributeError:
                 pass
+
+    @property
+    def _default_axis_physical_types(self):
+        return ("time",)
 
     @property
     def _world_axis_object_classes(self):
@@ -703,82 +710,34 @@ class CompositeFrame(CoordinateFrame):
         return dict(self._wao_renamed_classes_iter)
 
 
-class StokesProfile(str):
-    # This list of profiles in Table 7 in Greisen & Calabretta (2002)
-    # modified to be 0 indexed
-    profiles = {
-        'I': 0,
-        'Q': 1,
-        'U': 2,
-        'V': 3,
-        'RR': -1,
-        'LL': -2,
-        'RL': -3,
-        'LR': -4,
-        'XX': -5,
-        'YY': -6,
-        'XY': -7,
-        'YX': -8,
-    }
-
-    @classmethod
-    def from_index(cls, indexes):
-        """
-        Construct a StokesProfile object from a numerical index.
-
-        Parameters
-        ----------
-        indexes : `int`, `numpy.ndarray`
-            An index or array of indices to construct StokesProfile objects from.
-        """
-
-        nans = np.isnan(indexes)
-        indexes = np.asarray(indexes, dtype=int)
-        out = np.empty_like(indexes, dtype=object)
-
-        for profile, index in cls.profiles.items():
-            out[indexes == index] = cls(profile)
-
-        out[nans] = np.nan
-
-        if out.size == 1 and not nans:
-            return StokesProfile(out.item())
-        elif nans.all():
-            return np.array(out, dtype=float)
-        return out
-
-    def __new__(cls, content):
-        content = str(content)
-        if content not in cls.profiles.keys():
-            raise ValueError(f"The profile name must be one of {cls.profiles.keys()} not {content}")
-        return str.__new__(cls, content)
-
-    def value(self):
-        return self.profiles[self]
-
-
 class StokesFrame(CoordinateFrame):
     """
-    A coordinate frame for representing stokes polarisation states
+    A coordinate frame for representing Stokes polarisation states.
 
     Parameters
     ----------
     name : str
         Name of this frame.
+    axes_order : tuple
+        A dimension in the data that corresponds to this axis.
     """
 
-    def __init__(self, axes_order=(0,), name=None):
+    def __init__(self, axes_order=(0,), axes_names=("stokes",), name=None, axis_physical_types=None):
         super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=("stokes",), unit=u.one,
-                                          axis_physical_types="phys.polarization.stokes")
+                                          axes_names=axes_names, unit=u.one,
+                                          axis_physical_types=axis_physical_types)
+
+    @property
+    def _default_axis_physical_types(self):
+        return ("phys.polarization.stokes",)
 
     @property
     def _world_axis_object_classes(self):
         return {'stokes': (
-            StokesProfile,
+            StokesCoord,
             (),
             {},
-            StokesProfile.from_index)}
+        )}
 
     @property
     def _world_axis_object_components(self):
@@ -790,14 +749,12 @@ class StokesFrame(CoordinateFrame):
         else:
             arg = args[0]
 
-        return StokesProfile.from_index(arg)
+        return StokesCoord(arg)
 
     def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], str):
-            if coords[0] in StokesProfile.profiles.keys():
-                return StokesProfile.profiles[coords[0]] * u.one
-        else:
-            return coords[0]
+        if isinstance(coords[0], StokesCoord):
+            return coords[0].value << u.one
+        return coords[0]
 
 
 class Frame2D(CoordinateFrame):
@@ -823,6 +780,14 @@ class Frame2D(CoordinateFrame):
                                       axes_order=axes_order, name=name,
                                       axes_names=axes_names, unit=unit,
                                       axis_physical_types=axis_physical_types)
+
+    @property
+    def _default_axis_physical_types(self):
+        if all(self.axes_names):
+            ph_type = self.axes_names
+        else:
+            ph_type = self.axes_type
+        return tuple("custom:{}".format(t) for t in ph_type)
 
     def coordinates(self, *args):
         args = [args[i] for i in self.axes_order]

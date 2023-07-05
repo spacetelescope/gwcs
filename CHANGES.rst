@@ -7,6 +7,21 @@ Bug Fixes
 - Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
   objects. [#439]
 
+other
+^^^^^
+
+- Remove deprecated old ``bounding_box``. The new implementation is released with
+  astropy v 5.3. [#458]
+
+- Refactor ``CoordinateFrame.axis_physical_types``. [#459]
+
+- ``StokesFrame`` uses now ``astropy.coordinates.StokesCoord``. [#452]
+
+- Dropped support for Python 3.8. [#451]
+
+- Fixed a call to ``astropy.coordinates`` in ``wcstools.wcs_from_points``. [#448]
+
+- Code and docstrings clean up. [#460]
 
 0.18.3 (2022-12-23)
 -------------------
