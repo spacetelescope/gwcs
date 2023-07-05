@@ -202,23 +202,15 @@ class WCS(GWCSAPIMixin):
         """
         if not self._pipeline:
             return None
-        try:
-            from_ind = self._get_frame_index(from_frame)
-        except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available "
-                                       "frames".format(from_frame))
-        try:
-            to_ind = self._get_frame_index(to_frame)
-        except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_frame))
+
+        from_ind = self._get_frame_index(from_frame)
+        to_ind = self._get_frame_index(to_frame)
         if to_ind < from_ind:
-            #transforms = np.array(self._pipeline[to_ind: from_ind], dtype="object")[:, 1].tolist()
             transforms = [step.transform for step in self._pipeline[to_ind: from_ind]]
             transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
-            #transforms = np.array(self._pipeline[from_ind: to_ind], dtype="object")[:, 1].copy()
             transforms = [step.transform for step in self._pipeline[from_ind: to_ind]]
         return functools.reduce(lambda x, y: x | y, transforms)
 
@@ -297,9 +289,11 @@ class WCS(GWCSAPIMixin):
         """
         if isinstance(frame, cf.CoordinateFrame):
             frame = frame.name
-        #frame_names = [getattr(item[0], "name", item[0]) for item in self._pipeline]
         frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
-        return frame_names.index(frame)
+        try:
+            return frame_names.index(frame)
+        except ValueError as e:
+            raise CoordinateFrameError(f"Frame {frame} is not in the available frames") from e
 
     def _get_frame_name(self, frame):
         """
@@ -503,7 +497,9 @@ class WCS(GWCSAPIMixin):
         else:
             return result
 
-    def numerical_inverse(self, *args, **kwargs):
+    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
+                          detect_divergence=True, quiet=True, with_bounding_box=True,
+                          fill_value=np.nan, with_units=False, **kwargs):
         """
         Invert coordinates from output frame to input frame using numerical
         inverse.
@@ -555,8 +551,6 @@ class WCS(GWCSAPIMixin):
             iterations set by ``maxiter`` parameter. Instead,
             simply return the found solution. Default is `True`.
 
-        Other Parameters
-        ----------------
         adaptive : bool, optional
             Specifies whether to adaptively select only points that
             did not converge to a solution within the required
@@ -740,15 +734,6 @@ class WCS(GWCSAPIMixin):
          [2.76552923e-05 1.14789013e-05]]
 
         """
-        tolerance = kwargs.get('tolerance', 1e-5)
-        maxiter = kwargs.get('maxiter', 50)
-        adaptive = kwargs.get('adaptive', True)
-        detect_divergence = kwargs.get('detect_divergence', True)
-        quiet = kwargs.get('quiet', True)
-        with_bounding_box = kwargs.get('with_bounding_box', True)
-        fill_value = kwargs.get('fill_value', np.nan)
-        with_units = kwargs.pop('with_units', False)
-
         if not utils.isnumerical(args[0]):
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
@@ -1204,14 +1189,14 @@ class WCS(GWCSAPIMixin):
         output_name, output_frame_obj = self._get_frame_name(output_frame)
         try:
             input_index = self._get_frame_index(input_frame)
-        except ValueError:
+        except CoordinateFrameError:
             input_index = None
             if input_frame_obj is None:
                 raise ValueError(f"New coordinate frame {input_name} must "
                                  "be defined")
         try:
             output_index = self._get_frame_index(output_frame)
-        except ValueError:
+        except CoordinateFrameError:
             output_index = None
             if output_frame_obj is None:
                 raise ValueError(f"New coordinate frame {output_name} must "

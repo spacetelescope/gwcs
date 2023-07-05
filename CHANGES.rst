@@ -21,6 +21,8 @@ other
 
 - Fixed a call to ``astropy.coordinates`` in ``wcstools.wcs_from_points``. [#448]
 
+- Code and docstrings clean up. [#460]
+
 0.18.3 (2022-12-23)
 -------------------
 Bug Fixes
