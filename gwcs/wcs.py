@@ -551,8 +551,6 @@ class WCS(GWCSAPIMixin):
             iterations set by ``maxiter`` parameter. Instead,
             simply return the found solution. Default is `True`.
 
-        Other Parameters
-        ----------------
         adaptive : bool, optional
             Specifies whether to adaptively select only points that
             did not converge to a solution within the required
