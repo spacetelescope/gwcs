@@ -5,3 +5,4 @@ git+https://github.com/asdf-format/asdf-coordinates-schemas
 git+https://github.com/asdf-format/asdf-wcs-schemas
 git+https://github.com/astropy/astropy
 git+https://github.com/astropy/asdf-astropy
+numpy>=0.0.dev0
