@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   check:
-    name: 
+    name:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
       envs: |
@@ -31,15 +31,13 @@ jobs:
       envs: |
         - linux: test
           python-version: 3.9
-        - linux: test-numpy120
-          python-version: 3.9
-        - linux: test-numpy121
+        - linux: test-numpy125
           python-version: 3.9
         - linux: test-numpy122
           python-version: 3.9
         - linux: test
           python-version: 3.10
-        - linux: test-numpy121
+        - linux: test-numpy125
           python-version: 3.10
         - linux: test-numpy122
           python-version: 3.10
