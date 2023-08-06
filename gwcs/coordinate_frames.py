@@ -635,13 +635,17 @@ class CompositeFrame(CoordinateFrame):
         if len(coords) == len(self.frames):
             args = coords
         elif len(coords) == self.naxes:
-            args = []
-            for _frame in self.frames:
-                if _frame.naxes > 1:
-                    # Collect the arguments for this frame based on axes_order
-                    args.append([coords[i] for i in _frame.axes_order])
-                else:
-                    args.append(coords[_frame.axes_order[0]])
+            if all([isinstance(a, u.Quantity) for a in coords]):
+                args = coords
+                return args
+            else:
+                args = []
+                for _frame in self.frames:
+                    if _frame.naxes > 1:
+                        # Collect the arguments for this frame based on axes_order
+                        args.append([coords[i] for i in _frame.axes_order])
+                    else:
+                        args.append(coords[_frame.axes_order[0]])
         else:
             raise ValueError("Incorrect number of arguments")
 

@@ -521,3 +521,22 @@ def test_coordinate_frame_api():
 
     pixel2 = wcs.invert(world)
     assert u.allclose(pixel2, 0*u.pix)
+
+
+def test_split_celestial_axes():
+    forward = (m.Multiply(10*u.arcsec/u.pix) &
+               m.Linear1D(intercept=0*u.nm, slope=10*u.nm/u.pix) &
+               m.Multiply(15*u.arcsec/u.pix))
+
+    celestial_frame = cf.CelestialFrame(axes_order=(0, 2), unit=(u.arcsec, u.arcsec))
+    spectral_frame = cf.SpectralFrame(axes_order=(1,), unit=u.nm)
+    output_frame = cf.CompositeFrame([spectral_frame, celestial_frame])
+
+    input_frame = cf.CoordinateFrame(3, ["PIXEL"]*3, axes_order=list(range(3)), unit=[u.pix]*3)
+
+    wcs = gwcs.WCS(forward, input_frame, output_frame)
+
+    input_pixel = [1, 2, 3] * u.pix
+    output_world = wcs.pixel_to_world_values(*input_pixel)
+    output_pixel = wcs.world_to_pixel_values(*output_world)
+    assert_allclose(input_pixel.value, output_pixel)
