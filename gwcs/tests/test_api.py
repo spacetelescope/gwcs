@@ -540,3 +540,8 @@ def test_split_celestial_axes():
     output_world = wcs.pixel_to_world_values(*input_pixel)
     output_pixel = wcs.world_to_pixel_values(*output_world)
     assert_allclose(input_pixel.value, output_pixel)
+
+    input_pixel = [1, 2, 3]
+    output_world = wcs.pixel_to_world_values(*input_pixel)
+    output_pixel = wcs.world_to_pixel_values(*output_world)
+    assert_allclose(input_pixel, output_pixel)
