@@ -1091,7 +1091,9 @@ def test_in_image():
 
 
 def test_iter_inv():
-    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    fn = get_pkg_data_filename('data/nircamwcs.asdf')
+    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
     # remove analytic/user-supplied inverse:
     w.pipeline[0].transform.inverse = None
     w.bounding_box = None
@@ -1117,7 +1119,8 @@ def test_iter_inv():
     )
     assert np.allclose((x, y), (xp, yp))
 
-    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
 
     # test single point
     assert np.allclose((1, 2), w.numerical_inverse(*w(1, 2)))
