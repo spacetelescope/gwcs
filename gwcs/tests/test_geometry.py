@@ -7,8 +7,11 @@ import pytest
 import asdf
 import numpy as np
 from astropy import units as u
-from asdf_astropy.converters.transform.tests.test_transform import (
-     assert_model_roundtrip)
+
+try:
+    from asdf_astropy.testing.helpers import assert_model_roundtrip
+except ImportError:
+    from asdf_astropy.converters.transform.tests.test_transform import assert_model_roundtrip
 
 from .. import geometry
 
