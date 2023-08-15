@@ -1194,7 +1194,7 @@ def test_iter_inv():
 
 def test_tabular_2d_quantity():
     shape = (3, 3)
-    data = np.arange(np.product(shape)).reshape(shape) * u.m / u.s
+    data = np.arange(np.prod(shape)).reshape(shape) * u.m / u.s
 
     # The integer location is at the centre of the pixel.
     points_unit = u.pix
