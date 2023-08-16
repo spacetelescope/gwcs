@@ -1,4 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import importlib.resources
+
 from asdf.extension import ManifestExtension
 from .converters.wcs import (
     CelestialFrameConverter, CompositeFrameConverter, FrameConverter,
@@ -40,9 +42,9 @@ WCS_MODEL_CONVERTERS = [
 # The order here is important; asdf will prefer to use extensions
 # that occur earlier in the list.
 WCS_MANIFEST_URIS = [
-    "asdf://asdf-format.org/astronomy/gwcs/manifests/gwcs-1.0.0",
+    f"asdf://asdf-format.org/astronomy/gwcs/manifests/{path.stem}"
+    for path in sorted((importlib.resources.files("asdf_wcs_schemas.resources") / "manifests" / "gwcs").iterdir(), reverse=True)
 ]
-
 
 TRANSFORM_EXTENSIONS = [
     ManifestExtension.from_uri(
