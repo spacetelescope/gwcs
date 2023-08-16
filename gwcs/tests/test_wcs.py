@@ -640,8 +640,9 @@ def test_to_fits_sip():
     y, x = np.mgrid[:1024:10, :1024:10]
     xflat = np.ravel(x[1:-1, 1:-1])
     yflat = np.ravel(y[1:-1, 1:-1])
-    af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
-    miriwcs = af.tree['wcs']
+    fn = get_pkg_data_filename('data/miriwcs.asdf')
+    with asdf.open(fn, lazy_load=False, copy_arrays=True, ignore_missing_extensions=True) as af:
+        miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
     mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1, verbose=True)
     fitssip = astwcs.WCS(mirisip)
@@ -1000,8 +1001,9 @@ def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
 
 def test_to_fits_tab_miri_image():
     # gWCS:
-    af = asdf.open(get_pkg_data_filename('data/miriwcs.asdf'))
-    w = af.tree['wcs']
+    fn = get_pkg_data_filename('data/miriwcs.asdf')
+    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
 
     # FITS WCS -TAB:
     hdr, bt = w.to_fits_tab(sampling=0.5)
@@ -1023,8 +1025,9 @@ def test_to_fits_tab_miri_image():
 
 
 def test_to_fits_tab_miri_lrs():
-    af = asdf.open(get_pkg_data_filename('data/miri_lrs_wcs.asdf'))
-    w = af.tree['wcs']
+    fn = get_pkg_data_filename('data/miri_lrs_wcs.asdf')
+    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
 
     # FITS WCS -TAB:
     hdr, bt = w.to_fits(sampling=0.25)
@@ -1091,7 +1094,9 @@ def test_in_image():
 
 
 def test_iter_inv():
-    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    fn = get_pkg_data_filename('data/nircamwcs.asdf')
+    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
     # remove analytic/user-supplied inverse:
     w.pipeline[0].transform.inverse = None
     w.bounding_box = None
@@ -1117,7 +1122,8 @@ def test_iter_inv():
     )
     assert np.allclose((x, y), (xp, yp))
 
-    w = asdf.open(get_pkg_data_filename('data/nircamwcs.asdf')).tree['wcs']
+    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+        w = af.tree['wcs']
 
     # test single point
     assert np.allclose((1, 2), w.numerical_inverse(*w(1, 2)))
@@ -1191,7 +1197,7 @@ def test_iter_inv():
 
 def test_tabular_2d_quantity():
     shape = (3, 3)
-    data = np.arange(np.product(shape)).reshape(shape) * u.m / u.s
+    data = np.arange(np.prod(shape)).reshape(shape) * u.m / u.s
 
     # The integer location is at the centre of the pixel.
     points_unit = u.pix
@@ -1237,7 +1243,9 @@ def test_sip_roundtrip():
     hdr['naxis'] = 2
     hdr['naxis1'] = nx
     hdr['naxis2'] = ny
-    gw = _gwcs_from_hst_fits_wcs(hdr)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=astwcs.FITSFixedWarning)
+        gw = _gwcs_from_hst_fits_wcs(hdr)
     hdr_back = gw.to_fits_sip(
         max_pix_error=1e-6,
         max_inv_pix_error=None,
@@ -1268,7 +1276,9 @@ def test_sip_roundtrip():
 def test_spatial_spectral_stokes():
     """ Converts a FITS WCS to GWCS and compares results."""
     hdr = fits.Header.fromfile(get_pkg_data_filename("data/stokes.txt"))
-    aw = astwcs.WCS(hdr)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=astwcs.FITSFixedWarning)
+        aw = astwcs.WCS(hdr)
     crpix = aw.wcs.crpix
     crval = aw.wcs.crval
     cdelt = aw.wcs.cdelt

@@ -85,6 +85,8 @@ doctest_plus = "enabled"
 addopts = "--doctest-rst"
 filterwarnings = [
     "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
+    # importing astropy code causes this warning to be issued, so ignore it
+    "ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
 [tool.coverage.run]

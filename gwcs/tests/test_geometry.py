@@ -7,8 +7,11 @@ import pytest
 import asdf
 import numpy as np
 from astropy import units as u
-from asdf_astropy.converters.transform.tests.test_transform import (
-     assert_model_roundtrip)
+
+try:
+    from asdf_astropy.testing.helpers import assert_model_roundtrip
+except ImportError:
+    from asdf_astropy.converters.transform.tests.test_transform import assert_model_roundtrip
 
 from .. import geometry
 
@@ -150,9 +153,9 @@ def test_spherical_to_cartesian_mixed_Q(spher_to_cart, unit1, unit2):
 
 @pytest.mark.parametrize(
     'x, y, z',
-    list(set(
+    sorted(list(set(
         tuple(permutations([1 * u.m, 1, 1])) + tuple(permutations([1 * u.m, 1 * u.m, 1]))
-    ))
+    )), key=str)
 )
 def test_cartesian_to_spherical_mixed_Q(cart_to_spher, x, y, z):
     with pytest.raises(TypeError) as arg_err:
