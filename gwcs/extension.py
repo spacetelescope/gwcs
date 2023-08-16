@@ -43,7 +43,7 @@ WCS_MODEL_CONVERTERS = [
 # that occur earlier in the list.
 WCS_MANIFEST_URIS = [
     f"asdf://asdf-format.org/astronomy/gwcs/manifests/{path.stem}"
-    for path in sorted((importlib.resources.files("asdf_wcs_schemas.resources") / "manifests" / "gwcs").iterdir(), reverse=True)
+    for path in sorted((importlib.resources.files("asdf_wcs_schemas.resources") / "manifests").iterdir(), reverse=True)
 ]
 
 TRANSFORM_EXTENSIONS = [
