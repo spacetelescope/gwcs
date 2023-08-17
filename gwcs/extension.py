@@ -46,6 +46,8 @@ WCS_MANIFEST_URIS = [
     for path in sorted((importlib.resources.files("asdf_wcs_schemas.resources") / "manifests").iterdir(), reverse=True)
 ]
 
+# 1.0.0 contains multiple versions of the same tag, a bug fixed in
+# 1.0.1 so only register 1.0.0 if it's the only available manifest
 TRANSFORM_EXTENSIONS = [
     ManifestExtension.from_uri(
         uri,
@@ -53,7 +55,9 @@ TRANSFORM_EXTENSIONS = [
         converters=WCS_MODEL_CONVERTERS,
     )
     for uri in WCS_MANIFEST_URIS
+    if len(WCS_MANIFEST_URIS) == 1 or '1.0.0' not in uri
 ]
+
 
 def get_extensions():
     """
