@@ -1,9 +1,18 @@
 git+https://github.com/asdf-format/asdf
 git+https://github.com/asdf-format/asdf-standard
+
+# Use weekly astropy dev build
+--extra-index-url https://pypi.anaconda.org/astropy/simple astropy --pre
+
+git+https://github.com/astropy/astropy
+
+
+git+https://github.com/astropy/asdf-astropy
 git+https://github.com/asdf-format/asdf-transform-schemas
 git+https://github.com/asdf-format/asdf-coordinates-schemas
 git+https://github.com/asdf-format/asdf-wcs-schemas
-git+https://github.com/astropy/astropy
-git+https://github.com/astropy/asdf-astropy
+
+# Use Bi-weekly numpy/scipy dev builds
+--extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 numpy>=0.0.dev0
 scipy>=0.0.dev0

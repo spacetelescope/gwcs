@@ -80,7 +80,7 @@ def test_init_no_transform():
     assert gw.pipeline[1].frame == "icrs"
     with pytest.warns(DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."):
         assert gw.pipeline[1][0] == "icrs"
-    assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
+    assert np.isin(gw.available_frames, ['detector', 'icrs']).all()
     gw = wcs.WCS(output_frame=icrs, input_frame=detector)
     assert gw._pipeline[0].frame == "detector"
     with pytest.warns(DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."):
@@ -88,7 +88,7 @@ def test_init_no_transform():
     assert gw._pipeline[1].frame == "icrs"
     with pytest.warns(DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."):
         assert gw._pipeline[1][0] == "icrs"
-    assert np.in1d(gw.available_frames, ['detector', 'icrs']).all()
+    assert np.isin(gw.available_frames, ['detector', 'icrs']).all()
     with pytest.raises(NotImplementedError):
         gw(1, 2)
 
