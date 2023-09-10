@@ -23,6 +23,10 @@ other
 
 - Code and docstrings clean up. [#460]
 
+- Register all available asdf extension manifests from ``asdf-wcs-schemas``
+  except 1.0.0 (which contains duplicate tag versions). [#469]
+
+
 0.18.3 (2022-12-23)
 -------------------
 Bug Fixes
