@@ -19,7 +19,7 @@ def _assert_mapper_equal(a, b):
 
     if isinstance(a.mapper, dict):
         assert(a.mapper.__class__ == b.mapper.__class__) # nosec
-        assert(all(np.in1d(list(a.mapper), list(b.mapper)))) # nosec
+        assert(np.isin(list(a.mapper), list(b.mapper)).all()) # nosec
         for k in a.mapper:
             assert (a.mapper[k].__class__ == b.mapper[k].__class__) # nosec
             assert(all(a.mapper[k].parameters == b.mapper[k].parameters))  # nosec

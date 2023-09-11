@@ -7,6 +7,8 @@ Bug Fixes
 - Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
   objects. [#439]
 
+- Fix failures and warnings woth numpy 2.0. [#472]
+
 other
 ^^^^^
 

@@ -181,7 +181,7 @@ class LabelMapperArray(_LabelMapper):
     fittable = False
 
     def __init__(self, mapper, inputs_mapping=None, name=None, **kwargs):
-        if mapper.dtype.type is not np.unicode_:
+        if mapper.dtype.type is not np.str_:
             mapper = np.asanyarray(mapper, dtype=int)
             _no_label = 0
         else:
