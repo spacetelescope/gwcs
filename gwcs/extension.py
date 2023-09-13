@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import importlib.resources
 
-from asdf.extension import ManifestExtension
+from asdf.extension import Extension, ManifestExtension
 from .converters.wcs import (
     CelestialFrameConverter, CompositeFrameConverter, FrameConverter,
     Frame2DConverter, SpectralFrameConverter, StepConverter,
@@ -57,6 +57,20 @@ TRANSFORM_EXTENSIONS = [
     for uri in WCS_MANIFEST_URIS
     if len(WCS_MANIFEST_URIS) == 1 or '1.0.0' not in uri
 ]
+
+# if we don't register something for the 1.0.0 extension/manifest
+# opening old files will issue AsdfWarning messages stating that
+# the file was produced with an extension that is not installed
+# As the 1.0.1 and 1.1.0 extensions support all the required tags
+# it's not a helpful warning so here we register an 'empty'
+# extension for 1.0.0 which doesn't support any tags or types
+# but will be installed into asdf preventing the warning
+if len(TRANSFORM_EXTENSIONS) > 1:
+    class _EmptyExtension(Extension):
+        extension_uri = 'asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0'
+        legacy_class_names=["gwcs.extension.GWCSExtension"]
+
+    TRANSFORM_EXTENSIONS.append(_EmptyExtension())
 
 
 def get_extensions():
