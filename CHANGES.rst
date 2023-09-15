@@ -28,6 +28,9 @@ other
 - Register all available asdf extension manifests from ``asdf-wcs-schemas``
   except 1.0.0 (which contains duplicate tag versions). [#469]
 
+- Register empty extension for 1.0.0 to avoid warning about a missing
+  extension when opening old files. [#475]
+
 
 0.18.3 (2022-12-23)
 -------------------
