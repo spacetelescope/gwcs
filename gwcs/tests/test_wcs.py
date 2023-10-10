@@ -25,7 +25,6 @@ from .utils import _gwcs_from_hst_fits_wcs
 from . import data
 
 
-
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
 
 
