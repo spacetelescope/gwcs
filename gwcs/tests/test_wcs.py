@@ -1,16 +1,20 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import warnings
+import os.path
+
+import pytest
+
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
+
 from astropy.modeling import models
 from astropy import coordinates as coord
 from astropy.io import fits
 from astropy import units as u
-import pytest
-from astropy.utils.data import get_pkg_data_filename
 from astropy import wcs as astwcs
 from astropy.wcs import wcsapi
 from astropy.time import Time
+import asdf
 
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
@@ -18,7 +22,11 @@ from .. import coordinate_frames as cf
 from .. import utils
 from ..utils import CoordinateFrameError
 from .utils import _gwcs_from_hst_fits_wcs
-import asdf
+from . import data
+
+
+
+data_path = os.path.split(os.path.abspath(data.__file__))[0]
 
 
 m1 = models.Shift(12.4) & models.Shift(-2)
@@ -378,7 +386,7 @@ def test_grid_from_bounding_box_step():
 
 def test_wcs_from_points():
     np.random.seed(0)
-    hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+    hdr = fits.Header.fromtextfile(os.path.join(data_path, "acs.hdr"), endcard=False)
     with pytest.warns(astwcs.FITSFixedWarning) as caught_warnings:
         # this raises a warning unimportant for this testing the pix2world
         #   FITSFixedWarning(u'The WCS transformation has more axes (2) than
@@ -532,7 +540,7 @@ def test_high_level_api():
 
 class TestImaging(object):
     def setup_class(self):
-        hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"), endcard=False)
+        hdr = fits.Header.fromtextfile(os.path.join(data_path, "acs.hdr"), endcard=False)
         with pytest.warns(astwcs.FITSFixedWarning) as caught_warnings:
             # this raises a warning unimportant for this testing the pix2world
             #   FITSFixedWarning(u'The WCS transformation has more axes (2) than
@@ -640,7 +648,7 @@ def test_to_fits_sip():
     y, x = np.mgrid[:1024:10, :1024:10]
     xflat = np.ravel(x[1:-1, 1:-1])
     yflat = np.ravel(y[1:-1, 1:-1])
-    fn = get_pkg_data_filename('data/miriwcs.asdf')
+    fn = os.path.join(data_path, 'miriwcs.asdf')
     with asdf.open(fn, lazy_load=False, copy_arrays=True, ignore_missing_extensions=True) as af:
         miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
@@ -1001,7 +1009,7 @@ def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
 
 def test_to_fits_tab_miri_image():
     # gWCS:
-    fn = get_pkg_data_filename('data/miriwcs.asdf')
+    fn = os.path.join(data_path, 'miriwcs.asdf')
     with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
         w = af.tree['wcs']
 
@@ -1025,7 +1033,7 @@ def test_to_fits_tab_miri_image():
 
 
 def test_to_fits_tab_miri_lrs():
-    fn = get_pkg_data_filename('data/miri_lrs_wcs.asdf')
+    fn = os.path.join(data_path, 'miri_lrs_wcs.asdf')
     with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
         w = af.tree['wcs']
 
@@ -1094,7 +1102,7 @@ def test_in_image():
 
 
 def test_iter_inv():
-    fn = get_pkg_data_filename('data/nircamwcs.asdf')
+    fn = os.path.join(data_path, 'nircamwcs.asdf')
     with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
         w = af.tree['wcs']
     # remove analytic/user-supplied inverse:
@@ -1237,8 +1245,8 @@ def test_initialize_wcs_with_list():
 
 
 def test_sip_roundtrip():
-    hdr = fits.Header.fromtextfile(get_pkg_data_filename("data/acs.hdr"),
-                                   endcard=False)
+    hdr = fits.Header.fromtextfile(os.path.join(data_path, "acs.hdr"), endcard=False)
+
     nx = ny = 1024
     hdr['naxis'] = 2
     hdr['naxis1'] = nx
@@ -1275,7 +1283,7 @@ def test_sip_roundtrip():
 
 def test_spatial_spectral_stokes():
     """ Converts a FITS WCS to GWCS and compares results."""
-    hdr = fits.Header.fromfile(get_pkg_data_filename("data/stokes.txt"))
+    hdr = fits.Header.fromfile(os.path.join(data_path, "stokes.txt"))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=astwcs.FITSFixedWarning)
         aw = astwcs.WCS(hdr)
