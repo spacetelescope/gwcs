@@ -33,8 +33,8 @@ try:
     import tomllib
 except ImportError:
     import tomli as tomllib
-    
-from pkg_resources import get_distribution
+
+import importlib.metadata
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -83,7 +83,7 @@ copyright = f'{datetime.now().year}, {author}'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-release = get_distribution(project).version
+release = importlib.metadata.version(project)
 # for example take major/minor
 version = '.'.join(release.split('.')[:2])
 

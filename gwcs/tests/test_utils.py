@@ -1,17 +1,22 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import os.path
 import numpy as np
 from astropy.io import fits
 from astropy import wcs as fitswcs
 from astropy import units as u
 from astropy import coordinates as coord
 from astropy.modeling import models
-from astropy.utils.data import get_pkg_data_filename
 from astropy.tests.helper import assert_quantity_allclose
 import pytest
 from numpy.testing import assert_allclose
 
 from .. import utils as gwutils
 from ..utils import UnsupportedProjectionError
+
+from . import data
+
+
+data_path = os.path.split(os.path.abspath(data.__file__))[0]
 
 
 def test_wrong_projcode():
@@ -26,7 +31,7 @@ def test_wrong_projcode2():
 
 
 def test_fits_transform():
-    hdr = fits.Header.fromfile(get_pkg_data_filename('data/simple_wcs2.hdr'))
+    hdr = fits.Header.fromfile(os.path.join(data_path, "simple_wcs2.hdr"))
     gw1 = gwutils.make_fitswcs_transform(hdr)
     w1 = fitswcs.WCS(hdr)
     assert_allclose(gw1(1, 2), w1.wcs_pix2world(1, 2, 0), atol=10 ** -8)

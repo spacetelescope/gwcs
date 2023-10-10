@@ -1,3 +1,11 @@
+0.20.0 (unreleased)
+-------------------
+
+other
+^^^^^
+
+- Replace ``pkg_resources`` with ``importlib.metadata``. [#478]
+
 0.19.0 (2023-09-15)
 -------------------
 
