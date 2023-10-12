@@ -220,7 +220,7 @@ def test_return_coordinates():
     output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
     assert_allclose(w(x, y), numerical_result)
     assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-    assert_allclose(w.invert(num_plus_output, with_units=True), (x, y))
+    assert_allclose(w.invert(num_plus_output), (x, y))
     assert isinstance(num_plus_output, coord.SkyCoord)
 
     # Spectral frame
@@ -698,7 +698,7 @@ class TestImaging(object):
 
     def test_inverse(self):
         sky_coord = self.wcs(10, 20, with_units=True)
-        assert np.allclose(self.wcs.invert(sky_coord, with_units=True), (10, 20))
+        assert np.allclose(self.wcs.invert(sky_coord), (10, 20))
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
