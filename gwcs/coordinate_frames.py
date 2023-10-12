@@ -158,10 +158,6 @@ UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping(
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
-STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
-                               "TOPOCENTER", "LSR", "LSRK", "LSRD",
-                               "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
-
 
 def get_ctype_from_ucd(ucd):
     """
@@ -199,7 +195,6 @@ class BaseCoordinateFrame(abc.ABC):
         The name of the coordinate frame.
         """
 
-    # TODO: Why is this not `units`?
     @property
     @abc.abstractmethod
     def unit(self) -> tuple[u.Unit, ...]:
@@ -283,8 +278,6 @@ class CoordinateFrame(BaseCoordinateFrame):
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
         Reference frame (usually used with output_frame to convert to world coordinate objects).
-    reference_position : str
-        Reference position - one of ``STANDARD_REFERENCE_POSITION``
     unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
@@ -294,7 +287,7 @@ class CoordinateFrame(BaseCoordinateFrame):
     """
 
     def __init__(self, naxes, axes_type, axes_order, reference_frame=None,
-                 reference_position=None, unit=None, axes_names=None,
+                 unit=None, axes_names=None,
                  name=None, axis_physical_types=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
@@ -331,8 +324,6 @@ class CoordinateFrame(BaseCoordinateFrame):
         else:
             self._name = name
 
-        self._reference_position = reference_position
-
         if len(self._axes_type) != naxes:
             raise ValueError("Length of axes_type does not match number of axes.")
         if len(self._axes_order) != naxes:
@@ -367,8 +358,6 @@ class CoordinateFrame(BaseCoordinateFrame):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
             self.__class__.__name__, self.name,
             self.unit, self.axes_names, self.axes_order)
-        if self.reference_position is not None:
-            fmt += ', reference_position="{0}"'.format(self.reference_position)
         if self.reference_frame is not None:
             fmt += ", reference_frame={0}".format(self.reference_frame)
         fmt += ")>"
@@ -413,12 +402,6 @@ class CoordinateFrame(BaseCoordinateFrame):
     def reference_frame(self):
         """ Reference frame, used to convert to world coordinate objects. """
         return self._reference_frame
-
-    # TODO: This seems to be spectral specific, should it be moved to SpectralFrame?
-    @property
-    def reference_position(self):
-        """ Reference Position. """
-        return getattr(self, "_reference_position", None)
 
     @property
     def axes_type(self):
@@ -547,19 +530,15 @@ class SpectralFrame(CoordinateFrame):
         Spectral axis name.
     name : str
         Name for this frame.
-    reference_position : str
-        Reference position - one of ``STANDARD_REFERENCE_POSITION``
 
     """
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
-                 axes_names=None, name=None, axis_physical_types=None,
-                 reference_position=None):
+                 axes_names=None, name=None, axis_physical_types=None):
 
         super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                                             axes_names=axes_names, reference_frame=reference_frame,
                                             unit=unit, name=name,
-                                            reference_position=reference_position,
                                             axis_physical_types=axis_physical_types)
 
     @property
