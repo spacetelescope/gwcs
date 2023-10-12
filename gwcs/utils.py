@@ -465,24 +465,6 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-def isnumerical(val):
-    """
-    Determine if a value is numerical (number or np.array of numbers).
-    """
-    isnum = True
-    if isinstance(val, coords.SkyCoord):
-        isnum = False
-    elif isinstance(val, u.Quantity):
-        isnum = False
-    elif isinstance(val, (Time, TimeDelta)):
-        isnum = False
-    elif (isinstance(val, np.ndarray)
-          and not np.issubdtype(val.dtype, np.floating)
-          and not np.issubdtype(val.dtype, np.integer)):
-        isnum = False
-    return isnum
-
-
 def is_high_level(*args, low_level_wcs):
     """
     Determine if args matches the high level classes as defined by
