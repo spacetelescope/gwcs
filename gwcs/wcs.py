@@ -472,7 +472,7 @@ class WCS(GWCSAPIMixin):
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
         with_units : bool, optional
-            If ``True`` then high level Astropy objects will be accepted.
+            If ``True`` then high level astropy object (i.e. ``Quantity``) will be returned.
             Optional, default=False.
 
         Other Parameters
@@ -490,11 +490,19 @@ class WCS(GWCSAPIMixin):
             transform returns ``Quantity`` objects, else values.
 
         """
-        with_units = kwargs.pop('with_units', False)
-        if with_units:
+        if not utils.isnumerical(args[0]):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
-        return self._call_backward(*args, **kwargs)
+        results = self._call_backward(*args, **kwargs)
+
+        with_units = kwargs.pop('with_units', False)
+        if with_units:
+            high_level = values_to_high_level_objects(*results, low_level_wcs=self)
+            if len(high_level) == 1:
+                high_level = high_level[0]
+            return high_level
+
+        return results
 
     def _call_backward(self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs):
         try:

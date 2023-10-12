@@ -221,7 +221,7 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
-  >>> wcsobj.invert(sky, with_units=True)
+  >>> wcsobj.invert(sky)
   (<Quantity 1. pix>, <Quantity 2. pix>)
 
 .. _save_as_asdf:
