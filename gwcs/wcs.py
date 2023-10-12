@@ -486,7 +486,7 @@ class WCS(GWCSAPIMixin):
         result : tuple or value
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
-            The return type will be `~astropy.unit.Quantity` objects if the
+            The return type will be `~astropy.units.Quantity` objects if the
             transform returns ``Quantity`` objects, else values.
 
         """
