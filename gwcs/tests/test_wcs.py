@@ -1438,13 +1438,13 @@ def test_split_frame_wcs():
     # We setup a model which is pretending to be a celestial transform. Note
     # that we are pretending that this model is ordered lon, lat because that's
     # what the projections require in astropy.
-    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.arcsec/u.pix)
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
     compound = models.Linear1D(intercept=0*u.nm, slope=10*u.nm/u.pix) & spatial
     # This forward transforms uses mappings to be (lat, wave, lon)
     forward = models.Mapping((1, 2, 0)) | compound | models.Mapping((2, 0, 1))
 
     # Setup the output frame
-    celestial_frame = cf.CelestialFrame(axes_order=(2, 0), unit=(u.arcsec, u.arcsec),
+    celestial_frame = cf.CelestialFrame(axes_order=(2, 0), unit=(u.arcsec, u.deg),
                                         reference_frame=coord.ICRS())
     spectral_frame = cf.SpectralFrame(axes_order=(1,), unit=u.nm)
     output_frame = cf.CompositeFrame([spectral_frame, celestial_frame])
@@ -1458,7 +1458,7 @@ def test_split_frame_wcs():
     output_pixel = iwcs.world_to_pixel_values(*output_world)
     assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
-    expected_world = [15*u.arcsec, 20*u.nm, 60*u.arcsec]
+    expected_world = [15*u.deg, 20*u.nm, 60*u.arcsec]
     for expected, output in zip(expected_world, output_world):
         assert_allclose(output, expected.value)
 
@@ -1476,9 +1476,9 @@ def test_split_frame_wcs():
 
 def test_reordered_celestial():
     # This is a spatial model which is ordered lat, lon for the purposes of this test.
-    spatial = models.Multiply(20*u.deg/u.pix) & models.Multiply(15*u.deg/u.pix)
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
 
-    celestial_frame = cf.CelestialFrame(axes_order=(1, 0), unit=(u.deg, u.deg),
+    celestial_frame = cf.CelestialFrame(axes_order=(1, 0), unit=(u.arcsec, u.deg),
                                         reference_frame=coord.ICRS())
 
     input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
@@ -1491,7 +1491,7 @@ def test_reordered_celestial():
     output_pixel = iwcs.world_to_pixel_values(*output_world)
     assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
-    expected_world = [20*u.deg, 45*u.deg]
+    expected_world = [20*u.arcsec, 45*u.deg]
     assert_allclose(output_world, [e.value for e in expected_world])
 
     world_obj = iwcs.pixel_to_world(*input_pixel)
