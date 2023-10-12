@@ -483,20 +483,22 @@ class CelestialFrame(CoordinateFrame):
             unit = tuple([u.degree] * naxes)
         axes_type = ['SPATIAL'] * naxes
 
-        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
-                                             axes_order=axes_order,
-                                             reference_frame=reference_frame,
-                                             unit=unit,
-                                             axes_names=axes_names,
-                                             name=name, axis_physical_types=axis_physical_types)
+        super().__init__(naxes=naxes,
+                         axes_type=axes_type,
+                         axes_order=axes_order,
+                         reference_frame=reference_frame,
+                         unit=unit,
+                         axes_names=axes_names,
+                         name=name,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
         if isinstance(self.reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
         elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
-                                                coord.GCRS,
-                                                coord.PrecessedGeocentric)):
+                                               coord.GCRS,
+                                               coord.PrecessedGeocentric)):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
         elif isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
