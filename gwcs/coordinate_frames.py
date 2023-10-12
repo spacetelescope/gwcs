@@ -41,7 +41,7 @@ Each frame instance is both metadata for the inputs/outputs of a transform and
 also a converter between those inputs/outputs and richer coordinate
 representations of those inputs/ouputs.
 
-For example, an output frame of type `~astropy.coordinates.SpectralCoord`
+For example, an output frame of type `~gwcs.coordinate_frames.SpectralFrame`
 provides metadata to the `.WCS` object such as the ``axes_type`` being
 ``"SPECTRAL"`` and the unit of the output etc.  The output frame also provides a
 converter of the numeric output of the transform to a
@@ -478,20 +478,22 @@ class CelestialFrame(CoordinateFrame):
             unit = tuple([u.degree] * naxes)
         axes_type = ['SPATIAL'] * naxes
 
-        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
-                                             axes_order=axes_order,
-                                             reference_frame=reference_frame,
-                                             unit=unit,
-                                             axes_names=axes_names,
-                                             name=name, axis_physical_types=axis_physical_types)
+        super().__init__(naxes=naxes,
+                         axes_type=axes_type,
+                         axes_order=axes_order,
+                         reference_frame=reference_frame,
+                         unit=unit,
+                         axes_names=axes_names,
+                         name=name,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
         if isinstance(self.reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
         elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
-                                                coord.GCRS,
-                                                coord.PrecessedGeocentric)):
+                                               coord.GCRS,
+                                               coord.PrecessedGeocentric)):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
         elif isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
@@ -536,10 +538,10 @@ class SpectralFrame(CoordinateFrame):
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
                  axes_names=None, name=None, axis_physical_types=None):
 
-        super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
-                                            axes_names=axes_names, reference_frame=reference_frame,
-                                            unit=unit, name=name,
-                                            axis_physical_types=axis_physical_types)
+        super().__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
+                         axes_names=axes_names, reference_frame=reference_frame,
+                         unit=unit, name=name,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
@@ -759,9 +761,9 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), axes_names=("stokes",), name=None, axis_physical_types=None):
-        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=axes_names, unit=u.one,
-                                          axis_physical_types=axis_physical_types)
+        super().__init__(1, ["STOKES"], axes_order, name=name,
+                         axes_names=axes_names, unit=u.one,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
@@ -799,10 +801,10 @@ class Frame2D(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
                  name=None, axis_physical_types=None):
 
-        super(Frame2D, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
-                                      axes_order=axes_order, name=name,
-                                      axes_names=axes_names, unit=unit,
-                                      axis_physical_types=axis_physical_types)
+        super().__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+                         axes_order=axes_order, name=name,
+                         axes_names=axes_names, unit=unit,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
