@@ -536,10 +536,10 @@ class SpectralFrame(CoordinateFrame):
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
                  axes_names=None, name=None, axis_physical_types=None):
 
-        super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
-                                            axes_names=axes_names, reference_frame=reference_frame,
-                                            unit=unit, name=name,
-                                            axis_physical_types=axis_physical_types)
+        super().__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
+                         axes_names=axes_names, reference_frame=reference_frame,
+                         unit=unit, name=name,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
@@ -759,9 +759,9 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), axes_names=("stokes",), name=None, axis_physical_types=None):
-        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=axes_names, unit=u.one,
-                                          axis_physical_types=axis_physical_types)
+        super().__init__(1, ["STOKES"], axes_order, name=name,
+                         axes_names=axes_names, unit=u.one,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
@@ -799,10 +799,10 @@ class Frame2D(CoordinateFrame):
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
                  name=None, axis_physical_types=None):
 
-        super(Frame2D, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
-                                      axes_order=axes_order, name=name,
-                                      axes_names=axes_names, unit=unit,
-                                      axis_physical_types=axis_physical_types)
+        super().__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
+                         axes_order=axes_order, name=name,
+                         axes_names=axes_names, unit=unit,
+                         axis_physical_types=axis_physical_types)
 
     @property
     def _default_axis_physical_types(self):
