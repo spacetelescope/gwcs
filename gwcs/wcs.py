@@ -496,7 +496,7 @@ class WCS(GWCSAPIMixin):
             transform returns ``Quantity`` objects, else values.
 
         """
-        if not utils.isnumerical(args[0]):
+        if utils.is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
         results = self._call_backward(*args, **kwargs)
