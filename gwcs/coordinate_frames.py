@@ -110,7 +110,6 @@ from astropy.utils.misc import isiterable
 from astropy import time
 from astropy import units as u
 from astropy import utils as astutil
-from astropy.utils.decorators import deprecated
 from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
