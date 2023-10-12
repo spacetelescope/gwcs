@@ -19,7 +19,6 @@ import asdf
 from .. import wcs
 from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from .. import coordinate_frames as cf
-from .. import utils
 from ..utils import CoordinateFrameError
 from .utils import _gwcs_from_hst_fits_wcs
 from . import data
