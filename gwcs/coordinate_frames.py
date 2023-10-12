@@ -254,7 +254,7 @@ class BaseCoordinateFrame(abc.ABC):
 
         See Also
         --------
-        `astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_classes`
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_classes
         """
 
     @property
@@ -265,7 +265,7 @@ class BaseCoordinateFrame(abc.ABC):
 
         See Also
         --------
-        `astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components`
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components
         """
 
 
