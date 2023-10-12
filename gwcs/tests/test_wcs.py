@@ -208,49 +208,6 @@ def test_backward_transform_has_inverse():
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
-@pytest.mark.skip
-def test_return_coordinates():
-    """Test converting to coordinate objects or quantities."""
-    w = wcs.WCS(pipe[:])
-    x = 1
-    y = 2.3
-    numerical_result = (26.8, -0.6)
-    # Celestial frame
-    num_plus_output = w(x, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
-    assert_allclose(w(x, y), numerical_result)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-    assert_allclose(w.invert(num_plus_output), (x, y))
-    assert isinstance(num_plus_output, coord.SkyCoord)
-
-    # Spectral frame
-    poly = models.Polynomial1D(1, c0=1, c1=2)
-    w = wcs.WCS(forward_transform=poly, output_frame=spec)
-    numerical_result = poly(y)
-    num_plus_output = w(y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
-    assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
-    assert isinstance(num_plus_output, u.Quantity)
-
-    # CompositeFrame - [celestial, spectral]
-    output_frame = cf.CompositeFrame(frames=[icrs, spec])
-    transform = m1 & poly
-    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
-    numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-
-    # CompositeFrame - [celestial, Stokes]
-    output_frame = cf.CompositeFrame(frames=[icrs, stokes])
-    transform = m1 & models.Identity(1)
-    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
-    numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-
-
 def test_from_fiducial_sky():
     sky = coord.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
     tan = models.Pix2Sky_TAN()
