@@ -41,7 +41,7 @@ Each frame instance is both metadata for the inputs/outputs of a transform and
 also a converter between those inputs/outputs and richer coordinate
 representations of those inputs/ouputs.
 
-For example, an output frame of type `~astropy.coordinates.SpectralCoord`
+For example, an output frame of type `~gwcs.coordinate_frames.SpectralFrame`
 provides metadata to the `.WCS` object such as the ``axes_type`` being
 ``"SPECTRAL"`` and the unit of the output etc.  The output frame also provides a
 converter of the numeric output of the transform to a
