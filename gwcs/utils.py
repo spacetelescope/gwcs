@@ -481,3 +481,15 @@ def isnumerical(val):
           and not np.issubdtype(val.dtype, np.integer)):
         isnum = False
     return isnum
+
+
+def is_high_level(*args, low_level_wcs):
+    """
+    Determine if args matches the high level classes as defined by
+    ``low_level_wcs``.
+    """
+    if len(args) != len(low_level_wcs.world_axis_object_classes):
+        return False
+
+    return all([type(arg) is waoc[0]
+                for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())])
