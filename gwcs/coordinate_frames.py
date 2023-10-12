@@ -436,6 +436,11 @@ class CoordinateFrame(BaseCoordinateFrame):
     def world_axis_object_components(self):
         return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._axes_type)]
 
+    @property
+    def _native_world_axis_object_components(self):
+        """Defines the target component ordering (i.e. not taking into account axes_order)"""
+        return self.world_axis_object_components
+
 
 class CelestialFrame(CoordinateFrame):
     """
@@ -514,6 +519,14 @@ class CelestialFrame(CoordinateFrame):
     def _world_axis_object_components(self):
         return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self.unit[0])),
                 ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self.unit[1]))]
+
+    @property
+    def world_axis_object_components(self):
+        # Sort the native waoc by the axes order. The axes order may have jumps
+        # in it if there are other frames in between the components.
+        ordered = np.array(self._native_world_axis_object_components,
+                           dtype=object)[np.argsort(self.axes_order)]
+        return list(map(tuple, ordered))
 
 
 class SpectralFrame(CoordinateFrame):
@@ -711,7 +724,7 @@ class CompositeFrame(CoordinateFrame):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
             renamed_components = []
-            for comp in frame.world_axis_object_components:
+            for comp in frame._native_world_axis_object_components:
                 comp = list(comp)
                 rename = mapper[frame].get(comp[0])
                 if rename:
