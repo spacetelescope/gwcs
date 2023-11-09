@@ -240,31 +240,6 @@ Save a WCS object as a pure ASDF file
 :ref:`pure_asdf`
 
 
-Save a WCS object as an ASDF extension in a FITS file
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-.. doctest-skip::
-
-  >>> from astropy.io import fits
-  >>> from asdf import fits_embed
-  >>> hdul = fits.open("example_imaging.fits")
-  >>> hdul.info()
-  Filename: example_imaging.fits
-  No.    Name      Ver    Type      Cards   Dimensions   Format
-  0  PRIMARY       1 PrimaryHDU     775   ()
-  1  SCI           1 ImageHDU        71   (600, 550)   float32
-  >>> tree = {"sci": hdul[1].data,
-  ...         "wcs": wcsobj}
-  >>> fa = fits_embed.AsdfInFits(hdul, tree)
-  >>> fa.write_to("imaging_with_wcs_in_asdf.fits")
-  >>> fits.info("imaging_with_wcs_in_asdf.fits")
-  Filename: example_with_wcs.asdf
-  No.    Name      Ver    Type      Cards   Dimensions   Format
-  0  PRIMARY       1 PrimaryHDU     775   ()
-  1  SCI           1 ImageHDU        71   (600, 550)   float32
-  2  ASDF          1 BinTableHDU     11   1R x 1C   [5086B]
-
 Reading a WCS object from a file
 ++++++++++++++++++++++++++++++++
 
@@ -279,12 +254,6 @@ from a pure ASDF file or from an ASDF extension in a FITS file.
   >>> asdf_file = asdf.open("imaging_wcs.asdf")
   >>> wcsobj = asdf_file.tree['wcs']
 
-
-.. doctest-skip::
-
-  >>> import asdf
-  >>> fa = asdf.open("imaging_with_wcs_in_asdf.fits")
-  >>> wcsobj = fa.tree["wcs"]
 
 Other Examples
 --------------
