@@ -36,6 +36,16 @@ First, import the usual packages.
   >>> from gwcs import wcs, selector
   >>> from gwcs import coordinate_frames as cf
 
+Next, create the appropriate mapper object corresponding to the figure above:
+
+  >>> y, x = np.mgrid[:1000, :500]
+  >>> fmask = (((-x + 0.01 * y + 0.00002 * y**2)/ 500) * 13 - 0.5) + 14
+  >>> mask = fmask.astype(np.int8)
+  >>> mask[(mask % 2) == 1] = 0
+  >>> mask[mask > 13] = 0
+  >>> mask = mask // 2
+  >>> labelmapper = selector.LabelMapperArray(mask)
+
 The output frame is common for all slits and is a composite frame with two subframes,
 `~gwcs.coordinate_frames.CelestialFrame` and `~gwcs.coordinate_frames.SpectralFrame`.
 
@@ -59,28 +69,18 @@ In this example the mask is an array with the size of the detector where each it
 corresponds to a pixel on the detector and its value is the slice number (label) this pixel
 belongs to.
 
-Assuming the array is stored in
-`ASDF <https://asdf-standard.readthedocs.io/en/latest>`__ format, create the mask:
-
-.. doctest-skip-all
-
-  >>> import asdf
-  >>> f = asdf.open('mask.asdf')
-  >>> data = f.tree['mask']
-  >>> mask = selector.LabelMapperArray(data)
-
 Create the pixel to world transform for the entire IFU:
 
   >>> regions_transform = selector.RegionsSelector(inputs=['x','y'],
   ...                                              outputs=['ra', 'dec', 'lam'],
   ...                                              selector=transforms,
-  ...                                              label_mapper=mask,
+  ...                                              label_mapper=labelmapper,
   ...                                              undefined_transform_value=np.nan)
 
 The WCS object now can evaluate simultaneously the transforms of all slices.
 
   >>> wifu = wcs.WCS(forward_transform=regions_transform, output_frame=cframe, input_frame=det)
-  >>> y, x = mask.mapper.shape
+  >>> y, x = labelmapper.mapper.shape
   >>> y, x = np.mgrid[:y, :x]
   >>> r, d, l = wifu(x, y)
 
