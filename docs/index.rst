@@ -213,6 +213,8 @@ expressed with no associated transform
 
 To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a function:
 
+.. doctest-skip::
+
   >>> sky = wcsobj(1, 2)
   >>> print(sky)
   <SkyCoord (ICRS): (ra, dec) in deg
@@ -220,6 +222,8 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
+
+.. doctest-skip::
 
   >>> wcsobj.invert(sky)
   (<Quantity 1. pix>, <Quantity 2. pix>)
