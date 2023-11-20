@@ -79,6 +79,11 @@ def test_names(wcsobj):
     assert wcsobj.pixel_axis_names == wcsobj.input_frame.axes_names
 
 
+def test_names_split(gwcs_3d_galactic_spectral):
+    wcs = gwcs_3d_galactic_spectral
+    assert wcs.world_axis_names == wcs.output_frame.axes_names == ("Latitude", "Frequency", "Longitude")
+
+
 @fixture_wcs_ndim_types_units
 def test_pixel_n_dim(wcs_ndim_types_units):
     wcsobj, ndims, *_ = wcs_ndim_types_units
@@ -201,7 +206,7 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
 
 def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
@@ -223,7 +228,7 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
     temporal = waoc['temporal']
     assert temporal[0] is time.Time

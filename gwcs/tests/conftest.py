@@ -10,10 +10,10 @@ from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.modeling import models
 
-from .. import coordinate_frames as cf
-from .. import spectroscopy as sp
-from .. import wcs
-from .. import geometry
+from gwcs import coordinate_frames as cf
+from gwcs import spectroscopy as sp
+from gwcs import wcs
+from gwcs import geometry
 
 # frames
 detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
