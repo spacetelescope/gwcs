@@ -195,7 +195,7 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
 
 def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
@@ -217,7 +217,7 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
     temporal = waoc['temporal']
     assert temporal[0] is time.Time
