@@ -3,6 +3,7 @@ import functools
 import itertools
 import warnings
 
+import astropy.units as u
 import astropy.io.fits as fits
 import numpy as np
 import numpy.linalg as npla

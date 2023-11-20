@@ -375,7 +375,7 @@ def test_axis_physical_type():
     assert comp.axis_physical_types == ('pos.eq.ra', 'pos.eq.dec', 'em.freq', 'em.wl')
 
     spec6 = cf.SpectralFrame(name='waven', axes_order=(1,),
-                             axis_physical_types='em.wavenumber')
+                             axis_physical_types='em.wavenumber', unit=u.Unit(1))
     assert spec6.axis_physical_types == ('em.wavenumber',)
 
     t = cf.TemporalFrame(reference_frame=Time("2018-01-01T00:00:00"), unit=u.s)
