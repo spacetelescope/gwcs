@@ -472,7 +472,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._prop.axes_type)]
 
     @property
-   def _native_world_axis_object_components(self):
+    def _native_world_axis_object_components(self):
         """Defines the target component ordering (i.e. not taking into account axes_order)"""
         return self.world_axis_object_components
 
