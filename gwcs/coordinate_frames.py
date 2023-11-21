@@ -302,7 +302,7 @@ class FrameProperties:
                 raise ValueError("Number of axes names does not match number of axes.")
         else:
             self.axes_names = tuple([""] * naxes)
-            
+
         if self.axis_physical_types is not None:
             if isinstance(self.axis_physical_types, str):
                 self.axis_physical_types = (self.axis_physical_types,)
@@ -319,8 +319,7 @@ class FrameProperties:
 
             validate_physical_types(ph_type)
             self.axis_physical_types = tuple(ph_type)
-            #self.world_axis_physical_types = tuple(ph_type)
-            
+
     @property
     def _default_axis_physical_type(self):
         """
@@ -328,7 +327,6 @@ class FrameProperties:
         by the user.
         """
         return tuple("custom:{}".format(t) for t in self.axes_type)
-    
 
 
 class CoordinateFrame(BaseCoordinateFrame):
@@ -508,10 +506,6 @@ class CelestialFrame(CoordinateFrame):
                     if axes_names is None:
                         axes_names = _axes_names
                     naxes = len(_axes_names)
-                    #_unit = list(reference_frame.representation_component_units.values())
-                    #if unit is None and _unit:
-                    #    unit = _unit
-                        
 
         self.native_axes_order = tuple(range(naxes))
         if axes_order is None:
@@ -588,18 +582,17 @@ class SpectralFrame(CoordinateFrame):
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
                  axes_names=None, name=None, axis_physical_types=None):
-        
+
         if not isiterable(unit):
             unit = (unit,)
-            
+
         pht = axis_physical_types or self._default_axis_physical_types(unit)
-        
+
         super().__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,
                          unit=unit, name=name,
                          #axis_physical_types="em.wl")
                          axis_physical_types=pht)
-
 
     def _default_axis_physical_types(self, unit):
         if unit[0].physical_type == "frequency":
@@ -719,7 +712,7 @@ class CompositeFrame(CoordinateFrame):
     def __init__(self, frames, name=None):
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
-        
+
         axes_type = list(range(naxes))
         unit = list(range(naxes))
         axes_names = list(range(naxes))
@@ -742,8 +735,7 @@ class CompositeFrame(CoordinateFrame):
                 axes_names[ind] = n
                 unit[ind] = un
                 ph_type[ind] = pht
-        
-        
+
         if len(np.unique(axes_order)) != len(axes_order):
             raise ValueError("Incorrect numbering of axes, "
                              "axes_order should contain unique numbers, "
@@ -852,7 +844,7 @@ class StokesFrame(CoordinateFrame):
     def __init__(self, axes_order=(0,), axes_names=("stokes",), name=None, axis_physical_types=None):
 
         pht = axis_physical_types or self._default_axis_physical_types()
-        
+
         super().__init__(1, ["STOKES"], axes_order, name=name,
                          axes_names=axes_names, unit=u.one,
                          axis_physical_types=pht)
