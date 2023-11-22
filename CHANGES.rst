@@ -3,9 +3,7 @@
 
 - Improve documentation (part 1) [#483]
 
-- other
-^^^^^
-  - Replace ``pkg_resources`` with ``importlib.metadata``. [#478]
+- Replace ``pkg_resources`` with ``importlib.metadata``. [#478]
 
 0.19.0 (2023-09-15)
 -------------------

@@ -38,6 +38,8 @@ First, import the usual packages.
 
 Next, create the appropriate mapper object corresponding to the figure above:
 
+  >>> # Ignore the details of how this mask is constructed; they are using
+  >>> # array operations to generate the mask displayed for this example.
   >>> y, x = np.mgrid[:1000, :500]
   >>> fmask = (((-x + 0.01 * y + 0.00002 * y**2)/ 500) * 13 - 0.5) + 14
   >>> mask = fmask.astype(np.int8)

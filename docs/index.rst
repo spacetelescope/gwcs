@@ -121,8 +121,6 @@ There are two ways to save the WCS to a file:
 
 - `Save a WCS object as a pure ASDF file`_
 
-- `Save a WCS object as an ASDF extension in a FITS file`_
-
 
 A step-by-step example of constructing an imaging GWCS object.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -171,7 +169,7 @@ default.
   >>> tangent_projection = models.Pix2Sky_TAN()
   >>> celestial_rotation = models.RotateNative2Celestial(30., 45., 180.)
 
-For the last transformation, the 3 arguments are, respectively:
+For the last transformation, the three arguments are, respectively:
 
 - Celestial longitude (i.e., RA) of the fiducial point (e.g., (0, 0) in the input 
   spherical coordinates). 
@@ -181,7 +179,7 @@ For the last transformation, the 3 arguments are, respectively:
   always corresponds to a value of 180.
 
 The more general case where the detector is not aligned with north, would have
-a rotation transform after the pixelship and pixelscale transformations to
+a rotation transform after the pixelshift and pixelscale transformations to
 align the detector coordinates with north up.
 
 The net transformation from pixel coordinates to celestial coordinates then
