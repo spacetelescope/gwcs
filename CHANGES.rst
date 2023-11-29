@@ -1,4 +1,4 @@
-0.20.0 (unreleased)
+0.20.0 (2023-11-29)
 -------------------
 
 other
@@ -17,7 +17,7 @@ Bug Fixes
 - Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
   objects. [#439]
 
-- Fix failures and warnings woth numpy 2.0. [#472]
+- Fix failures and warnings with numpy 2.0. [#472]
 
 other
 ^^^^^
