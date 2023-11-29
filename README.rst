@@ -1,9 +1,7 @@
 GWCS - Generalized World Coordinate System
 ==========================================
 
-.. image:: https://github.com/spacetelescope/gwcs/workflows/CI/badge.svg
-    :target: https://github.com/spacetelescope/gwcs/actions
-    :alt: CI Status
+[![CI](https://github.com/spacetelescope/gwcs/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/gwcs/actions/workflows/ci.yml)
     
 .. image:: https://readthedocs.org/projects/docs/badge/?version=latest
     :target: https://gwcs.readthedocs.io/en/latest/
