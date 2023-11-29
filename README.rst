@@ -1,8 +1,10 @@
 GWCS - Generalized World Coordinate System
 ==========================================
 
-[![CI](https://github.com/spacetelescope/gwcs/actions/workflows/ci.yml/badge.svg)](https://github.com/spacetelescope/gwcs/actions/workflows/ci.yml)
-    
+.. image:: https://github.com/spacetelescope/gwcs/actions/workflows/ci.yml/badge.svg
+    :target: https://github.com/spacetelescope/gwcs/actions
+    :alt: CI Status
+
 .. image:: https://readthedocs.org/projects/docs/badge/?version=latest
     :target: https://gwcs.readthedocs.io/en/latest/
     :alt: Documentation Status
@@ -30,17 +32,12 @@ GWCS takes a general approach to the problem of expressing transformations betwe
 
 For complete features and usage examples see the `documentation`_ site.
 
-Note
-----
-Beginning with version 0.9 GWCS requires Python 3.5 and above.
-
-
 Installation
 ------------
 
 To install::
 
-    pip install gwcs  # Make sure pip >= 9.0.1 is used.
+    pip install gwcs 
 
 To clone from github and install the master branch::
 
