@@ -1,9 +1,14 @@
-0.20.0 (unreleased)
+0.21.0 (unreleased)
+-------------------
+
+0.20.0 (2023-11-29)
 -------------------
 
 - Improve documentation (part 1) [#483]
 
 - Replace ``pkg_resources`` with ``importlib.metadata``. [#478]
+
+- Serialize and deserialize ``pixel_shape`` with asdf. [#480]
 
 0.19.0 (2023-09-15)
 -------------------
@@ -14,7 +19,7 @@ Bug Fixes
 - Synchronize ``array_shape`` and ``pixel_shape`` attributes of WCS
   objects. [#439]
 
-- Fix failures and warnings woth numpy 2.0. [#472]
+- Fix failures and warnings with numpy 2.0. [#472]
 
 other
 ^^^^^

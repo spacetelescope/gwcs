@@ -52,6 +52,7 @@ def assert_frame_roundtrip(frame, tmpdir, version=None):
 
 def _assert_wcs_equal(a, b):
     assert a.name == b.name # nosec
+    assert a.pixel_shape == b.pixel_shape
     assert len(a.available_frames) == len(b.available_frames) # nosec
     for a_step, b_step in zip(a.pipeline, b.pipeline):
         _assert_frame_equal(a_step.frame, b_step.frame)
@@ -75,10 +76,13 @@ def test_create_wcs(tmpdir):
     gw1 = wcs.WCS(output_frame='icrs', input_frame='detector', forward_transform=m1)
     gw2 = wcs.WCS(output_frame='icrs', forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
+    gw4 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
+    gw4.pixel_shape = (100, 200)
 
     assert_wcs_roundtrip(gw1, tmpdir)
     assert_wcs_roundtrip(gw2, tmpdir)
     assert_wcs_roundtrip(gw3, tmpdir)
+    assert_wcs_roundtrip(gw4, tmpdir)
 
 
 def test_composite_frame(tmpdir):

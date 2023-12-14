@@ -15,12 +15,16 @@ class WCSConverter(Converter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..wcs import WCS
-        return WCS(node['steps'], name=node['name'])
+        gwcsobj = WCS(node['steps'], name=node['name'])
+        if 'pixel_shape' in node:
+            gwcsobj.pixel_shape = node['pixel_shape']
+        return gwcsobj
 
     def to_yaml_tree(self, gwcsobj, tag, ctx):
         return {
             'name': gwcsobj.name,
-            'steps': gwcsobj.pipeline
+            'steps': gwcsobj.pipeline,
+            'pixel_shape': gwcsobj.pixel_shape,
         }
 
 
