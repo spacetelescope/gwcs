@@ -109,6 +109,9 @@ Inverse Transformations
 Often, it is useful to be able to compute inverse transformation that converts
 coordinates from the output frame back to the coordinates in the input frame.
 
+Note. the ``backward_transform`` attribute is equivalent to
+``forward_transform.inverse``.
+
 In this section, for illustration purpose, we will be using the same 2D imaging
 WCS from ``imaging_wcs_wdist.asdf`` created in :ref:`imaging_example` whose
 forward transformation converts image coordinates to world coordinates and
@@ -175,3 +178,4 @@ point far away from the image for which numerical inverse fails.
    [5.31656943e-06 2.72052603e-10]
    [6.81557583e-06 1.06560533e-06]
    [3.96365344e-04 6.41822468e-05]]
+

@@ -102,56 +102,75 @@ To install the latest release::
 
 The latest release of GWCS is also available as part of `astroconda <https://github.com/astroconda/astroconda>`__.
 
+
 .. _getting-started:
 
-Getting Started
----------------
+Basic Structure of a GWCS Object
+--------------------------------
 
-The WCS data model represents a pipeline of transformations between two
-coordinate frames, the final one usually a physical coordinate system.
-It is represented as a list of steps executed in order. Each step defines a
-starting coordinate frame and the transform to the next frame in the pipeline.
-The last step has no transform, only a frame which is the output frame of
-the total transform. As a minimum a WCS object has an ``input_frame`` (defaults to "detector"),
-an ``output_frame`` and the transform between them.
+The key concept to be aware of is that a GWCS Object consists of a pipeline
+of steps; each step contains a transform (i.e., an Astropy model) that
+converts the input coordinates of the step to the output coordinates of
+the step. Furthermore, each step has an optional coordinate frame associated
+with the step. The coordinate frame represents the input coordinate frame, not
+the output coordinates. Most typically, the first step coordinate frame is
+the detector pixel coordinates (the default). Since no step has a coordinate
+frame for the output coordinates, it is necessary to append a step with no
+transform to the end of the pipeline to represent the output coordinate frame.
+For imaging, this frame typically references one of the Astropy standard
+Sky Coordinate Frames of Reference. The GWCS frames also serve to hold the
+units on the axes, the names of the axes and the physical type of the axis
+(e.g., wavelength).
 
-The WCS is validated using the `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
-and serialized to file using the  `asdf <https://asdf.readthedocs.io/en/latest/>`__ package.
-There are two ways to save the WCS to a file:
+Since it is often useful to obtain coordinates in an intermediate frame of
+reference, GWCS allows the pipeline to consist of more than one transform.
+For example, for spectrographs, it is useful to have access to coordinates
+in the slit plane, and in such a case, the first step would transform from
+the detector to the slit plane, and the second step from the slit plane to
+sky coordinates and a wavelength. Constructed this way, it is possible to
+extract from the GWCS the needed transforms between identified frames of
+reference.
+
+The GWCS object can be saved to the ASDF format using the
+`asdf <https://asdf.readthedocs.io/en/latest/>`__ package and validated
+using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
+
+There are two ways to save the GWCS object to a files:
+
+- `Save a WCS object as a pure ASDF file`_ 
 
 - `Save a WCS object as a pure ASDF file`_
 
-- `Save a WCS object as an ASDF extension in a FITS file`_
 
-
-A step by step example of constructing an imaging GWCS object.
+A step-by-step example of constructing an imaging GWCS object.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following example shows how to construct a GWCS object equivalent to
-a FITS imaging WCS without distortion, defined in this FITS imaging header::
+The following example shows how to construct a GWCS object that maps
+input pixel coordinates to sky coordinates. This example
+involves 4 sequential transformations:
 
-  WCSAXES =                    2 / Number of coordinate axes
-  WCSNAME = '47 Tuc     '        / Coordinate system title
-  CRPIX1  =               2048.0 / Pixel coordinate of reference point
-  CRPIX2  =               1024.0 / Pixel coordinate of reference point
-  PC1_1   =   1.290551569736E-05 / Coordinate transformation matrix element
-  PC1_2   =  5.9525007864732E-06 / Coordinate transformation matrix element
-  PC2_1   =  5.0226382102765E-06 / Coordinate transformation matrix element
-  PC2_2   = -1.2644844123757E-05 / Coordinate transformation matrix element
-  CDELT1  =                  1.0 / [deg] Coordinate increment at reference point
-  CDELT2  =                  1.0 / [deg] Coordinate increment at reference point
-  CUNIT1  = 'deg'                / Units of coordinate increment and value
-  CUNIT2  = 'deg'                / Units of coordinate increment and value
-  CTYPE1  = 'RA---TAN'           / TAN (gnomonic) projection + SIP distortions
-  CTYPE2  = 'DEC--TAN'           / TAN (gnomonic) projection + SIP distortions
-  CRVAL1  =        5.63056810618 / [deg] Coordinate value at reference point
-  CRVAL2  =      -72.05457184279 / [deg] Coordinate value at reference point
-  LONPOLE =                180.0 / [deg] Native longitude of celestial pole
-  LATPOLE =      -72.05457184279 / [deg] Native latitude of celestial pole
-  RADESYS = 'ICRS'                / Equatorial coordinate system
+- Adjusting pixel coordinates such that the center of the array has
+  (0, 0) value (typical of most WCS definitions, but any pixel may
+  be the reference that is tied to the sky reference, even the (0, 0)
+  pixel, or even pixels outside of the detector).
+- Scaling pixels such that the center pixel of the array has the expected
+  angular scale. (I.e., applying the plate scale)
+- Projecting the resultant coordinates onto the sky using the tangent
+  projection. If the field of view is small, the inaccuracies resulting
+  leaving this out will be small; however, this is generally applied.
+- Transforming the center pixel to the appropriate celestial coordinate
+  with the approprate orientation on the sky. For simplicity's sake,
+  we assume the detector array is already oriented with north up, and
+  that the array has the appropriate parity as the sky coordinates.
 
+
+The detector has a 1000 pixel by 1000 pixel array.
+
+For simplicity, no units will be used, but instead will be implicit.
 
 The following imports are generally useful:
+
+.. doctest-skip::
 
   >>> import numpy as np
   >>> from astropy.modeling import models
@@ -160,51 +179,50 @@ The following imports are generally useful:
   >>> from gwcs import wcs
   >>> from gwcs import coordinate_frames as cf
 
-The ``forward_transform`` is constructed as a combined model using `astropy.modeling`.
-The ``frames`` are subclasses of `~gwcs.coordinate_frames.CoordinateFrame`. Although strings are
-acceptable as ``coordinate_frames`` it is recommended this is used only in testing/debugging.
+In the following transformation definitions, angular units are in degrees by
+default.
 
-Using the `~astropy.modeling` package create a combined model to transform
-detector coordinates to ICRS following the FITS WCS standard convention.
+.. doctest-skip::
 
-First, create a transform which shifts the input  ``x`` and ``y`` coordinates by ``CRPIX``.  We subtract 1 from the CRPIX values because the first pixel is considered pixel ``1`` in FITS WCS:
+  >>> pixelshift = models.Shift(-500) & models.Shift(-500)
+  >>> pixelscale = models.Scale(0.1 / 3600.) & models.Scale(0.1 / 3600.) # 0.1 arcsec/pixel
+  >>> tangent_projection = models.Pix2Sky_TAN()
+  >>> celestial_rotation = models.RotateNative2Celestial(30., 45., 180.)
 
-  >>> shift_by_crpix = models.Shift(-(2048 - 1)*u.pix) & models.Shift(-(1024 - 1)*u.pix)
+For the last transformation, the three arguments are, respectively:
 
-Create a transform which rotates the inputs using the ``PC matrix``.
+- Celestial longitude (i.e., RA) of the fiducial point (e.g., (0, 0) in the input
+  spherical coordinates).
+  In this case we put the detector center at 30 degrees (RA = 2 hours)
+- Celestial latitude (i.e., Dec) of the fiducial point. Here Dec = 45 degrees.
+- Longitude of celestial pole in input coordinate system. With north up, this
+  always corresponds to a value of 180.
 
-  >>> matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
-  ...                    [5.0226382102765E-06 , -1.2644844123757E-05]])
-  >>> rotation = models.AffineTransformation2D(matrix * u.deg,
-  ...                                          translation=[0, 0] * u.deg)
-  >>> rotation.input_units_equivalencies = {"x": u.pixel_scale(1*u.deg/u.pix),
-  ...                                       "y": u.pixel_scale(1*u.deg/u.pix)}
-  >>> rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix) * u.pix,
-  ...                                                  translation=[0, 0] * u.pix)
-  >>> rotation.inverse.input_units_equivalencies = {"x": u.pixel_scale(1*u.pix/u.deg),
-  ...                                               "y": u.pixel_scale(1*u.pix/u.deg)}
+The more general case where the detector is not aligned with north, would have
+a rotation transform after the pixelshift and pixelscale transformations to
+align the detector coordinates with north up.
 
-Create a tangent projection and a rotation on the sky using ``CRVAL``.
+The net transformation from pixel coordinates to celestial coordinates then
+becomes:
 
-  >>> tan = models.Pix2Sky_TAN()
-  >>> celestial_rotation =  models.RotateNative2Celestial(5.63056810618*u.deg, -72.05457184279*u.deg, 180*u.deg)
+.. doctest-skip::
 
-  >>> det2sky = shift_by_crpix | rotation | tan | celestial_rotation
-  >>> det2sky.name = "linear_transform"
+  >>> det2sky = pixelshift | pixelscale | tangent_projection | celestial_rotation
 
-Create a ``detector`` coordinate frame and a ``celestial`` ICRS frame.
+The remaining elements to defining the WCS are he input and output
+frames of reference. While the GWCS scheme allows intermediate frames
+of reference, this example doesn't have any. The output frame is
+expressed with no associated transform
+
+.. doctest-skip::
 
   >>> detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
   ...                             unit=(u.pix, u.pix))
   >>> sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs',
   ...                               unit=(u.deg, u.deg))
-
-This WCS pipeline has only one step - from ``detector`` to ``sky``:
-
-  >>> pipeline = [(detector_frame, det2sky),
-  ...             (sky_frame, None)
-  ...            ]
-  >>> wcsobj = wcs.WCS(pipeline)
+  >>> wcsobj = wcs.WCS([(detector_frame, det2sky),
+  ...                   (sky_frame, None)
+  ...                  ]
   >>> print(wcsobj)
     From      Transform
   -------- ----------------
@@ -213,13 +231,17 @@ This WCS pipeline has only one step - from ``detector`` to ``sky``:
 
 To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a function:
 
-  >>> sky = wcsobj(1*u.pix, 2*u.pix, with_units=True)
+.. doctest-skip::
+
+  >>> sky = wcsobj(1, 2)
   >>> print(sky)
   <SkyCoord (ICRS): (ra, dec) in deg
     (5.52515954, -72.05190935)>
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
+
+.. doctest-skip::
 
   >>> wcsobj.invert(sky)
   (<Quantity 1. pix>, <Quantity 2. pix>)
@@ -240,31 +262,6 @@ Save a WCS object as a pure ASDF file
 :ref:`pure_asdf`
 
 
-Save a WCS object as an ASDF extension in a FITS file
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-.. doctest-skip::
-
-  >>> from astropy.io import fits
-  >>> from asdf import fits_embed
-  >>> hdul = fits.open("example_imaging.fits")
-  >>> hdul.info()
-  Filename: example_imaging.fits
-  No.    Name      Ver    Type      Cards   Dimensions   Format
-  0  PRIMARY       1 PrimaryHDU     775   ()
-  1  SCI           1 ImageHDU        71   (600, 550)   float32
-  >>> tree = {"sci": hdul[1].data,
-  ...         "wcs": wcsobj}
-  >>> fa = fits_embed.AsdfInFits(hdul, tree)
-  >>> fa.write_to("imaging_with_wcs_in_asdf.fits")
-  >>> fits.info("imaging_with_wcs_in_asdf.fits")
-  Filename: example_with_wcs.asdf
-  No.    Name      Ver    Type      Cards   Dimensions   Format
-  0  PRIMARY       1 PrimaryHDU     775   ()
-  1  SCI           1 ImageHDU        71   (600, 550)   float32
-  2  ASDF          1 BinTableHDU     11   1R x 1C   [5086B]
-
 Reading a WCS object from a file
 ++++++++++++++++++++++++++++++++
 
@@ -279,12 +276,6 @@ from a pure ASDF file or from an ASDF extension in a FITS file.
   >>> asdf_file = asdf.open("imaging_wcs.asdf")
   >>> wcsobj = asdf_file.tree['wcs']
 
-
-.. doctest-skip::
-
-  >>> import asdf
-  >>> fa = asdf.open("imaging_with_wcs_in_asdf.fits")
-  >>> wcsobj = fa.tree["wcs"]
 
 Other Examples
 --------------
@@ -309,6 +300,7 @@ Using ``gwcs``
   gwcs/pure_asdf.rst
   gwcs/wcs_validation.rst
   gwcs/points_to_wcs.rst
+  gwcs/fits_analog.rst
 
 
 See also
