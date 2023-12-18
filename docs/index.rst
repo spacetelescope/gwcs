@@ -102,22 +102,42 @@ To install the latest release::
 
 The latest release of GWCS is also available as part of `astroconda <https://github.com/astroconda/astroconda>`__.
 
+
 .. _getting-started:
 
-Getting Started
----------------
+Basic Structure of a GWCS Object
+--------------------------------
 
-The WCS data model represents a pipeline of transformations between two
-coordinate frames, the final one usually a physical coordinate system.
-It is represented as a list of steps executed in order. Each step defines a
-starting coordinate frame and the transform to the next frame in the pipeline.
-The last step has no transform, only a frame which is the output frame of
-the total transform. As a minimum a WCS object has an ``input_frame`` (defaults to "detector"),
-an ``output_frame`` and the transform between them.
+The key concept to be aware of is that a GWCS Object consists of a pipeline
+of steps; each step contains a transform (i.e., an Astropy model) that
+converts the input coordinates of the step to the output coordinates of
+the step. Furthermore, each step has an optional coordinate frame associated
+with the step. The coordinate frame represents the input coordinate frame, not
+the output coordinates. Most typically, the first step coordinate frame is
+the detector pixel coordinates (the default). Since no step has a coordinate
+frame for the output coordinates, it is necessary to append a step with no
+transform to the end of the pipeline to represent the output coordinate frame.
+For imaging, this frame typically references one of the Astropy standard
+Sky Coordinate Frames of Reference. The GWCS frames also serve to hold the
+units on the axes, the names of the axes and the physical type of the axis
+(e.g., wavelength).
 
-The WCS is validated using the `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
-and serialized to file using the  `asdf <https://asdf.readthedocs.io/en/latest/>`__ package.
-There are two ways to save the WCS to a file:
+Since it is often useful to obtain coordinates in an intermediate frame of
+reference, GWCS allows the pipeline to consist of more than one transform.
+For example, for spectrographs, it is useful to have access to coordinates
+in the slit plane, and in such a case, the first step would transform from
+the detector to the slit plane, and the second step from the slit plane to
+sky coordinates and a wavelength. Constructed this way, it is possible to
+extract from the GWCS the needed transforms between identified frames of
+reference.
+
+The GWCS object can be saved to the ASDF format using the
+`asdf <https://asdf.readthedocs.io/en/latest/>`__ package and validated
+using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
+
+There are two ways to save the GWCS object to a files:
+
+- `Save a WCS object as a pure ASDF file`_ 
 
 - `Save a WCS object as a pure ASDF file`_
 
@@ -126,10 +146,10 @@ A step-by-step example of constructing an imaging GWCS object.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following example shows how to construct a GWCS object that maps
-input pixel coordinates to sky coordinates. This example 
-involves 4 sequential transformations: 
+input pixel coordinates to sky coordinates. This example
+involves 4 sequential transformations:
 
-- Adjusting pixel coordinates such that the center of the array has 
+- Adjusting pixel coordinates such that the center of the array has
   (0, 0) value (typical of most WCS definitions, but any pixel may
   be the reference that is tied to the sky reference, even the (0, 0)
   pixel, or even pixels outside of the detector).
@@ -138,7 +158,7 @@ involves 4 sequential transformations:
 - Projecting the resultant coordinates onto the sky using the tangent
   projection. If the field of view is small, the inaccuracies resulting
   leaving this out will be small; however, this is generally applied.
-- Transforming the center pixel to the appropriate celestial coordinate 
+- Transforming the center pixel to the appropriate celestial coordinate
   with the approprate orientation on the sky. For simplicity's sake,
   we assume the detector array is already oriented with north up, and
   that the array has the appropriate parity as the sky coordinates.
@@ -159,7 +179,7 @@ The following imports are generally useful:
   >>> from gwcs import wcs
   >>> from gwcs import coordinate_frames as cf
 
-In the following transformation definitions, angular units are in degrees by 
+In the following transformation definitions, angular units are in degrees by
 default.
 
 .. doctest-skip::
@@ -171,8 +191,8 @@ default.
 
 For the last transformation, the three arguments are, respectively:
 
-- Celestial longitude (i.e., RA) of the fiducial point (e.g., (0, 0) in the input 
-  spherical coordinates). 
+- Celestial longitude (i.e., RA) of the fiducial point (e.g., (0, 0) in the input
+  spherical coordinates).
   In this case we put the detector center at 30 degrees (RA = 2 hours)
 - Celestial latitude (i.e., Dec) of the fiducial point. Here Dec = 45 degrees.
 - Longitude of celestial pole in input coordinate system. With north up, this

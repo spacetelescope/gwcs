@@ -1,10 +1,10 @@
 0.21.0 (unreleased)
 -------------------
 
+- Improve documentation (part 1) [#483]
+
 0.20.0 (2023-11-29)
 -------------------
-
-- Improve documentation (part 1) [#483]
 
 - Replace ``pkg_resources`` with ``importlib.metadata``. [#478]
 
