@@ -3,6 +3,8 @@
 
 - Improve documentation (part 1) [#483]
 
+- Add a minimum version requirement for ``asdf-wcs-schemas``. [#488]
+
 0.20.0 (2023-11-29)
 -------------------
 
