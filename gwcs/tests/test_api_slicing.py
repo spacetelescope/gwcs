@@ -51,7 +51,7 @@ def test_ellipsis(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) == (u.deg, u.deg)
 
     assert wcs.world_axis_object_classes['spectral'][0] is SpectralCoord
     assert wcs.world_axis_object_classes['spectral'][1] == ()
@@ -112,7 +112,7 @@ def test_spectral_slice(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) == (u.deg, u.deg)
 
     assert_allclose(wcs.pixel_to_world_values(29, 44), (10, 25))
     assert_allclose(wcs.array_index_to_world_values(44, 29), (10, 25))
@@ -173,7 +173,7 @@ def test_spectral_range(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] ==  (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
     assert wcs.world_axis_object_classes['spectral'][0] is SpectralCoord
     assert wcs.world_axis_object_classes['spectral'][1] == ()
@@ -237,7 +237,7 @@ def test_celestial_slice(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] ==  (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
     assert wcs.world_axis_object_classes['spectral'][0] is SpectralCoord
     assert wcs.world_axis_object_classes['spectral'][1] == ()
@@ -302,7 +302,7 @@ def test_celestial_range(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] ==  (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
     assert wcs.world_axis_object_classes['spectral'][0] is SpectralCoord
     assert wcs.world_axis_object_classes['spectral'][1] == ()
@@ -370,7 +370,7 @@ def test_no_array_shape(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] ==  (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
     assert wcs.world_axis_object_classes['spectral'][0] is SpectralCoord
     assert wcs.world_axis_object_classes['spectral'][1] == ()
@@ -438,7 +438,7 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
-    assert wcs.world_axis_object_classes['celestial'][2]['unit'] ==  (u.deg, u.deg)
+    assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
     assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (10, 20, 25))
     assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (10, 20, 25))

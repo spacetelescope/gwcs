@@ -11,7 +11,6 @@ from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
-from astropy.time import Time, TimeDelta
 from astropy.wcs import Celprm
 
 
@@ -465,19 +464,13 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-def isnumerical(val):
+def is_high_level(*args, low_level_wcs):
     """
-    Determine if a value is numerical (number or np.array of numbers).
+    Determine if args matches the high level classes as defined by
+    ``low_level_wcs``.
     """
-    isnum = True
-    if isinstance(val, coords.SkyCoord):
-        isnum = False
-    elif isinstance(val, u.Quantity):
-        isnum = False
-    elif isinstance(val, (Time, TimeDelta)):
-        isnum = False
-    elif (isinstance(val, np.ndarray)
-          and not np.issubdtype(val.dtype, np.floating)
-          and not np.issubdtype(val.dtype, np.integer)):
-        isnum = False
-    return isnum
+    if len(args) != len(low_level_wcs.world_axis_object_classes):
+        return False
+
+    return all([type(arg) is waoc[0]
+                for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())])
