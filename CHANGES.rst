@@ -5,6 +5,8 @@
 
 - Add a minimum version requirement for ``asdf-wcs-schemas``. [#488]
 
+- Fix ``WCS.__str__`` for instances without transforms. [#489]
+
 0.20.0 (2023-11-29)
 -------------------
 

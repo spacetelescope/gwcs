@@ -1338,13 +1338,13 @@ class WCS(GWCSAPIMixin):
     def __str__(self):
         from astropy.table import Table
 
-        #col1 = [item[0] for item in self._pipeline]
         col1 = [step.frame for step in self._pipeline]
         col2 = []
         for item in self._pipeline[: -1]:
-            #model = item[1]
             model = item.transform
-            if model.name is not None:
+            if model is None:
+                col2.append(None)
+            elif model.name is not None:
                 col2.append(model.name)
             else:
                 col2.append(model.__class__.__name__)

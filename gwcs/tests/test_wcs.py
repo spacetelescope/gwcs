@@ -1316,3 +1316,8 @@ def test_spatial_spectral_stokes():
     assert_allclose(gw_sky.data.lat, aw_sky.data.lat)
     assert_allclose(gw_spec.value, aw_spec.value)
     assert_allclose(gw_stokes.value, aw_stokes.value)
+
+
+def test_wcs_str():
+    w = wcs.WCS(output_frame="icrs")
+    assert 'icrs' in str(w)
