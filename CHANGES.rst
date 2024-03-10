@@ -1,7 +1,7 @@
-0.21.0 (unreleased)
+0.21.0 (2024-03-10)
 -------------------
 
-- Improve documentation (part 1) [#483]
+- Improve documentation. [#483]
 
 - Add a minimum version requirement for ``asdf-wcs-schemas``. [#491]
 
