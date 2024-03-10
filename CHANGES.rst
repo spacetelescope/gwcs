@@ -3,7 +3,7 @@
 
 - Improve documentation (part 1) [#483]
 
-- Add a minimum version requirement for ``asdf-wcs-schemas``. [#488]
+- Add a minimum version requirement for ``asdf-wcs-schemas``. [#491]
 
 - Fix ``WCS.__str__`` for instances without transforms. [#489]
 

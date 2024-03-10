@@ -32,13 +32,13 @@ jobs:
           python-version: 3.9
         - linux: test-numpy125
           python-version: 3.9
-        - linux: test-numpy122
+        - linux: test-numpy123
           python-version: 3.9
         - linux: test
           python-version: 3.10
         - linux: test-numpy125
           python-version: 3.10
-        - linux: test-numpy122
+        - linux: test-numpy123
           python-version: 3.10
         - linux: test
           python-version: 3.11
