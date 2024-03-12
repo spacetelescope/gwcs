@@ -137,7 +137,7 @@ using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
 
 There are two ways to save the GWCS object to a files:
 
-- `Save a WCS object as a pure ASDF file`_ 
+- `Save a WCS object as a pure ASDF file`_
 
 - `Save a WCS object as a pure ASDF file`_
 
@@ -222,11 +222,11 @@ expressed with no associated transform
   ...                               unit=(u.deg, u.deg))
   >>> wcsobj = wcs.WCS([(detector_frame, det2sky),
   ...                   (sky_frame, None)
-  ...                  ]
+  ...                  ])
   >>> print(wcsobj)
     From      Transform
   -------- ----------------
-  detector linear_transform
+  detector detector_to_sky
       icrs             None
 
 To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a function:
@@ -235,16 +235,27 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 
   >>> sky = wcsobj(1, 2)
   >>> print(sky)
-  <SkyCoord (ICRS): (ra, dec) in deg
-    (5.52515954, -72.05190935)>
+  (29.980402161089177, 44.98616499109102)
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
 .. doctest-skip::
 
-  >>> wcsobj.invert(sky)
-  (<Quantity 1. pix>, <Quantity 2. pix>)
+  >>> wcsobj.invert(*sky)
+  (0.9999999996185807, 1.999999999186798)
+
+GWCS supports the common WCS interface which defines several methods
+to work with high level Astropy objects:
+
+.. doctest-skip::
+
+  >>> sky_obj = wcsobj.pixel_to_world(1, 2)
+  >>> print(sky)
+  <SkyCoord (ICRS): (ra, dec) in deg
+    (29.98040216, 44.98616499)>
+  >>> wcsobj.world_to_pixel(sky_obj)
+  (0.9999999996185807, 1.999999999186798)
 
 .. _save_as_asdf:
 
