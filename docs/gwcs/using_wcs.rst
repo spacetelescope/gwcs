@@ -69,7 +69,10 @@ Calling the :meth:`~gwcs.WCS.footprint` returns the footprint on the sky.
 .. doctest-skip::
 
    >>> wcsobj.footprint()
-
+   array([[  5.5264392 , -72.05149213],
+   ...    [  5.54580408, -72.06422321],
+   ...    [  5.63010439, -72.05426843],
+   ...    [  5.610708  , -72.04173847]])
 
 Manipulating Transforms
 -----------------------
@@ -82,7 +85,7 @@ Transforms between frames can be retrieved and evaluated separately.
 
   >>> dist = wcsobj.get_transform('detector', 'undistorted_frame')
   >>> dist(1, 2)    # doctest: +FLOAT_CMP
-  (-292.4150238489997, -616.8680129899999)
+  (41.62325692108675, -12.68101006210054)
 
 Transforms in the pipeline can be replaced by new transforms.
 
@@ -119,6 +122,8 @@ inverse transformation converts world coordinates back to image coordinates.
 
 .. doctest-skip::
 
+  >>> import asdf
+  >>> from astropy.utils.data import get_pkg_data_filename
   >>> wcsobj = asdf.open(get_pkg_data_filename('imaging_wcs_wdist.asdf')).tree['wcs']
 
 The most general method available for computing inverse coordinate
@@ -140,7 +145,7 @@ most situations:
   (349.9999994163172, 200.00000017679295)
   >>> world = wcsobj([2, 350, -5000], [2, 200, 6000])
   >>> print(wcsobj.invert(*world))  # convert multiple points at once
-  (array([ 2.00000000e+00,  3.49999999e+02, -5.00000000e+03]), array([1.99999972e+00, 2.00000002e+02, 6.00000000e+03])
+  (array([ 1.99999752,  3.49999999e+02, -5.00000000e+03]), array([1.99999972e+00, 2.00000002e+02, 6.00000000e+03])
 
 By default, parameter ``quiet`` is set to `True` in `WCS.numerical_inverse() <gwcs.wcs.WCS.numerical_inverse>`
 and so it will return results "as is" without warning us about possible loss
@@ -178,4 +183,3 @@ point far away from the image for which numerical inverse fails.
    [5.31656943e-06 2.72052603e-10]
    [6.81557583e-06 1.06560533e-06]
    [3.96365344e-04 6.41822468e-05]]
-
