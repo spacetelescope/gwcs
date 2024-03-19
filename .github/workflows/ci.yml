@@ -41,6 +41,7 @@ jobs:
         - linux: py311-cov
           coverage: codecov
           pytest-results-summary: true
+        - linux: py312
         - linux: py3-dev
   environment:
     runs-on: ubuntu-latest
