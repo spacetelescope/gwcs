@@ -1,7 +1,7 @@
 [project]
 name = "gwcs"
 description = "Generalized World Coordinate System"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "gwcs developers", email = "help@stsci.edu" },
 ]
@@ -59,7 +59,9 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-'gwcs.tests.data' = ["*"]
+"gwcs.tests.data" = [
+    "*",
+]
 
 [tool.setuptools.packages.find]
 namespaces = false
@@ -84,7 +86,6 @@ doctest_plus = "enabled"
 addopts = "--doctest-rst"
 filterwarnings = [
     "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
-    # importing astropy code causes this warning to be issued, so ignore it
     "ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
