@@ -16,77 +16,52 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DATA_PATH: /tmp/data
+
 jobs:
   check:
-    name:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
       envs: |
         - linux: check-style
         - linux: check-security
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
     with:
       envs: |
-        - linux: test
-          python-version: 3.9
-        - linux: test-numpy125
-          python-version: 3.9
-        - linux: test-numpy123
-          python-version: 3.9
-        - linux: test
-          python-version: 3.10
-        - linux: test-numpy125
-          python-version: 3.10
-        - linux: test-numpy123
-          python-version: 3.10
-        - linux: test
-          python-version: 3.11
+        - linux: py310
+        - linux: py310-numpy123
+        - linux: py310-numpy125
+        - linux: py311
           pytest-results-summary: true
-        - macos: test
-          python-version: 3.11
+        - macos: py311
           pytest-results-summary: true
-        - linux: test-dev
-        - linux: test-pyargs
-          python-version: 3.11
-        - linux: test-cov
-          python-version: 3.11
+        - linux: py311-pyargs
+        - linux: py311-cov
           coverage: codecov
           pytest-results-summary: true
-  crds:
-    name: retrieve current CRDS context
+        - linux: py312
+        - linux: py3-dev
+  environment:
     runs-on: ubuntu-latest
-    env:
-      OBSERVATORY: jwst
-      CRDS_PATH: /tmp/crds_cache
-      CRDS_SERVER_URL: https://jwst-crds.stsci.edu
     steps:
-      - id: context
-        run: >
-          echo "pmap=$(
-          curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.OBSERVATORY }}"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ |
-          python -c "import sys, json; print(json.load(sys.stdin)['result'])"
-          )" >> $GITHUB_OUTPUT
-        # Get default CRDS_CONTEXT without installing crds client
-        # See https://hst-crds.stsci.edu/static/users_guide/web_services.html#generic-request
-      - id: path
-        run: echo "path=${{ env.CRDS_PATH }}" >> $GITHUB_OUTPUT
-      - id: server
-        run: echo "url=${{ env.CRDS_SERVER_URL }}" >> $GITHUB_OUTPUT
+      - id: data_path
+        run: echo "path=${{ env.DATA_PATH }}" >> $GITHUB_OUTPUT
     outputs:
-      context: ${{ steps.context.outputs.pmap }}
-      path: ${{ steps.path.outputs.path }}
-      server: ${{ steps.server.outputs.url }}
+      data_path: ${{ steps.data_path.outputs.path }}
+  crds_contexts:
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
   test_downstream:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
-    needs: [ crds ]
+    needs: [ environment, crds_contexts ]
     with:
       setenv: |
-        CRDS_PATH: ${{ needs.crds.outputs.path }}
-        CRDS_SERVER_URL: ${{ needs.crds.outputs.server }}
+        CRDS_PATH: ${{ needs.environment.outputs.data_path }}/crds
+        CRDS_SERVER_URL: https://jwst-crds.stsci.edu
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.crds.outputs.path }}
-      cache-key: crds-${{ needs.crds.outputs.context }}
+      cache-path: ${{ needs.environment.outputs.data_path }}/crds
+      cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
-        - linux: py310-test-jwst-cov-xdist
+        - linux: py311-test-jwst-cov-xdist
