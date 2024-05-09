@@ -433,6 +433,11 @@ class WCS(GWCSAPIMixin):
             coords,
             np.nan
         )
+
+        if isinstance(result, np.ndarray) and result.shape == ():
+            # scalar results should be floats:
+            result = float(result)
+
         return result
 
     def invert(self, *args, **kwargs):

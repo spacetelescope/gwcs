@@ -1,6 +1,8 @@
 0.22.0 (unreleased)
 -------------------
 
+- Return nan for world to pixel transformations outside of the
+  bounding box. [#497]
 
 0.21.0 (2024-03-10)
 -------------------
