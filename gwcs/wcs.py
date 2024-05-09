@@ -396,7 +396,11 @@ class WCS(GWCSAPIMixin):
         kwargs['fill_value'] = np.nan
 
         coords = self.invert(*args, **kwargs)
+        result = self._pixel_coords_in_image(coords, args)
 
+        return result
+
+    def _pixel_coords_in_image(self, coords, args):
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
             result = np.all(result, axis=0)
@@ -419,7 +423,16 @@ class WCS(GWCSAPIMixin):
 
             elif result:
                 result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
+        return result
 
+    def _out_of_bounding_box_to_nan(self, coords, args):
+        # world coordinates outside the bounding_box are set to nan:
+        within_bounding_box = self._pixel_coords_in_image(coords, args)
+        result = np.where(
+            within_bounding_box,
+            coords,
+            np.nan
+        )
         return result
 
     def invert(self, *args, **kwargs):

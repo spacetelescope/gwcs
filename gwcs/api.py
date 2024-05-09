@@ -135,6 +135,7 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
 
         result = self.invert(*world_arrays, with_units=False)
+        result = self._out_of_bounding_box_to_nan(result, world_arrays)
 
         return self._remove_quantity_output(result, self.input_frame)
 
@@ -321,6 +322,8 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         else:
             if not utils.isnumerical(result):
                 result = result.value
+
+        result = self._out_of_bounding_box_to_nan(result, world_objects)
 
         return result
 
