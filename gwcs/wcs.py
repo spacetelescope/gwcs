@@ -396,10 +396,7 @@ class WCS(GWCSAPIMixin):
            and `False` if input is outside the footprint.
 
         """
-        kwargs['with_bounding_box'] = True
-        kwargs['fill_value'] = np.nan
-
-        coords = self.invert(*args, **kwargs)
+        coords = self.invert(*args, with_bounding_box=False, **kwargs)
 
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
@@ -480,11 +477,8 @@ class WCS(GWCSAPIMixin):
             except (NotImplementedError, KeyError):
                 args = utils.get_values(self.output_frame.unit, *args)
 
-        if 'with_bounding_box' not in kwargs:
-            kwargs['with_bounding_box'] = True
-
-        if 'fill_value' not in kwargs:
-            kwargs['fill_value'] = np.nan
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        fill_value = kwargs.pop('fill_value', np.nan)
 
         try:
             # remove iterative inverse-specific keyword arguments:
@@ -492,6 +486,24 @@ class WCS(GWCSAPIMixin):
             result = self.backward_transform(*args, **akwargs)
         except (NotImplementedError, KeyError):
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
+
+        if with_bounding_box and self.bounding_box is not None:
+            bbox = self.bounding_box
+            if self.input_frame.naxes == 1:
+                result = [result]
+            input_shape = self.backward_transform.input_shape(result)
+            valid_inputs, valid_index, all_out = bbox.prepare_inputs(input_shape, result)
+            if all_out:
+                if self.input_frame.naxes == 1:
+                    return bbox._all_out_output(input_shape, fill_value)[0][0]
+                else:
+                    return bbox._all_out_output(input_shape, fill_value)[0]
+            else:
+                if self.input_frame.naxes == 1:
+                    valid_inputs = valid_inputs[0]
+                    result = bbox.prepare_outputs(valid_inputs, valid_index, input_shape, fill_value)[0]
+                else:
+                    result = tuple(bbox.prepare_outputs(valid_inputs, valid_index, input_shape, fill_value))
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
