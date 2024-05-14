@@ -1,6 +1,8 @@
 0.22.0 (unreleased)
 -------------------
 
+- Fixed a bug where evaluating the inverse transform did not
+  respect the bounding box. [#498]
 
 0.21.0 (2024-03-10)
 -------------------
