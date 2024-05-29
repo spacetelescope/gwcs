@@ -525,8 +525,8 @@ class WCS(GWCSAPIMixin):
         else:
             return result
 
-    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
-                          detect_divergence=True, quiet=True, with_bounding_box=True,
+    def numerical_inverse(self, *args, tolerance=1e-4, maxiter=30, adaptive=True,
+                          detect_divergence=False, quiet=True, with_bounding_box=True,
                           fill_value=np.nan, with_units=False, **kwargs):
         """
         Invert coordinates from output frame to input frame using numerical
