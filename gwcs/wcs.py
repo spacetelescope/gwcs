@@ -472,6 +472,7 @@ class WCS(GWCSAPIMixin):
             if self.output_frame.naxes == 1:
                 args = [args]
             try:
+                # uses_quantity constructs the backward_transform
                 if not self.backward_transform.uses_quantity:
                     args = utils.get_values(self.output_frame.unit, *args)
             except (NotImplementedError, KeyError):
@@ -483,27 +484,38 @@ class WCS(GWCSAPIMixin):
         try:
             # remove iterative inverse-specific keyword arguments:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = self.backward_transform(*args, **akwargs)
+            btrans = self.backward_transform
+            result = btrans(*args, **akwargs)
+            #result_shape = btrans.input_shape(result)
         except (NotImplementedError, KeyError):
+            btrans = None
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
+            #result_shape = result[0].shape
 
         if with_bounding_box and self.bounding_box is not None:
             bbox = self.bounding_box
             if self.input_frame.naxes == 1:
                 result = [result]
-            input_shape = self.backward_transform.input_shape(result)
-            valid_inputs, valid_index, all_out = bbox.prepare_inputs(input_shape, result)
+            if btrans is not None:
+                result_shape = btrans.input_shape(result)
+            else:
+            # numerical_inversse was run - > 2 outputs
+                if np.isscalar(result[0]):
+                    result_shape = ()
+                else:
+                    result_shape = result[0].shape
+            valid_inputs, valid_index, all_out = bbox.prepare_inputs(result_shape, result)
             if all_out:
                 if self.input_frame.naxes == 1:
-                    return bbox._all_out_output(input_shape, fill_value)[0][0]
+                    return bbox._all_out_output(result_shape, fill_value)[0][0]
                 else:
-                    return bbox._all_out_output(input_shape, fill_value)[0]
+                    return bbox._all_out_output(result_shape, fill_value)[0]
             else:
                 if self.input_frame.naxes == 1:
                     valid_inputs = valid_inputs[0]
-                    result = bbox.prepare_outputs(valid_inputs, valid_index, input_shape, fill_value)[0]
+                    result = bbox.prepare_outputs(valid_inputs, valid_index, result_shape, fill_value)[0]
                 else:
-                    result = tuple(bbox.prepare_outputs(valid_inputs, valid_index, input_shape, fill_value))
+                    result = tuple(bbox.prepare_outputs(valid_inputs, valid_index, result_shape, fill_value))
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
