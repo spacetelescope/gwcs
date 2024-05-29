@@ -504,6 +504,13 @@ class WCS(GWCSAPIMixin):
                     result_shape = ()
                 else:
                     result_shape = result[0].shape
+            if self.input_frame.naxes > 1:
+                first_res = result[0]
+                if not utils.isnumerical(first_res):
+                    result = [i.value for i in result]
+            else:
+                if not utils.isnumerical(result):
+                    result = result.value
             valid_inputs, valid_index, all_out = bbox.prepare_inputs(result_shape, result)
             if all_out:
                 if self.input_frame.naxes == 1:
