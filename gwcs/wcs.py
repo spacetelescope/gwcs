@@ -2032,7 +2032,7 @@ class WCS(GWCSAPIMixin):
                 # index of the axis in this frame's
                 fidx = frame.axes_order.index(axno)
                 if hasattr(frame.unit[fidx], 'get_format_name'):
-                    cunit = frame.unit[fidx].get_format_name(u.format.Fits).upper()
+                    cunit = frame.unit[fidx].get_format_name(u.format.FITS).upper()
                 else:
                     cunit = ''
 
