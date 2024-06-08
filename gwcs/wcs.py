@@ -467,62 +467,33 @@ class WCS(GWCSAPIMixin):
         """
         with_units = kwargs.pop('with_units', False)
 
+        try:
+            btrans = self.backward_transform
+        except NotImplementedError:
+            btrans = None
+
         if not utils.isnumerical(args[0]):
+            # convert astropy objects to numbers and arrays
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
                 args = [args]
-            try:
-                # uses_quantity constructs the backward_transform
-                if not self.backward_transform.uses_quantity:
-                    args = utils.get_values(self.output_frame.unit, *args)
-            except (NotImplementedError, KeyError):
-                args = utils.get_values(self.output_frame.unit, *args)
 
+            # if the transform does not use units, getthe numerical values
+            if btrans is not None and not btrans.uses_quantity:
+                args = utils.get_values(self.output_frame.unit, *args)
+ 
         with_bounding_box = kwargs.pop('with_bounding_box', True)
         fill_value = kwargs.pop('fill_value', np.nan)
 
-        try:
-            # remove iterative inverse-specific keyword arguments:
+        if btrans is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            btrans = self.backward_transform
             result = btrans(*args, **akwargs)
-            #result_shape = btrans.input_shape(result)
-        except (NotImplementedError, KeyError):
-            btrans = None
+        else:
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
-            #result_shape = result[0].shape
 
+        # deal with values outside the bounding box
         if with_bounding_box and self.bounding_box is not None:
-            bbox = self.bounding_box
-            if self.input_frame.naxes == 1:
-                result = [result]
-            if btrans is not None:
-                result_shape = btrans.input_shape(result)
-            else:
-            # numerical_inversse was run - > 2 outputs
-                if np.isscalar(result[0]):
-                    result_shape = ()
-                else:
-                    result_shape = result[0].shape
-            if self.input_frame.naxes > 1:
-                first_res = result[0]
-                if not utils.isnumerical(first_res):
-                    result = [i.value for i in result]
-            else:
-                if not utils.isnumerical(result):
-                    result = result.value
-            valid_inputs, valid_index, all_out = bbox.prepare_inputs(result_shape, result)
-            if all_out:
-                if self.input_frame.naxes == 1:
-                    return bbox._all_out_output(result_shape, fill_value)[0][0]
-                else:
-                    return bbox._all_out_output(result_shape, fill_value)[0]
-            else:
-                if self.input_frame.naxes == 1:
-                    valid_inputs = valid_inputs[0]
-                    result = bbox.prepare_outputs(valid_inputs, valid_index, result_shape, fill_value)[0]
-                else:
-                    result = tuple(bbox.prepare_outputs(valid_inputs, valid_index, result_shape, fill_value))
+            result = self.out_of_bounds(result)
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
@@ -531,6 +502,25 @@ class WCS(GWCSAPIMixin):
                 return self.input_frame.coordinates(*result)
         else:
             return result
+
+    def out_of_bounds(self, pixel_arrays):
+        if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
+            pixel_arrays = [pixel_arrays]
+
+        pixel_arrays = list(pixel_arrays)
+        bbox = self.bounding_box
+        for idim, pix in enumerate(pixel_arrays):
+            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            if np.any(outside):
+                if np.isscalar(pix):
+                    pixel_arrays[idim] = np.nan
+                else:
+                    pix = pixel_arrays[idim].astype(float, copy=True)
+                    pix[outside] = np.nan
+                    pixel_arrays[idim] = pix
+        if self.input_frame.naxes == 1:
+            pixel_arrays = pixel_arrays[0]
+        return pixel_arrays
 
     def numerical_inverse(self, *args, tolerance=1e-5, maxiter=30, adaptive=True,
                           detect_divergence=True, quiet=True, with_bounding_box=True,
