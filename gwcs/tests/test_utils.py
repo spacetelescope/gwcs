@@ -6,6 +6,8 @@ from astropy import wcs as fitswcs
 from astropy import units as u
 from astropy import coordinates as coord
 from astropy.modeling import models
+from astropy import table
+
 from astropy.tests.helper import assert_quantity_allclose
 import pytest
 from numpy.testing import assert_allclose
@@ -103,6 +105,10 @@ def test_isnumerical():
 
     assert gwutils.isnumerical(np.array(0, dtype='>f8'))
     assert gwutils.isnumerical(np.array(0, dtype='>i4'))
+
+    # check a table column
+    t = table.Table(data=[[1,2,3], [4,5,6]], names=['x', 'y'])
+    assert not gwutils.isnumerical(t['x'])
 
 
 def test_get_values():
