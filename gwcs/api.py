@@ -298,10 +298,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
         return pixels
 
-    def _sanitize_world_inputs(self, *world_arrays):
-        world_coord = []
-
-
     def pixel_to_world(self, *pixel_arrays):
         """
         Convert pixel values to world coordinates.

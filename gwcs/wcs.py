@@ -477,7 +477,7 @@ class WCS(GWCSAPIMixin):
             # if the transform does not use units, getthe numerical values
             if btrans is not None and not btrans.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
- 
+
         with_bounding_box = kwargs.pop('with_bounding_box', True)
         fill_value = kwargs.pop('fill_value', np.nan)
 
@@ -489,7 +489,7 @@ class WCS(GWCSAPIMixin):
 
         # deal with values outside the bounding box
         if with_bounding_box and self.bounding_box is not None:
-            result = self.out_of_bounds(result)
+            result = self.out_of_bounds(result, fill_value=fill_value)
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
@@ -499,7 +499,7 @@ class WCS(GWCSAPIMixin):
         else:
             return result
 
-    def out_of_bounds(self, pixel_arrays):
+    def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
             pixel_arrays = [pixel_arrays]
 
