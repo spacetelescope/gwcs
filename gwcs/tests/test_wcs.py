@@ -1125,6 +1125,7 @@ def test_iter_inv():
         *w(x, y),
         adaptive=True,
         detect_divergence=True,
+        tolerance=1e-4, maxiter=50,
         quiet=False
     )
     assert np.allclose((x, y), (xp, yp))
@@ -1144,6 +1145,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y),
         adaptive=True,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=False,
         quiet=False
     )
@@ -1178,6 +1180,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y, with_bounding_box=False),
         adaptive=False,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=True,
         quiet=False,
         with_bounding_box=False
@@ -1191,6 +1194,7 @@ def test_iter_inv():
         xp, yp = w.numerical_inverse(
             *w(x, y, with_bounding_box=False),
             adaptive=False,
+            tolerance=1e-5, maxiter=50,
             detect_divergence=True,
             quiet=False,
             with_bounding_box=False

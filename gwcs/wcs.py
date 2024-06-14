@@ -392,10 +392,7 @@ class WCS(GWCSAPIMixin):
            and `False` if input is outside the footprint.
 
         """
-        kwargs['with_bounding_box'] = True
-        kwargs['fill_value'] = np.nan
-
-        coords = self.invert(*args, **kwargs)
+        coords = self.invert(*args, with_bounding_box=False, **kwargs)
 
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
@@ -466,28 +463,37 @@ class WCS(GWCSAPIMixin):
         """
         with_units = kwargs.pop('with_units', False)
 
+        try:
+            btrans = self.backward_transform
+        except NotImplementedError:
+            btrans = None
+
         if not utils.isnumerical(args[0]):
+            # convert astropy objects to numbers and arrays
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
                 args = [args]
-            try:
-                if not self.backward_transform.uses_quantity:
-                    args = utils.get_values(self.output_frame.unit, *args)
-            except (NotImplementedError, KeyError):
+
+            # if the transform does not use units, getthe numerical values
+            if btrans is not None and not btrans.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
 
-        if 'with_bounding_box' not in kwargs:
-            kwargs['with_bounding_box'] = True
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        fill_value = kwargs.pop('fill_value', np.nan)
+        akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
 
-        if 'fill_value' not in kwargs:
-            kwargs['fill_value'] = np.nan
+        if with_bounding_box and self.bounding_box is not None:
+            result = self.outside_footprint(args)
 
-        try:
-            # remove iterative inverse-specific keyword arguments:
-            akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = self.backward_transform(*args, **akwargs)
-        except (NotImplementedError, KeyError):
+        if btrans is not None:
+            #akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
+            result = btrans(*args, **akwargs)
+        else:
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
+
+        # deal with values outside the bounding box
+        if with_bounding_box and self.bounding_box is not None:
+            result = self.out_of_bounds(result, fill_value=fill_value)
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
@@ -496,8 +502,47 @@ class WCS(GWCSAPIMixin):
                 return self.input_frame.coordinates(*result)
         else:
             return result
+        
+    def outside_footprint(self, world_arrays):
+        for axis in world_arrays:
+            if np.isscalar(world_arrays) or self.output_frame.naxes == 1:
+                world_arrays = [world_arrays]
+        world_arrays = list(world_arrays)
+        footprint = self.footprint()
+        for idim, coord in enumerate(world_arrays):
+            axis_range = footprint[:, idim]
+            range = [axis_range.min(), axis_range.max()]
+            outside = (coord < range[0]) | (coord > range[1])
+            if np.any(outside):
+                if np.isscalar(coord):
+                    coord = np.nan
+                else:
+                    coord[outside] = np.nan
+                world_arrays[idim] = coord
 
-    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
+        return world_arrays
+
+
+    def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
+        if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
+            pixel_arrays = [pixel_arrays]
+
+        pixel_arrays = list(pixel_arrays)
+        bbox = self.bounding_box
+        for idim, pix in enumerate(pixel_arrays):
+            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            if np.any(outside):
+                if np.isscalar(pix):
+                    pixel_arrays[idim] = np.nan
+                else:
+                    pix = pixel_arrays[idim].astype(float, copy=True)
+                    pix[outside] = np.nan
+                    pixel_arrays[idim] = pix
+        if self.input_frame.naxes == 1:
+            pixel_arrays = pixel_arrays[0]
+        return pixel_arrays
+
+    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=30, adaptive=True,
                           detect_divergence=True, quiet=True, with_bounding_box=True,
                           fill_value=np.nan, with_units=False, **kwargs):
         """
@@ -1380,6 +1425,11 @@ class WCS(GWCSAPIMixin):
 
         """
         def _order_clockwise(v):
+            # if self.input_frame.naxes == 1:
+            #     bb = self.bounding_box.bounding_box()
+            #     if isinstance(bb[0], u.Quantity):
+            #         bb = [v.value for v in bb] * bb[0].unit
+            #     return (bb,)
             return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
                                [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
 
@@ -1397,6 +1447,7 @@ class WCS(GWCSAPIMixin):
         else:
             vertices = np.array(list(itertools.product(*bb))).T
 
+        # workaround an issue with bbox with quantity, interval needs to be a cquantity, not a list of quantities
         if center:
             vertices = utils._toindex(vertices)
 

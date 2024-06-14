@@ -10,10 +10,10 @@ from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.modeling import models
 
-from .. import coordinate_frames as cf
-from .. import spectroscopy as sp
-from .. import wcs
-from .. import geometry
+from gwcs import coordinate_frames as cf
+from gwcs import spectroscopy as sp
+from gwcs import wcs
+from gwcs import geometry
 
 # frames
 detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
@@ -522,3 +522,32 @@ def spher_to_cart():
 @pytest.fixture
 def cart_to_spher():
     return geometry.CartesianToSpherical()
+
+
+@pytest.fixture
+def gwcs_simple_imaging_no_units():
+    shift_by_crpix = models.Shift(-2048) & models.Shift(-1024)
+    matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
+                       [5.0226382102765E-06 , -1.2644844123757E-05]])
+    rotation = models.AffineTransformation2D(matrix,
+                                             translation=[0, 0])
+
+    rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix),
+                                                     translation=[0, 0])
+    tan = models.Pix2Sky_TAN()
+    celestial_rotation =  models.RotateNative2Celestial(5.63056810618,
+                                                        -72.05457184279,
+                                                        180)
+    det2sky = shift_by_crpix | rotation | tan | celestial_rotation
+    det2sky.name = "linear_transform"
+
+    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
+                                unit=(u.pix, u.pix))
+    sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs',
+                                  unit=(u.deg, u.deg))
+    pipeline = [(detector_frame, det2sky),
+                (sky_frame, None)
+                ]
+    w = wcs.WCS(pipeline)
+    w.bounding_box = ((2, 100), (5, 500))
+    return w
