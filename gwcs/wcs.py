@@ -480,9 +480,13 @@ class WCS(GWCSAPIMixin):
 
         with_bounding_box = kwargs.pop('with_bounding_box', True)
         fill_value = kwargs.pop('fill_value', np.nan)
+        akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
+
+        if with_bounding_box and self.bounding_box is not None:
+            result = self.outside_footprint(args)
 
         if btrans is not None:
-            akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
+            #akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = btrans(*args, **akwargs)
         else:
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
@@ -498,6 +502,26 @@ class WCS(GWCSAPIMixin):
                 return self.input_frame.coordinates(*result)
         else:
             return result
+        
+    def outside_footprint(self, world_arrays):
+        for axis in world_arrays:
+            if np.isscalar(world_arrays) or self.output_frame.naxes == 1:
+                world_arrays = [world_arrays]
+        world_arrays = list(world_arrays)
+        footprint = self.footprint()
+        for idim, coord in enumerate(world_arrays):
+            axis_range = footprint[:, idim]
+            range = [axis_range.min(), axis_range.max()]
+            outside = (coord < range[0]) | (coord > range[1])
+            if np.any(outside):
+                if np.isscalar(coord):
+                    coord = np.nan
+                else:
+                    coord[outside] = np.nan
+                world_arrays[idim] = coord
+
+        return world_arrays
+
 
     def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
@@ -1401,6 +1425,11 @@ class WCS(GWCSAPIMixin):
 
         """
         def _order_clockwise(v):
+            # if self.input_frame.naxes == 1:
+            #     bb = self.bounding_box.bounding_box()
+            #     if isinstance(bb[0], u.Quantity):
+            #         bb = [v.value for v in bb] * bb[0].unit
+            #     return (bb,)
             return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
                                [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
 
@@ -1418,6 +1447,7 @@ class WCS(GWCSAPIMixin):
         else:
             vertices = np.array(list(itertools.product(*bb))).T
 
+        # workaround an issue with bbox with quantity, interval needs to be a cquantity, not a list of quantities
         if center:
             vertices = utils._toindex(vertices)
 

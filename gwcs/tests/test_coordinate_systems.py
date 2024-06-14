@@ -112,6 +112,7 @@ def test_bare_baseframe():
             output_frame=frame,
             input_frame=cf.CoordinateFrame(1, "PIXEL", (0,), unit=(u.pix,), name="detector_frame")
             )
+    #w.bounding_box = (0, 9)
     assert u.allclose(w.world_to_pixel(0*u.km), 0)
 
 
