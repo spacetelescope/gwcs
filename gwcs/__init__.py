@@ -65,8 +65,12 @@ except importlib.metadata.PackageNotFoundError:  # pragma: no cover
     # package is not installed
     pass  # pragma: no cover
 
+def __getattr__(name):
+    for sub_module in ("wcs", "wcstools", "coordinate_frames", "selector"):
+        module = __import__(f"gwcs.{sub_module}", fromlist=['*'])
+        globals().update({name: getattr(module, name) for name in module.__all__})
 
-from .wcs import *   # noqa
-from .wcstools import *   # noqa
-from .coordinate_frames import *  # noqa
-from .selector import *   # noqa
+    try:
+        return globals()[name]
+    except KeyError:
+        raise AttributeError(f"module 'gwcs' has no attribute '{name}'") from None

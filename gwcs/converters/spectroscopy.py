@@ -2,7 +2,6 @@
 ASDF tags for spectroscopy related models.
 
 """
-from astropy import units as u
 from asdf_astropy.converters.transform.core import (
     TransformConverterBase, parameter_to_value
 )
@@ -84,6 +83,7 @@ class GratingEquationConverter(TransformConverterBase):
         return model
 
     def to_yaml_tree_transform(self, model, tag, ctx):
+        from astropy import units as u
         from ..spectroscopy import (AnglesFromGratingEquation3D,
                                     WavelengthFromGratingEquation)
         if model.groove_density.unit is not None:
