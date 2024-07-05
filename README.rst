@@ -9,7 +9,7 @@ GWCS - Generalized World Coordinate System
     :target: https://gwcs.readthedocs.io/en/latest/
     :alt: Documentation Status
 
-.. image:: https://codecov.io/gh/spacetelescope/gwcs/branch/master/graph/badge.svg?token=JtHal6Jbta
+.. image:: https://codecov.io/gh/spacetelescope/gwcs/branch/main/graph/badge.svg?token=JtHal6Jbta
     :target: https://codecov.io/gh/spacetelescope/gwcs
     :alt: Code coverage
 
@@ -39,7 +39,7 @@ To install::
 
     pip install gwcs 
 
-To clone from github and install the master branch::
+To clone from github and install the main branch::
 
     git clone https://github.com/spacetelescope/gwcs.git
     cd gwcs
