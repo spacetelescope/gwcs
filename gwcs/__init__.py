@@ -40,7 +40,7 @@ To install::
 
     pip install gwcs
 
-To clone from github and install the master branch::
+To clone from github and install the main branch::
 
     git clone https://github.com/spacetelescope/gwcs.git
     cd gwcs

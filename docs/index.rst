@@ -14,7 +14,7 @@ spectral wavelength) is crucial to relating astronomical data to the phenomena t
 other types of data often come encoded with information that describes this mapping – this is referred
 to as the ‘World Coordinate System’ or WCS. The term WCS is often used to refer specifically
 to the most widely used 'FITS implementation of WCS', but here unless specified WCS refers to
-the broader concept of relating pixel ⟷ world. (See the discussion in `APE14 <https://github.com/astropy/astropy-APEs/blob/master/APE14.rst#backgroundterminology>`__
+the broader concept of relating pixel ⟷ world. (See the discussion in `APE14 <https://github.com/astropy/astropy-APEs/blob/main/APE14.rst#backgroundterminology>`__
 for more on this topic).
 
 The FITS WCS standard, currently the most widely used method of encoding WCS in data, describes a
