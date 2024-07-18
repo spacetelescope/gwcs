@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import importlib.metadata
 import warnings
 import os.path
 
@@ -49,6 +50,14 @@ nx, ny = (5, 2)
 x = np.linspace(0, 1, nx)
 y = np.linspace(0, 1, ny)
 xv, yv = np.meshgrid(x, y)
+
+
+def asdf_open_memory_mapping_kwarg(memmap: bool) -> dict:
+    if tuple(int(part) for part in importlib.metadata.version("asdf").split(".")) >= (3, 1, 0):
+        return {"memmap": memmap}
+    else :
+        return {"copy_arrays": not memmap}
+
 
 # Test initializing a WCS
 
@@ -648,7 +657,7 @@ def test_to_fits_sip():
     xflat = np.ravel(x[1:-1, 1:-1])
     yflat = np.ravel(y[1:-1, 1:-1])
     fn = os.path.join(data_path, 'miriwcs.asdf')
-    with asdf.open(fn, lazy_load=False, copy_arrays=True, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
     mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1, verbose=True)
@@ -1009,7 +1018,7 @@ def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
 def test_to_fits_tab_miri_image():
     # gWCS:
     fn = os.path.join(data_path, 'miriwcs.asdf')
-    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         w = af.tree['wcs']
 
     # FITS WCS -TAB:
@@ -1033,7 +1042,7 @@ def test_to_fits_tab_miri_image():
 
 def test_to_fits_tab_miri_lrs():
     fn = os.path.join(data_path, 'miri_lrs_wcs.asdf')
-    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         w = af.tree['wcs']
 
     # FITS WCS -TAB:
@@ -1102,7 +1111,7 @@ def test_in_image():
 
 def test_iter_inv():
     fn = os.path.join(data_path, 'nircamwcs.asdf')
-    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=True)) as af:
         w = af.tree['wcs']
     # remove analytic/user-supplied inverse:
     w.pipeline[0].transform.inverse = None
@@ -1129,7 +1138,7 @@ def test_iter_inv():
     )
     assert np.allclose((x, y), (xp, yp))
 
-    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=True)) as af:
         w = af.tree['wcs']
 
     # test single point
