@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import importlib.metadata
 import warnings
 import os.path
 
@@ -15,6 +14,7 @@ from astropy import units as u
 from astropy import wcs as astwcs
 from astropy.wcs import wcsapi
 from astropy.time import Time
+from astropy.utils.introspection import minversion
 import asdf
 
 from .. import wcs
@@ -53,7 +53,7 @@ xv, yv = np.meshgrid(x, y)
 
 
 def asdf_open_memory_mapping_kwarg(memmap: bool) -> dict:
-    if tuple(int(part) for part in importlib.metadata.version("asdf").split(".")) >= (3, 1, 0):
+    if minversion("asdf", "3.1.0"):
         return {"memmap": memmap}
     else :
         return {"copy_arrays": not memmap}
