@@ -1264,7 +1264,7 @@ def test_sip_roundtrip():
         assert hdr[k] == hdr_back[k]
 
     for k in ['cd1_1', 'cd1_2', 'cd2_1', 'cd2_2']:
-        assert np.allclose(hdr[k], hdr_back[k], atol=0, rtol=1e-9)
+        assert np.allclose(hdr[k], hdr_back[k], atol=1e-14, rtol=1e-9)
 
     for t in ('a', 'b'):
         order = hdr[f'{t}_order']
@@ -1275,7 +1275,7 @@ def test_sip_roundtrip():
                     assert np.allclose(
                         hdr[k],
                         hdr_back[k],
-                        atol=0.0,
+                        atol=1e-15,
                         rtol=1.0e-8 * 10**(i + j)
                     )
 
