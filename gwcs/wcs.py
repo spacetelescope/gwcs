@@ -679,7 +679,7 @@ class WCS(GWCSAPIMixin):
         >>> import numpy as np
 
         >>> filename = get_pkg_data_filename('data/nircamwcs.asdf', package='gwcs.tests')
-        >>> with asdf.open(filename, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+        >>> with asdf.open(filename, memmap=False, lazy_load=False, ignore_missing_extensions=True) as af:
         ...    w = af.tree['wcs']
 
         >>> ra, dec = w([1,2,3], [1,1,1])
