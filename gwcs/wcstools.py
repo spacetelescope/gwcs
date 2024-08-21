@@ -247,8 +247,9 @@ def wcs_from_points(xy, world_coords, proj_point='center',
         be passed in.
     projection : `~astropy.modeling.projections.Projection`
         A projection type. One of the projections in
-        `~astropy.modeling.projections.projcodes`. Defaults to TAN projection
-        (`astropy.modeling.projections.Sky2Pix_TAN`).
+        `~astropy.modeling.projections.projcodes`.
+        The direction is from sky to detector.
+        Defaults to TAN projection (`astropy.modeling.projections.Sky2Pix_TAN`).
     poly_degree : int
         Degree of polynomial model to be fit to data. Defaults to 4.
     polynomial_type : str
