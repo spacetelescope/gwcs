@@ -1,7 +1,9 @@
 0.22.0 (unreleased)
 -------------------
 
-- replace usages of ``copy_arrays`` with ``memmap`` [#503]
+- Replace usages of ``copy_arrays`` with ``memmap`` [#503]
+
+- Fix an issue with units in ``wcs_from_points``. [#507]
 
 0.21.0 (2024-03-10)
 -------------------
