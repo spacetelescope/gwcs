@@ -423,6 +423,14 @@ def test_wcs_from_points():
     assert_allclose(newra, ra, atol=10**-6)
     assert_allclose(newdec, dec, atol=10**-6)
 
+    newra, newdec = w.pixel_to_world_values(x, y)
+    assert_allclose(newra, ra, atol=10**-6)
+    assert_allclose(newdec, dec, atol=10**-6)
+
+    newsky = w.pixel_to_world(x, y)
+    assert_allclose(newsky.data.lon.deg, ra, atol=10**-6)
+    assert_allclose(newsky.data.lat.deg, dec, atol=10**-6)
+
 
 def test_grid_from_bounding_box_2():
     bb = ((-0.5, 5.5), (-0.5, 4.5))
