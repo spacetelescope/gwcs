@@ -6,7 +6,6 @@ import warnings
 import astropy.io.fits as fits
 import numpy as np
 import numpy.linalg as npla
-from astropy import units as u
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -2031,16 +2030,12 @@ class WCS(GWCSAPIMixin):
 
                 # index of the axis in this frame's
                 fidx = frame.axes_order.index(axno)
-                if hasattr(frame.unit[fidx], 'get_format_name'):
-                    cunit = frame.unit[fidx].get_format_name(u.format.Fits).upper()
-                else:
-                    cunit = ''
 
                 axis_info = _WorldAxisInfo(
                     axis=axno,
                     frame=frame,
                     world_axis_order=self.output_frame.axes_order.index(axno),
-                    cunit=cunit,
+                    cunit=frame.unit[fidx].to_string('fits', fraction=True).upper(),
                     ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
                     input_axes=mapping[axno]
                 )
