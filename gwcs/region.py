@@ -372,19 +372,21 @@ class Edge:
         u = self._stop - self._start
         v = edge._stop - edge._start
         w = self._start - edge._start
-        D = np.cross(u, v)
+        D = _cross(u, v)
 
-        if np.allclose(np.cross(u, v), 0, rtol=0,
-                       atol=1e2 * np.finfo(float).eps):
+        if abs(D) <= 1e2 * np.finfo(float).eps:
             return np.array(self._start)
 
-        return np.cross(v, w) / D * u + self._start
+        return _cross(v, w) / D * u + self._start
 
     def is_parallel(self, edge):
         u = self._stop - self._start
         v = edge._stop - edge._start
-        return np.allclose(np.cross(u, v), 0, rtol=0,
-                           atol=1e2 * np.finfo(float).eps)
+        return abs(_cross(u, v)) <= 1e2 * np.finfo(float).eps
+
+
+def _cross(u, v):
+    return u[0] * v[1] - u[1] * v[0]
 
 
 def _round_vertex(v):
