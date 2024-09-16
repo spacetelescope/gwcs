@@ -43,7 +43,7 @@ To clone from github and install the master branch::
 
     git clone https://github.com/spacetelescope/gwcs.git
     cd gwcs
-    python setup.py install
+    pip install --editable .
 
     
 Contributing Code, Documentation, or Feedback
