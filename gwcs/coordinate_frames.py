@@ -584,13 +584,12 @@ class SpectralFrame(CoordinateFrame):
 
         if not isiterable(unit):
             unit = (unit,)
-
+        unit = [u.Unit(un) for un in unit]
         pht = axis_physical_types or self._default_axis_physical_types(unit)
 
         super().__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,
                          unit=unit, name=name,
-                         #axis_physical_types="em.wl")
                          axis_physical_types=pht)
 
     def _default_axis_physical_types(self, unit):
