@@ -280,7 +280,7 @@ def test_high_level_wrapper(wcsobj, request):
 
     # The wrapper and the raw gwcs class can take different paths
     wc1 = hlvl.pixel_to_world(*pixel_input)
-    wc2 = wcsobj.pixel_to_world(*pixel_input)
+    wc2 = wcsobj(*pixel_input, with_units=True)
 
     assert type(wc1) is type(wc2)
 
