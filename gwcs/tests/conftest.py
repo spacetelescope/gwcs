@@ -256,7 +256,7 @@ def gwcs_3d_galactic_spectral():
 
     shift = models.Shift(-crpix3) & models.Shift(-crpix1)
     scale = models.Multiply(cdelt3) & models.Multiply(cdelt1)
-    proj = models.Pix2Sky_CAR()
+    proj = models.Pix2Sky_TAN()
     skyrot = models.RotateNative2Celestial(crval3, 90 + crval1, 180)
     celestial = shift | scale | proj | skyrot
 

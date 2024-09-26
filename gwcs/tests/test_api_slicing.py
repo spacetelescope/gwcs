@@ -67,11 +67,11 @@ def test_ellipsis(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['spectral'][1] == ()
     assert wcs.world_axis_object_classes['spectral'][2] == {'unit': 'Hz'}
 
-    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (10, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (10, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (80, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (80, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 39., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 29))
+    assert_allclose(wcs.world_to_pixel_values(80, 20, 205), (29., 39., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 20, 205), (44, 39, 29))
 
     assert str(wcs) == EXPECTED_ELLIPSIS_REPR.strip()
     assert EXPECTED_ELLIPSIS_REPR.strip() in repr(wcs)
@@ -128,11 +128,11 @@ def test_spectral_slice(gwcs_3d_galactic_spectral):
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
     assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) == (u.deg, u.deg)
 
-    assert_allclose(wcs.pixel_to_world_values(29, 44), (10, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 29), (10, 25))
+    assert_allclose(wcs.pixel_to_world_values(29, 44), (80, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 29), (80, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 25), (29., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 25), (44, 29))
+    assert_allclose(wcs.world_to_pixel_values(80, 205), (29., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 205), (44, 29))
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (5, 50)])
 
@@ -197,11 +197,11 @@ def test_spectral_range(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['spectral'][1] == ()
     assert wcs.world_axis_object_classes['spectral'][2] == {'unit': 'Hz'}
 
-    assert_allclose(wcs.pixel_to_world_values(29, 35, 44), (10, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 35, 29), (10, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(29, 35, 44), (80, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 35, 29), (80, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 35., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 35, 29))
+    assert_allclose(wcs.world_to_pixel_values(80, 20, 205), (29., 35., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 20, 205), (44, 35, 29))
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (-6, 41), (5, 50)])
 
@@ -265,11 +265,11 @@ def test_celestial_slice(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['spectral'][1] == ()
     assert wcs.world_axis_object_classes['spectral'][2] == {'unit': 'Hz'}
 
-    assert_allclose(wcs.pixel_to_world_values(39, 44), (10.24, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 39), (10.24, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(39, 44), (79.76, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 39), (79.76, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(12.4, 20, 25), (39., 44.))
-    assert_equal(wcs.world_to_array_index_values(12.4, 20, 25), (44, 39))
+    assert_allclose(wcs.world_to_pixel_values(79.76, 20, 205), (39., 44.))
+    assert_equal(wcs.world_to_array_index_values(79.76, 20, 205), (44, 39))
 
     assert_equal(wcs.pixel_bounds, [(-2, 45), (5, 50)])
 
@@ -334,11 +334,11 @@ def test_celestial_range(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['spectral'][1] == ()
     assert wcs.world_axis_object_classes['spectral'][2] == {'unit': 'Hz'}
 
-    assert_allclose(wcs.pixel_to_world_values(24, 39, 44), (10, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 39, 24), (10, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(24, 39, 44), (80, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 39, 24), (80, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (24., 39., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 24))
+    assert_allclose(wcs.world_to_pixel_values(80, 20, 205), (24., 39., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 20, 205), (44, 39, 24))
 
     assert_equal(wcs.pixel_bounds, [(-6, 30), (-2, 45), (5, 50)])
 
@@ -406,11 +406,11 @@ def test_no_array_shape(gwcs_3d_galactic_spectral):
     assert wcs.world_axis_object_classes['spectral'][1] == ()
     assert wcs.world_axis_object_classes['spectral'][2] == {'unit': 'Hz'}
 
-    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (10, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (10, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (80, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (80, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 39., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 29))
+    assert_allclose(wcs.world_to_pixel_values(80, 20, 205), (29., 39., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 20, 205), (44, 39, 29))
 
     assert str(wcs) == EXPECTED_NO_SHAPE_REPR.strip()
     assert EXPECTED_NO_SHAPE_REPR.strip() in repr(wcs)
@@ -474,11 +474,11 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
     assert isinstance(wcs.world_axis_object_classes['celestial'][2]['frame'], Galactic)
     assert tuple(wcs.world_axis_object_classes['celestial'][2]['unit']) ==  (u.deg, u.deg)
 
-    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (10, 20, 25))
-    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (10, 20, 25))
+    assert_allclose(wcs.pixel_to_world_values(29, 39, 44), (80, 20, 205))
+    assert_allclose(wcs.array_index_to_world_values(44, 39, 29), (80, 20, 205))
 
-    assert_allclose(wcs.world_to_pixel_values(10, 20, 25), (29., 39., 44.))
-    assert_equal(wcs.world_to_array_index_values(10, 20, 25), (44, 39, 29))
+    assert_allclose(wcs.world_to_pixel_values(80, 20, 205), (29., 39., 44.))
+    assert_equal(wcs.world_to_array_index_values(80, 20, 205), (44, 39, 29))
 
     assert_equal(wcs.pixel_bounds, [(-1, 35), (-2, 45), (5, 50)])
 
