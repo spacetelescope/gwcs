@@ -274,11 +274,8 @@ def test_high_level_wrapper(wcsobj, request):
 
     pixel_input = [3] * wcsobj.pixel_n_dim
 
-    # If the model expects units we have to pass in units
-    if wcsobj.forward_transform.uses_quantity:
-        pixel_input *= u.pix
-
-    # The wrapper and the raw gwcs class can take different paths
+    # Assert that both APE 14 API and GWCS give the same answer The APE 14 API
+    # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input, with_units=True)
 
@@ -289,6 +286,22 @@ def test_high_level_wrapper(wcsobj, request):
             _compare_frame_output(w1, w2)
     else:
         _compare_frame_output(wc1, wc2)
+
+    # we have just asserted that wc1 and wc2 are equal
+    if not isinstance(wc1, (list, tuple)):
+        wc1 = (wc1,)
+
+    pix_out1 = hlvl.world_to_pixel(*wc1)
+    pix_out2 = wcsobj.invert(*wc1)
+
+    if not isinstance(pix_out2, (list, tuple)):
+        pix_out2 = (pix_out2,)
+
+    if wcsobj.forward_transform.uses_quantity:
+        pix_out2 = tuple(p.to_value(unit) for p, unit in zip(pix_out2, wcsobj.input_frame.unit))
+
+    np.testing.assert_allclose(pix_out1, pixel_input)
+    np.testing.assert_allclose(pix_out2, pixel_input)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
