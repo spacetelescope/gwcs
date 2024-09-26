@@ -125,7 +125,8 @@ def gwcs_3d_identity_units():
                 models.Multiply(1 * u.nm / u.pixel))
     sky_frame = cf.CelestialFrame(axes_order=(0, 1), name='icrs',
                                   reference_frame=coord.ICRS(),
-                                  axes_names=("longitude", "latitude"))
+                                  axes_names=("longitude", "latitude"),
+                                  unit=(u.arcsec, u.arcsec))
     wave_frame = cf.SpectralFrame(axes_order=(2, ), unit=u.nm, axes_names=("wavelength",))
 
     frame = cf.CompositeFrame([sky_frame, wave_frame])
