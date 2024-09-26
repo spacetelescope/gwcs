@@ -564,17 +564,16 @@ class CelestialFrame(CoordinateFrame):
 
     @property
     def world_axis_object_classes(self):
-        unit = np.array(self.unit)[np.argsort(self.axes_order)]
         return {'celestial': (
             coord.SkyCoord,
             (),
             {'frame': self.reference_frame,
-             'unit': unit})}
+             'unit': self._prop.unit})}
 
     @property
-    def _world_axis_object_components(self):
-        return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self.unit[0])),
-                ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self.unit[1]))]
+    def _native_world_axis_object_components(self):
+        return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self._prop.unit[0])),
+                ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self._prop.unit[1]))]
 
 
 class SpectralFrame(CoordinateFrame):
