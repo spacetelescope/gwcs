@@ -7,6 +7,7 @@ import astropy.units as u
 import astropy.io.fits as fits
 import numpy as np
 import numpy.linalg as npla
+from astropy import utils as astutil
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -366,6 +367,8 @@ class WCS(GWCSAPIMixin):
         results = self._call_forward(*args, **kwargs)
 
         if with_units:
+            if not astutil.isiterable(results):
+                results = (results,)
             high_level = values_to_high_level_objects(*results, low_level_wcs=self)
             if len(high_level) == 1:
                 high_level = high_level[0]
