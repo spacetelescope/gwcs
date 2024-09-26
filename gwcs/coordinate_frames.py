@@ -573,8 +573,8 @@ class CelestialFrame(CoordinateFrame):
 
     @property
     def _native_world_axis_object_components(self):
-        return [('celestial', 0, 'spherical.lon'),
-                ('celestial', 1, 'spherical.lat')]
+        return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self.unit[0])),
+                ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self.unit[1]))]
 
 
 class SpectralFrame(CoordinateFrame):
@@ -634,7 +634,7 @@ class SpectralFrame(CoordinateFrame):
 
     @property
     def _native_world_axis_object_components(self):
-        return [('spectral', 0, 'value')]
+        return [('spectral', 0, lambda sc: sc.to_value(self.unit[0]))]
 
 
 class TemporalFrame(CoordinateFrame):
