@@ -533,7 +533,7 @@ class WCS(GWCSAPIMixin):
 
     def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
                           detect_divergence=True, quiet=True, with_bounding_box=True,
-                          fill_value=np.nan, with_units=False, **kwargs):
+                          fill_value=np.nan, **kwargs):
         """
         Invert coordinates from output frame to input frame using numerical
         inverse.
@@ -559,11 +559,6 @@ class WCS(GWCSAPIMixin):
 
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
-
-        with_units : bool, optional
-            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.coordinates.SpectralCoord` object, by using the units of
-            the output cooridnate frame. Default is `False`.
 
         tolerance : float, optional
             *Absolute tolerance* of solution. Iteration terminates when the
@@ -769,6 +764,9 @@ class WCS(GWCSAPIMixin):
          [2.76552923e-05 1.14789013e-05]]
 
         """
+        if kwargs.pop("with_units", False):
+            raise ValueError("Support for with_units in numerical_inverse has been removed, use inverse")
+
         args_shape = np.shape(args)
         nargs = args_shape[0]
         arg_dim = len(args_shape) - 1
