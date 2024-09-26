@@ -89,7 +89,7 @@ def coordinates(*inputs, frame):
 
 def coordinate_to_quantity(*inputs, frame):
     results = high_level_objects_to_values(*inputs, low_level_wcs=frame)
-    results = [r<<unit for r, unit in zip(results, frame.unit)]
+    results = [r << unit for r, unit in zip(results, frame.unit)]
     return results
 
 

@@ -676,7 +676,6 @@ class TemporalFrame(CoordinateFrame):
             except AttributeError:
                 pass
 
-    #@property
     def _default_axis_physical_types(self):
         return ("time",)
 
