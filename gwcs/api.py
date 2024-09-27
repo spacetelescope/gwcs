@@ -51,14 +51,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         arbitrary string.  Alternatively, if the physical type is
         unknown/undefined, an element can be `None`.
         """
-        # A CompositeFrame orders the output correctly based on axes_order.
-        if isinstance(self.output_frame, cf.CompositeFrame):
-            return self.output_frame.axis_physical_types
-
-        # If we don't have a CompositeFrame, where this is taken care of for us,
-        # we need to make sure we re-order the output to match the transform.
-        # The underlying frames don't reorder themselves because axes_order is global.
-        return tuple(self.output_frame.axis_physical_types[i] for i in self.output_frame.axes_order)
+        return self.output_frame.axis_physical_types
 
     @property
     def world_axis_units(self):

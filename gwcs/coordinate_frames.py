@@ -481,7 +481,8 @@ class CoordinateFrame(BaseCoordinateFrame):
 
         These physical types are the types in frame order, not transform order.
         """
-        return self._prop.axis_physical_types or self._default_axis_physical_types
+        apt = self._prop.axis_physical_types or self._default_axis_physical_types
+        return self._sort_property(apt)
 
     @property
     def world_axis_object_classes(self):
@@ -500,7 +501,7 @@ class CelestialFrame(CoordinateFrame):
     Representation of a Celesital coordinate system.
 
     This class has a native order of longitude then latitude, meaning
-    ``axes_names``, ``unit`` should be lon, lat ordered.  If your transform is
+    ``axes_names``, ``unit`` and ``axis_physical_types`` should be lon, lat ordered.  If your transform is
     in a different order this should be specified with ``axes_order``.
 
     Parameters
@@ -515,6 +516,8 @@ class CelestialFrame(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
+    axis_physical_types : list
+        The UCD 1+ physical types for the axes, in frame order (lon, lat).
     """
 
     def __init__(self, axes_order=None, reference_frame=None,
