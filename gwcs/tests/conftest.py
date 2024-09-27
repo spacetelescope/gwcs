@@ -54,7 +54,7 @@ def gwcs_2d_spatial_reordered():
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
     out_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
-                                   axes_order=(1, 0))
+                                  axes_order=(1, 0))
     return wcs.WCS(model_2d_shift | models.Mapping((1, 0)), input_frame=detector_2d, output_frame=out_frame)
 
 
