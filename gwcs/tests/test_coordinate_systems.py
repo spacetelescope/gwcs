@@ -475,3 +475,29 @@ def test_ucd1_to_ctype(caplog):
         assert ctype_to_ucd[v] == k
 
     assert inv_map['new.repeated.type'] in new_ctype_to_ucd
+
+
+def test_celestial_ordering():
+   c1 = cf.CelestialFrame(
+       reference_frame=coord.ICRS(),
+       axes_order=(0, 1),
+       axes_names=("lon", "lat"),
+       unit=(u.deg, u.arcsec),
+       axis_physical_types=("custom:lon", "custom:lat"),
+   )
+   c2 = cf.CelestialFrame(
+       reference_frame=coord.ICRS(),
+       axes_order=(1, 0),
+       axes_names=("lon", "lat"),
+       unit=(u.deg, u.arcsec),
+       axis_physical_types=("custom:lon", "custom:lat"),
+   )
+
+   assert c1.axes_names == ("lon", "lat")
+   assert c2.axes_names == ("lat", "lon")
+
+   assert c1.unit == (u.deg, u.arcsec)
+   assert c2.unit == (u.arcsec, u.deg)
+
+   assert c1.axis_physical_types == ("custom:lon", "custom:lat")
+   assert c2.axis_physical_types == ("custom:lat", "custom:lon")
