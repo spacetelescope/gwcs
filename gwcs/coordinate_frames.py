@@ -1,9 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-This module defines coordinate frames for describing the inputs and/or outputs of a transform.
+This module defines coordinate frames for describing the inputs and/or outputs
+of a transform.
 
-In the following example, we have a two stage transform, with an input frame, an
-output frame and an intermediate frame.
+In the block diagram, the WCS pipeline has a two stage transformation (two
+astropy Model instances), with an input frame, an output frame and an
+intermediate frame.
 
 .. code-block::
 
@@ -62,8 +64,11 @@ a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two frames as
 
   [SpectralFrame(axes_order=(1,)), CelestialFrame(axes_order=(2, 0))]
 
-we would map the outputs of this transform into the correct positions in the
-frames. As shown below, this is also used when constructing the inputs to the inverse transform.
+we would map the outputs of this transform into the correct positions in the frames.
+ As shown below, this is also used when constructing the inputs to the inverse transform.
+
+
+When taking the output from the forward transform the following transformation is performed by the coordinate frames:
 
 .. code-block::
 
@@ -82,6 +87,13 @@ frames. As shown below, this is also used when constructing the inputs to the in
               │                        │    │
               │                        │    │
               ▼                        ▼    ▼
+   SpectralCoord(lambda)    SkyCoord((lon, lat))
+
+
+When considering the backward transform the following transformations take place in the coordinate frames before the transform is called:
+
+.. code-block::
+
    SpectralCoord(lambda)    SkyCoord((lon, lat))
               │                        │    │
               └─────┐     ┌────────────┘    │
