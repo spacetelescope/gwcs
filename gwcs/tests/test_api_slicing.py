@@ -446,7 +446,8 @@ World Dim    0    1    2
 
 def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
     pht = list(gwcs_3d_galactic_spectral.output_frame._axis_physical_types)
-    pht[1] = None
+    # This index is in "axes_order" ordering
+    pht[2] = None
     gwcs_3d_galactic_spectral.output_frame._prop.axis_physical_types = tuple(pht)
 
     wcs = SlicedLowLevelWCS(gwcs_3d_galactic_spectral, Ellipsis)
@@ -467,7 +468,7 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
                          ('spectral', 0),
                          ('celestial', 0)]
 
-    assert all([callable(l) for l in last_one])
+    assert all([callable(last) for last in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()

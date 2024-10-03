@@ -719,43 +719,35 @@ class CompositeFrame(CoordinateFrame):
     Parameters
     ----------
     frames : list
-        List of frames (TemporalFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
+        List of constituient frames.
     name : str
         Name for this frame.
-
     """
 
     def __init__(self, frames, name=None):
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
 
-        axes_type = list(range(naxes))
-        unit = list(range(naxes))
-        axes_names = list(range(naxes))
-        ph_type = list(range(naxes))
         axes_order = []
+        axes_type = []
+        axes_names = []
+        unit = []
+        ph_type = []
 
         for frame in frames:
             axes_order.extend(frame.axes_order)
 
+        # Stack the raw (not-native) ordered properties
         for frame in frames:
-            unsorted_prop = zip(
-                frame.axes_order,
-                frame._prop.axes_type,
-                frame._prop.unit,
-                frame._prop.axes_names,
-                frame._prop.axis_physical_types
-            )
-            for ind, axtype, un, n, pht in unsorted_prop:
-                axes_type[ind] = axtype
-                axes_names[ind] = n
-                unit[ind] = un
-                ph_type[ind] = pht
+            axes_type += list(frame._prop.axes_type)
+            axes_names += list(frame._prop.axes_names)
+            unit += list(frame._prop.unit)
+            ph_type += list(frame._prop.axis_physical_types)
 
         if len(np.unique(axes_order)) != len(axes_order):
             raise ValueError("Incorrect numbering of axes, "
                              "axes_order should contain unique numbers, "
-                             "got {}.".format(axes_order))
+                             f"got {axes_order}.")
 
         super().__init__(naxes, axes_type=axes_type,
                          axes_order=axes_order,
@@ -766,23 +758,10 @@ class CompositeFrame(CoordinateFrame):
 
     @property
     def frames(self):
+        """
+        The constituient frames that comprise this `CompositeFrame`.
+        """
         return self._frames
-
-    @property
-    def unit(self):
-        return self._prop.unit
-
-    @property
-    def axes_names(self):
-        return self._prop.axes_names
-
-    @property
-    def axes_type(self):
-        return self._prop.axes_type
-
-    @property
-    def axis_physical_types(self):
-        return self._prop.axis_physical_types
 
     def __repr__(self):
         return repr(self.frames)
@@ -826,9 +805,6 @@ class CompositeFrame(CoordinateFrame):
 
     @property
     def world_axis_object_components(self):
-        """
-        We need to generate the components respecting the axes_order.
-        """
         out = [None] * self.naxes
 
         for frame, components in self._wao_renamed_components_iter:

@@ -478,26 +478,47 @@ def test_ucd1_to_ctype(caplog):
 
 
 def test_celestial_ordering():
-   c1 = cf.CelestialFrame(
-       reference_frame=coord.ICRS(),
-       axes_order=(0, 1),
-       axes_names=("lon", "lat"),
-       unit=(u.deg, u.arcsec),
-       axis_physical_types=("custom:lon", "custom:lat"),
-   )
-   c2 = cf.CelestialFrame(
-       reference_frame=coord.ICRS(),
-       axes_order=(1, 0),
-       axes_names=("lon", "lat"),
-       unit=(u.deg, u.arcsec),
-       axis_physical_types=("custom:lon", "custom:lat"),
-   )
+    c1 = cf.CelestialFrame(
+        reference_frame=coord.ICRS(),
+        axes_order=(0, 1),
+        axes_names=("lon", "lat"),
+        unit=(u.deg, u.arcsec),
+        axis_physical_types=("custom:lon", "custom:lat"),
+    )
+    c2 = cf.CelestialFrame(
+        reference_frame=coord.ICRS(),
+        axes_order=(1, 0),
+        axes_names=("lon", "lat"),
+        unit=(u.deg, u.arcsec),
+        axis_physical_types=("custom:lon", "custom:lat"),
+    )
 
-   assert c1.axes_names == ("lon", "lat")
-   assert c2.axes_names == ("lat", "lon")
+    assert c1.axes_names == ("lon", "lat")
+    assert c2.axes_names == ("lat", "lon")
 
-   assert c1.unit == (u.deg, u.arcsec)
-   assert c2.unit == (u.arcsec, u.deg)
+    assert c1.unit == (u.deg, u.arcsec)
+    assert c2.unit == (u.arcsec, u.deg)
 
-   assert c1.axis_physical_types == ("custom:lon", "custom:lat")
-   assert c2.axis_physical_types == ("custom:lat", "custom:lon")
+    assert c1.axis_physical_types == ("custom:lon", "custom:lat")
+    assert c2.axis_physical_types == ("custom:lat", "custom:lon")
+
+
+def test_composite_ordering():
+    print("boo")
+    c1 = cf.CelestialFrame(
+        reference_frame=coord.ICRS(),
+        axes_order=(1, 0),
+        axes_names=("lon", "lat"),
+        unit=(u.deg, u.arcsec),
+        axis_physical_types=("custom:lon", "custom:lat"),
+    )
+    spec = cf.SpectralFrame(
+        axes_order=(2,),
+        axes_names=("spectral",),
+        unit=u.AA,
+    )
+    comp = cf.CompositeFrame([c1, spec])
+    assert comp.axes_names == ("lat", "lon", "spectral")
+    assert comp.axis_physical_types == ("custom:lat", "custom:lon", "em.wl")
+    assert comp.unit == (u.arcsec, u.deg, u.AA)
+    assert comp.axes_order == (1, 0, 2)
