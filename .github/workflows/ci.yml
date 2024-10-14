@@ -21,13 +21,13 @@ env:
 
 jobs:
   check:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
     with:
       envs: |
         - linux: check-style
         - linux: check-security
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
     with:
       envs: |
         - linux: py310
@@ -51,9 +51,9 @@ jobs:
     outputs:
       data_path: ${{ steps.data_path.outputs.path }}
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@d96060f99a7ca75969f6652b050243592f4ebaeb  # 12.0.0
   test_downstream:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@main
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
     needs: [ environment, crds_contexts ]
     with:
       setenv: |
