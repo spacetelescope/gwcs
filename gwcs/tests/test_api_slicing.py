@@ -44,9 +44,13 @@ def test_ellipsis(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[True, False, True], [False, True, False], [True, False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                ('spectral', 0, 'value'),
-                                                ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -106,8 +110,12 @@ def test_spectral_slice(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[True, True], [True, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -166,9 +174,13 @@ def test_spectral_range(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[True, False, True], [False, True, False], [True, False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                  ('spectral', 0, 'value'),
-                                                  ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -230,9 +242,13 @@ def test_celestial_slice(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[False, True], [True, False], [False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                ('spectral', 0, 'value'),
-                                                ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -295,9 +311,13 @@ def test_celestial_range(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[True, False, True], [False, True, False], [True, False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                ('spectral', 0, 'value'),
-                                                ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -363,9 +383,13 @@ def test_no_array_shape(gwcs_3d_galactic_spectral):
 
     assert_equal(wcs.axis_correlation_matrix, [[True, False, True], [False, True, False], [True, False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                ('spectral', 0, 'value'),
-                                                ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
@@ -431,9 +455,13 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
     assert_equal(wcs.axis_correlation_matrix, [[True, False, True],
                                                [False, True, False], [True, False, True]])
 
-    assert wcs.world_axis_object_components == [('celestial', 1, 'spherical.lat'),
-                                                  ('spectral', 0, 'value'),
-                                                  ('celestial', 0, 'spherical.lon')]
+    first_two = [c[:2] for c in wcs.world_axis_object_components]
+    last_one = [c[2] for c in wcs.world_axis_object_components]
+    assert first_two == [('celestial', 1),
+                         ('spectral', 0),
+                         ('celestial', 0)]
+
+    assert all([callable(l) for l in last_one])
 
     assert wcs.world_axis_object_classes['celestial'][0] is SkyCoord
     assert wcs.world_axis_object_classes['celestial'][1] == ()
