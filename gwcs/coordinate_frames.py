@@ -647,7 +647,7 @@ class SpectralFrame(CoordinateFrame):
             {'unit': self.unit[0]})}
 
     @property
-    def _world_axis_object_components(self):
+    def _native_world_axis_object_components(self):
         return [('spectral', 0, lambda sc: sc.to_value(self.unit[0]))]
 
 
