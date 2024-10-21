@@ -7,6 +7,8 @@
 
 - Fix incorrect units being returned in the low level WCS API. [#512]
 
+- Synchronize ``region.py`` with the copies of it in JWST and Romancal. [#517]
+
 0.21.0 (2024-03-10)
 -------------------
 
