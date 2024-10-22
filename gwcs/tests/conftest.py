@@ -10,10 +10,10 @@ from astropy.time import Time
 from astropy import coordinates as coord
 from astropy.modeling import models
 
-from .. import coordinate_frames as cf
-from .. import spectroscopy as sp
-from .. import wcs
-from .. import geometry
+from gwcs import coordinate_frames as cf
+from gwcs import spectroscopy as sp
+from gwcs import wcs
+from gwcs import geometry
 
 # frames
 detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
@@ -54,7 +54,7 @@ def gwcs_2d_spatial_reordered():
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
     out_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
-                                   axes_order=(1, 0))
+                                  axes_order=(1, 0))
     return wcs.WCS(model_2d_shift | models.Mapping((1, 0)), input_frame=detector_2d, output_frame=out_frame)
 
 
@@ -256,7 +256,7 @@ def gwcs_3d_galactic_spectral():
 
     shift = models.Shift(-crpix3) & models.Shift(-crpix1)
     scale = models.Multiply(cdelt3) & models.Multiply(cdelt1)
-    proj = models.Pix2Sky_CAR()
+    proj = models.Pix2Sky_TAN()
     skyrot = models.RotateNative2Celestial(crval3, 90 + crval1, 180)
     celestial = shift | scale | proj | skyrot
 

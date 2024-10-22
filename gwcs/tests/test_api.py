@@ -79,6 +79,11 @@ def test_names(wcsobj):
     assert wcsobj.pixel_axis_names == wcsobj.input_frame.axes_names
 
 
+def test_names_split(gwcs_3d_galactic_spectral):
+    wcs = gwcs_3d_galactic_spectral
+    assert wcs.world_axis_names == wcs.output_frame.axes_names == ("Latitude", "Frequency", "Longitude")
+
+
 @fixture_wcs_ndim_types_units
 def test_pixel_n_dim(wcs_ndim_types_units):
     wcsobj, ndims, *_ = wcs_ndim_types_units
@@ -106,7 +111,7 @@ def test_world_axis_units(wcs_ndim_types_units):
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
 def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
-    assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y, with_units=False))
+    assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y))
 
 
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
@@ -116,7 +121,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     call_pixel = x*u.pix, y*u.pix
     api_pixel = x, y
 
-    call_world = wcsobj(*call_pixel, with_units=False)
+    call_world = wcsobj(*call_pixel)
     api_world = wcsobj.pixel_to_world_values(*api_pixel)
 
     # Check that call returns quantities and api dosen't
@@ -126,7 +131,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
 
-    new_call_pixel = wcsobj.invert(*call_world, with_units=False)
+    new_call_pixel = wcsobj.invert(*call_world)
     [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel)]
 
     new_api_pixel = wcsobj.world_to_pixel_values(*api_world)
@@ -140,7 +145,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     call_pixel = x * u.pix
     api_pixel = x
 
-    call_world = wcsobj(call_pixel, with_units=False)
+    call_world = wcsobj(call_pixel)
     api_world = wcsobj.pixel_to_world_values(api_pixel)
 
     # Check that call returns quantities and api dosen't
@@ -150,7 +155,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
 
-    new_call_pixel = wcsobj.invert(call_world, with_units=False)
+    new_call_pixel = wcsobj.invert(call_world)
     assert_allclose(new_call_pixel, call_pixel)
 
     new_api_pixel = wcsobj.world_to_pixel_values(api_world)
@@ -160,7 +165,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
 @pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
 def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
-    assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x, with_units=False))
+    assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x))
 
 
 def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
@@ -201,7 +206,7 @@ def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
 
 def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
@@ -223,7 +228,7 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     assert 'frame' in waoc['celestial'][2]
     assert 'unit' in waoc['celestial'][2]
     assert isinstance(waoc['celestial'][2]['frame'], coord.ICRS)
-    assert waoc['celestial'][2]['unit'] == (u.deg, u.deg)
+    assert tuple(waoc['celestial'][2]['unit']) == (u.deg, u.deg)
 
     temporal = waoc['temporal']
     assert temporal[0] is time.Time
@@ -269,10 +274,8 @@ def test_high_level_wrapper(wcsobj, request):
 
     pixel_input = [3] * wcsobj.pixel_n_dim
 
-    # If the model expects units we have to pass in units
-    if wcsobj.forward_transform.uses_quantity:
-        pixel_input *= u.pix
-
+    # Assert that both APE 14 API and GWCS give the same answer The APE 14 API
+    # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input, with_units=True)
 
@@ -283,6 +286,22 @@ def test_high_level_wrapper(wcsobj, request):
             _compare_frame_output(w1, w2)
     else:
         _compare_frame_output(wc1, wc2)
+
+    # we have just asserted that wc1 and wc2 are equal
+    if not isinstance(wc1, (list, tuple)):
+        wc1 = (wc1,)
+
+    pix_out1 = hlvl.world_to_pixel(*wc1)
+    pix_out2 = wcsobj.invert(*wc1)
+
+    if not isinstance(pix_out2, (list, tuple)):
+        pix_out2 = (pix_out2,)
+
+    if wcsobj.forward_transform.uses_quantity:
+        pix_out2 = tuple(p.to_value(unit) for p, unit in zip(pix_out2, wcsobj.input_frame.unit))
+
+    np.testing.assert_allclose(pix_out1, pixel_input)
+    np.testing.assert_allclose(pix_out2, pixel_input)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
@@ -368,24 +387,20 @@ def test_low_level_wcs(wcsobj):
 
 @wcs_objs
 def test_pixel_to_world(wcsobj):
-    comp = wcsobj(x, y, with_units=True)
-    comp = wcsobj.output_frame.coordinates(comp)
+    values = wcsobj(x, y)
     result = wcsobj.pixel_to_world(x, y)
-    assert isinstance(comp, coord.SkyCoord)
     assert isinstance(result, coord.SkyCoord)
-    assert_allclose(comp.data.lon, result.data.lon)
-    assert_allclose(comp.data.lat, result.data.lat)
+    assert_allclose(values[0] * u.deg, result.data.lon)
+    assert_allclose(values[1] * u.deg, result.data.lat)
 
 
 @wcs_objs
 def test_array_index_to_world(wcsobj):
-    comp = wcsobj(x, y, with_units=True)
-    comp = wcsobj.output_frame.coordinates(comp)
+    values = wcsobj(x, y)
     result = wcsobj.array_index_to_world(y, x)
-    assert isinstance(comp, coord.SkyCoord)
     assert isinstance(result, coord.SkyCoord)
-    assert_allclose(comp.data.lon, result.data.lon)
-    assert_allclose(comp.data.lat, result.data.lat)
+    assert_allclose(values[0] * u.deg, result.data.lon)
+    assert_allclose(values[1] * u.deg, result.data.lat)
 
 
 def test_pixel_to_world_quantity(gwcs_2d_shift_scale, gwcs_2d_shift_scale_quantity):
@@ -466,28 +481,28 @@ def sky_ra_dec(request, gwcs_2d_spatial_shift):
 def test_world_to_pixel(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec, with_units=False))
+    assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec))
 
 
 def test_world_to_array_index(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec, with_units=False)[::-1])
+    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec)[::-1])
 
 
 def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_pixel_values(sky), wcsobj.invert(ra, dec, with_units=False))
+    assert_allclose(wcsobj.world_to_pixel_values(ra, dec), wcsobj.invert(ra, dec))
 
 
 def test_world_to_array_index_values(gwcs_2d_spatial_shift, sky_ra_dec):
     wcsobj = gwcs_2d_spatial_shift
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_array_index_values(sky),
-                    wcsobj.invert(ra, dec, with_units=False)[::-1])
+    assert_allclose(wcsobj.world_to_array_index_values(ra, dec),
+                    wcsobj.invert(ra, dec)[::-1])
 
 
 def test_ndim_str_frames(gwcs_with_frames_strings):
@@ -500,12 +515,12 @@ def test_composite_many_base_frame():
     q_frame_2 = cf.CoordinateFrame(name='distance', axes_order=(1,), naxes=1, axes_type="SPATIAL", unit=(u.m,))
     frame = cf.CompositeFrame([q_frame_1, q_frame_2])
 
-    wao_classes = frame._world_axis_object_classes
+    wao_classes = frame.world_axis_object_classes
 
     assert len(wao_classes) == 2
     assert not set(wao_classes.keys()).difference({"SPATIAL", "SPATIAL1"})
 
-    wao_components = frame._world_axis_object_components
+    wao_components = frame.world_axis_object_components
 
     assert len(wao_components) == 2
     assert not {c[0] for c in wao_components}.difference({"SPATIAL", "SPATIAL1"})
