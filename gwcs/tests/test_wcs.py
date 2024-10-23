@@ -441,6 +441,12 @@ def test_grid_from_compound_bounding_box():
 
     assert np.all(grid == grid_truth)
 
+    # Capture errors
+    with pytest.raises(ValueError, match=r"Cannot use selector with a non-CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box[(300,)], selector=(300,))
+    with pytest.raises(ValueError, match=r"selector must be set when bounding_box is a CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box)
+
 
 def test_wcs_from_points():
     np.random.seed(0)
