@@ -204,10 +204,6 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     if isinstance(bounding_box, ModelBoundingBox):
         input_names = bounding_box.model.inputs
 
-        # Reorder the bounding box to match the order of the inputs
-        if bounding_box.order == "C":
-            input_names = input_names[::-1]
-
         # Get tuple of tuples of the bounding box values
         bounding_box = tuple(
             tuple(bounding_box[name])

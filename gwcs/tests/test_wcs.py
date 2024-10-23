@@ -413,21 +413,6 @@ def test_grid_from_model_bounding_box():
 
     assert np.all(grid == grid_truth)
 
-    # Handle the C order case
-    model.inputs = ("y", "x", "slit_name")
-    model.bounding_box = ModelBoundingBox(
-        {
-            "x": bbox[0],
-            "y": bbox[1],
-        },
-        model=model,
-        ignored=["slit_name"],
-        order="C",
-    )
-    grid = grid_from_bounding_box(model.bounding_box)
-
-    assert np.all(grid == grid_truth)
-
 
 def test_grid_from_compound_bounding_box():
     bbox = ((-1, 1), (0, 1))
