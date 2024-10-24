@@ -9,6 +9,8 @@
 
 - Synchronize ``region.py`` with the copies of it in JWST and Romancal. [#517]
 
+- Add support for compound bounding boxes and ignored bounding box entries. [#519]
+
 0.21.0 (2024-03-10)
 -------------------
 

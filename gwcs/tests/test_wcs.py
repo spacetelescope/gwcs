@@ -7,7 +7,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from astropy.modeling import models
+from astropy.modeling import models, bind_compound_bounding_box
+from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy import coordinates as coord
 from astropy.io import fits
 from astropy import units as u
@@ -390,6 +391,61 @@ def test_grid_from_bounding_box_step():
 
     with pytest.raises(ValueError):
         grid_from_bounding_box(bb, step=(1, 2, 1))
+
+def test_grid_from_model_bounding_box():
+    bbox = ((-1, 1), (0, 1))
+    # Truth grid
+    grid_truth = grid_from_bounding_box(bbox)
+
+    # Create a bounding box
+    model = models.Const2D() & models.Const1D()
+    model.inputs = ("x", "y", "slit_name")
+    model.bounding_box = ModelBoundingBox(
+        {
+            "x": bbox[0],
+            "y": bbox[1],
+        },
+        model=model,
+        ignored=["slit_name"],
+        order="F",
+    )
+    grid = grid_from_bounding_box(model.bounding_box)
+
+    assert np.all(grid == grid_truth)
+
+
+def test_grid_from_compound_bounding_box():
+    bbox = ((-1, 1), (0, 1))
+    # Truth grid
+    grid_truth = grid_from_bounding_box(bbox)
+
+    # Create a compound bounding box
+    model = models.Const2D() & models.Const1D()
+    model.inputs = ("x", "y", "slit_name")
+    bind_compound_bounding_box(
+        model,
+        {
+            (200,) : {
+                "x": bbox[0],
+                "y": bbox[1],
+            },
+            (300,) :{
+                "x": (-2, 2),
+                "y": (0, 2),
+            }
+        },
+        [("slit_name",)],
+        order="F",
+    )
+    grid = grid_from_bounding_box(model.bounding_box, selector=(200,))
+
+    assert np.all(grid == grid_truth)
+
+    # Capture errors
+    with pytest.raises(ValueError, match=r"Cannot use selector with a non-CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box[(300,)], selector=(300,))
+    with pytest.raises(ValueError, match=r"selector must be set when bounding_box is a CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box)
 
 
 def test_wcs_from_points():

@@ -5,6 +5,7 @@ import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling import projections
 from astropy.modeling import models, fitting
+from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy import coordinates as coord
 from astropy import units as u
 
@@ -139,7 +140,7 @@ frame2transform = {CelestialFrame: _sky_transform,
                    }
 
 
-def grid_from_bounding_box(bounding_box, step=1, center=True):
+def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     """
     Create a grid of input points from the WCS bounding_box.
 
@@ -151,11 +152,14 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
 
     Parameters
     ----------
-    bounding_box : tuple
+    bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox | ~astropy.modeling.bounding_box.CompoundBoundingBox
         The bounding_box of a WCS object, `~gwcs.wcs.WCS.bounding_box`.
     step : scalar or tuple
         Step size for grid in each dimension.  Scalar applies to all dimensions.
     center : bool
+    selector : tuple | None
+        If selector is set then it must be a selector tuple and bounding_box must
+        be a CompoundBoundingBox.
 
     The bounding_box is in order of X, Y [, Z] and the output will be in the
     same order.
@@ -187,6 +191,26 @@ def grid_from_bounding_box(bounding_box, step=1, center=True):
     """
     def _bbox_to_pixel(bbox):
         return (np.floor(bbox[0] + 0.5), np.ceil(bbox[1] - 0.5))
+
+    if selector is not None and not isinstance(bounding_box, CompoundBoundingBox):
+        raise ValueError("Cannot use selector with a non-CompoundBoundingBox")
+
+    if isinstance(bounding_box, CompoundBoundingBox):
+        if selector is None:
+            raise ValueError("selector must be set when bounding_box is a CompoundBoundingBox")
+
+        bounding_box = bounding_box[selector]
+
+    if isinstance(bounding_box, ModelBoundingBox):
+        input_names = bounding_box.model.inputs
+
+        # Get tuple of tuples of the bounding box values
+        bounding_box = tuple(
+            tuple(bounding_box[name])
+            for name in input_names
+            if name not in bounding_box.ignored_inputs
+        )
+
     # 1D case
     if np.isscalar(bounding_box[0]):
         nd = 1
