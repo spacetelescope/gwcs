@@ -7,6 +7,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
+from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects, high_level_objects_to_values
 import astropy.units as u
 
 from . import utils
@@ -302,10 +303,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
 
         return pixels
 
-    def _sanitize_world_inputs(self, *world_arrays):
-        world_coord = []
-
-
     def pixel_to_world(self, *pixel_arrays):
         """
         Convert pixel values to world coordinates.
@@ -326,8 +323,9 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert world coordinates to pixel values.
         """
+        #args = high_level_objects_to_values(*world_objects, low_level_wcs=self)
+        #result = self.invert(*args)
         result = self.invert(*world_objects, with_units=True)
-
         if self.input_frame.naxes > 1:
             first_res = result[0]
             if not utils.isnumerical(first_res):

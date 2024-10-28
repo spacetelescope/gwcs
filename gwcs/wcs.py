@@ -13,7 +13,11 @@ from astropy.modeling.core import Model
 from astropy.modeling.models import (Const1D, Identity, Mapping, Polynomial2D,
                                      RotateCelestial2Native, Shift,
                                      Sky2Pix_TAN)
+from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
+from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values
+
+from astropy import units as u
 from scipy import linalg, optimize
 
 from . import coordinate_frames as cf
@@ -471,9 +475,7 @@ class WCS(GWCSAPIMixin):
             btrans = self.backward_transform
         except NotImplementedError:
             btrans = None
-        print(f"args[0], {args[0]}")
         if not utils.isnumerical(args[0]):
-            print(f"args1, {args}")
             # convert astropy objects to numbers and arrays
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
@@ -486,12 +488,10 @@ class WCS(GWCSAPIMixin):
         with_bounding_box = kwargs.pop('with_bounding_box', True)
         fill_value = kwargs.pop('fill_value', np.nan)
         akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-        print(f"args, {args}")
         if with_bounding_box and self.bounding_box is not None:
             result = self.outside_footprint(args)
 
         if btrans is not None:
-            #akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = btrans(*args, **akwargs)
         else:
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
@@ -507,38 +507,27 @@ class WCS(GWCSAPIMixin):
                 return self.input_frame.coordinates(*result)
         else:
             return result
-        
+
     def outside_footprint(self, world_arrays):
-        # for axis in world_arrays:
-        #     if np.isscalar(axis):
-        #         world_arrays = np.asarray(list(world_arrays), dtype = np.float64)
-        #         world_arrays = [world_arrays]
-                #print('axis', axis, world_arrays)
-                #if np.isscalar(axis) or self.output_frame.naxes == 1:
-        if self.output_frame.naxes == 1:
-                #print('axis', axis)
-                #axis = float(axis)
-                world_arrays = [world_arrays]
-                #print('axis', axis)
-        print('world_arrays1', world_arrays)
-        #world_arrays = np.asarray(list(world_arrays))#, dtype = np.float64)
-        print('world_arrays2', world_arrays)
+        world_arrays = list(world_arrays)
 
         axes_types = set(self.output_frame.axes_type)
-        for axtyp in axes_types:
-            footprint = self.footprint(axis_type=axtyp)
-            
-            ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
-            #print('ind', ind)
+        footprint = self.footprint()
+        world_arrays = [coo.to(unit) for coo, unit in zip(world_arrays, self.output_frame.unit)
+                        if isinstance(coo, u.Quantity)]
+        world_arrays = [high_level_objects_to_values(coo, low_level_wcs=self) for
+                        coo in world_arrays if not utils.isnumerical(coo)]
 
-            for idim, coord in enumerate(world_arrays[ind]):
-                #print('footprint', footprint)
+        for axtyp in axes_types:
+            ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
+
+            for idim, coord in enumerate(world_arrays):
+                coord = _tofloat(coord)
                 if np.asarray(ind).sum() > 1:
                     axis_range = footprint[:, idim]
                 else:
                     axis_range = footprint
                 range = [axis_range.min(), axis_range.max()]
-                #print('idim', idim, coord, range)
                 outside = (coord < range[0]) | (coord > range[1])
                 if np.any(outside):
                     if np.isscalar(coord):
@@ -1473,11 +1462,6 @@ class WCS(GWCSAPIMixin):
 
         """
         def _order_clockwise(v):
-            # if self.input_frame.naxes == 1:
-            #     bb = self.bounding_box.bounding_box()
-            #     if isinstance(bb[0], u.Quantity):
-            #         bb = [v.value for v in bb] * bb[0].unit
-            #     return (bb,)
             return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
                                [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
 
@@ -1508,7 +1492,7 @@ class WCS(GWCSAPIMixin):
         axis_type = axis_type.lower()
         if axis_type == 'spatial' and all_spatial:
             return result.T
-        
+
         if axis_type != "all":
             axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
             if not axtyp_ind.any():
