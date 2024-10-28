@@ -241,7 +241,8 @@ def gwcs_3d_galactic_spectral():
     transform = models.Mapping((2, 0, 1)) | celestial & wave_model | models.Mapping((1, 2, 0))
 
     sky_frame = cf.CelestialFrame(axes_order=(2, 0),
-                                  reference_frame=coord.Galactic(), axes_names=("Longitude", "Latitude"))
+                                  reference_frame=coord.Galactic(),
+                                  axes_names=("Longitude", "Latitude"))
     wave_frame = cf.SpectralFrame(axes_order=(1, ), unit=u.Hz, axes_names=("Frequency",))
 
     frame = cf.CompositeFrame([sky_frame, wave_frame])

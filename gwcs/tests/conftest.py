@@ -3,15 +3,7 @@ This file contains a set of pytest fixtures which are different gwcses for testi
 """
 import pytest
 
-import numpy as np
-
-import astropy.units as u
-from astropy import coordinates as coord
-from astropy.modeling import models
-
 from gwcs import examples
-from gwcs import coordinate_frames as cf
-from gwcs import wcs
 from gwcs import geometry
 
 
