@@ -7,7 +7,6 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 from astropy.wcs.wcsapi import BaseHighLevelWCS, BaseLowLevelWCS
 from astropy.modeling import separable
-from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects, high_level_objects_to_values
 import astropy.units as u
 
 from . import utils
