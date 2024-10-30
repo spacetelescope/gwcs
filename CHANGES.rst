@@ -11,6 +11,8 @@
 
 - Add support for compound bounding boxes and ignored bounding box entries. [#519]
 
+- Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
+
 0.21.0 (2024-03-10)
 -------------------
 
