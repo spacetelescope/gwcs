@@ -1286,6 +1286,15 @@ class WCS(GWCSAPIMixin):
         except NotImplementedError:
             return None
 
+        if bb.order == "C":
+            warnings.warn(
+                "The bounding_box was set in C order on the transform prior to being used in the gwcs!"
+                "Check that you indended that ordering for the bounding_box, and consider setting it in F order."
+                "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS."
+            )
+            self.bounding_box = bb.bounding_box(order="F")
+            bb = self.bounding_box
+
         return bb
 
     @bounding_box.setter

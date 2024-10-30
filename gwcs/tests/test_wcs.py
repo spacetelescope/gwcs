@@ -1429,6 +1429,10 @@ def test_bounding_box_is_returned_F():
     pipeline_bbox_before = [(detector_2d_frame, model_2d_shift_bbox), (frame, None)]
     gwcs_object_before = wcs.WCS(pipeline_bbox_before)
 
+    # Check that first access in this case will raise a warning
+    with pytest.warns(UserWarning):
+        gwcs_object_before.bounding_box
+
     # Check order is returned as F
     assert gwcs_object_before.bounding_box.order == "F"
 
