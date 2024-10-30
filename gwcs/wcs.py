@@ -1468,7 +1468,7 @@ class WCS(GWCSAPIMixin):
         if bounding_box is None:
             if self.bounding_box is None:
                 raise TypeError("Need a valid bounding_box to compute the footprint.")
-            bb = self.bounding_box.bounding_box()
+            bb = self.bounding_box.bounding_box(order='F')
         else:
             bb = bounding_box
 
