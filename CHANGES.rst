@@ -13,6 +13,8 @@
 
 - Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
 
+- Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522] 
+
 0.21.0 (2024-03-10)
 -------------------
 
