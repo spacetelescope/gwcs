@@ -10,23 +10,23 @@ from . import spectroscopy as sp
 from . import wcs
 
 # frames
-detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
-detector_2d = cf.Frame2D(name='detector', axes_order=(0, 1))
-icrs_sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
+DETECTOR_1D_FRAME = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
+DETECTOR_2D_FRAME = cf.Frame2D(name='detector', axes_order=(0, 1))
+ICRC_SKY_FRAME = cf.CelestialFrame(reference_frame=coord.ICRS(),
                                    axes_order=(0, 1))
 
-freq_frame = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(0, ))
-wave_frame = cf.SpectralFrame(name='wave', unit=u.m, axes_order=(2, ),
+FREQ_FRAME = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(0, ))
+WAVE_FRAME = cf.SpectralFrame(name='wave', unit=u.m, axes_order=(2, ),
                               axes_names=('lambda', ))
 
 # transforms
-model_2d_shift = models.Shift(1) & models.Shift(2)
-model_1d_scale = models.Scale(2)
+MODEL_2D_SHIFT = models.Shift(1) & models.Shift(2)
+MODEL_1D_SCALE = models.Scale(2)
 
 
 def gwcs_2d_quantity_shift():
     frame = cf.CoordinateFrame(name="quantity", axes_order=(0, 1), naxes=2, axes_type=("SPATIAL", "SPATIAL"), unit=(u.km, u.km))
-    pipe = [(detector_2d, model_2d_shift), (frame, None)]
+    pipe = [(DETECTOR_2D_FRAME, MODEL_2D_SHIFT), (frame, None)]
 
     return wcs.WCS(pipe)
 
@@ -35,7 +35,7 @@ def gwcs_2d_spatial_shift():
     """
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
-    pipe = [(detector_2d, model_2d_shift), (icrs_sky_frame, None)]
+    pipe = [(DETECTOR_2D_FRAME, MODEL_2D_SHIFT), (ICRC_SKY_FRAME, None)]
 
     return wcs.WCS(pipe)
 
@@ -46,16 +46,16 @@ def gwcs_2d_spatial_reordered():
     """
     out_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
                                    axes_order=(1, 0))
-    return wcs.WCS(model_2d_shift | models.Mapping((1, 0)), input_frame=detector_2d, output_frame=out_frame)
+    return wcs.WCS(MODEL_2D_SHIFT | models.Mapping((1, 0)), input_frame=DETECTOR_2D_FRAME, output_frame=out_frame)
 
 
 def gwcs_1d_freq():
-    return wcs.WCS([(detector_1d, model_1d_scale), (freq_frame, None)])
+    return wcs.WCS([(DETECTOR_1D_FRAME, MODEL_1D_SCALE), (FREQ_FRAME, None)])
 
 
 def gwcs_3d_spatial_wave():
-    comp1 = cf.CompositeFrame([icrs_sky_frame, wave_frame])
-    m = model_2d_shift & model_1d_scale
+    comp1 = cf.CompositeFrame([ICRC_SKY_FRAME, WAVE_FRAME])
+    m = MODEL_2D_SHIFT & MODEL_1D_SCALE
 
     detector_frame = cf.CoordinateFrame(name="detector", naxes=3,
                                         axes_order=(0, 1, 2),
@@ -70,14 +70,14 @@ def gwcs_2d_shift_scale():
     m1 = models.Shift(1) & models.Shift(2)
     m2 = models.Scale(5) & models.Scale(10)
     m3 = m1 | m2
-    pipe = [(detector_2d, m3), (icrs_sky_frame, None)]
+    pipe = [(DETECTOR_2D_FRAME, m3), (ICRC_SKY_FRAME, None)]
     return wcs.WCS(pipe)
 
 
 def gwcs_1d_freq_quantity():
 
     detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, unit=u.pix, axes_type="detector")
-    return wcs.WCS([(detector_1d, models.Multiply(1 * u.Hz / u.pix)), (freq_frame, None)])
+    return wcs.WCS([(detector_1d, models.Multiply(1 * u.Hz / u.pix)), (FREQ_FRAME, None)])
 
 
 def gwcs_2d_shift_scale_quantity():
@@ -96,7 +96,7 @@ def gwcs_2d_shift_scale_quantity():
     }
     m7 = m5 & m6
     m8 = m4 | m7
-    pipe2 = [(detector_2d, m8), (icrs_sky_frame, None)]
+    pipe2 = [(DETECTOR_2D_FRAME, m8), (ICRC_SKY_FRAME, None)]
     return wcs.WCS(pipe2)
 
 
@@ -188,10 +188,10 @@ def gwcs_stokes_lookup():
 
 
 def gwcs_3spectral_orders():
-    comp1 = cf.CompositeFrame([icrs_sky_frame, wave_frame])
+    comp1 = cf.CompositeFrame([ICRC_SKY_FRAME, WAVE_FRAME])
     detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
                                 unit=(u.pix, u.pix))
-    m = model_2d_shift & model_1d_scale
+    m = MODEL_2D_SHIFT & MODEL_1D_SCALE
 
     return wcs.WCS([(detector_frame, m),
                     (comp1, None)])
