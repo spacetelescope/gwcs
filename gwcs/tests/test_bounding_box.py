@@ -85,8 +85,3 @@ def test_gwcs_spec_cel_time_4d(gwcs_spec_cel_time_4d, input, output):
     w = gwcs_spec_cel_time_4d
 
     assert_allclose(w.invert(*w(*input, with_bounding_box=False)), output, atol=1e-8)
-
-
-# @pytest.mark.parametrize((("input", "output")), [((2, 4, 5), (2, 4, 5))]
-# def test_gwcs_1d_freq_quantity(gwcs_1d_freq_quantity, input, output):
-#     w = gwcs_1d_freq_quantity
