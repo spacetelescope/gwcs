@@ -1430,7 +1430,7 @@ def test_bounding_box_is_returned_F():
     gwcs_object_before = wcs.WCS(pipeline_bbox_before)
 
     # Check that first access in this case will raise a warning
-    with pytest.warns(UserWarning):
+    with pytest.warns(wcs.GwcsBoundingBoxWarning):
         gwcs_object_before.bounding_box
 
     # Check order is returned as F

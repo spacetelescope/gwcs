@@ -72,6 +72,12 @@ class NoConvergence(Exception):
         self.slow_conv = slow_conv
 
 
+class GwcsBoundingBoxWarning(UserWarning):
+    """
+    A warning class to report issues with bounding boxes in GWCS.
+    """
+
+
 class _WorldAxisInfo():
     def __init__(self, axis, frame, world_axis_order, cunit, ctype, input_axes):
         """
@@ -1286,11 +1292,19 @@ class WCS(GWCSAPIMixin):
         except NotImplementedError:
             return None
 
-        if bb.order == "C":
+        if (
+            # Check that the bounding_box was set on the instance (not a default)
+            transform_0._user_bounding_box is not None 
+            # Check the order of that bounding_box is C
+            and bb.order == "C" 
+            # Check that the bounding_box is not a single value
+            and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
+        ):
             warnings.warn(
-                "The bounding_box was set in C order on the transform prior to being used in the gwcs!"
-                "Check that you indended that ordering for the bounding_box, and consider setting it in F order."
-                "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS."
+                "The bounding_box was set in C order on the transform prior to being used in the gwcs!\n"
+                "Check that you indended that ordering for the bounding_box, and consider setting it in F order.\n"
+                "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS.",
+                GwcsBoundingBoxWarning
             )
             self.bounding_box = bb.bounding_box(order="F")
             bb = self.bounding_box
