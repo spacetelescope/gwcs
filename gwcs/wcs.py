@@ -1294,9 +1294,9 @@ class WCS(GWCSAPIMixin):
 
         if (
             # Check that the bounding_box was set on the instance (not a default)
-            transform_0._user_bounding_box is not None 
+            transform_0._user_bounding_box is not None
             # Check the order of that bounding_box is C
-            and bb.order == "C" 
+            and bb.order == "C"
             # Check that the bounding_box is not a single value
             and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
         ):
