@@ -239,7 +239,6 @@ def gwcs_3d_galactic_spectral():
     wave_model = models.Shift(-crpix2) | models.Multiply(cdelt2) | models.Shift(crval2)
 
     transform = models.Mapping((2, 0, 1)) | celestial & wave_model | models.Mapping((1, 2, 0))
-    transform.bounding_box = ((5, 50), (-2, 45), (-1, 35))
 
     sky_frame = cf.CelestialFrame(axes_order=(2, 0),
                                   reference_frame=coord.Galactic(), axes_names=("Longitude", "Latitude"))
@@ -253,6 +252,7 @@ def gwcs_3d_galactic_spectral():
                                         unit=(u.pix, u.pix, u.pix))
 
     owcs = wcs.WCS(forward_transform=transform, output_frame=frame, input_frame=detector_frame)
+    owcs.bounding_box = ((-1, 35), (-2, 45), (5, 50))
     owcs.array_shape = (30, 20, 10)
     owcs.pixel_shape = (10, 20, 30)
 

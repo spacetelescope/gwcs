@@ -3,97 +3,57 @@
 %YAML 1.1
 %TAG ! tag:stsci.edu:asdf/
 --- !core/asdf-1.1.0
-asdf_library: !core/software-1.0.0 {author: Space Telescope Science Institute, homepage: 'http://github.com/spacetelescope/asdf',
-  name: asdf, version: 2.6.0}
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 3.5.0}
 history:
   extensions:
   - !core/extension_metadata-1.0.0
-    extension_class: asdf.extension.BuiltinExtension
-    software: !core/software-1.0.0 {name: asdf, version: 2.6.0}
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.5.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.1.1}
+    software: !core/software-1.0.0 {name: asdf, version: 3.5.0}
   - !core/extension_metadata-1.0.0
-    extension_class: gwcs.extension.GWCSExtension
-    software: !core/software-1.0.0 {name: gwcs, version: 0.13.1.dev16+g71f9b60}
-wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://astropy.org/astropy/extensions/units-1.0.0
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.6.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.2.0
+    manifest_software: !core/software-1.0.0 {name: asdf_wcs_schemas, version: 0.4.0}
+    software: !core/software-1.0.0 {name: gwcs, version: 0.22.0a1.dev14+gc46e932}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/astronomy/coordinates/extensions/coordinates-1.0.0
+    manifest_software: !core/software-1.0.0 {name: asdf_coordinates_schemas, version: 0.3.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.6.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/transform/extensions/transform-1.5.0
+    manifest_software: !core/software-1.0.0 {name: asdf_transform_schemas, version: 0.5.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.6.1}
+wcs: !<tag:stsci.edu:gwcs/wcs-1.2.0>
   name: ''
+  pixel_shape: null
   steps:
-  - !<tag:stsci.edu:gwcs/step-1.0.0>
+  - !<tag:stsci.edu:gwcs/step-1.1.0>
     frame: !<tag:stsci.edu:gwcs/frame2d-1.0.0>
       axes_names: [x, y]
       axes_order: [0, 1]
       axis_physical_types: ['custom:x', 'custom:y']
       name: detector
-      unit: [!unit/unit-1.0.0 'pixel', !unit/unit-1.0.0 'pixel']
+      unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
     transform: !transform/compose-1.2.0
-      bounding_box:
-      - [6.5, 396.5]
-      - [302.5, 346.5]
-      bounds:
-        amplitude_7: [null, null]
-        angle_22: [null, null]
-        angle_3: [null, null]
-        c0_0_13: [null, null]
-        c0_0_14: [null, null]
-        c0_0_16: [null, null]
-        c0_0_17: [null, null]
-        c0_10: [null, null]
-        c0_11: [null, null]
-        c0_1_13: [null, null]
-        c0_1_14: [null, null]
-        c0_1_16: [null, null]
-        c0_1_17: [null, null]
-        c0_2_13: [null, null]
-        c0_2_14: [null, null]
-        c0_3_13: [null, null]
-        c0_3_14: [null, null]
-        c0_4_13: [null, null]
-        c0_4_14: [null, null]
-        c1_0_13: [null, null]
-        c1_0_14: [null, null]
-        c1_0_16: [null, null]
-        c1_0_17: [null, null]
-        c1_10: [null, null]
-        c1_11: [null, null]
-        c1_1_13: [null, null]
-        c1_1_14: [null, null]
-        c1_2_13: [null, null]
-        c1_2_14: [null, null]
-        c1_3_13: [null, null]
-        c1_3_14: [null, null]
-        c2_0_13: [null, null]
-        c2_0_14: [null, null]
-        c2_1_13: [null, null]
-        c2_1_14: [null, null]
-        c2_2_13: [null, null]
-        c2_2_14: [null, null]
-        c3_0_13: [null, null]
-        c3_0_14: [null, null]
-        c3_1_13: [null, null]
-        c3_1_14: [null, null]
-        c4_0_13: [null, null]
-        c4_0_14: [null, null]
-        offset_1: [null, null]
-        offset_2: [null, null]
-        offset_20: [null, null]
-        offset_21: [null, null]
-        offset_4: [null, null]
-        offset_5: [null, null]
-        offset_8: [null, null]
-      fixed: {amplitude_7: false, angle_22: false, angle_3: false, c0_0_13: false,
-        c0_0_14: false, c0_0_16: false, c0_0_17: false, c0_10: false, c0_11: false,
-        c0_1_13: false, c0_1_14: false, c0_1_16: false, c0_1_17: false, c0_2_13: false,
-        c0_2_14: false, c0_3_13: false, c0_3_14: false, c0_4_13: false, c0_4_14: false,
-        c1_0_13: false, c1_0_14: false, c1_0_16: false, c1_0_17: false, c1_10: false,
-        c1_11: false, c1_1_13: false, c1_1_14: false, c1_2_13: false, c1_2_14: false,
-        c1_3_13: false, c1_3_14: false, c2_0_13: false, c2_0_14: false, c2_1_13: false,
-        c2_1_14: false, c2_2_13: false, c2_2_14: false, c3_0_13: false, c3_0_14: false,
-        c3_1_13: false, c3_1_14: false, c4_0_13: false, c4_0_14: false, offset_1: false,
-        offset_2: false, offset_20: false, offset_21: false, offset_4: false, offset_5: false,
-        offset_8: false}
+      bounding_box: !transform/property/bounding_box-1.0.0
+        ignore: []
+        intervals:
+          x0: [302.5, 346.5]
+          x1: [6.5, 396.5]
+        order: F
       forward:
-      - !transform/remap_axes-1.2.0
-        bounds: {}
-        fixed: {}
+      - !transform/remap_axes-1.3.0
+        inputs: [x0, x1]
         mapping: [0, 1, 0, 1]
+        outputs: [x0, x1, x2, x3]
       - !transform/concatenate-1.2.0
         forward:
         - !transform/compose-1.2.0
@@ -103,51 +63,54 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
             - !transform/concatenate-1.2.0
               forward:
               - !transform/shift-1.2.0
-                bounds:
-                  offset: &id001 [null, null]
-                fixed: {offset: false}
+                inputs: [x]
                 offset: -325.13
+                outputs: [y]
               - !transform/shift-1.2.0
-                bounds:
-                  offset: *id001
-                fixed: {offset: false}
+                inputs: [x]
                 offset: -299.7
-            - !transform/rotate2d-1.2.0
+                outputs: [y]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            - !transform/rotate2d-1.3.0
               angle: 0.24155757363306068
-              bounds:
-                angle: &id002 [null, null]
-              fixed: {angle: false}
+              inputs: [x, y]
+              outputs: [x, y]
+            inputs: [x0, x1]
+            outputs: [x, y]
           - !transform/compose-1.2.0
             forward:
             - !transform/concatenate-1.2.0
               forward:
               - !transform/shift-1.2.0
-                bounds:
-                  offset: *id001
-                fixed: {offset: false}
+                inputs: [x]
                 offset: 325.13
+                outputs: [y]
               - !transform/shift-1.2.0
-                bounds:
-                  offset: *id001
-                fixed: {offset: false}
+                inputs: [x]
                 offset: 299.7
+                outputs: [y]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
             - !transform/compose-1.2.0
               forward:
               - !transform/concatenate-1.2.0
                 forward:
                 - !transform/identity-1.2.0
-                  bounds: {}
-                  fixed: {}
-                - !transform/constant-1.2.0
-                  bounds:
-                    amplitude: [null, null]
-                  fixed: {amplitude: false}
-                  inverse: !transform/constant-1.2.0
-                    bounds:
-                      amplitude: [null, null]
-                    fixed: {amplitude: false}
+                  inputs: [x0]
+                  outputs: [x0]
+                - !transform/constant-1.4.0
+                  dimensions: 1
+                  inputs: [x]
+                  inverse: !transform/constant-1.4.0
+                    dimensions: 1
+                    inputs: [x]
+                    outputs: [y]
                     value: 299.7
+                  outputs: [y]
                   value: 299.7
+                inputs: [x0, x]
+                outputs: [x0, y]
               - !transform/compose-1.2.0
                 forward:
                 - !transform/compose-1.2.0
@@ -165,92 +128,75 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                             - !transform/concatenate-1.2.0
                               forward:
                               - !transform/shift-1.2.0
-                                bounds:
-                                  offset: *id001
-                                fixed: {offset: false}
+                                inputs: [x]
                                 offset: -4.0
+                                outputs: [y]
                               - !transform/identity-1.2.0
-                                bounds: {}
-                                fixed: {}
+                                inputs: [x0]
+                                outputs: [x0]
+                              inputs: [x, x0]
+                              outputs: [y, x0]
                             - !transform/concatenate-1.2.0
                               forward:
                               - !transform/polynomial-1.2.0
-                                bounds:
-                                  c0: [null, null]
-                                  c1: [null, null]
                                 coefficients: !core/ndarray-1.0.0
                                   source: 0
                                   datatype: float64
                                   byteorder: little
                                   shape: [2]
                                 domain: [-1, 1]
-                                fixed: {c0: false, c1: false}
+                                inputs: [x]
                                 inverse: !transform/polynomial-1.2.0
-                                  bounds:
-                                    c0: [null, null]
-                                    c1: [null, null]
                                   coefficients: !core/ndarray-1.0.0
                                     source: 1
                                     datatype: float64
                                     byteorder: little
                                     shape: [2]
                                   domain: [-1, 1]
-                                  fixed: {c0: false, c1: false}
+                                  inputs: [x]
+                                  outputs: [y]
                                   window: [-1, 1]
                                 name: M_column_correction
+                                outputs: [y]
                                 window: [-1, 1]
                               - !transform/polynomial-1.2.0
-                                bounds:
-                                  c0: [null, null]
-                                  c1: [null, null]
                                 coefficients: !core/ndarray-1.0.0
                                   source: 2
                                   datatype: float64
                                   byteorder: little
                                   shape: [2]
                                 domain: [-1, 1]
-                                fixed: {c0: false, c1: false}
+                                inputs: [x]
                                 inverse: !transform/polynomial-1.2.0
-                                  bounds:
-                                    c0: [null, null]
-                                    c1: [null, null]
                                   coefficients: !core/ndarray-1.0.0
                                     source: 3
                                     datatype: float64
                                     byteorder: little
                                     shape: [2]
                                   domain: [-1, 1]
-                                  fixed: {c0: false, c1: false}
+                                  inputs: [x]
+                                  outputs: [y]
                                   window: [-1, 1]
                                 name: M_row_correction
+                                outputs: [y]
                                 window: [-1, 1]
-                          - !transform/remap_axes-1.2.0
-                            bounds: {}
-                            fixed: {}
+                              inputs: [x0, x1]
+                              outputs: [y0, y1]
+                            inputs: [x, x0]
+                            outputs: [y0, y1]
+                          - !transform/remap_axes-1.3.0
+                            inputs: [x0, x1]
                             inverse: !transform/identity-1.2.0
-                              bounds: {}
-                              fixed: {}
+                              inputs: [x0, x1]
                               n_dims: 2
+                              outputs: [x0, x1]
                             mapping: [0, 1, 0, 1]
+                            outputs: [x0, x1, x2, x3]
+                          inputs: [x, x0]
+                          outputs: [x0, x1, x2, x3]
                         - !transform/concatenate-1.2.0
                           forward:
                           - !transform/polynomial-1.2.0
-                            bounds:
-                              c0_0: [null, null]
-                              c0_1: [null, null]
-                              c0_2: [null, null]
-                              c0_3: [null, null]
-                              c0_4: [null, null]
-                              c1_0: [null, null]
-                              c1_1: [null, null]
-                              c1_2: [null, null]
-                              c1_3: [null, null]
-                              c2_0: [null, null]
-                              c2_1: [null, null]
-                              c2_2: [null, null]
-                              c3_0: [null, null]
-                              c3_1: [null, null]
-                              c4_0: [null, null]
                             coefficients: !core/ndarray-1.0.0
                               source: 4
                               datatype: float64
@@ -259,27 +205,8 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                             domain:
                             - [-1, 1]
                             - [-1, 1]
-                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                              c3_0: false, c3_1: false, c4_0: false}
+                            inputs: [x, y]
                             inverse: !transform/polynomial-1.2.0
-                              bounds:
-                                c0_0: [null, null]
-                                c0_1: [null, null]
-                                c0_2: [null, null]
-                                c0_3: [null, null]
-                                c0_4: [null, null]
-                                c1_0: [null, null]
-                                c1_1: [null, null]
-                                c1_2: [null, null]
-                                c1_3: [null, null]
-                                c2_0: [null, null]
-                                c2_1: [null, null]
-                                c2_2: [null, null]
-                                c3_0: [null, null]
-                                c3_1: [null, null]
-                                c4_0: [null, null]
                               coefficients: !core/ndarray-1.0.0
                                 source: 5
                                 datatype: float64
@@ -288,34 +215,17 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                               domain:
                               - [-1, 1]
                               - [-1, 1]
-                              fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                                c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                                c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                                c3_0: false, c3_1: false, c4_0: false}
+                              inputs: [x, y]
+                              outputs: [z]
                               window:
                               - [-1, 1]
                               - [-1, 1]
                             name: B_correction
+                            outputs: [z]
                             window:
                             - [-1, 1]
                             - [-1, 1]
                           - !transform/polynomial-1.2.0
-                            bounds:
-                              c0_0: [null, null]
-                              c0_1: [null, null]
-                              c0_2: [null, null]
-                              c0_3: [null, null]
-                              c0_4: [null, null]
-                              c1_0: [null, null]
-                              c1_1: [null, null]
-                              c1_2: [null, null]
-                              c1_3: [null, null]
-                              c2_0: [null, null]
-                              c2_1: [null, null]
-                              c2_2: [null, null]
-                              c3_0: [null, null]
-                              c3_1: [null, null]
-                              c4_0: [null, null]
                             coefficients: !core/ndarray-1.0.0
                               source: 6
                               datatype: float64
@@ -324,27 +234,8 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                             domain:
                             - [-1, 1]
                             - [-1, 1]
-                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                              c3_0: false, c3_1: false, c4_0: false}
+                            inputs: [x, y]
                             inverse: !transform/polynomial-1.2.0
-                              bounds:
-                                c0_0: [null, null]
-                                c0_1: [null, null]
-                                c0_2: [null, null]
-                                c0_3: [null, null]
-                                c0_4: [null, null]
-                                c1_0: [null, null]
-                                c1_1: [null, null]
-                                c1_2: [null, null]
-                                c1_3: [null, null]
-                                c2_0: [null, null]
-                                c2_1: [null, null]
-                                c2_2: [null, null]
-                                c3_0: [null, null]
-                                c3_1: [null, null]
-                                c4_0: [null, null]
                               coefficients: !core/ndarray-1.0.0
                                 source: 7
                                 datatype: float64
@@ -353,32 +244,33 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                               domain:
                               - [-1, 1]
                               - [-1, 1]
-                              fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                                c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                                c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                                c3_0: false, c3_1: false, c4_0: false}
+                              inputs: [x, y]
+                              outputs: [z]
                               window:
                               - [-1, 1]
                               - [-1, 1]
                             name: A_correction
+                            outputs: [z]
                             window:
                             - [-1, 1]
                             - [-1, 1]
-                      - !transform/remap_axes-1.2.0
-                        bounds: {}
-                        fixed: {}
-                        inverse: !transform/remap_axes-1.2.0
-                          bounds: {}
-                          fixed: {}
+                          inputs: [x0, y0, x1, y1]
+                          outputs: [z0, z1]
+                        inputs: [x, x0]
+                        outputs: [z0, z1]
+                      - !transform/remap_axes-1.3.0
+                        inputs: [x0, x1]
+                        inverse: !transform/remap_axes-1.3.0
+                          inputs: [x0, x1]
                           mapping: [0, 1, 0, 1]
+                          outputs: [x0, x1, x2, x3]
                         mapping: [0, 1, 0, 1]
+                        outputs: [x0, x1, x2, x3]
+                      inputs: [x, x0]
+                      outputs: [x0, x1, x2, x3]
                     - !transform/concatenate-1.2.0
                       forward:
                       - !transform/polynomial-1.2.0
-                        bounds:
-                          c0_0: [null, null]
-                          c0_1: [null, null]
-                          c1_0: [null, null]
                         coefficients: !core/ndarray-1.0.0
                           source: 8
                           datatype: float64
@@ -387,16 +279,13 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                         domain:
                         - [-1, 1]
                         - [-1, 1]
-                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        inputs: [x, y]
                         name: TI_row_correction
+                        outputs: [z]
                         window:
                         - [-1, 1]
                         - [-1, 1]
                       - !transform/polynomial-1.2.0
-                        bounds:
-                          c0_0: [null, null]
-                          c0_1: [null, null]
-                          c1_0: [null, null]
                         coefficients: !core/ndarray-1.0.0
                           source: 9
                           datatype: float64
@@ -405,23 +294,38 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                         domain:
                         - [-1, 1]
                         - [-1, 1]
-                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        inputs: [x, y]
                         name: TI_column_correction
+                        outputs: [z]
                         window:
                         - [-1, 1]
                         - [-1, 1]
+                      inputs: [x0, y0, x1, y1]
+                      outputs: [z0, z1]
+                    inputs: [x, x0]
+                    outputs: [z0, z1]
                   - !transform/identity-1.2.0
-                    bounds: {}
-                    fixed: {}
-                    inverse: !transform/remap_axes-1.2.0
-                      bounds: {}
-                      fixed: {}
+                    inputs: [x0, x1]
+                    inverse: !transform/remap_axes-1.3.0
+                      inputs: [x0, x1]
                       mapping: [0, 1, 0, 1]
+                      outputs: [x0, x1, x2, x3]
                     n_dims: 2
-                - !transform/remap_axes-1.2.0
-                  bounds: {}
-                  fixed: {}
+                    outputs: [x0, x1]
+                  inputs: [x, x0]
+                  outputs: [x0, x1]
+                - !transform/remap_axes-1.3.0
+                  inputs: [x0, x1]
                   mapping: [1, 0]
+                  outputs: [x0, x1]
+                inputs: [x, x0]
+                outputs: [x0, x1]
+              inputs: [x0, x]
+              outputs: [x0, x1]
+            inputs: [x0, x1]
+            outputs: [x0, x1]
+          inputs: [x0, x1]
+          outputs: [x0, x1]
         - !transform/compose-1.2.0
           forward:
           - !transform/compose-1.2.0
@@ -431,42 +335,53 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
               - !transform/concatenate-1.2.0
                 forward:
                 - !transform/shift-1.2.0
-                  bounds:
-                    offset: *id001
-                  fixed: {offset: false}
+                  inputs: [x]
                   offset: -325.13
+                  outputs: [y]
                 - !transform/shift-1.2.0
-                  bounds:
-                    offset: *id001
-                  fixed: {offset: false}
+                  inputs: [x]
                   offset: -299.7
-              - !transform/rotate2d-1.2.0
+                  outputs: [y]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              - !transform/rotate2d-1.3.0
                 angle: 0.24155757363306068
-                bounds:
-                  angle: *id002
-                fixed: {angle: false}
-            - !transform/remap_axes-1.2.0
-              bounds: {}
-              fixed: {}
+                inputs: [x, y]
+                outputs: [x, y]
+              inputs: [x0, x1]
+              outputs: [x, y]
+            - !transform/remap_axes-1.3.0
+              inputs: [x0, x1]
               mapping: [1]
+              outputs: [x0]
+            inputs: [x0, x1]
+            outputs: [x0]
           - !transform/tabular-1.2.0
-            bounding_box: [-291.60259000740217, 95.69787960086536]
-            bounds: {}
+            bounding_box: !transform/property/bounding_box-1.0.0
+              ignore: []
+              intervals:
+                x: [-291.60259000740217, 95.69787960086536]
+              order: C
             bounds_error: false
             fill_value: .nan
-            fixed: {}
+            inputs: [x]
             inverse: !transform/tabular-1.2.0
-              bounding_box: [3.596040329703134, 14.387876373781149]
-              bounds: {}
+              bounding_box: !transform/property/bounding_box-1.0.0
+                ignore: []
+                intervals:
+                  x: [3.596040329703134, 14.387876373781149]
+                order: C
               bounds_error: false
               fill_value: .nan
-              fixed: {}
+              inputs: [x]
               lookup_table: !core/ndarray-1.0.0
                 source: 12
                 datatype: float64
                 byteorder: little
                 shape: [699]
+              method: linear
               name: waverefinv
+              outputs: [y]
               points:
               - !core/ndarray-1.0.0
                 source: 13
@@ -478,72 +393,21 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
               datatype: float64
               byteorder: little
               shape: [388]
+            method: linear
             name: waveref
+            outputs: [y]
             points:
             - !core/ndarray-1.0.0
               source: 11
               datatype: float64
               byteorder: little
               shape: [388]
+          inputs: [x0, x1]
+          outputs: [y]
+        inputs: [x00, x10, x01, x11]
+        outputs: [x0, x1, y]
+      inputs: [x0, x1]
       inverse: !transform/compose-1.2.0
-        bounds:
-          angle_14: [null, null]
-          angle_17: [null, null]
-          c0_0_2: [null, null]
-          c0_0_3: [null, null]
-          c0_0_5: [null, null]
-          c0_0_6: [null, null]
-          c0_1_2: [null, null]
-          c0_1_3: [null, null]
-          c0_1_5: [null, null]
-          c0_1_6: [null, null]
-          c0_2_5: [null, null]
-          c0_2_6: [null, null]
-          c0_3_5: [null, null]
-          c0_3_6: [null, null]
-          c0_4_5: [null, null]
-          c0_4_6: [null, null]
-          c0_8: [null, null]
-          c0_9: [null, null]
-          c1_0_2: [null, null]
-          c1_0_3: [null, null]
-          c1_0_5: [null, null]
-          c1_0_6: [null, null]
-          c1_1_5: [null, null]
-          c1_1_6: [null, null]
-          c1_2_5: [null, null]
-          c1_2_6: [null, null]
-          c1_3_5: [null, null]
-          c1_3_6: [null, null]
-          c1_8: [null, null]
-          c1_9: [null, null]
-          c2_0_5: [null, null]
-          c2_0_6: [null, null]
-          c2_1_5: [null, null]
-          c2_1_6: [null, null]
-          c2_2_5: [null, null]
-          c2_2_6: [null, null]
-          c3_0_5: [null, null]
-          c3_0_6: [null, null]
-          c3_1_5: [null, null]
-          c3_1_6: [null, null]
-          c4_0_5: [null, null]
-          c4_0_6: [null, null]
-          offset_10: [null, null]
-          offset_12: [null, null]
-          offset_13: [null, null]
-          offset_18: [null, null]
-          offset_19: [null, null]
-        fixed: {angle_14: false, angle_17: false, c0_0_2: false, c0_0_3: false, c0_0_5: false,
-          c0_0_6: false, c0_1_2: false, c0_1_3: false, c0_1_5: false, c0_1_6: false,
-          c0_2_5: false, c0_2_6: false, c0_3_5: false, c0_3_6: false, c0_4_5: false,
-          c0_4_6: false, c0_8: false, c0_9: false, c1_0_2: false, c1_0_3: false, c1_0_5: false,
-          c1_0_6: false, c1_1_5: false, c1_1_6: false, c1_2_5: false, c1_2_6: false,
-          c1_3_5: false, c1_3_6: false, c1_8: false, c1_9: false, c2_0_5: false, c2_0_6: false,
-          c2_1_5: false, c2_1_6: false, c2_2_5: false, c2_2_6: false, c3_0_5: false,
-          c3_0_6: false, c3_1_5: false, c3_1_6: false, c4_0_5: false, c4_0_6: false,
-          offset_10: false, offset_12: false, offset_13: false, offset_18: false,
-          offset_19: false}
         forward:
         - !transform/concatenate-1.2.0
           forward:
@@ -553,25 +417,21 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
               forward:
               - !transform/compose-1.2.0
                 forward:
-                - !transform/remap_axes-1.2.0
-                  bounds: {}
-                  fixed: {}
+                - !transform/remap_axes-1.3.0
+                  inputs: [x0, x1]
                   mapping: [1, 0]
+                  outputs: [x0, x1]
                 - !transform/compose-1.2.0
                   forward:
-                  - !transform/remap_axes-1.2.0
-                    bounds: {}
-                    fixed: {}
+                  - !transform/remap_axes-1.3.0
+                    inputs: [x0, x1]
                     mapping: [0, 1, 0, 1]
+                    outputs: [x0, x1, x2, x3]
                   - !transform/compose-1.2.0
                     forward:
                     - !transform/concatenate-1.2.0
                       forward:
                       - !transform/polynomial-1.2.0
-                        bounds:
-                          c0_0: [null, null]
-                          c0_1: [null, null]
-                          c1_0: [null, null]
                         coefficients: !core/ndarray-1.0.0
                           source: 14
                           datatype: float64
@@ -580,16 +440,13 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                         domain:
                         - [-1, 1]
                         - [-1, 1]
-                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        inputs: [x, y]
                         name: T_row_correction
+                        outputs: [z]
                         window:
                         - [-1, 1]
                         - [-1, 1]
                       - !transform/polynomial-1.2.0
-                        bounds:
-                          c0_0: [null, null]
-                          c0_1: [null, null]
-                          c1_0: [null, null]
                         coefficients: !core/ndarray-1.0.0
                           source: 15
                           datatype: float64
@@ -598,38 +455,25 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                         domain:
                         - [-1, 1]
                         - [-1, 1]
-                        fixed: {c0_0: false, c0_1: false, c1_0: false}
+                        inputs: [x, y]
                         name: T_column_correction
+                        outputs: [z]
                         window:
                         - [-1, 1]
                         - [-1, 1]
+                      inputs: [x0, y0, x1, y1]
+                      outputs: [z0, z1]
                     - !transform/compose-1.2.0
                       forward:
-                      - !transform/remap_axes-1.2.0
-                        bounds: {}
-                        fixed: {}
+                      - !transform/remap_axes-1.3.0
+                        inputs: [x0, x1]
                         mapping: [0, 1, 0, 1]
+                        outputs: [x0, x1, x2, x3]
                       - !transform/compose-1.2.0
                         forward:
                         - !transform/concatenate-1.2.0
                           forward:
                           - !transform/polynomial-1.2.0
-                            bounds:
-                              c0_0: [null, null]
-                              c0_1: [null, null]
-                              c0_2: [null, null]
-                              c0_3: [null, null]
-                              c0_4: [null, null]
-                              c1_0: [null, null]
-                              c1_1: [null, null]
-                              c1_2: [null, null]
-                              c1_3: [null, null]
-                              c2_0: [null, null]
-                              c2_1: [null, null]
-                              c2_2: [null, null]
-                              c3_0: [null, null]
-                              c3_1: [null, null]
-                              c4_0: [null, null]
                             coefficients: !core/ndarray-1.0.0
                               source: 16
                               datatype: float64
@@ -638,30 +482,12 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                             domain:
                             - [-1, 1]
                             - [-1, 1]
-                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                              c3_0: false, c3_1: false, c4_0: false}
+                            inputs: [x, y]
+                            outputs: [z]
                             window:
                             - [-1, 1]
                             - [-1, 1]
                           - !transform/polynomial-1.2.0
-                            bounds:
-                              c0_0: [null, null]
-                              c0_1: [null, null]
-                              c0_2: [null, null]
-                              c0_3: [null, null]
-                              c0_4: [null, null]
-                              c1_0: [null, null]
-                              c1_1: [null, null]
-                              c1_2: [null, null]
-                              c1_3: [null, null]
-                              c2_0: [null, null]
-                              c2_1: [null, null]
-                              c2_2: [null, null]
-                              c3_0: [null, null]
-                              c3_1: [null, null]
-                              c4_0: [null, null]
                             coefficients: !core/ndarray-1.0.0
                               source: 17
                               datatype: float64
@@ -670,119 +496,148 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
                             domain:
                             - [-1, 1]
                             - [-1, 1]
-                            fixed: {c0_0: false, c0_1: false, c0_2: false, c0_3: false,
-                              c0_4: false, c1_0: false, c1_1: false, c1_2: false,
-                              c1_3: false, c2_0: false, c2_1: false, c2_2: false,
-                              c3_0: false, c3_1: false, c4_0: false}
+                            inputs: [x, y]
+                            outputs: [z]
                             window:
                             - [-1, 1]
                             - [-1, 1]
+                          inputs: [x0, y0, x1, y1]
+                          outputs: [z0, z1]
                         - !transform/compose-1.2.0
                           forward:
                           - !transform/identity-1.2.0
-                            bounds: {}
-                            fixed: {}
+                            inputs: [x0, x1]
                             n_dims: 2
+                            outputs: [x0, x1]
                           - !transform/compose-1.2.0
                             forward:
                             - !transform/concatenate-1.2.0
                               forward:
                               - !transform/polynomial-1.2.0
-                                bounds:
-                                  c0: [null, null]
-                                  c1: [null, null]
                                 coefficients: !core/ndarray-1.0.0
                                   source: 18
                                   datatype: float64
                                   byteorder: little
                                   shape: [2]
                                 domain: [-1, 1]
-                                fixed: {c0: false, c1: false}
+                                inputs: [x]
+                                outputs: [y]
                                 window: [-1, 1]
                               - !transform/polynomial-1.2.0
-                                bounds:
-                                  c0: [null, null]
-                                  c1: [null, null]
                                 coefficients: !core/ndarray-1.0.0
                                   source: 19
                                   datatype: float64
                                   byteorder: little
                                   shape: [2]
                                 domain: [-1, 1]
-                                fixed: {c0: false, c1: false}
+                                inputs: [x]
+                                outputs: [y]
                                 window: [-1, 1]
+                              inputs: [x0, x1]
+                              outputs: [y0, y1]
                             - !transform/concatenate-1.2.0
                               forward:
                               - !transform/shift-1.2.0
-                                bounds:
-                                  offset: &id003 [null, null]
-                                fixed: {offset: false}
+                                inputs: [x]
                                 offset: 4.0
+                                outputs: [y]
                               - !transform/identity-1.2.0
-                                bounds: {}
-                                fixed: {}
+                                inputs: [x0]
+                                outputs: [x0]
+                              inputs: [x, x0]
+                              outputs: [y, x0]
+                            inputs: [x0, x1]
+                            outputs: [y, x0]
+                          inputs: [x0, x1]
+                          outputs: [y, x0]
+                        inputs: [x0, y0, x1, y1]
+                        outputs: [y, x0]
+                      inputs: [x0, x1]
+                      outputs: [y, x0]
+                    inputs: [x0, y0, x1, y1]
+                    outputs: [y, x0]
+                  inputs: [x0, x1]
+                  outputs: [y, x0]
+                inputs: [x0, x1]
+                outputs: [y, x0]
               - !transform/compose-1.2.0
                 forward:
                 - !transform/concatenate-1.2.0
                   forward:
                   - !transform/shift-1.2.0
-                    bounds:
-                      offset: *id003
-                    fixed: {offset: false}
+                    inputs: [x]
                     offset: -325.13
+                    outputs: [y]
                   - !transform/shift-1.2.0
-                    bounds:
-                      offset: *id003
-                    fixed: {offset: false}
+                    inputs: [x]
                     offset: -299.7
-                - !transform/rotate2d-1.2.0
+                    outputs: [y]
+                  inputs: [x0, x1]
+                  outputs: [y0, y1]
+                - !transform/rotate2d-1.3.0
                   angle: 0.24155757363306068
-                  bounds:
-                    angle: &id004 [null, null]
-                  fixed: {angle: false}
-            - !transform/remap_axes-1.2.0
-              bounds: {}
-              fixed: {}
+                  inputs: [x, y]
+                  outputs: [x, y]
+                inputs: [x0, x1]
+                outputs: [x, y]
+              inputs: [x0, x1]
+              outputs: [x, y]
+            - !transform/remap_axes-1.3.0
+              inputs: [x0, x1]
               mapping: [0]
               n_inputs: 2
+              outputs: [x0]
+            inputs: [x0, x1]
+            outputs: [x0]
           - !transform/tabular-1.2.0
-            bounding_box: [3.596040329703134, 14.387876373781149]
-            bounds: {}
+            bounding_box: !transform/property/bounding_box-1.0.0
+              ignore: []
+              intervals:
+                x: [3.596040329703134, 14.387876373781149]
+              order: C
             bounds_error: false
             fill_value: .nan
-            fixed: {}
+            inputs: [x]
             lookup_table: !core/ndarray-1.0.0
               source: 20
               datatype: float64
               byteorder: little
               shape: [699]
+            method: linear
             name: waverefinv
+            outputs: [y]
             points:
             - !core/ndarray-1.0.0
               source: 21
               datatype: float64
               byteorder: little
               shape: [699]
+          inputs: [x0, x1, x]
+          outputs: [x0, y]
         - !transform/compose-1.2.0
           forward:
-          - !transform/rotate2d-1.2.0
+          - !transform/rotate2d-1.3.0
             angle: -0.24155757363306068
-            bounds:
-              angle: *id004
-            fixed: {angle: false}
+            inputs: [x, y]
+            outputs: [x, y]
           - !transform/concatenate-1.2.0
             forward:
             - !transform/shift-1.2.0
-              bounds:
-                offset: *id003
-              fixed: {offset: false}
+              inputs: [x]
               offset: 325.13
+              outputs: [y]
             - !transform/shift-1.2.0
-              bounds:
-                offset: *id003
-              fixed: {offset: false}
+              inputs: [x]
               offset: 299.7
-  - !<tag:stsci.edu:gwcs/step-1.0.0>
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x, y]
+          outputs: [y0, y1]
+        inputs: [x0, x1, x]
+        outputs: [y0, y1]
+      outputs: [x0, x1, y]
+  - !<tag:stsci.edu:gwcs/step-1.1.0>
     frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
       frames:
       - !<tag:stsci.edu:gwcs/frame2d-1.0.0>
@@ -790,47 +645,45 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
         axes_order: [0, 1]
         axis_physical_types: ['custom:v2', 'custom:v3']
         name: v2v3_spatial
-        unit: [!unit/unit-1.0.0 'arcsec', !unit/unit-1.0.0 'arcsec']
+        unit: [!unit/unit-1.0.0 arcsec, !unit/unit-1.0.0 arcsec]
       - !<tag:stsci.edu:gwcs/spectral_frame-1.0.0>
         axes_names: [lambda]
         axes_order: [2]
         axis_physical_types: [em.wl]
         name: spec
-        unit: [!unit/unit-1.0.0 'um']
+        unit: [!unit/unit-1.0.0 um]
       name: v2v3
     transform: !transform/concatenate-1.2.0
-      bounds:
-        angles_2: [null, null]
-        factor_0: [null, null]
-        factor_1: [null, null]
-      fixed: {angles_2: false, factor_0: false, factor_1: false}
       forward:
       - !transform/compose-1.2.0
         forward:
         - !transform/concatenate-1.2.0
           forward:
           - !transform/scale-1.2.0
-            bounds:
-              factor: &id005 [null, null]
             factor: 0.0002777777777777778
-            fixed: {factor: false}
+            inputs: [x]
+            outputs: [y]
           - !transform/scale-1.2.0
-            bounds:
-              factor: *id005
             factor: 0.0002777777777777778
-            fixed: {factor: false}
+            inputs: [x]
+            outputs: [y]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
         - !transform/rotate_sequence_3d-1.0.0
           angles: [-0.12597594444444443, 0.10374517305555556, 0.0, -72.0545718, -5.630568]
           axes_order: zyxyz
-          bounds:
-            angles: [null, null]
-          fixed: {angles: false}
+          inputs: [lon, lat]
           name: v23tosky
+          outputs: [lon, lat]
           rotation_type: spherical
+        inputs: [x0, x1]
+        outputs: [lon, lat]
       - !transform/identity-1.2.0
-        bounds: {}
-        fixed: {}
-  - !<tag:stsci.edu:gwcs/step-1.0.0>
+        inputs: [x0]
+        outputs: [x0]
+      inputs: [x00, x10, x01]
+      outputs: [lon, lat, x0]
+  - !<tag:stsci.edu:gwcs/step-1.1.0>
     frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
       frames:
       - !<tag:stsci.edu:gwcs/celestial_frame-1.0.0>
@@ -840,14 +693,15 @@ wcs: !<tag:stsci.edu:gwcs/wcs-1.0.0>
         name: icrs
         reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
           frame_attributes: {}
-        unit: [!unit/unit-1.0.0 'deg', !unit/unit-1.0.0 'deg']
+        unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
       - !<tag:stsci.edu:gwcs/spectral_frame-1.0.0>
         axes_names: [lambda]
         axes_order: [2]
         axis_physical_types: [em.wl]
         name: spec
-        unit: [!unit/unit-1.0.0 'um']
+        unit: [!unit/unit-1.0.0 um]
       name: world
+    transform: null
 ...
 ”BLK 0                             ⁄€¥®‘« ke-.uüÛ33333ì)¿öôôôôôô?”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0                             ⁄€¥®‘« ke-.uüÛ33333ì)¿öôôôôôô?”BLK 0                             Eã’ø5ìêNó‚ﬂhêÖ{     ¯@      D@”BLK 0               »       »       »£Z¥¡∆ÊÉÇ<¥Ö‹”LC¶« jX?_Õ@ ÂÓr+ø 9:mŸM)øÄ€3ÆˆÚ’>Ö ò<«πÜ?"KímäL-? @n.µ> åTóÓF>        6ÖÚ¬\UøÄn´“™øx¶»Ê-’>                 Ä‹ØFa> ©Vï9>                        `˝ëÇ˚f®>                                ”BLK 0               »       »       »*WÀ≤˛VäN¨ÛìäËü‰Â{îCÃ&Iø˙i›uâjBøÜC∆û> @ ’à8æx:?Z4¡˛Ω~˘\ÚW¡Ã?rfÂ≈∆æ ‡d;‚Pí>Ä≈6óïX¶=        Ï#ÓÄóòÃ> Ë π“Ò<æ˝?ù_Y*æ                 mN$éa°>`µhg≥¥=                        ÛeLìûD-æ                                ”BLK 0               »       »       »ìrë‘)ı«∏ÛW`¨ÍÌßÛµù”∑i?œù_2*úñø0IAn€‘ø d¡á†èø> ‰(öÜØ[ææÏRò—®@ÙH`íÁÈfø0'9YEø(ípÎø]Ã>        ‹≈o”-L'?  çÄtù> åß3ûMXæ                 /Egyœ>\<ªòzÙ√>                         `õ^Ω>                                ”BLK 0               »       »       »9ˆ€UëHıw—íØoÉ+u€ùFø_|0W4˛Ã?†W Ωx¡æ†–Ω{ÄDæ =ù_˛Ö=è„ümR?w£8j{? àıhæ¸
 X,,Ræ        Ù[áﬁå™>–Iªƒ∞ÿÉ>¿¨á%ñîΩ                 Mu,ïi"æqèêÛF!æ                         ÀZ9
@@ -930,26 +784,26 @@ A>8)@€L˘)@)@¨X÷ÜH)@}d≥
 #+@y)ÇÚÙ*+@J5_vﬂ2+@A<˙…:+@ÏL~¥B+@ΩXˆüJ+@éd”ÖâR+@_p∞	tZ+@0|çç^b+@àjIj+@“ìGï3r+@£ü$z+@t´ùÇ+@E∑ﬁ Ûâ+@√ª§›ë+@ÁŒò(»ô+@∏⁄u¨≤°+@âÊR0ù©+@ZÚ/¥á±+@+˛8rπ+@¸	Íª\¡+@Õ«?G…+@û!§√1—+@o-ÅGŸ+@@9^À·+@E;OÒË+@‚P”€+@≥\ıV∆¯+@Ñh“⁄∞ ,@UtØ^õ,@&Äå‚Ö,@˜ãifp,@»óFÍZ ,@ô£#nE(,@jØ Ú/0,@;ª›u8,@«∫˘@,@›“ó}ÔG,@Æﬁt⁄O,@ÍQÖƒW,@Pˆ.	Ø_,@!çôg,@ÚÈÑo,@√∆înw,@î%£Y,@e1ÄúCá,@6=] .è,@I:§ó,@ÿT(ü,@©`Ù´Ì¶,@zl—/ÿÆ,@KxÆ≥¬∂,@Ñã7≠æ,@Ìèhªó∆,@#ASDF BLOCK INDEX
 %YAML 1.1
 ---
-- 35600
-- 35670
-- 35740
-- 35810
-- 35880
-- 36134
-- 36388
-- 36642
-- 36896
-- 36982
-- 37068
-- 40226
-- 43384
-- 49030
-- 54676
-- 54762
-- 54848
-- 55102
-- 55356
-- 55426
-- 55496
-- 61142
+- 27843
+- 27913
+- 27983
+- 28053
+- 28123
+- 28377
+- 28631
+- 28885
+- 29139
+- 29225
+- 29311
+- 32469
+- 35627
+- 41273
+- 46919
+- 47005
+- 47091
+- 47345
+- 47599
+- 47669
+- 47739
+- 53385
 ...

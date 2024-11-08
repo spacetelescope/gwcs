@@ -74,6 +74,39 @@ Calling the :meth:`~gwcs.WCS.footprint` returns the footprint on the sky.
    ...    [  5.63010439, -72.05426843],
    ...    [  5.610708  , -72.04173847]])
 
+.. warning::
+
+  GWCS and astropy default to different tuple ordering conventions for representing
+  multi-dimensional bounding boxes. 
+  
+  * GWCS uses the ``"F"`` ordering convention, where the tuples are ordered
+    ``((x0min, x0max), (x1min, x1max), ..., (xnmin, xnmax))`` (x,y,z ordering).
+  * While astropy uses the ``"C"`` ordering convention, where tuples are ordered
+    ``((xnmin, xnmax), ..., (x1min, x1max), (x0min, x0max))`` (z, y, x ordering).
+
+  This means that given the same tuple of tuples, say ``((a, b), (c, d))``, setting 
+  the bounding box on the transform prior to creating the GWCS will result in a
+  different bounding box than if one sets the same tuple of tuples on the GWCS object
+  itself. Indeed, in this case the former will assume ``(c, d)`` is the bounding box
+  for ``x`` while the latter will assume ``(a, b)`` is the bounding box for ``x``.
+
+  It is recommended that when working on GWCS objects that one sets the bounding
+  box on the GWCS object itself, rather than on the transform prior to creating
+  the GWCS object.
+
+  Note if one wants to set the bounding box on the transform itself
+  rather than the GWCS object then it should be done with
+  `~astropy.modeling.bind_bounding_box` with the ``order`` argument properly set.
+
+
+.. note ::
+
+  The GWCS will always convert or assume the bounding box to the ``"F"`` ordering
+  convention when setting the bounding box on the GWCS object itself and will
+  perform this conversion on the first access to the bounding box through the GWCS
+  object. If conversion occurs on first access, GWCS will issue a warning to alert
+  the user that the bounding box has been converted.
+
 Manipulating Transforms
 -----------------------
 

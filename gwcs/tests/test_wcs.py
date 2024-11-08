@@ -1394,3 +1394,52 @@ def test_spatial_spectral_stokes():
 def test_wcs_str():
     w = wcs.WCS(output_frame="icrs")
     assert 'icrs' in str(w)
+
+
+def test_bounding_box_is_returned_F():
+    bbox_tuple = ((1, 2), (3, 4))
+
+    detector_2d_frame = cf.Frame2D(name='detector', axes_order=(0, 1))
+    model_2d_shift = models.Shift(1) & models.Shift(2)
+
+    model_2d_shift_bbox = model_2d_shift.copy()
+    model_2d_shift_bbox.bounding_box = bbox_tuple
+
+    frame = cf.CoordinateFrame(name="quantity", axes_order=(0, 1), naxes=2, axes_type=("SPATIAL", "SPATIAL"), unit=(u.km, u.km))
+
+    # Demonstrate that model_2d_shift does not have a bounding box
+    with pytest.raises(NotImplementedError):
+        model_2d_shift.bounding_box
+
+    # Demonstrate that model_2d_shift_bbox does have a bounding box
+    assert model_2d_shift_bbox.bounding_box == bbox_tuple
+
+    # Demonstrate the model_2d_shift_bbox has order "C"
+    assert model_2d_shift_bbox.bounding_box.order == "C"
+
+    # Create a WCS and then set a bounding box on it
+    pipeline_bbox_after = [(detector_2d_frame, model_2d_shift), (frame, None)]
+    gwcs_object_after = wcs.WCS(pipeline_bbox_after)
+    gwcs_object_after.bounding_box = bbox_tuple
+
+    assert gwcs_object_after.bounding_box == bbox_tuple
+    assert gwcs_object_after.bounding_box.order == "F"
+
+    # Create a WCS on transform with a bounding box
+    pipeline_bbox_before = [(detector_2d_frame, model_2d_shift_bbox), (frame, None)]
+    gwcs_object_before = wcs.WCS(pipeline_bbox_before)
+
+    # Check that first access in this case will raise a warning
+    with pytest.warns(wcs.GwcsBoundingBoxWarning):
+        gwcs_object_before.bounding_box
+
+    # Check order is returned as F
+    assert gwcs_object_before.bounding_box.order == "F"
+
+    # The bounding box tuple will now be ordered differently than the original
+    # Tuple due to the order change
+    assert gwcs_object_before.bounding_box != bbox_tuple
+    assert gwcs_object_before.bounding_box.bounding_box(order="C") == bbox_tuple
+
+    # Show the the bounding box is different between the two WCS objects
+    assert gwcs_object_after.bounding_box != gwcs_object_before.bounding_box
