@@ -32,7 +32,6 @@ jobs:
     with:
       envs: |
         - linux: py310
-        - linux: py310-numpy123
         - linux: py310-numpy125
         - linux: py311
           pytest-results-summary: true
@@ -44,25 +43,3 @@ jobs:
           pytest-results-summary: true
         - linux: py312
         - linux: py3-dev
-  environment:
-    runs-on: ubuntu-latest
-    steps:
-      - id: data_path
-        run: echo "path=${{ env.DATA_PATH }}" >> $GITHUB_OUTPUT
-    outputs:
-      data_path: ${{ steps.data_path.outputs.path }}
-  crds_contexts:
-    uses: ./.github/workflows/contexts.yml
-  test_downstream:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
-    needs: [ environment, crds_contexts ]
-    with:
-      setenv: |
-        CRDS_PATH: ${{ needs.environment.outputs.data_path }}/crds
-        CRDS_SERVER_URL: https://jwst-crds.stsci.edu
-        CRDS_CLIENT_RETRY_COUNT: 3
-        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: ${{ needs.environment.outputs.data_path }}/crds
-      cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
-      envs: |
-        - linux: py311-test-jwst-cov-xdist
