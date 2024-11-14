@@ -85,6 +85,7 @@ norecursedirs = [
 doctest_plus = "enabled"
 addopts = "--doctest-rst"
 filterwarnings = [
+    "error",
     "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
     "ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
