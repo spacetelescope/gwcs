@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import warnings
+from contextlib import suppress
 from asdf.extension import Converter
 
 
@@ -22,7 +23,7 @@ class WCSConverter(Converter):
 
         # Ignore the warning about the bounding box order for data read from a
         # file. This is causing issues with files from MAST.
-        with warnings.catch_warnings():
+        with suppress(AttributeError), warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=GwcsBoundingBoxWarning)
             _ = gwcsobj.bounding_box
 
