@@ -1,0 +1,31 @@
+name: retrieve latest data cache key
+
+on:
+  workflow_call:
+    outputs:
+      cache_key:
+        value: ${{ jobs.retrieve_cache.outputs.cache_key }}
+      cache_path:
+        value: ${{ jobs.retrieve_cache.outputs.cache_path }}
+
+jobs:
+  retrieve_cache:
+    name: retrieve latest data cache key
+    runs-on: ubuntu-latest
+    steps:
+      - name: retrieve latest data cache key
+        id: latest_cache_key
+        run: |
+          # use actions/gh-actions-cache to allow filtering by key
+          gh extension install actions/gh-actions-cache
+          CACHE_KEY=$(gh actions-cache list -R ${{ github.repository }} --key data- --sort created-at | cut -f 1 | head -n 1)
+          if [ "$CACHE_KEY" == '' ]; then exit 1; fi
+          echo cache_key=$CACHE_KEY >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: echo cache_key=${{ steps.latest_cache_key.outputs.cache_key }}
+      - id: cache_path
+        run: echo cache_path=/tmp/data/ >> $GITHUB_OUTPUT
+    outputs:
+      cache_key: ${{ steps.latest_cache_key.outputs.cache_key }}
+      cache_path: ${{ steps.cache_path.outputs.cache_path }}

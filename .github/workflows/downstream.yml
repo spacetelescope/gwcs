@@ -39,6 +39,7 @@ jobs:
   crds_contexts:
     uses: ./.github/workflows/contexts.yml
 
+
   jwst:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
     needs: [ environment, crds_contexts ]
@@ -66,6 +67,30 @@ jobs:
       cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
         - linux: py311-test-romancal-cov-xdist
+
+  get_romanism_data:
+    uses: ./.github/workflows/webbpsf_data.yml
+
+  romanisim_data_cache:
+    needs: [ get_romanism_data ]
+    uses: ./.github/workflows/get_webbpsf.yml
+
+  romanisim:
+    needs: [ romanisim_data_cache ]
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
+    with:
+      libraries: |
+        brew:
+          - eigen
+          - fftw
+      setenv: |
+        WEBBPSF_PATH: ${{ needs.romanisim_data_cache.outputs.cache_path }}webbpsf-data/
+        GALSIM_CAT_PATH: ${{ needs.romanisim_data_cache.outputs.cache_path }}galsim_data/real_galaxy_catalog_23.5_example.fits
+        FFTW_DIR: /opt/homebrew/opt/fftw/lib/
+      cache-path: ${{ needs.romanisim_data_cache.outputs.cache_path }}
+      cache-key: ${{ needs.romanisim_data_cache.outputs.cache_key }} 
+      envs: |
+        - linux: py311-test-romanisim-cov-xdist
 
   astropy:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
