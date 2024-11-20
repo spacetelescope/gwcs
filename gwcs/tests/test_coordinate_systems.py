@@ -15,7 +15,6 @@ from astropy.coordinates import StokesCoord, SpectralCoord
 from .. import WCS
 from .. import coordinate_frames as cf
 
-from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects, high_level_objects_to_values
 import astropy
 astropy_version = astropy.__version__
 
@@ -56,19 +55,6 @@ inputs1 = [xscalar, xarr]
 inputs3 = [(xscalar, yscalar, xscalar), (xarr, yarr, xarr)]
 
 
-@pytest.fixture(autouse=True, scope="module")
-def serialized_classes():
-    """
-    In the rest of this test file we are passing the CoordinateFrame object to
-    astropy helper functions as if they were a low level WCS object.
-
-    This little patch means that this works.
-    """
-    cf.CoordinateFrame.serialized_classes = False
-    yield
-    del cf.CoordinateFrame.serialized_classes
-
-
 def test_units():
     assert(comp1.unit == (u.deg, u.deg, u.Hz))
     assert(comp2.unit == (u.m, u.m, u.m))
@@ -81,14 +67,13 @@ def test_units():
 # These two functions fake the old methods on CoordinateFrame to reduce the
 # amount of refactoring that needed doing in these tests.
 def coordinates(*inputs, frame):
-    results = values_to_high_level_objects(*inputs, low_level_wcs=frame)
-    if isinstance(results, list) and len(results) == 1:
-        return results[0]
-    return results
+    return frame.to_high_level_coordinates(*inputs)
 
 
 def coordinate_to_quantity(*inputs, frame):
-    results = high_level_objects_to_values(*inputs, low_level_wcs=frame)
+    results = frame.from_high_level_coordinates(*inputs)
+    if not isinstance(results, list):
+        results = [results]
     results = [r << unit for r, unit in zip(results, frame.unit)]
     return results
 
