@@ -247,7 +247,7 @@ class FrameProperties:
             self.axis_physical_types = tuple(ph_type)
 
     @property
-    def _default_axis_physical_type(self):
+    def _default_axis_physical_types(self):
         """
         The default physical types to use for this frame if none are specified
         by the user.
@@ -416,12 +416,12 @@ class CoordinateFrame(BaseCoordinateFrame):
             axes_type,
             unit,
             axes_names,
-            axis_physical_types or self._default_axis_physical_type(axes_type)
+            axis_physical_types or self._default_axis_physical_types(axes_type)
         )
 
         super().__init__()
 
-    def _default_axis_physical_type(self, axes_type):
+    def _default_axis_physical_types(self, axes_type):
         """
         The default physical types to use for this frame if none are specified
         by the user.
@@ -494,8 +494,7 @@ class CoordinateFrame(BaseCoordinateFrame):
 
         These physical types are the types in frame order, not transform order.
         """
-        apt = self._prop.axis_physical_types or self._default_axis_physical_types
-        return self._sort_property(apt)
+        return self._sort_property(self._prop.axis_physical_types)
 
     @property
     def world_axis_object_classes(self):
