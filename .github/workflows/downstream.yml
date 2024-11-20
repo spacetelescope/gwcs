@@ -66,7 +66,7 @@ jobs:
 
   romanisim_data:
     needs: [ environment ]
-    uses: spacetelescope/romanisim/.github/workflows/retrieve_cache.yml@develop
+    uses: spacetelescope/romanisim/.github/workflows/retrieve_cache.yml@main
     with:
       cache_path: ${{ needs.environment.outputs.data_path }}
 
