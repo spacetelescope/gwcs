@@ -13,6 +13,6 @@ on:
 
 jobs:
   download_romanisim_data:
-    uses: spacetelescope/romanisim/.github/workflows/retrieve_cache.yml@main
+    uses: spacetelescope/romanisim/.github/workflows/data.yml@main
     with:
-      minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
+      webbpsf_minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
