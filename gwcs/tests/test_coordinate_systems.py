@@ -347,7 +347,7 @@ def test_coordinate_to_quantity_error():
         coordinate_to_quantity(1, frame=frame)
 
 
-def test_axis_physical_type():
+def test_axis_physical_types():
     assert icrs.axis_physical_types == ("pos.eq.ra", "pos.eq.dec")
     assert spec1.axis_physical_types == ("em.freq",)
     assert spec2.axis_physical_types == ("em.wl",)
