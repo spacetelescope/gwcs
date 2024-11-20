@@ -127,6 +127,7 @@ from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
+from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 from astropy.coordinates import StokesCoord
 
 __all__ = ['BaseCoordinateFrame', 'Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
@@ -506,6 +507,61 @@ class CoordinateFrame(BaseCoordinateFrame):
     @property
     def _native_world_axis_object_components(self):
         return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._prop.axes_type)]
+
+    @property
+    def serialized_classes(self):
+        """
+        This property is used by the low level WCS API in Astropy.
+
+        By providing it we can duck type as a low level WCS object.
+        """
+        return False
+
+    def to_high_level_coordinates(self, *values):
+        """
+        Convert "values" to high level coordinate objects described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        values : `numbers.Number` or `numpy.ndarray`
+           ``naxis`` number of coordinates as scalars or arrays.
+
+        Returns
+        -------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+        """
+        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
+        if len(high_level) == 1:
+            high_level = high_level[0]
+        return high_level
+
+    def from_high_level_coordinates(self, *high_level_coords):
+        """
+        Convert high level coordinate objects to "values" as described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+
+        Returns
+        -------
+        values : `numbers.Number` or `numpy.ndarray`
+           ``naxis`` number of coordinates as scalars or arrays.
+        """
+        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
+        if len(values) == 1:
+            values = values[0]
+        return values
 
 
 class CelestialFrame(CoordinateFrame):
