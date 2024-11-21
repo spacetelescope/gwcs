@@ -173,7 +173,6 @@ class WCS(GWCSAPIMixin):
                     else:
                         name, frame_obj = self._get_frame_name(item[0])
                     super(WCS, self).__setattr__(name, frame_obj)
-                    #self._pipeline.append((name, item[1]))
                     self._pipeline = forward_transform
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
@@ -295,6 +294,17 @@ class WCS(GWCSAPIMixin):
             backward.inverse = self.forward_transform
         return backward
 
+    def _get_frame_by_name(self, frame_name):
+        """
+        Return the frame object by name.
+        """
+        frames = [step.frame for step in self._pipeline if step.frame.name == frame_name]
+        if len(frames) > 1:
+            raise ValueError(f"There is more than one frame named {frame_name}")
+        if len(frames) == 0:
+            return ValueError(f"No frame found matching {frame_name}")
+        return frames[0]
+
     def _get_frame_index(self, frame):
         """
         Return the index in the pipeline where this frame is locate.
@@ -386,16 +396,21 @@ class WCS(GWCSAPIMixin):
             transform = self.forward_transform
         else:
             transform = self.get_transform(from_frame, to_frame)
+        if from_frame is None:
+            from_frame = self.input_frame
+        if to_frame is None:
+            to_frame = self.output_frame
 
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
+        breakpoint()
         # Validate that the input type matches what the transform expects
         input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
         if not input_is_quantity and transform.uses_quantity:
-            args = self._add_units_input(args, self.input_frame)
+            args = self._add_units_input(args, from_frame)
         if not transform.uses_quantity and input_is_quantity:
-            args = self._remove_units_input(args, self.input_frame)
+            args = self._remove_units_input(args, from_frame)
 
         return transform(*args,
                          with_bounding_box=with_bounding_box,
@@ -502,14 +517,18 @@ class WCS(GWCSAPIMixin):
             transform returns ``Quantity`` objects, else values.
 
         """
+        # must pop before calling the model
+        with_units = kwargs.pop('with_units', False)
+
         if utils.is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
         results = self._call_backward(*args, **kwargs)
 
-        with_units = kwargs.pop('with_units', False)
         if with_units:
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self)
+            # values are always expected to be arrays or scalars not quantities
+            results = self._remove_units_input(results, self.input_frame)
+            high_level = values_to_high_level_objects(*results, low_level_wcs=self.input_frame)
             if len(high_level) == 1:
                 high_level = high_level[0]
             return high_level
@@ -1136,7 +1155,13 @@ class WCS(GWCSAPIMixin):
         results = self._call_forward(*args, from_frame=from_frame, to_frame=to_frame, **kwargs)
 
         if with_units and not backward:
-            return values_to_high_level_objects(*results, low_level_wcs=self)
+            # TODO: Apparently you can have frames which are just strings
+            # We need an actual frame object for this to work
+            if isinstance(to_frame, str):
+                to_frame = self._get_frame_by_name(to_frame)
+            # values are always expected to be arrays or scalars not quantities
+            results = self._remove_units_input(results, to_frame)
+            return values_to_high_level_objects(*results, low_level_wcs=to_frame)
         return results
 
     @property
@@ -1150,7 +1175,6 @@ class WCS(GWCSAPIMixin):
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            #return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
             return [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline ]
         else:
             return None

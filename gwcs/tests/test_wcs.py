@@ -1499,7 +1499,7 @@ def test_reordered_celestial():
     output_pixel = iwcs.world_to_pixel_values(*output_world)
     assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
-    expected_world = [45*u.deg, 20*u.arcsec]#, 45*u.deg]
+    expected_world = [45*u.deg, 20*u.arcsec]
     assert_allclose(output_world, [e.value for e in expected_world])
 
     world_obj = iwcs.pixel_to_world(*input_pixel)
@@ -1510,3 +1510,75 @@ def test_reordered_celestial():
 
     obj_pixel = iwcs.world_to_pixel(world_obj)
     assert_allclose(obj_pixel, u.Quantity(input_pixel).to_value(u.pix))
+
+
+@pytest.fixture
+def gwcs_with_pipeline_celestial():
+    input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
+                                     axes_order=list(range(2)),
+                                     unit=[u.pix]*2,
+                                     name="input")
+
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
+
+    celestial_frame = cf.CelestialFrame(axes_order=(0, 1), unit=(u.arcsec, u.deg),
+                                        reference_frame=coord.ICRS(), name="celestial")
+
+    custom = models.Shift(1*u.deg) & models.Shift(2*u.deg)
+
+    output_frame = cf.CoordinateFrame(2, ["CUSTOM"]*2,
+                                      axes_order=list(range(2)), unit=[u.arcsec]*2, name="output")
+
+    pipeline = [
+        (input_frame, spatial),
+        (celestial_frame, custom),
+        (output_frame, None),
+    ]
+
+    return wcs.WCS(pipeline)
+
+
+def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
+    """
+    This test checks that high level objects still work with a multi-stage
+    pipeline when doing forward transforms.
+    """
+    iwcs = gwcs_with_pipeline_celestial
+
+    input_pixel = [1*u.pix, 1*u.pix]
+
+    output_world = iwcs(*input_pixel)
+
+    assert output_world[0].unit == u.deg
+    assert output_world[1].unit == u.deg
+    assert u.allclose(output_world[0], 20*u.arcsec + 1*u.deg)
+    assert u.allclose(output_world[1], 15*u.deg + 2*u.deg)
+
+    # with_units=True puts the result in the frame units rather than in the
+    # model units.
+    output_world_with_units = iwcs(*input_pixel, with_units=True)
+    assert output_world_with_units[0].unit is u.arcsec
+    assert output_world_with_units[1].unit is u.arcsec
+
+    # This should be in model units of the spatial model
+    intermediate_world = iwcs.transform(
+        "input",
+        "celestial",
+        *input_pixel,
+    )
+    assert intermediate_world[0].unit == u.arcsec
+    assert intermediate_world[1].unit == u.deg
+    assert u.allclose(intermediate_world[0], 20*u.arcsec)
+    assert u.allclose(intermediate_world[1], 15*u.deg)
+
+    intermediate_world_with_units = iwcs.transform(
+        "input",
+        "celestial",
+        *input_pixel,
+        with_units=True
+    )
+    assert len(intermediate_world_with_units) == 1
+    assert isinstance(intermediate_world_with_units[0], coord.SkyCoord)
+    sc = intermediate_world_with_units[0]
+    assert u.allclose(sc.ra, 20*u.arcsec)
+    assert u.allclose(sc.dec, 15*u.deg)
