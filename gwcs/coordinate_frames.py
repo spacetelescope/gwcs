@@ -534,6 +534,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         high_level_coordinates
             One (or more) high level object describing the coordinate.
         """
+        values = [v.to_value(unit) if hasattr(v, "to_value") else v for v, unit in zip(values, self.unit)]
         high_level = values_to_high_level_objects(*values, low_level_wcs=self)
         if len(high_level) == 1:
             high_level = high_level[0]
@@ -727,7 +728,7 @@ class TemporalFrame(CoordinateFrame):
         Name for this frame.
     """
 
-    def __init__(self, reference_frame, unit=None, axes_order=(0,),
+    def __init__(self, reference_frame, unit=u.s, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
         axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
                                                       reference_frame.scale,

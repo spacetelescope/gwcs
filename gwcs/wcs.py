@@ -369,6 +369,8 @@ class WCS(GWCSAPIMixin):
         if with_units:
             if not astutil.isiterable(results):
                 results = (results,)
+            # values are always expected to be arrays or scalars not quantities
+            results = self._remove_units_input(results, self.output_frame)
             high_level = values_to_high_level_objects(*results, low_level_wcs=self)
             if len(high_level) == 1:
                 high_level = high_level[0]
