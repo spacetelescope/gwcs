@@ -116,6 +116,7 @@ When considering the backward transform the following transformations take place
 import abc
 from collections import defaultdict
 import logging
+import numbers
 import numpy as np
 from dataclasses import dataclass, InitVar
 
@@ -526,7 +527,7 @@ class CoordinateFrame(BaseCoordinateFrame):
 
         Parameters
         ----------
-        values : `numbers.Number` or `numpy.ndarray`
+        values : `numbers.Number`, `numpy.ndarray`, or `~astropy.units.Quantity`
            ``naxis`` number of coordinates as scalars or arrays.
 
         Returns
@@ -534,7 +535,12 @@ class CoordinateFrame(BaseCoordinateFrame):
         high_level_coordinates
             One (or more) high level object describing the coordinate.
         """
+        # We allow Quantity-like objects here which values_to_high_level_objects does not.
         values = [v.to_value(unit) if hasattr(v, "to_value") else v for v, unit in zip(values, self.unit)]
+
+        if not all([isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values]):
+            raise TypeError("All values should be a scalar number or a numpy array.")
+
         high_level = values_to_high_level_objects(*values, low_level_wcs=self)
         if len(high_level) == 1:
             high_level = high_level[0]
