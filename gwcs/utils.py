@@ -472,5 +472,18 @@ def is_high_level(*args, low_level_wcs):
     if len(args) != len(low_level_wcs.world_axis_object_classes):
         return False
 
-    return all([type(arg) is waoc[0]
-                for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())])
+    type_match = [(type(arg), waoc[0])
+                  for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())]
+
+    types_are_high_level = [argt is t for argt, t in type_match]
+
+    if all(types_are_high_level):
+        return True
+
+    if any(types_are_high_level):
+        raise TypeError(
+            "Invalid types were passed, got "
+            f"({', '.join(tm[0].__name__ for tm in type_match)}) expected "
+            f"({', '.join(tm[1].__name__ for tm in type_match)}).")
+
+    return False
