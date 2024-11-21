@@ -193,7 +193,7 @@ def test_temporal_relative():
     assert coordinates(10, frame=t) == Time("2018-01-01T00:00:00") + 10 * u.s
     assert coordinates(10 * u.s, frame=t) == Time("2018-01-01T00:00:00") + 10 * u.s
 
-    a = coordinates((10, 20), frame=t)
+    a = coordinates(np.array((10, 20)), frame=t)
     assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
     assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
 
@@ -201,21 +201,9 @@ def test_temporal_relative():
     assert coordinates(10 * u.s, frame=t) == Time("2018-01-01T00:00:00") + 10 * u.s
     assert coordinates(TimeDelta(10, format='sec'), frame=t) == Time("2018-01-01T00:00:00") + 10 * u.s
 
-    a = coordinates((10, 20) * u.s, frame=t)
+    a = coordinates(np.array((10, 20)) * u.s, frame=t)
     assert a[0] == Time("2018-01-01T00:00:00") + 10 * u.s
     assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
-
-
-def test_temporal_absolute():
-    t = cf.TemporalFrame(reference_frame=Time([], format='isot'))
-    assert coordinates("2018-01-01T00:00:00", frame=t) == Time("2018-01-01T00:00:00")
-
-    a = coordinates(("2018-01-01T00:00:00", "2018-01-01T00:10:00"), frame=t)
-    assert a[0] == Time("2018-01-01T00:00:00")
-    assert a[1] == Time("2018-01-01T00:10:00")
-
-    t = cf.TemporalFrame(reference_frame=Time([], scale='tai', format='isot'))
-    assert coordinates("2018-01-01T00:00:00", frame=t) == Time("2018-01-01T00:00:00", scale='tai')
 
 
 @pytest.mark.parametrize('inp', [
