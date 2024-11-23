@@ -28,15 +28,11 @@ jobs:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@924441154cf3053034c6513d5e06c69d262fb9a6  # v1.13.0
     with:
       envs: |
-        - linux: py310
-        - linux: py310-numpy125
-        - linux: py311
-          pytest-results-summary: true
-        - macos: py311
-          pytest-results-summary: true
-        - linux: py311-pyargs
+        - linux: py310-oldestdeps
         - linux: py311-cov
           coverage: codecov
+          pytest-results-summary: true
+        - macos: py311
           pytest-results-summary: true
         - linux: py312
         - linux: py3-dev
