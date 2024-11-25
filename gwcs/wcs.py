@@ -404,7 +404,6 @@ class WCS(GWCSAPIMixin):
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
-        breakpoint()
         # Validate that the input type matches what the transform expects
         input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
         if not input_is_quantity and transform.uses_quantity:
