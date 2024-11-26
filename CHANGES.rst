@@ -15,6 +15,8 @@
 
 - Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522] 
 
+- Move the bounding box attachment to the forward transform property. [#532]
+
 0.21.0 (2024-03-10)
 -------------------
 
