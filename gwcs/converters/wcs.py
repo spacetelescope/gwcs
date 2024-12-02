@@ -1,6 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 
+import warnings
+from contextlib import suppress
 from asdf.extension import Converter
 
 
@@ -14,10 +16,17 @@ class WCSConverter(Converter):
     types = ["gwcs.wcs.WCS"]
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..wcs import WCS
+        from ..wcs import WCS, GwcsBoundingBoxWarning
         gwcsobj = WCS(node['steps'], name=node['name'])
         if 'pixel_shape' in node:
             gwcsobj.pixel_shape = node['pixel_shape']
+
+        # Ignore the warning about the bounding box order for data read from a
+        # file. This is causing issues with files from MAST.
+        with suppress(AttributeError), warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=GwcsBoundingBoxWarning)
+            _ = gwcsobj.bounding_box
+
         return gwcsobj
 
     def to_yaml_tree(self, gwcsobj, tag, ctx):
