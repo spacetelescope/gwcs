@@ -15,8 +15,11 @@
 
 - Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522] 
 
+- Adjust ``world_to_array_index_values`` to round to integer coordinates as specified by APE 14. [#525]
+
 - Add warning filter to asdf extension to prevent the ``bounding_box`` order warning for gwcs
   objects originating from a file. [#526]
+
 
 0.21.0 (2024-03-10)
 -------------------

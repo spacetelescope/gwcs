@@ -147,10 +147,14 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         `~BaseLowLevelWCS.pixel_to_world_values`). The indices should be
         returned as rounded integers.
         """
-        result = self.world_to_pixel_values(*world_arrays)
-        if self.pixel_n_dim != 1:
-            result = result[::-1]
-        return result
+        results = self.world_to_pixel_values(*world_arrays)
+        if self.pixel_n_dim == 1:
+            results = (results,)
+        else:
+            results = results[::-1]
+
+        results = tuple(utils._toindex(result) for result in results)
+        return results[0] if self.pixel_n_dim == 1 else results
 
     @property
     def array_shape(self):
