@@ -73,6 +73,17 @@ def gwcs_2d_shift_scale():
     pipe = [(DETECTOR_2D_FRAME, m3), (ICRC_SKY_FRAME, None)]
     return wcs.WCS(pipe)
 
+def gwcs_2d_bad_bounding_box_order():
+    m1 = models.Shift(1) & models.Shift(2)
+    m2 = models.Scale(5) & models.Scale(10)
+    m3 = m1 | m2
+
+    # Purposefully set the bounding box in the wrong order
+    m3.bounding_box = ((1, 2), (3, 4))
+
+    pipe = [(DETECTOR_2D_FRAME, m3), (ICRC_SKY_FRAME, None)]
+    return wcs.WCS(pipe)
+
 
 def gwcs_1d_freq_quantity():
 
