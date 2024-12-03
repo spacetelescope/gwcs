@@ -298,6 +298,9 @@ class WCS(GWCSAPIMixin):
         """
         Return the frame object by name.
         """
+        if not isinstance(frame_name, str):
+            return frame_name
+
         frames = [step.frame for step in self._pipeline if step.frame.name == frame_name]
         if len(frames) > 1:
             raise ValueError(f"There is more than one frame named {frame_name}")
@@ -1146,6 +1149,9 @@ class WCS(GWCSAPIMixin):
         from_ind = self._get_frame_index(from_frame)
         to_ind = self._get_frame_index(to_frame)
         backward = to_ind < from_ind
+        # Convert from strings to frame objects
+        from_frame = self._get_frame_by_name(from_frame)
+        to_frame = self._get_frame_by_name(to_frame)
 
         with_units = kwargs.pop("with_units", False)
         if with_units and backward:
@@ -1153,14 +1159,13 @@ class WCS(GWCSAPIMixin):
 
         results = self._call_forward(*args, from_frame=from_frame, to_frame=to_frame, **kwargs)
 
-        if with_units and not backward:
-            # TODO: Apparently you can have frames which are just strings
-            # We need an actual frame object for this to work
-            if isinstance(to_frame, str):
-                to_frame = self._get_frame_by_name(to_frame)
+        if with_units:
             # values are always expected to be arrays or scalars not quantities
             results = self._remove_units_input(results, to_frame)
-            return values_to_high_level_objects(*results, low_level_wcs=to_frame)
+            high_level = values_to_high_level_objects(*results, low_level_wcs=to_frame)
+            if len(high_level) == 1:
+                high_level = high_level[0]
+            return high_level
         return results
 
     @property

@@ -1582,3 +1582,44 @@ def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
     sc = intermediate_world_with_units[0]
     assert u.allclose(sc.ra, 20*u.arcsec)
     assert u.allclose(sc.dec, 15*u.deg)
+
+
+def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
+    """
+    This test checks that high level objects still work with a multi-stage
+    pipeline when doing backward transforms.
+    """
+    iwcs = gwcs_with_pipeline_celestial
+
+    input_world = [
+        20*u.arcsec + 1*u.deg,
+        15*u.deg + 2*u.deg,
+    ]
+    pixel = iwcs.invert(*input_world)
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1]*u.pix)
+
+    pixel = iwcs.invert(
+        *input_world,
+        with_units=True,
+    )
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1]*u.pix)
+
+    intermediate_world = iwcs.transform(
+        "output",
+        "celestial",
+        *input_world,
+    )
+    assert all(isinstance(p, u.Quantity) for p in intermediate_world)
+    assert u.allclose(intermediate_world, [20*u.arcsec, 15*u.deg])
+
+    intermediate_world = iwcs.transform(
+        "output",
+        "celestial",
+        *input_world,
+        with_units=True,
+    )
+    assert isinstance(intermediate_world, coord.SkyCoord)
