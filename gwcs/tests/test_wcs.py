@@ -1516,32 +1516,6 @@ def test_reordered_celestial():
     assert_allclose(obj_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
 
-@pytest.fixture
-def gwcs_with_pipeline_celestial():
-    input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
-                                     axes_order=list(range(2)),
-                                     unit=[u.pix]*2,
-                                     name="input")
-
-    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
-
-    celestial_frame = cf.CelestialFrame(axes_order=(0, 1), unit=(u.arcsec, u.deg),
-                                        reference_frame=coord.ICRS(), name="celestial")
-
-    custom = models.Shift(1*u.deg) & models.Shift(2*u.deg)
-
-    output_frame = cf.CoordinateFrame(2, ["CUSTOM"]*2,
-                                      axes_order=list(range(2)), unit=[u.arcsec]*2, name="output")
-
-    pipeline = [
-        (input_frame, spatial),
-        (celestial_frame, custom),
-        (output_frame, None),
-    ]
-
-    return wcs.WCS(pipeline)
-
-
 def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
     """
     This test checks that high level objects still work with a multi-stage

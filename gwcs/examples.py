@@ -488,3 +488,28 @@ def gwcs_7d_complex_mapping():
     w.pixel_shape = (16, 32, 21, 11, 11, 2)
 
     return w
+
+
+def gwcs_with_pipeline_celestial():
+    input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
+                                     axes_order=list(range(2)),
+                                     unit=[u.pix]*2,
+                                     name="input")
+
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
+
+    celestial_frame = cf.CelestialFrame(axes_order=(0, 1), unit=(u.arcsec, u.deg),
+                                        reference_frame=coord.ICRS(), name="celestial")
+
+    custom = models.Shift(1*u.deg) & models.Shift(2*u.deg)
+
+    output_frame = cf.CoordinateFrame(2, ["CUSTOM"]*2,
+                                      axes_order=list(range(2)), unit=[u.arcsec]*2, name="output")
+
+    pipeline = [
+        (input_frame, spatial),
+        (celestial_frame, custom),
+        (output_frame, None),
+    ]
+
+    return wcs.WCS(pipeline)
