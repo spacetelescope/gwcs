@@ -20,7 +20,6 @@ import asdf
 
 import gwcs.coordinate_frames as cf
 from gwcs import wcs
-from gwcs import utils
 from gwcs.wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from gwcs.utils import CoordinateFrameError
 from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
