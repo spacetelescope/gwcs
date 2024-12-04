@@ -1154,8 +1154,8 @@ class WCS(GWCSAPIMixin):
         to_frame = self._get_frame_by_name(to_frame)
 
         with_units = kwargs.pop("with_units", False)
-        if with_units and backward:
-            args = high_level_objects_to_values(*args, low_level_wcs=self)
+        if backward and utils.is_high_level(*args, low_level_wcs=from_frame):
+            args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
 
         results = self._call_forward(*args, from_frame=from_frame, to_frame=to_frame, **kwargs)
 

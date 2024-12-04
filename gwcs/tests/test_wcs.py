@@ -22,7 +22,8 @@ from gwcs import wcs
 from gwcs.wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
 from gwcs import coordinate_frames as cf
 from gwcs.utils import CoordinateFrameError
-from . utils import _gwcs_from_hst_fits_wcs
+from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
+from gwcs.tests import data
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
 
 
@@ -465,7 +466,8 @@ def test_bounding_box_eval():
     Tests evaluation with and without respecting the bounding_box.
     """
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    pipeline = [('detector', trans3), ('sky', None)]
+    pipeline = [(cf.CoordinateFrame(naxes=1, axes_type=("PIXEL",), axes_order=(0,), name='detector'), trans3),
+                (cf.CoordinateFrame(naxes=1, axes_type=("SPATIAL",), axes_order=(0,), name='sky'), None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = ((-1, 10), (6, 15), (4.3, 6.9))
 
@@ -606,11 +608,13 @@ class TestImaging(object):
         tan = models.Pix2Sky_TAN(name='tangent_projection')
         sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
         det = cf.Frame2D(name='detector')
+        focal = cf.Frame2D(name='focal')
         wcs_forward = wcslin | tan | n2c
-        pipeline = [wcs.Step('detector', distortion),
-                    wcs.Step('focal', wcs_forward),
-                    wcs.Step(sky_cs, None)
-                    ]
+        pipeline = [
+            wcs.Step(det, distortion),
+            wcs.Step(focal, wcs_forward),
+            wcs.Step(sky_cs, None)
+        ]
 
         self.wcs = wcs.WCS(input_frame=det,
                            output_frame=sky_cs,
@@ -657,7 +661,7 @@ class TestImaging(object):
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
-        res = self.wcs.transform('sky', 'focal', sky_coord, with_units=True)
+        res = self.wcs.transform('sky', 'focal', sky_coord, with_units=False)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 
     def test_units(self):
@@ -1577,9 +1581,8 @@ def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
         *input_pixel,
         with_units=True
     )
-    assert len(intermediate_world_with_units) == 1
-    assert isinstance(intermediate_world_with_units[0], coord.SkyCoord)
-    sc = intermediate_world_with_units[0]
+    assert isinstance(intermediate_world_with_units, coord.SkyCoord)
+    sc = intermediate_world_with_units
     assert u.allclose(sc.ra, 20*u.arcsec)
     assert u.allclose(sc.dec, 15*u.deg)
 
