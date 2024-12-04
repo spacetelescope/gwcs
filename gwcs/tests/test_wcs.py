@@ -18,12 +18,14 @@ from astropy.time import Time
 from astropy.utils.introspection import minversion
 import asdf
 
+import gwcs.coordinate_frames as cf
 from gwcs import wcs
+from gwcs import utils
 from gwcs.wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
-from gwcs import coordinate_frames as cf
 from gwcs.utils import CoordinateFrameError
-from . utils import _gwcs_from_hst_fits_wcs
+from gwcs.utils import _gwcs_from_hst_fits_wcs
 from gwcs.tests import data
+from gwcs.examples import gwcs_2d_bad_bounding_box_order
 
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
@@ -1597,3 +1599,29 @@ def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
         with_units=True,
     )
     assert isinstance(intermediate_world, coord.SkyCoord)
+
+
+def test_no_bounding_box_if_read_from_file(tmp_path):
+    bad_wcs = gwcs_2d_bad_bounding_box_order()
+
+    # Check the waring is issued for the bounding box of this WCS object
+    with pytest.warns(wcs.GwcsBoundingBoxWarning):
+        bad_wcs.bounding_box
+
+    # Check that the warning is not issued again the second time
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bad_wcs.bounding_box
+
+    # Write a bad wcs bounding box to an asdf file
+    asdf_file = tmp_path / "bad_wcs.asdf"
+    af = asdf.AsdfFile({"wcs": gwcs_2d_bad_bounding_box_order()}) # re-create the bad wcs object
+    af.write_to(asdf_file)
+
+    with asdf.open(asdf_file) as af:
+        wcs_from_file = af["wcs"]
+
+    # Check that no warning is issued for the bounding box of this WCS object
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        wcs_from_file.bounding_box
