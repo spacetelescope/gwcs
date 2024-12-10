@@ -400,30 +400,11 @@ class WCS(GWCSAPIMixin):
            and `False` if input is outside the footprint.
 
         """
-        coords = self.invert(*args, with_bounding_box=False, **kwargs)
+        coords = self.invert(*args, **kwargs)
 
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
             result = np.all(result, axis=0)
-
-        if self.bounding_box is None or not np.any(result):
-            return result
-
-        if self.input_frame.naxes == 1:
-            x1, x2 = self.bounding_box.bounding_box()
-
-            if len(np.shape(args[0])) > 0:
-                result[result] = (coords[result] >= x1) & (coords[result] <= x2)
-            elif result:
-                result = (coords >= x1) and (coords <= x2)
-
-        else:
-            if len(np.shape(args[0])) > 0:
-                for c, (x1, x2) in zip(coords, self.bounding_box):
-                    result[result] = (c[result] >= x1) & (c[result] <= x2)
-
-            elif result:
-                result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
 
         return result
 
@@ -489,7 +470,7 @@ class WCS(GWCSAPIMixin):
         fill_value = kwargs.pop('fill_value', np.nan)
         akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
         if with_bounding_box and self.bounding_box is not None:
-            result = self.outside_footprint(args)
+            args = self.outside_footprint(args)
 
         if btrans is not None:
             result = btrans(*args, **akwargs)
@@ -513,11 +494,8 @@ class WCS(GWCSAPIMixin):
 
         axes_types = set(self.output_frame.axes_type)
         footprint = self.footprint()
-        world_arrays = [coo.to(unit) for coo, unit in zip(world_arrays, self.output_frame.unit)
-                        if isinstance(coo, u.Quantity)]
-        world_arrays = [high_level_objects_to_values(coo, low_level_wcs=self) for
-                        coo in world_arrays if not utils.isnumerical(coo)]
-
+        if not utils.isnumerical(world_arrays[0]):
+            world_arrays = high_level_objects_to_values(*world_arrays, low_level_wcs=self)
         for axtyp in axes_types:
             ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
 

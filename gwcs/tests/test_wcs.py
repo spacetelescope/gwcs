@@ -1161,10 +1161,10 @@ def test_in_image():
                    None)])
     w2.bounding_box = [(1, 100), (2, 20)]
 
-    assert np.isscalar(w2.in_image(2, 6))
+    assert np.isscalar(w2.in_image(2, 6))#[0])
     assert not np.isscalar(w2.in_image([2], [6]))
-    assert w2.in_image(4, 6)
-    assert not w2.in_image(5, 0)
+    assert (w2.in_image(4, 6))#.all()
+    assert not (w2.in_image(5, 0))#, [True, False])
     assert np.array_equal(
         w2.in_image(
             [[9, 10, 11, 15], [8, 9, 67, 98], [2, 2, np.nan, 102]],
