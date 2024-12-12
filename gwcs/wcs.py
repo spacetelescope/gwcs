@@ -15,7 +15,7 @@ from astropy.modeling.models import (Const1D, Identity, Mapping, Polynomial2D,
                                      Sky2Pix_TAN)
 from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
-from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values
+from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 
 from astropy import units as u
 from scipy import linalg, optimize
@@ -494,7 +494,9 @@ class WCS(GWCSAPIMixin):
 
         axes_types = set(self.output_frame.axes_type)
         footprint = self.footprint()
+        not_numerical = False
         if not utils.isnumerical(world_arrays[0]):
+            not_numerical = True
             world_arrays = high_level_objects_to_values(*world_arrays, low_level_wcs=self)
         for axtyp in axes_types:
             ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
@@ -513,7 +515,8 @@ class WCS(GWCSAPIMixin):
                     else:
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
-
+        if not_numerical:
+            world_arrays = values_to_high_level_objects(*world_arrays, low_level_wcs=self)
         return world_arrays
 
 
