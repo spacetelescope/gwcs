@@ -5,31 +5,6 @@ import pytest
 
 from .. import examples
 from .. import geometry
-import numpy as np
-
-import astropy.units as u
-from astropy.time import Time
-from astropy import coordinates as coord
-from astropy.modeling import models
-
-from gwcs import coordinate_frames as cf
-from gwcs import spectroscopy as sp
-from gwcs import wcs
-from gwcs import geometry
-
-# frames
-detector_1d = cf.CoordinateFrame(name='detector', axes_order=(0,), naxes=1, axes_type="detector")
-detector_2d = cf.Frame2D(name='detector', axes_order=(0, 1))
-icrs_sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
-                                   axes_order=(0, 1))
-
-freq_frame = cf.SpectralFrame(name='freq', unit=u.Hz, axes_order=(0, ))
-wave_frame = cf.SpectralFrame(name='wave', unit=u.m, axes_order=(2, ),
-                              axes_names=('lambda', ))
-
-# transforms
-model_2d_shift = models.Shift(1) & models.Shift(2)
-model_1d_scale = models.Scale(2)
 
 
 @pytest.fixture

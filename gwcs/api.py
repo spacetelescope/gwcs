@@ -322,8 +322,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         """
         Convert world coordinates to pixel values.
         """
-        #args = high_level_objects_to_values(*world_objects, low_level_wcs=self)
-        #result = self.invert(*args)
         result = self.invert(*world_objects, with_units=True)
         if self.input_frame.naxes > 1:
             first_res = result[0]
