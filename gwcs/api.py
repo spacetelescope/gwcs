@@ -132,7 +132,13 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
-        world_arrays = self._add_units_input(world_arrays, self.backward_transform, self.output_frame)
+        try:
+            backward_transform = self.backward_transform
+            world_arrays = self._add_units_input(world_arrays,
+                                                 backward_transform,
+                                                 self.output_frame)
+        except NotImplementedError:
+            pass
 
         result = self.invert(*world_arrays, with_units=False)
 
@@ -317,7 +323,6 @@ class GWCSAPIMixin(BaseHighLevelWCS, BaseLowLevelWCS):
         Convert world coordinates to pixel values.
         """
         result = self.invert(*world_objects, with_units=True)
-
         if self.input_frame.naxes > 1:
             first_res = result[0]
             if not utils.isnumerical(first_res):

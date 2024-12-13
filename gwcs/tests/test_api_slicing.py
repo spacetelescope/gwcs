@@ -262,8 +262,8 @@ def test_celestial_slice(gwcs_3d_galactic_spectral):
     assert_allclose(wcs.pixel_to_world_values(39, 44), (10.24, 20, 25))
     assert_allclose(wcs.array_index_to_world_values(44, 39), (10.24, 20, 25))
 
-    assert_allclose(wcs.world_to_pixel_values(12.4, 20, 25), (39., 44.))
-    assert_equal(wcs.world_to_array_index_values(12.4, 20, 25), (44, 39))
+    assert_allclose(wcs.world_to_pixel_values(10.24, 20, 25), (39., 44.))
+    assert_equal(wcs.world_to_array_index_values(10.24, 20, 25), (44, 39))
 
     assert_equal(wcs.pixel_bounds, [(-2, 45), (5, 50)])
 
