@@ -493,7 +493,11 @@ class WCS(GWCSAPIMixin):
         world_arrays = list(world_arrays)
 
         axes_types = set(self.output_frame.axes_type)
-        footprint = self.footprint()
+        try:
+            footprint = self.footprint()
+        except AttributeError:
+            # SlicedWCS does not implement footrpint
+            return world_arrays
         not_numerical = False
         if not utils.isnumerical(world_arrays[0]):
             not_numerical = True
@@ -502,13 +506,17 @@ class WCS(GWCSAPIMixin):
             ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
 
             for idim, coord in enumerate(world_arrays):
-                coord = _tofloat(coord)
+                if not np.isscalar(coord):
+                    coord = _tofloat(coord.copy())
                 if np.asarray(ind).sum() > 1:
                     axis_range = footprint[:, idim]
                 else:
-                    axis_range = footprint
+                    axis_range = footprint[:, idim]
                 range = [axis_range.min(), axis_range.max()]
-                outside = (coord < range[0]) | (coord > range[1])
+                if axtyp == 'SPATIAL' and isinstance(self.output_frame, cf.CelestialFrame):
+                    range = np.mod(range, 180)
+                    coord = np.mod(coord, 180)
+                outside = np.logical_or(coord < range[0], coord > range[1])
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
