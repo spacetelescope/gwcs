@@ -11,8 +11,6 @@ from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
 import astropy.units as u
-from astropy.time import Time, TimeDelta
-from astropy import table
 from astropy.wcs import Celprm
 
 

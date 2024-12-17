@@ -19,9 +19,7 @@ from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
 from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 
-from astropy import units as u
 from scipy import linalg, optimize
-from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 
 from . import coordinate_frames as cf
 from . import utils
