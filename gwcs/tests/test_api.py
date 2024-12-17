@@ -265,7 +265,11 @@ def test_high_level_wrapper(wcsobj, request):
 
     hlvl = HighLevelWCSWrapper(wcsobj)
 
-    pixel_input = [6] * wcsobj.pixel_n_dim
+    pixel_input = [3] * wcsobj.pixel_n_dim
+    if wcsobj.bounding_box is not None:
+        for i, interval in wcsobj.bounding_box.intervals.items():
+            bbox_min = u.Quantity(interval.lower).value
+            pixel_input[i] = max(bbox_min + 1, pixel_input[i])
 
     # Assert that both APE 14 API and GWCS give the same answer The APE 14 API
     # uses the mixin class and __call__ calls values_to_high_level_objects
