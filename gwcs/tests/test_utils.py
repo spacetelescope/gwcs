@@ -6,6 +6,8 @@ from astropy import wcs as fitswcs
 from astropy import units as u
 from astropy import coordinates as coord
 from astropy.modeling import models
+from astropy import table
+
 from astropy.tests.helper import assert_quantity_allclose
 import pytest
 from numpy.testing import assert_allclose

@@ -1126,8 +1126,8 @@ def test_in_image():
 
     assert np.isscalar(w2.in_image(2, 6))
     assert not np.isscalar(w2.in_image([2], [6]))
-    assert w2.in_image(4, 6)
-    assert not w2.in_image(5, 0)
+    assert (w2.in_image(4, 6))
+    assert not (w2.in_image(5, 0))
     assert np.array_equal(
         w2.in_image(
             [[9, 10, 11, 15], [8, 9, 67, 98], [2, 2, np.nan, 102]],
@@ -1162,6 +1162,7 @@ def test_iter_inv():
         *w(x, y),
         adaptive=True,
         detect_divergence=True,
+        tolerance=1e-4, maxiter=50,
         quiet=False
     )
     assert np.allclose((x, y), (xp, yp))
@@ -1181,6 +1182,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y),
         adaptive=True,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=False,
         quiet=False
     )
@@ -1215,6 +1217,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y, with_bounding_box=False),
         adaptive=False,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=True,
         quiet=False,
         with_bounding_box=False
@@ -1228,6 +1231,7 @@ def test_iter_inv():
         xp, yp = w.numerical_inverse(
             *w(x, y, with_bounding_box=False),
             adaptive=False,
+            tolerance=1e-5, maxiter=50,
             detect_divergence=True,
             quiet=False,
             with_bounding_box=False

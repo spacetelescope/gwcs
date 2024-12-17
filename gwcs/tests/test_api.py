@@ -63,7 +63,6 @@ fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=
 
 @fixture_all_wcses
 def test_lowlevel_types(wcsobj):
-    pytest.importorskip("typeguard")
     try:
         # Skip this on older versions of astropy where it dosen't exist.
         from astropy.wcs.wcsapi.tests.utils import validate_low_level_wcs_types
@@ -241,12 +240,12 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
 def _compare_frame_output(wc1, wc2):
     if isinstance(wc1, coord.SkyCoord):
         assert isinstance(wc1.frame, type(wc2.frame))
-        assert u.allclose(wc1.spherical.lon, wc2.spherical.lon)
-        assert u.allclose(wc1.spherical.lat, wc2.spherical.lat)
-        assert u.allclose(wc1.spherical.distance, wc2.spherical.distance)
+        assert u.allclose(wc1.spherical.lon, wc2.spherical.lon, equal_nan=True)
+        assert u.allclose(wc1.spherical.lat, wc2.spherical.lat,  equal_nan=True)
+        assert u.allclose(wc1.spherical.distance, wc2.spherical.distance,  equal_nan=True)
 
     elif isinstance(wc1, u.Quantity):
-        assert u.allclose(wc1, wc2)
+        assert u.allclose(wc1, wc2, equal_nan=True)
 
     elif isinstance(wc1, time.Time):
         assert u.allclose((wc1 - wc2).to(u.s), 0*u.s)
@@ -263,16 +262,10 @@ def _compare_frame_output(wc1, wc2):
 
 @fixture_all_wcses
 def test_high_level_wrapper(wcsobj, request):
-    if request.node.callspec.params['wcsobj'] in ('gwcs_4d_identity_units', 'gwcs_stokes_lookup'):
-        pytest.importorskip("astropy", minversion="4.0dev0")
-
-    # Remove the bounding box because the type test is a little broken with the
-    # bounding box.
-    del wcsobj._pipeline[0].transform.bounding_box
 
     hlvl = HighLevelWCSWrapper(wcsobj)
 
-    pixel_input = [3] * wcsobj.pixel_n_dim
+    pixel_input = [6] * wcsobj.pixel_n_dim
 
     # Assert that both APE 14 API and GWCS give the same answer The APE 14 API
     # uses the mixin class and __call__ calls values_to_high_level_objects
@@ -305,8 +298,6 @@ def test_high_level_wrapper(wcsobj, request):
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
-    pytest.importorskip("astropy", minversion="4.0dev0")
-
     hlvl = HighLevelWCSWrapper(gwcs_stokes_lookup)
 
     pixel_input = [0, 1, 2, 3]

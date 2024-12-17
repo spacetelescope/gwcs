@@ -88,8 +88,8 @@ def sellmeier_zemax():
 
 @pytest.fixture(scope="function")
 def gwcs_3d_galactic_spectral():
-    return examples.gwcs_3d_galactic_spectral()
 
+    return examples.gwcs_3d_galactic_spectral()
 
 @pytest.fixture(scope="function")
 def gwcs_1d_spectral():
