@@ -554,6 +554,7 @@ class WCS(GWCSAPIMixin):
         world_arrays = list(world_arrays)
 
         axes_types = set(self.output_frame.axes_type)
+        axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
         if utils.is_high_level(world_arrays[0], low_level_wcs=self):
@@ -562,14 +563,25 @@ class WCS(GWCSAPIMixin):
         for axtyp in axes_types:
             ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
 
-            for idim, coord in enumerate(world_arrays):
+            for idim, (coord, phys) in enumerate(zip(world_arrays, axes_phys_types)):
                 coord = _tofloat(coord)
                 if np.asarray(ind).sum() > 1:
                     axis_range = footprint[:, idim]
                 else:
                     axis_range = footprint
                 range = [axis_range.min(), axis_range.max()]
-                outside = (coord < range[0]) | (coord > range[1])
+
+                if (axtyp == 'SPATIAL' and str(phys).endswith((".ra", ".lon"))
+                    and range[1] - range[0] > 180):
+                        # most likely this coordinate is wrapped at 360
+                        d = np.mean(range)
+                        range = [
+                            axis_range[axis_range < d].max(),
+                            axis_range[axis_range > d].min()
+                        ]
+                        outside = (coord >= range[0]) & (coord < range[1])
+                else:
+                    outside = (coord < range[0]) | (coord > range[1])
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan

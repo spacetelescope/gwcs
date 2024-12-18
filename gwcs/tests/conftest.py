@@ -62,6 +62,11 @@ def gwcs_simple_imaging_units():
 
 
 @pytest.fixture
+def gwcs_simple_imaging():
+    return examples.gwcs_simple_imaging()
+
+
+@pytest.fixture
 def gwcs_stokes_lookup():
     return examples.gwcs_stokes_lookup()
 

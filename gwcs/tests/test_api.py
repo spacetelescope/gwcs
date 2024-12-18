@@ -479,10 +479,11 @@ def test_world_to_pixel(gwcs_2d_spatial_shift, sky_ra_dec):
     assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec))
 
 
-def test_world_to_array_index(gwcs_2d_spatial_shift, sky_ra_dec):
-    wcsobj = gwcs_2d_spatial_shift
+def test_world_to_array_index(gwcs_simple_imaging, sky_ra_dec):
+    wcsobj = gwcs_simple_imaging
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec)[::-1])
+
+    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1])
 
 
 def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
@@ -492,12 +493,12 @@ def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
     assert_allclose(wcsobj.world_to_pixel_values(ra, dec), wcsobj.invert(ra, dec))
 
 
-def test_world_to_array_index_values(gwcs_2d_spatial_shift, sky_ra_dec):
-    wcsobj = gwcs_2d_spatial_shift
+def test_world_to_array_index_values(gwcs_simple_imaging, sky_ra_dec):
+    wcsobj = gwcs_simple_imaging
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_array_index_values(ra, dec),
-                    wcsobj.invert(ra, dec)[::-1])
+    assert_allclose(wcsobj.world_to_array_index_values(sky),
+                    wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1])
 
 
 def test_ndim_str_frames(gwcs_with_frames_strings):
