@@ -14,7 +14,7 @@
 
 - Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
 
-- Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522] 
+- Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522]
 
 - Move the bounding box attachment to the forward transform property. [#532]
 
@@ -24,6 +24,9 @@
 
 - Fixed a bug where evaluating the inverse transform did not
   respect the bounding box. [#498]
+
+- Improved reliability of inside/outside footprint computations when evaluating
+  inverse transform with bounding box. [#536]
 
 
 0.21.0 (2024-03-10)

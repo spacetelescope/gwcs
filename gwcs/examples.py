@@ -36,7 +36,6 @@ def gwcs_2d_spatial_shift():
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
     pipe = [(DETECTOR_2D_FRAME, MODEL_2D_SHIFT), (ICRC_SKY_FRAME, None)]
-
     return wcs.WCS(pipe)
 
 
@@ -179,6 +178,29 @@ def gwcs_simple_imaging_units():
                                 unit=(u.pix, u.pix))
     sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs',
                                   unit=(u.deg, u.deg))
+    pipeline = [(detector_frame, det2sky),
+                (sky_frame, None)
+                ]
+    return wcs.WCS(pipeline)
+
+
+def gwcs_simple_imaging():
+    shift_by_crpix = models.Shift(-2048) & models.Shift(-1024)
+    matrix = np.array([[1.290551569736E-05, 5.9525007864732E-06],
+                       [5.0226382102765E-06 , -1.2644844123757E-05]])
+    rotation = models.AffineTransformation2D(matrix,
+                                             translation=[0, 0])
+    rotation.inverse = models.AffineTransformation2D(np.linalg.inv(matrix),
+                                                     translation=[0, 0])
+    tan = models.Pix2Sky_TAN()
+    celestial_rotation =  models.RotateNative2Celestial(5.63056810618,
+                                                        -72.05457184279,
+                                                        180)
+    det2sky = shift_by_crpix | rotation | tan | celestial_rotation
+    det2sky.name = "linear_transform"
+
+    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"))
+    sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
     pipeline = [(detector_frame, det2sky),
                 (sky_frame, None)
                 ]
