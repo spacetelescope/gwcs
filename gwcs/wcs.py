@@ -523,8 +523,6 @@ class WCS(GWCSAPIMixin):
         except NotImplementedError:
             transform = None
 
-        with_bounding_box = kwargs.pop('with_bounding_box', True)
-        fill_value = kwargs.pop('fill_value', np.nan)
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
 
