@@ -14,9 +14,9 @@ import numpy as np
 
 __all__ = ['Region', 'Edge', 'Polygon']
 
+_INTERSECT_ATOL = 1e2 * np.finfo(float).eps
 
-class Region(metaclass=abc.ABCMeta):
-
+class Region:
     """
     Base class for regions.
 
@@ -33,14 +33,14 @@ class Region(metaclass=abc.ABCMeta):
         self._rid = rid
 
     @abc.abstractmethod
-    def __contains__(self, x, y):
+    def __contains__(self, px):
         """
         Determines if a pixel is within a region.
 
         Parameters
         ----------
-        x, y : float
-            x , y values of a pixel
+        px : tuple[float, float]
+            A pixel coordinate (x, y)
 
         Returns
         -------
@@ -49,6 +49,7 @@ class Region(metaclass=abc.ABCMeta):
         Subclasses must define this method.
         """
 
+    @abc.abstractmethod
     def scan(self, mask):
         """
         Sets mask values to region id for all pixels within the region.
@@ -68,7 +69,6 @@ class Region(metaclass=abc.ABCMeta):
 
 
 class Polygon(Region):
-
     """
     Represents a 2D polygon region with multiple vertices.
 
@@ -86,11 +86,11 @@ class Polygon(Region):
 
     """
 
-    def __init__(self, rid, vertices, coord_frame="detector"):
+    def __init__(self, rid, vertices, coord_system="Cartesian"):
         if len(vertices) < 4:
-            raise ValueError("Expected vertices to be "
-                             "a list of minimum 4 tuples (x,y)")
-        super(Polygon, self).__init__(rid, coord_frame)
+            raise ValueError("Expected vertices to be a list of minimum 4 tuples (x,y)")
+
+        super().__init__(rid, coord_system)
 
         # self._shiftx & self._shifty are introduced to shift the bottom-left
         # corner of the polygon's bounding box to (0,0) as a (hopefully
@@ -114,8 +114,9 @@ class Polygon(Region):
         self._shifty = int(round(self._shifty))
 
         self._bbox = self._get_bounding_box()
-        self._scan_line_range = \
-            list(range(self._bbox[1], self._bbox[3] + self._bbox[1] + 1))
+        self._scan_line_range = list(
+            range(self._bbox[1], self._bbox[3] + self._bbox[1] + 1)
+        )
         # constructs a Global Edge Table (GET) in bbox coordinates
         self._GET = self._construct_ordered_GET()
 
@@ -130,7 +131,7 @@ class Polygon(Region):
         """
         Construct a Global Edge Table (GET)
 
-        The GET is an OrderedDict. Keys are scan  line numbers,
+        The GET is an OrderedDict. Keys are scan line numbers,
         ordered from bbox.ymin to bbox.ymax, where bbox is the
         bounding box of the polygon.
         Values are lists of edges for which edge.ymin==scan_line_number.
@@ -149,7 +150,7 @@ class Polygon(Region):
             ymin_ind = (ymin == i).nonzero()[0]
             # a hack for incomplete filling .any() fails if 0 is in ymin_ind
             # if ymin_ind.any():
-            yminindlen, = ymin_ind.shape
+            (yminindlen,) = ymin_ind.shape
             if yminindlen:
                 GET[i] = [edges[ymin_ind[0]]]
                 for j in ymin_ind[1:]:
@@ -160,8 +161,10 @@ class Polygon(Region):
         """
         Create a list of Edge objects from vertices
         """
-        return [Edge(name=f'E{i - 1}', start=self._vertices[i - 1], stop=self._vertices[i])
-                for i in range(1, len(self._vertices))]
+        return [
+            Edge(name=f"E{i - 1}", start=self._vertices[i - 1], stop=self._vertices[i])
+            for i in range(1, len(self._vertices))
+        ]
 
     def scan(self, data):
         """
@@ -186,11 +189,13 @@ class Polygon(Region):
           5. Set elements between pairs of X in the AET to the Edge's ID
 
         """
-        # TODO: 1.This algorithm does not mark pixels in the top row and left most column.
-        # Pad the initial pixel description on top and left with 1 px to prevent this.
-        # 2. Currently it uses intersection of the scan line with edges. If this is
-        # too slow it should use the 1/m increment (replace 3 above) (or the increment
-        # should be removed from the GET entry).
+        # TODO:
+        # 1. This algorithm does not mark pixels in the top row and left most
+        #    column. Pad the initial pixel description on top and left with 1 px
+        #    to prevent this.
+        # 2. Currently it uses # intersection of the scan line with edges. If
+        #    this is too slow it should use the 1/m increment (replace 3 above)
+        #    (or the increment should be removed from the GET entry).
 
         # see comments in the __init__ function for the reason of introducing
         # polygon shifts (self._shiftx & self._shifty). Here we need to shift
@@ -204,7 +209,6 @@ class Polygon(Region):
         scline = self._scan_line_range[-1]
 
         while y <= scline:
-
             if y < scline:
                 AET = self.update_AET(y, AET)
 
@@ -212,10 +216,16 @@ class Polygon(Region):
                 y += 1
                 continue
 
-            scan_line = Edge('scan_line', start=[self._bbox[0], y],
-                             stop=[self._bbox[0] + self._bbox[2], y])
-            x = [int(np.ceil(e.compute_AET_entry(scan_line)[1]))
-                 for e in AET if e is not None]
+            scan_line = Edge(
+                "scan_line",
+                start=[self._bbox[0], y],
+                stop=[self._bbox[0] + self._bbox[2], y],
+            )
+            x = [
+                int(np.ceil(e.compute_AET_entry(scan_line)[1]))
+                for e in AET
+                if e is not None
+            ]
             xnew = np.sort(x)
             ysh = y + self._shifty
 
@@ -226,7 +236,7 @@ class Polygon(Region):
             for i, j in zip(xnew[::2], xnew[1::2]):
                 xstart = max(0, i + self._shiftx)
                 xend = min(j + self._shiftx, nx - 1)
-                data[ysh][xstart:xend + 1] = self._rid
+                data[ysh][xstart : xend + 1] = self._rid
 
             y += 1
 
@@ -254,13 +264,16 @@ class Polygon(Region):
         return AET
 
     def __contains__(self, px):
-        """even-odd algorithm or smth else better sould be used"""
-        return px[0] >= self._bbox[0] and px[0] <= self._bbox[0] + self._bbox[2] and \
-            px[1] >= self._bbox[1] and px[1] <= self._bbox[1] + self._bbox[3]
+        """even-odd algorithm or something else better should be used"""
+        return (
+            px[0] >= self._bbox[0]
+            and px[0] <= self._bbox[0] + self._bbox[2]
+            and px[1] >= self._bbox[1]
+            and px[1] <= self._bbox[1] + self._bbox[3]
+        )
 
 
 class Edge:
-
     """
     Edge representation.
 
@@ -271,7 +284,7 @@ class Edge:
 
     """
 
-    def __init__(self, name=None, start=None, stop=None, next=None):
+    def __init__(self, name=None, start=None, stop=None, next=None):  # noqa: A002
         self._start = None
         if start is not None:
             self._start = np.asarray(start)
@@ -329,8 +342,12 @@ class Edge:
             if np.diff(earr[:, 1]).item() == 0:
                 return None
             else:
-                entry = [self._ymax, self._yminx,
-                         (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(), None]
+                entry = [
+                    self._ymax,
+                    self._yminx,
+                    (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(),
+                    None,
+                ]
         return entry
 
     def compute_AET_entry(self, edge):
@@ -347,19 +364,20 @@ class Edge:
         fmt = ""
         if self._name is not None:
             fmt += self._name
-            next = self.next
-            while next is not None:
+            next_edge = self.next
+            while next_edge is not None:
                 fmt += "-->"
-                fmt += next._name
-                next = next.next
+                fmt += next_edge._name
+                next_edge = next_edge.next
+
         return fmt
 
     @property
-    def next(self):
+    def next(self):  # noqa: A003
         return self._next
 
     @next.setter
-    def next(self, edge):
+    def next(self, edge):  # noqa: A003
         if self._name is None:
             self._name = edge._name
             self._stop = edge._stop
@@ -372,19 +390,31 @@ class Edge:
         u = self._stop - self._start
         v = edge._stop - edge._start
         w = self._start - edge._start
-        D = np.cross(u, v)
 
-        if np.allclose(np.cross(u, v), 0, rtol=0,
-                       atol=1e2 * np.finfo(float).eps):
+        D = _det(u, v)
+
+        if abs(D) < _INTERSECT_ATOL:
             return np.array(self._start)
 
-        return np.cross(v, w) / D * u + self._start
+        return _det(v, w) / D * u + self._start
 
     def is_parallel(self, edge):
         u = self._stop - self._start
         v = edge._stop - edge._start
-        return np.allclose(np.cross(u, v), 0, rtol=0,
-                           atol=1e2 * np.finfo(float).eps)
+        return np.allclose(_det(u, v), 0, rtol=0, atol=_INTERSECT_ATOL)
+
+
+def _det(u, v):
+    """
+    Find the determinant of the matrix formed by the vectors u and v
+
+    Note: Originally this was computed using a numpy "2D" cross product,
+          however, this functionality has been deprecated and slated for
+          removal.
+    Note: This is marginally faster than using `np.linalg.det([u, v])` by ~10ms
+          during empirical testing
+    """
+    return u[0] * v[1] - u[1] * v[0]
 
 
 def _round_vertex(v):

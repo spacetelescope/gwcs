@@ -12,6 +12,7 @@ from astropy.io import fits
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.time import Time, TimeDelta
+from astropy import table
 from astropy.wcs import Celprm
 
 
@@ -470,14 +471,12 @@ def isnumerical(val):
     Determine if a value is numerical (number or np.array of numbers).
     """
     isnum = True
-    if isinstance(val, coords.SkyCoord):
-        isnum = False
-    elif isinstance(val, u.Quantity):
-        isnum = False
-    elif isinstance(val, (Time, TimeDelta)):
+    astropy_types=(coords.SkyCoord, u.Quantity, Time, TimeDelta, table.Column, table.Row)
+    if isinstance(val, astropy_types):
         isnum = False
     elif (isinstance(val, np.ndarray)
           and not np.issubdtype(val.dtype, np.floating)
-          and not np.issubdtype(val.dtype, np.integer)):
+          and not np.issubdtype(val.dtype, np.integer)
+          ):
         isnum = False
     return isnum

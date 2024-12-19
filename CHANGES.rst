@@ -1,3 +1,34 @@
+0.22.0 (2024-12-19)
+-------------------
+
+- Replace usages of ``copy_arrays`` with ``memmap`` [#503]
+
+- Fix an issue with units in ``wcs_from_points``. [#507]
+
+- Fix incorrect units being returned in the low level WCS API. [#512]
+
+- Synchronize ``region.py`` with the copies of it in JWST and Romancal. [#517]
+
+- Add support for compound bounding boxes and ignored bounding box entries. [#519]
+
+
+- Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
+
+- Force ``bounding_box`` to always be returned as a ``F`` ordered box. [#522]
+
+- Move the bounding box attachment to the forward transform property. [#532]
+
+- Adjust ``world_to_array_index_values`` to round to integer coordinates as specified by APE 14. [#525]
+
+- Add warning filter to asdf extension to prevent the ``bounding_box`` order warning for gwcs objects originating from a file. [#526]
+
+- Fixed a bug where evaluating the inverse transform did not
+  respect the bounding box. [#498]
+
+- Improved reliability of inside/outside footprint computations when evaluating
+  inverse transform with bounding box. [#536]
+
+
 0.21.0 (2024-03-10)
 -------------------
 

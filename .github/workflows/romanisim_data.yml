@@ -1,0 +1,18 @@
+name: download and cache romanisim data
+
+on:
+  schedule:
+    - cron: "42 4 * * 3"
+  workflow_dispatch:
+    inputs:
+      webbpsf_minimal:
+        description: minimal WebbPSF dataset
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  download_romanisim_data:
+    uses: spacetelescope/romanisim/.github/workflows/data.yml@main
+    with:
+      webbpsf_minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}

@@ -6,7 +6,6 @@ import warnings
 import astropy.io.fits as fits
 import numpy as np
 import numpy.linalg as npla
-from astropy import units as u
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -14,7 +13,11 @@ from astropy.modeling.core import Model
 from astropy.modeling.models import (Const1D, Identity, Mapping, Polynomial2D,
                                      RotateCelestial2Native, Shift,
                                      Sky2Pix_TAN)
+from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
+from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
+
+from astropy import units as u
 from scipy import linalg, optimize
 
 from . import coordinate_frames as cf
@@ -71,6 +74,12 @@ class NoConvergence(Exception):
         self.niter = niter
         self.divergent = divergent
         self.slow_conv = slow_conv
+
+
+class GwcsBoundingBoxWarning(UserWarning):
+    """
+    A warning class to report issues with bounding boxes in GWCS.
+    """
 
 
 class _WorldAxisInfo():
@@ -253,14 +262,19 @@ class WCS(GWCSAPIMixin):
     def forward_transform(self):
         """
         Return the total forward transform - from input to output coordinate frame.
-
         """
-
-        if self._pipeline:
-            #return functools.reduce(lambda x, y: x | y, [step[1] for step in self._pipeline[: -1]])
-            return functools.reduce(lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]])
-        else:
+        if not self._pipeline:
             return None
+
+        transform = functools.reduce(lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]])
+
+        if self.bounding_box is not None:
+            # Currently compound models do not attempt to combine individual model
+            # bounding boxes. Get the forward transform and assign the bounding_box to it
+            # before evaluating it. The order Model.bounding_box is reversed.
+            transform.bounding_box = self.bounding_box
+
+        return transform
 
     @property
     def backward_transform(self):
@@ -349,12 +363,6 @@ class WCS(GWCSAPIMixin):
         if 'fill_value' not in kwargs:
             kwargs['fill_value'] = np.nan
 
-        if self.bounding_box is not None:
-            # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box to it
-            # before evaluating it. The order Model.bounding_box is reversed.
-            transform.bounding_box = self.bounding_box
-
         result = transform(*args, **kwargs)
 
         if with_units:
@@ -392,33 +400,11 @@ class WCS(GWCSAPIMixin):
            and `False` if input is outside the footprint.
 
         """
-        kwargs['with_bounding_box'] = True
-        kwargs['fill_value'] = np.nan
-
         coords = self.invert(*args, **kwargs)
 
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
             result = np.all(result, axis=0)
-
-        if self.bounding_box is None or not np.any(result):
-            return result
-
-        if self.input_frame.naxes == 1:
-            x1, x2 = self.bounding_box.bounding_box()
-
-            if len(np.shape(args[0])) > 0:
-                result[result] = (coords[result] >= x1) & (coords[result] <= x2)
-            elif result:
-                result = (coords >= x1) and (coords <= x2)
-
-        else:
-            if len(np.shape(args[0])) > 0:
-                for c, (x1, x2) in zip(coords, self.bounding_box):
-                    result[result] = (c[result] >= x1) & (c[result] <= x2)
-
-            elif result:
-                result = all([(c >= x1) and (c <= x2) for c, (x1, x2) in zip(coords, self.bounding_box)])
 
         return result
 
@@ -466,28 +452,34 @@ class WCS(GWCSAPIMixin):
         """
         with_units = kwargs.pop('with_units', False)
 
+        try:
+            btrans = self.backward_transform
+        except NotImplementedError:
+            btrans = None
         if not utils.isnumerical(args[0]):
+            # convert astropy objects to numbers and arrays
             args = self.output_frame.coordinate_to_quantity(*args)
             if self.output_frame.naxes == 1:
                 args = [args]
-            try:
-                if not self.backward_transform.uses_quantity:
-                    args = utils.get_values(self.output_frame.unit, *args)
-            except (NotImplementedError, KeyError):
+
+            # if the transform does not use units, getthe numerical values
+            if btrans is not None and not btrans.uses_quantity:
                 args = utils.get_values(self.output_frame.unit, *args)
 
-        if 'with_bounding_box' not in kwargs:
-            kwargs['with_bounding_box'] = True
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        fill_value = kwargs.pop('fill_value', np.nan)
+        akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
+        if with_bounding_box and self.bounding_box is not None:
+            args = self.outside_footprint(args)
 
-        if 'fill_value' not in kwargs:
-            kwargs['fill_value'] = np.nan
-
-        try:
-            # remove iterative inverse-specific keyword arguments:
-            akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = self.backward_transform(*args, **akwargs)
-        except (NotImplementedError, KeyError):
+        if btrans is not None:
+            result = btrans(*args, **akwargs)
+        else:
             result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
+
+        # deal with values outside the bounding box
+        if with_bounding_box and self.bounding_box is not None:
+            result = self.out_of_bounds(result, fill_value=fill_value)
 
         if with_units and self.input_frame:
             if self.input_frame.naxes == 1:
@@ -497,7 +489,69 @@ class WCS(GWCSAPIMixin):
         else:
             return result
 
-    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=50, adaptive=True,
+    def outside_footprint(self, world_arrays):
+        world_arrays = list(world_arrays)
+
+        axes_types = set(self.output_frame.axes_type)
+        axes_phys_types = self.world_axis_physical_types
+        footprint = self.footprint()
+        not_numerical = False
+        if not utils.isnumerical(world_arrays[0]):
+            not_numerical = True
+            world_arrays = high_level_objects_to_values(*world_arrays, low_level_wcs=self)
+        for axtyp in axes_types:
+            ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
+
+            for idim, (coord, phys) in enumerate(zip(world_arrays, axes_phys_types)):
+                coord = _tofloat(coord)
+                if np.asarray(ind).sum() > 1:
+                    axis_range = footprint[:, idim]
+                else:
+                    axis_range = footprint
+                range = [axis_range.min(), axis_range.max()]
+
+                if (axtyp == 'SPATIAL' and str(phys).endswith((".ra", ".lon"))
+                    and range[1] - range[0] > 180):
+                        # most likely this coordinate is wrapped at 360
+                        d = np.mean(range)
+                        range = [
+                            axis_range[axis_range < d].max(),
+                            axis_range[axis_range > d].min()
+                        ]
+                        outside = (coord >= range[0]) & (coord < range[1])
+                else:
+                    outside = (coord < range[0]) | (coord > range[1])
+                if np.any(outside):
+                    if np.isscalar(coord):
+                        coord = np.nan
+                    else:
+                        coord[outside] = np.nan
+                    world_arrays[idim] = coord
+        if not_numerical:
+            world_arrays = values_to_high_level_objects(*world_arrays, low_level_wcs=self)
+        return world_arrays
+
+
+    def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
+        if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
+            pixel_arrays = [pixel_arrays]
+
+        pixel_arrays = list(pixel_arrays)
+        bbox = self.bounding_box
+        for idim, pix in enumerate(pixel_arrays):
+            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            if np.any(outside):
+                if np.isscalar(pix):
+                    pixel_arrays[idim] = np.nan
+                else:
+                    pix = pixel_arrays[idim].astype(float, copy=True)
+                    pix[outside] = np.nan
+                    pixel_arrays[idim] = pix
+        if self.input_frame.naxes == 1:
+            pixel_arrays = pixel_arrays[0]
+        return pixel_arrays
+
+    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=30, adaptive=True,
                           detect_divergence=True, quiet=True, with_bounding_box=True,
                           fill_value=np.nan, with_units=False, **kwargs):
         """
@@ -679,7 +733,7 @@ class WCS(GWCSAPIMixin):
         >>> import numpy as np
 
         >>> filename = get_pkg_data_filename('data/nircamwcs.asdf', package='gwcs.tests')
-        >>> with asdf.open(filename, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+        >>> with asdf.open(filename, lazy_load=False, ignore_missing_extensions=True) as af:
         ...    w = af.tree['wcs']
 
         >>> ra, dec = w([1,2,3], [1,1,1])
@@ -1282,10 +1336,31 @@ class WCS(GWCSAPIMixin):
 
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
+
+        if transform_0 is None:
+            return None
+
         try:
             bb = transform_0.bounding_box
         except NotImplementedError:
             return None
+
+        if (
+            # Check that the bounding_box was set on the instance (not a default)
+            transform_0._user_bounding_box is not None
+            # Check the order of that bounding_box is C
+            and bb.order == "C"
+            # Check that the bounding_box is not a single value
+            and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
+        ):
+            warnings.warn(
+                "The bounding_box was set in C order on the transform prior to being used in the gwcs!\n"
+                "Check that you indended that ordering for the bounding_box, and consider setting it in F order.\n"
+                "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS.",
+                GwcsBoundingBoxWarning
+            )
+            self.bounding_box = bb.bounding_box(order="F")
+            bb = self.bounding_box
 
         return bb
 
@@ -1386,17 +1461,22 @@ class WCS(GWCSAPIMixin):
         if bounding_box is None:
             if self.bounding_box is None:
                 raise TypeError("Need a valid bounding_box to compute the footprint.")
-            bb = self.bounding_box
+            bb = self.bounding_box.bounding_box(order='F')
         else:
             bb = bounding_box
 
         all_spatial = all([t.lower() == "spatial" for t in self.output_frame.axes_type])
-
-        if all_spatial:
+        if self.output_frame.naxes == 1:
+            if isinstance(bb[0], u.Quantity):
+                bb = np.asarray([b.value for b in bb]) * bb[0].unit
+            vertices = (bb,)
+        elif all_spatial:
             vertices = _order_clockwise(bb)
         else:
             vertices = np.array(list(itertools.product(*bb))).T
 
+        # workaround an issue with bbox with quantity, interval needs to be a cquantity, not a list of quantities
+        # strip units
         if center:
             vertices = utils._toindex(vertices)
 
@@ -1410,14 +1490,16 @@ class WCS(GWCSAPIMixin):
             axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
             if not axtyp_ind.any():
                 raise ValueError('This WCS does not have axis of type "{}".'.format(axis_type))
-            result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
+            if len(axtyp_ind) > 1:
+                result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
             if axis_type == "spatial":
                 result = _order_clockwise(result)
             else:
                 result.sort()
                 result = np.squeeze(result)
-
+        if self.output_frame.naxes == 1:
+            return np.array([result]).T
         return result.T
 
     def fix_inputs(self, fixed):
@@ -2031,16 +2113,12 @@ class WCS(GWCSAPIMixin):
 
                 # index of the axis in this frame's
                 fidx = frame.axes_order.index(axno)
-                if hasattr(frame.unit[fidx], 'get_format_name'):
-                    cunit = frame.unit[fidx].get_format_name(u.format.Fits).upper()
-                else:
-                    cunit = ''
 
                 axis_info = _WorldAxisInfo(
                     axis=axno,
                     frame=frame,
                     world_axis_order=self.output_frame.axes_order.index(axno),
-                    cunit=cunit,
+                    cunit=frame.unit[fidx].to_string('fits', fraction=True).upper(),
                     ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
                     input_axes=mapping[axno]
                 )

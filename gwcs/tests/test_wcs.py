@@ -7,13 +7,15 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from astropy.modeling import models
+from astropy.modeling import models, bind_compound_bounding_box
+from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy import coordinates as coord
 from astropy.io import fits
 from astropy import units as u
 from astropy import wcs as astwcs
 from astropy.wcs import wcsapi
 from astropy.time import Time
+from astropy.utils.introspection import minversion
 import asdf
 
 from .. import wcs
@@ -23,6 +25,7 @@ from .. import utils
 from ..utils import CoordinateFrameError
 from .utils import _gwcs_from_hst_fits_wcs
 from . import data
+from ..examples import gwcs_2d_bad_bounding_box_order
 
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
@@ -49,6 +52,14 @@ nx, ny = (5, 2)
 x = np.linspace(0, 1, nx)
 y = np.linspace(0, 1, ny)
 xv, yv = np.meshgrid(x, y)
+
+
+def asdf_open_memory_mapping_kwarg(memmap: bool) -> dict:
+    if minversion("asdf", "3.1.0"):
+        return {"memmap": memmap}
+    else :
+        return {"copy_arrays": not memmap}
+
 
 # Test initializing a WCS
 
@@ -382,6 +393,61 @@ def test_grid_from_bounding_box_step():
     with pytest.raises(ValueError):
         grid_from_bounding_box(bb, step=(1, 2, 1))
 
+def test_grid_from_model_bounding_box():
+    bbox = ((-1, 1), (0, 1))
+    # Truth grid
+    grid_truth = grid_from_bounding_box(bbox)
+
+    # Create a bounding box
+    model = models.Const2D() & models.Const1D()
+    model.inputs = ("x", "y", "slit_name")
+    model.bounding_box = ModelBoundingBox(
+        {
+            "x": bbox[0],
+            "y": bbox[1],
+        },
+        model=model,
+        ignored=["slit_name"],
+        order="F",
+    )
+    grid = grid_from_bounding_box(model.bounding_box)
+
+    assert np.all(grid == grid_truth)
+
+
+def test_grid_from_compound_bounding_box():
+    bbox = ((-1, 1), (0, 1))
+    # Truth grid
+    grid_truth = grid_from_bounding_box(bbox)
+
+    # Create a compound bounding box
+    model = models.Const2D() & models.Const1D()
+    model.inputs = ("x", "y", "slit_name")
+    bind_compound_bounding_box(
+        model,
+        {
+            (200,) : {
+                "x": bbox[0],
+                "y": bbox[1],
+            },
+            (300,) :{
+                "x": (-2, 2),
+                "y": (0, 2),
+            }
+        },
+        [("slit_name",)],
+        order="F",
+    )
+    grid = grid_from_bounding_box(model.bounding_box, selector=(200,))
+
+    assert np.all(grid == grid_truth)
+
+    # Capture errors
+    with pytest.raises(ValueError, match=r"Cannot use selector with a non-CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box[(300,)], selector=(300,))
+    with pytest.raises(ValueError, match=r"selector must be set when bounding_box is a CompoundBoundingBox"):
+        grid_from_bounding_box(model.bounding_box)
+
 
 def test_wcs_from_points():
     np.random.seed(0)
@@ -413,6 +479,14 @@ def test_wcs_from_points():
     newra, newdec = w(x, y)
     assert_allclose(newra, ra, atol=10**-6)
     assert_allclose(newdec, dec, atol=10**-6)
+
+    newra, newdec = w.pixel_to_world_values(x, y)
+    assert_allclose(newra, ra, atol=10**-6)
+    assert_allclose(newdec, dec, atol=10**-6)
+
+    newsky = w.pixel_to_world(x, y)
+    assert_allclose(newsky.data.lon.deg, ra, atol=10**-6)
+    assert_allclose(newsky.data.lat.deg, dec, atol=10**-6)
 
 
 def test_grid_from_bounding_box_2():
@@ -648,7 +722,7 @@ def test_to_fits_sip():
     xflat = np.ravel(x[1:-1, 1:-1])
     yflat = np.ravel(y[1:-1, 1:-1])
     fn = os.path.join(data_path, 'miriwcs.asdf')
-    with asdf.open(fn, lazy_load=False, copy_arrays=True, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         miriwcs = af.tree['wcs']
     bounding_box = ((0, 1024), (0, 1024))
     mirisip = miriwcs.to_fits_sip(bounding_box, max_inv_pix_error=0.1, verbose=True)
@@ -1009,7 +1083,7 @@ def test_to_fits_tab_time_cube(gwcs_cube_with_separable_time):
 def test_to_fits_tab_miri_image():
     # gWCS:
     fn = os.path.join(data_path, 'miriwcs.asdf')
-    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         w = af.tree['wcs']
 
     # FITS WCS -TAB:
@@ -1033,7 +1107,7 @@ def test_to_fits_tab_miri_image():
 
 def test_to_fits_tab_miri_lrs():
     fn = os.path.join(data_path, 'miri_lrs_wcs.asdf')
-    with asdf.open(fn, copy_arrays=True, lazy_load=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=False)) as af:
         w = af.tree['wcs']
 
     # FITS WCS -TAB:
@@ -1089,8 +1163,8 @@ def test_in_image():
 
     assert np.isscalar(w2.in_image(2, 6))
     assert not np.isscalar(w2.in_image([2], [6]))
-    assert w2.in_image(4, 6)
-    assert not w2.in_image(5, 0)
+    assert (w2.in_image(4, 6))
+    assert not (w2.in_image(5, 0))
     assert np.array_equal(
         w2.in_image(
             [[9, 10, 11, 15], [8, 9, 67, 98], [2, 2, np.nan, 102]],
@@ -1102,7 +1176,7 @@ def test_in_image():
 
 def test_iter_inv():
     fn = os.path.join(data_path, 'nircamwcs.asdf')
-    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=True)) as af:
         w = af.tree['wcs']
     # remove analytic/user-supplied inverse:
     w.pipeline[0].transform.inverse = None
@@ -1125,11 +1199,12 @@ def test_iter_inv():
         *w(x, y),
         adaptive=True,
         detect_divergence=True,
+        tolerance=1e-4, maxiter=50,
         quiet=False
     )
     assert np.allclose((x, y), (xp, yp))
 
-    with asdf.open(fn, lazy_load=False, copy_arrays=False, ignore_missing_extensions=True) as af:
+    with asdf.open(fn, lazy_load=False, ignore_missing_extensions=True, **asdf_open_memory_mapping_kwarg(memmap=True)) as af:
         w = af.tree['wcs']
 
     # test single point
@@ -1144,6 +1219,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y),
         adaptive=True,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=False,
         quiet=False
     )
@@ -1178,6 +1254,7 @@ def test_iter_inv():
     xp, yp = w.numerical_inverse(
         *w(x, y, with_bounding_box=False),
         adaptive=False,
+        tolerance=1e-5, maxiter=50,
         detect_divergence=True,
         quiet=False,
         with_bounding_box=False
@@ -1191,6 +1268,7 @@ def test_iter_inv():
         xp, yp = w.numerical_inverse(
             *w(x, y, with_bounding_box=False),
             adaptive=False,
+            tolerance=1e-5, maxiter=50,
             detect_divergence=True,
             quiet=False,
             with_bounding_box=False
@@ -1264,7 +1342,7 @@ def test_sip_roundtrip():
         assert hdr[k] == hdr_back[k]
 
     for k in ['cd1_1', 'cd1_2', 'cd2_1', 'cd2_2']:
-        assert np.allclose(hdr[k], hdr_back[k], atol=0, rtol=1e-9)
+        assert np.allclose(hdr[k], hdr_back[k], atol=1e-14, rtol=1e-9)
 
     for t in ('a', 'b'):
         order = hdr[f'{t}_order']
@@ -1275,7 +1353,7 @@ def test_sip_roundtrip():
                     assert np.allclose(
                         hdr[k],
                         hdr_back[k],
-                        atol=0.0,
+                        atol=1e-15,
                         rtol=1.0e-8 * 10**(i + j)
                     )
 
@@ -1321,3 +1399,78 @@ def test_spatial_spectral_stokes():
 def test_wcs_str():
     w = wcs.WCS(output_frame="icrs")
     assert 'icrs' in str(w)
+
+
+def test_bounding_box_is_returned_F():
+    bbox_tuple = ((1, 2), (3, 4))
+
+    detector_2d_frame = cf.Frame2D(name='detector', axes_order=(0, 1))
+    model_2d_shift = models.Shift(1) & models.Shift(2)
+
+    model_2d_shift_bbox = model_2d_shift.copy()
+    model_2d_shift_bbox.bounding_box = bbox_tuple
+
+    frame = cf.CoordinateFrame(name="quantity", axes_order=(0, 1), naxes=2, axes_type=("SPATIAL", "SPATIAL"), unit=(u.km, u.km))
+
+    # Demonstrate that model_2d_shift does not have a bounding box
+    with pytest.raises(NotImplementedError):
+        model_2d_shift.bounding_box
+
+    # Demonstrate that model_2d_shift_bbox does have a bounding box
+    assert model_2d_shift_bbox.bounding_box == bbox_tuple
+
+    # Demonstrate the model_2d_shift_bbox has order "C"
+    assert model_2d_shift_bbox.bounding_box.order == "C"
+
+    # Create a WCS and then set a bounding box on it
+    pipeline_bbox_after = [(detector_2d_frame, model_2d_shift), (frame, None)]
+    gwcs_object_after = wcs.WCS(pipeline_bbox_after)
+    gwcs_object_after.bounding_box = bbox_tuple
+
+    assert gwcs_object_after.bounding_box == bbox_tuple
+    assert gwcs_object_after.bounding_box.order == "F"
+
+    # Create a WCS on transform with a bounding box
+    pipeline_bbox_before = [(detector_2d_frame, model_2d_shift_bbox), (frame, None)]
+    gwcs_object_before = wcs.WCS(pipeline_bbox_before)
+
+    # Check that first access in this case will raise a warning
+    with pytest.warns(wcs.GwcsBoundingBoxWarning):
+        gwcs_object_before.bounding_box
+
+    # Check order is returned as F
+    assert gwcs_object_before.bounding_box.order == "F"
+
+    # The bounding box tuple will now be ordered differently than the original
+    # Tuple due to the order change
+    assert gwcs_object_before.bounding_box != bbox_tuple
+    assert gwcs_object_before.bounding_box.bounding_box(order="C") == bbox_tuple
+
+    # Show the the bounding box is different between the two WCS objects
+    assert gwcs_object_after.bounding_box != gwcs_object_before.bounding_box
+
+
+def test_no_bounding_box_if_read_from_file(tmp_path):
+    bad_wcs = gwcs_2d_bad_bounding_box_order()
+
+    # Check the waring is issued for the bounding box of this WCS object
+    with pytest.warns(wcs.GwcsBoundingBoxWarning):
+        bad_wcs.bounding_box
+
+    # Check that the warning is not issued again the second time
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bad_wcs.bounding_box
+
+    # Write a bad wcs bounding box to an asdf file
+    asdf_file = tmp_path / "bad_wcs.asdf"
+    af = asdf.AsdfFile({"wcs": gwcs_2d_bad_bounding_box_order()}) # re-create the bad wcs object
+    af.write_to(asdf_file)
+
+    with asdf.open(asdf_file) as af:
+        wcs_from_file = af["wcs"]
+
+    # Check that no warning is issued for the bounding box of this WCS object
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        wcs_from_file.bounding_box

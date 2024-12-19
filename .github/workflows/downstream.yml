@@ -1,0 +1,109 @@
+name: test downstream packages
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly Monday 9AM build
+    # * is a special character in YAML so you have to quote this string
+    - cron: '0 9 * * 1'
+  pull_request:
+    # We also want this workflow triggered if the `Downstream CI` label is
+    # added or present when PR is updated
+    types:
+      - synchronize
+      - labeled
+  push:
+    tags:
+      - '*'
+
+# Only cancel in-progress jobs or runs for the current workflow
+#   This cancels the already triggered workflows for a specific PR without canceling
+#   other instances of this workflow (other PRs, scheduled triggers, etc) when something
+#   within that PR re-triggers this CI
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  environment:
+    runs-on: ubuntu-latest
+    steps:
+      - id: data_path
+        run: echo "path=${{ runner.temp }}/data" >> $GITHUB_OUTPUT
+    outputs:
+      data_path: ${{ steps.data_path.outputs.path }}
+
+  crds_contexts:
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
+
+  jwst:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@d68193b68216da64eafaa618f53c59f5d271c56e  # v1.14.0
+    needs: [ environment, crds_contexts ]
+    with:
+      setenv: |
+        CRDS_PATH: ${{ needs.environment.outputs.data_path }}/crds
+        CRDS_SERVER_URL: https://jwst-crds.stsci.edu
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      cache-path: ${{ needs.environment.outputs.data_path }}/crds
+      cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
+      envs: |
+        - linux: py311-test-jwst-cov-xdist
+
+  romancal:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@d68193b68216da64eafaa618f53c59f5d271c56e  # v1.14.0
+    needs: [ environment, crds_contexts ]
+    with:
+      setenv: |
+        CRDS_PATH: ${{ needs.environment.outputs.data_path }}/crds
+        CRDS_SERVER_URL: https://roman-crds.stsci.edu
+        CRDS_CLIENT_RETRY_COUNT: 3
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+      cache-path: ${{ needs.environment.outputs.data_path }}/crds
+      cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
+      envs: |
+        - linux: py311-test-romancal-cov-xdist
+
+  romanisim_data:
+    needs: [ environment ]
+    uses: spacetelescope/romanisim/.github/workflows/retrieve_cache.yml@main
+    with:
+      cache_path: ${{ needs.environment.outputs.data_path }}
+
+  romanisim:
+    needs: [ romanisim_data ]
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@d68193b68216da64eafaa618f53c59f5d271c56e  # v1.14.0
+    with:
+      libraries: |
+        brew:
+          - eigen
+          - fftw
+      setenv: |
+        WEBBPSF_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/webbpsf-data/
+        GALSIM_CAT_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/galsim_data/real_galaxy_catalog_23.5_example.fits
+        FFTW_DIR: /opt/homebrew/opt/fftw/lib/
+      cache-path: ${{ needs.romanisim_data.outputs.cache_path }}
+      cache-key: ${{ needs.romanisim_data.outputs.cache_key }} 
+      envs: |
+        - linux: py311-test-romanisim-cov-xdist
+
+  astropy:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@d68193b68216da64eafaa618f53c59f5d271c56e  # v1.14.0
+    if: (github.repository == 'spacetelescope/gwcs' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Downstream CI')))
+    with:
+      submodules: false
+      # Any env name which does not start with `pyXY` will use this Python version.
+      default_python: '3.11'
+      envs: |
+        - linux: specutils
+
+  third-party:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@d68193b68216da64eafaa618f53c59f5d271c56e  # v1.14.0
+    if: (github.repository == 'spacetelescope/gwcs' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Downstream CI')))
+    with:
+      submodules: false
+      # Any env name which does not start with `pyXY` will use this Python version.
+      default_python: '3.11'
+      envs: |
+        - linux: ndcube
+        - linux: dkist

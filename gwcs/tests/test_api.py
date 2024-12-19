@@ -63,7 +63,6 @@ fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=
 
 @fixture_all_wcses
 def test_lowlevel_types(wcsobj):
-    pytest.importorskip("typeguard")
     try:
         # Skip this on older versions of astropy where it dosen't exist.
         from astropy.wcs.wcsapi.tests.utils import validate_low_level_wcs_types
@@ -165,8 +164,10 @@ def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
 
 def test_world_axis_object_components_2d(gwcs_2d_spatial_shift):
     waoc = gwcs_2d_spatial_shift.world_axis_object_components
-    assert waoc == [('celestial', 0, 'spherical.lon'),
-                    ('celestial', 1, 'spherical.lat')]
+    assert waoc[0][:2] == ('celestial', 0)
+    assert callable(waoc[0][2])
+    assert waoc[1][:2] == ('celestial', 1)
+    assert callable(waoc[1][2])
 
 
 def test_world_axis_object_components_2d_generic(gwcs_2d_quantity_shift):
@@ -177,15 +178,19 @@ def test_world_axis_object_components_2d_generic(gwcs_2d_quantity_shift):
 
 def test_world_axis_object_components_1d(gwcs_1d_freq):
     waoc = gwcs_1d_freq.world_axis_object_components
-    assert waoc == [('spectral', 0, 'value')]
+    assert [c[:2] for c in waoc] == [('spectral', 0)]
+    assert callable(waoc[0][2])
 
 
 def test_world_axis_object_components_4d(gwcs_4d_identity_units):
     waoc = gwcs_4d_identity_units.world_axis_object_components
-    assert waoc[0:3] == [('celestial', 0, 'spherical.lon'),
-                         ('celestial', 1, 'spherical.lat'),
-                         ('spectral', 0, 'value')]
-    assert waoc[3][0:2] == ('temporal', 0)
+    first_two = [c[:2] for c in waoc]
+    last_one = [c[2] for c in waoc]
+    assert first_two == [('celestial', 0),
+                         ('celestial', 1),
+                         ('spectral', 0),
+                         ('temporal', 0)]
+    assert all([callable(l) for l in last_one])
 
 
 def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
@@ -230,12 +235,12 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
 def _compare_frame_output(wc1, wc2):
     if isinstance(wc1, coord.SkyCoord):
         assert isinstance(wc1.frame, type(wc2.frame))
-        assert u.allclose(wc1.spherical.lon, wc2.spherical.lon)
-        assert u.allclose(wc1.spherical.lat, wc2.spherical.lat)
-        assert u.allclose(wc1.spherical.distance, wc2.spherical.distance)
+        assert u.allclose(wc1.spherical.lon, wc2.spherical.lon, equal_nan=True)
+        assert u.allclose(wc1.spherical.lat, wc2.spherical.lat,  equal_nan=True)
+        assert u.allclose(wc1.spherical.distance, wc2.spherical.distance,  equal_nan=True)
 
     elif isinstance(wc1, u.Quantity):
-        assert u.allclose(wc1, wc2)
+        assert u.allclose(wc1, wc2, equal_nan=True)
 
     elif isinstance(wc1, time.Time):
         assert u.allclose((wc1 - wc2).to(u.s), 0*u.s)
@@ -252,12 +257,6 @@ def _compare_frame_output(wc1, wc2):
 
 @fixture_all_wcses
 def test_high_level_wrapper(wcsobj, request):
-    if request.node.callspec.params['wcsobj'] in ('gwcs_4d_identity_units', 'gwcs_stokes_lookup'):
-        pytest.importorskip("astropy", minversion="4.0dev0")
-
-    # Remove the bounding box because the type test is a little broken with the
-    # bounding box.
-    del wcsobj._pipeline[0].transform.bounding_box
 
     hlvl = HighLevelWCSWrapper(wcsobj)
 
@@ -280,8 +279,6 @@ def test_high_level_wrapper(wcsobj, request):
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
-    pytest.importorskip("astropy", minversion="4.0dev0")
-
     hlvl = HighLevelWCSWrapper(gwcs_stokes_lookup)
 
     pixel_input = [0, 1, 2, 3]
@@ -463,10 +460,11 @@ def test_world_to_pixel(gwcs_2d_spatial_shift, sky_ra_dec):
     assert_allclose(wcsobj.world_to_pixel(sky), wcsobj.invert(ra, dec, with_units=False))
 
 
-def test_world_to_array_index(gwcs_2d_spatial_shift, sky_ra_dec):
-    wcsobj = gwcs_2d_spatial_shift
+def test_world_to_array_index(gwcs_simple_imaging, sky_ra_dec):
+    wcsobj = gwcs_simple_imaging
     sky, ra, dec = sky_ra_dec
-    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra, dec, with_units=False)[::-1])
+
+    assert_allclose(wcsobj.world_to_array_index(sky), wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1])
 
 
 def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
@@ -476,12 +474,12 @@ def test_world_to_pixel_values(gwcs_2d_spatial_shift, sky_ra_dec):
     assert_allclose(wcsobj.world_to_pixel_values(sky), wcsobj.invert(ra, dec, with_units=False))
 
 
-def test_world_to_array_index_values(gwcs_2d_spatial_shift, sky_ra_dec):
-    wcsobj = gwcs_2d_spatial_shift
+def test_world_to_array_index_values(gwcs_simple_imaging, sky_ra_dec):
+    wcsobj = gwcs_simple_imaging
     sky, ra, dec = sky_ra_dec
 
     assert_allclose(wcsobj.world_to_array_index_values(sky),
-                    wcsobj.invert(ra, dec, with_units=False)[::-1])
+                    wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1])
 
 
 def test_ndim_str_frames(gwcs_with_frames_strings):
@@ -521,3 +519,19 @@ def test_coordinate_frame_api():
 
     pixel2 = wcs.invert(world)
     assert u.allclose(pixel2, 0*u.pix)
+
+
+def test_world_axis_object_components_units(gwcs_3d_identity_units):
+    from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values
+
+    wcs = gwcs_3d_identity_units
+    world = wcs.pixel_to_world(1, 1, 1)
+
+    values = high_level_objects_to_values(*world, low_level_wcs=wcs)
+
+    expected_values = [world[0].spherical.lon.to_value(wcs.output_frame.unit[0]),
+                       world[0].spherical.lon.to_value(wcs.output_frame.unit[1]),
+                       world[1].to_value(wcs.output_frame.unit[2])]
+
+    assert not any([isinstance(o, u.Quantity) for o in values])
+    np.testing.assert_allclose(values, expected_values)

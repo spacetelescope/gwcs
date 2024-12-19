@@ -190,7 +190,6 @@ def test_temporal_relative():
     assert a[1] == Time("2018-01-01T00:00:00") + 20 * u.s
 
 
-@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher")
 def test_temporal_absolute():
     t = cf.TemporalFrame(reference_frame=Time([], format='isot'))
     assert t.coordinates("2018-01-01T00:00:00") == Time("2018-01-01T00:00:00")
@@ -240,7 +239,6 @@ def test_coordinate_to_quantity_spectral(inp):
     (Time("2011-01-01T00:00:10"),),
     (10 * u.s,)
 ])
-@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher.")
 def test_coordinate_to_quantity_temporal(inp):
     temp = cf.TemporalFrame(reference_frame=Time("2011-01-01T00:00:00"), unit=u.s)
 
@@ -325,7 +323,6 @@ def test_coordinate_to_quantity_frame_2d():
         assert_quantity_allclose(output, exp)
 
 
-@pytest.mark.skipif(astropy_version<"4", reason="Requires astropy 4.0 or higher.")
 def test_coordinate_to_quantity_error():
     frame = cf.Frame2D(unit=(u.one, u.arcsec))
     with pytest.raises(ValueError):
