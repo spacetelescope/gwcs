@@ -497,7 +497,7 @@ def test_world_to_array_index_values(gwcs_simple_imaging, sky_ra_dec):
     wcsobj = gwcs_simple_imaging
     sky, ra, dec = sky_ra_dec
 
-    assert_allclose(wcsobj.world_to_array_index_values(sky),
+    assert_allclose(wcsobj.world_to_array_index_values(ra, dec),
                     wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1])
 
 
