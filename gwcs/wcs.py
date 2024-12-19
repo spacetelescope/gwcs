@@ -551,16 +551,11 @@ class WCS(GWCSAPIMixin):
         return result
 
     def outside_footprint(self, world_arrays):
-        world_eps = 5.0 * np.finfo(np.float32).eps
-        eps_p = 1.0 + world_eps
-        eps_m = 1.0 - world_eps
-
         world_arrays = list(world_arrays)
 
         axes_types = set(self.output_frame.axes_type)
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
-
         not_numerical = False
         if utils.is_high_level(world_arrays[0], low_level_wcs=self):
             not_numerical = True
@@ -584,10 +579,9 @@ class WCS(GWCSAPIMixin):
                             axis_range[axis_range < d].max(),
                             axis_range[axis_range > d].min()
                         ]
-                        outside = (coord > range[0] * eps_p) & (coord < range[1] * eps_m)
+                        outside = (coord >= range[0]) & (coord < range[1])
                 else:
-                    outside = (coord < range[0] * eps_m) | (coord > range[1] * eps_p)
-
+                    outside = (coord < range[0]) | (coord > range[1])
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
