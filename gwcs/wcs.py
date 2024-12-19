@@ -508,19 +508,19 @@ class WCS(GWCSAPIMixin):
                     axis_range = footprint[:, idim]
                 else:
                     axis_range = footprint
-                range = [axis_range.min(), axis_range.max()]
+                min_ax = axis_range.min()
+                max_ax = axis_range.max()
 
                 if (axtyp == 'SPATIAL' and str(phys).endswith((".ra", ".lon"))
-                    and range[1] - range[0] > 180):
+                    and (max_ax - min_ax) > 180):
                         # most likely this coordinate is wrapped at 360
-                        d = np.mean(range)
-                        range = [
-                            axis_range[axis_range < d].max(),
-                            axis_range[axis_range > d].min()
-                        ]
-                        outside = (coord >= range[0]) & (coord < range[1])
+                        d = 0.5 * (min_ax + max_ax)
+                        m = (axis_range <= d)
+                        min_ax = axis_range[m].max()
+                        max_ax = axis_range[~m].min()
+                        outside = (coord > min_ax) & (coord < max_ax)
                 else:
-                    outside = (coord < range[0]) | (coord > range[1])
+                    outside = (coord < min_ax) | (coord > max_ax)
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
