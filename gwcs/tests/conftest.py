@@ -146,3 +146,8 @@ def spher_to_cart():
 @pytest.fixture
 def cart_to_spher():
     return geometry.CartesianToSpherical()
+
+
+@pytest.fixture
+def gwcs_with_pipeline_celestial():
+    return examples.gwcs_with_pipeline_celestial()
