@@ -18,14 +18,13 @@ from astropy.time import Time
 from astropy.utils.introspection import minversion
 import asdf
 
-from .. import wcs
-from ..wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
-from .. import coordinate_frames as cf
-from .. import utils
-from ..utils import CoordinateFrameError
-from .utils import _gwcs_from_hst_fits_wcs
-from . import data
-from ..examples import gwcs_2d_bad_bounding_box_order
+from gwcs import wcs
+from gwcs.wcstools import (wcs_from_fiducial, grid_from_bounding_box, wcs_from_points)
+from gwcs import coordinate_frames as cf
+from gwcs.utils import CoordinateFrameError
+from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
+from gwcs.tests import data
+from gwcs.examples import gwcs_2d_bad_bounding_box_order
 
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
@@ -35,7 +34,7 @@ m1 = models.Shift(12.4) & models.Shift(-2)
 m2 = models.Scale(2) & models.Scale(-2)
 m = m1 | m2
 
-icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs')
+icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs', unit=(u.deg, u.deg))
 detector = cf.Frame2D(name='detector', axes_order=(0, 1))
 focal = cf.Frame2D(name='focal', axes_order=(0, 1), unit=(u.m, u.m))
 spec = cf.SpectralFrame(name='wave', unit=[u.m, ], axes_order=(2, ), axes_names=('lambda', ))
@@ -208,48 +207,6 @@ def test_backward_transform_has_inverse():
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
-def test_return_coordinates():
-    """Test converting to coordinate objects or quantities."""
-    w = wcs.WCS(pipe[:])
-    x = 1
-    y = 2.3
-    numerical_result = (26.8, -0.6)
-    # Celestial frame
-    num_plus_output = w(x, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
-    assert_allclose(w(x, y), numerical_result)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-    assert_allclose(w.invert(num_plus_output), (x, y))
-    assert isinstance(num_plus_output, coord.SkyCoord)
-
-    # Spectral frame
-    poly = models.Polynomial1D(1, c0=1, c1=2)
-    w = wcs.WCS(forward_transform=poly, output_frame=spec)
-    numerical_result = poly(y)
-    num_plus_output = w(y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(num_plus_output)
-    assert_allclose(utils.get_values(w.unit, output_quant), numerical_result)
-    assert isinstance(num_plus_output, u.Quantity)
-
-    # CompositeFrame - [celestial, spectral]
-    output_frame = cf.CompositeFrame(frames=[icrs, spec])
-    transform = m1 & poly
-    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
-    numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-
-    # CompositeFrame - [celestial, Stokes]
-    output_frame = cf.CompositeFrame(frames=[icrs, stokes])
-    transform = m1 & models.Identity(1)
-    w = wcs.WCS(forward_transform=transform, output_frame=output_frame)
-    numerical_result = transform(x, y, y)
-    num_plus_output = w(x, y, y, with_units=True)
-    output_quant = w.output_frame.coordinate_to_quantity(*num_plus_output)
-    assert_allclose(utils.get_values(w.unit, *output_quant), numerical_result)
-
-
 def test_from_fiducial_sky():
     sky = coord.SkyCoord(1.63 * u.radian, -72.4 * u.deg, frame='fk5')
     tan = models.Pix2Sky_TAN()
@@ -269,7 +226,7 @@ def test_from_fiducial_composite():
     assert isinstance(w.cube_frame.frames[1].reference_frame, coord.FK5)
     assert_allclose(w(1, 1, 1), (1.5, 96.52373368309931, -71.37420187296995))
     # test returning coordinate objects with composite output_frame
-    res = w(1, 2, 2, with_units=True)
+    res = w.pixel_to_world(1, 2, 2)
     assert_allclose(res[0], u.Quantity(1.5 * u.micron))
     assert isinstance(res[1], coord.SkyCoord)
     assert_allclose(res[1].ra.value, 99.329496642319)
@@ -281,7 +238,7 @@ def test_from_fiducial_composite():
     assert_allclose(w(1, 1, 1), (11.5, 99.97738475762152, -72.29039139739766))
     # test coordinate object output
 
-    coord_result = w(1, 1, 1, with_units=True)
+    coord_result = w.pixel_to_world(1, 1, 1)
     assert_allclose(coord_result[0], u.Quantity(11.5 * u.micron))
 
 
@@ -312,13 +269,16 @@ def test_bounding_box():
     with pytest.raises(ValueError):
         w.bounding_box = ((1, 5), (2, 6))
 
+
+def test_bounding_box_units():
     # Test that bounding_box with quantities can be assigned and evaluates
     bb = ((1 * u.pix, 5 * u.pix), (2 * u.pix, 6 * u.pix))
     trans = models.Shift(10 * u .pix) & models.Shift(2 * u.pix)
     pipeline = [('detector', trans), ('sky', None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
-    assert_allclose(w(-1*u.pix, -1*u.pix), (np.nan, np.nan))
+    world = w(-1*u.pix, -1*u.pix)
+    assert_allclose(world, (np.nan, np.nan))
 
 
 def test_compound_bounding_box():
@@ -506,7 +466,8 @@ def test_bounding_box_eval():
     Tests evaluation with and without respecting the bounding_box.
     """
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    pipeline = [('detector', trans3), ('sky', None)]
+    pipeline = [(cf.CoordinateFrame(naxes=1, axes_type=("PIXEL",), axes_order=(0,), name='detector'), trans3),
+                (cf.CoordinateFrame(naxes=1, axes_type=("SPATIAL",), axes_order=(0,), name='sky'), None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = ((-1, 10), (6, 15), (4.3, 6.9))
 
@@ -647,11 +608,13 @@ class TestImaging(object):
         tan = models.Pix2Sky_TAN(name='tangent_projection')
         sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name='sky')
         det = cf.Frame2D(name='detector')
+        focal = cf.Frame2D(name='focal')
         wcs_forward = wcslin | tan | n2c
-        pipeline = [wcs.Step('detector', distortion),
-                    wcs.Step('focal', wcs_forward),
-                    wcs.Step(sky_cs, None)
-                    ]
+        pipeline = [
+            wcs.Step(det, distortion),
+            wcs.Step(focal, wcs_forward),
+            wcs.Step(sky_cs, None)
+        ]
 
         self.wcs = wcs.WCS(input_frame=det,
                            output_frame=sky_cs,
@@ -698,7 +661,7 @@ class TestImaging(object):
 
     def test_back_coordinates(self):
         sky_coord = self.wcs(1, 2, with_units=True)
-        res = self.wcs.transform('sky', 'focal', sky_coord)
+        res = self.wcs.transform('sky', 'focal', sky_coord, with_units=False)
         assert_allclose(res, self.wcs.get_transform('detector', 'focal')(1, 2))
 
     def test_units(self):
@@ -818,7 +781,7 @@ def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
     assert fw_hdr['NAXIS2'] == 64
 
     fw = astwcs.WCS(fw_hdr)
-    gskyval = w(1, 60, 55, with_units=True)[0]
+    gskyval = w.pixel_to_world(1, 60, 55)[1]
     fskyval = fw.all_pix2world(1, 60, 0)
     fskyval = [float(fskyval[ra_axis - 1]), float(fskyval[dec_axis - 1])]
     assert np.allclose([gskyval.ra.value, gskyval.dec.value], fskyval)
@@ -831,7 +794,7 @@ def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
     assert fw_hdr['CTYPE1'] == 'GLAT-TAN'
 
     fw = astwcs.WCS(fw_hdr)
-    gskyval = w(7, 8, 9, with_units=True)[0]
+    gskyval = w.pixel_to_world(7, 8, 9)[0]
     assert np.allclose([gskyval.b.value, gskyval.l.value],
                        fw.all_pix2world(7, 9, 0), atol=1e-3)
 
@@ -1474,3 +1437,170 @@ def test_no_bounding_box_if_read_from_file(tmp_path):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         wcs_from_file.bounding_box
+
+
+def test_split_frame_wcs():
+    # Setup a WCS where the pixel & world axes are (lat, wave, lon)
+
+    # We setup a model which is pretending to be a celestial transform. Note
+    # that we are pretending that this model is ordered lon, lat because that's
+    # what the projections require in astropy.
+
+    # Input is (lat, wave, lon)
+    # lat: multuply by 20 arcsec, lon: multiply by 15 deg
+    # result should be 20 arcsec, 10nm, 45 deg
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
+    compound = models.Linear1D(intercept=0*u.nm, slope=10*u.nm/u.pix) & spatial
+    # This forward transforms uses mappings to be (lat, wave, lon)
+    forward = models.Mapping((1, 0, 2)) | compound |  models.Mapping((1, 0, 2))
+
+    # Setup the output frame
+    celestial_frame = cf.CelestialFrame(axes_order=(2, 0), unit=(u.deg, u.arcsec),
+                                      reference_frame=coord.ICRS(), axes_names=('lon', 'lat'))
+    #celestial_frame = cf.CelestialFrame(axes_order=(2, 0), unit=(u.arcsec, u.deg),
+    #                                    reference_frame=coord.ICRS())
+    spectral_frame = cf.SpectralFrame(axes_order=(1,), unit=u.nm, axes_names='wave')
+    output_frame = cf.CompositeFrame([spectral_frame, celestial_frame])
+    #output_frame = cf.CompositeFrame([celestial_frame, spectral_frame])
+
+    input_frame = cf.CoordinateFrame(3, ["PIXEL"]*3,
+                                     axes_order=list(range(3)), unit=[u.pix]*3)
+
+    iwcs = wcs.WCS(forward, input_frame, output_frame)
+    input_pixel = [1*u.pix, 1*u.pix, 3*u.pix]
+    output_world = iwcs.pixel_to_world_values(*input_pixel)
+    output_pixel = iwcs.world_to_pixel_values(*output_world)
+    assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
+
+    expected_world = [20*u.arcsec, 10*u.nm, 45*u.deg]
+    #expected_world = [15*u.deg, 20*u.nm, 60*u.arcsec]
+    for expected, output in zip(expected_world, output_world):
+        assert_allclose(output, expected.value)
+
+    world_obj = iwcs.pixel_to_world(*input_pixel)
+    assert isinstance(world_obj[0], coord.SkyCoord)
+    assert isinstance(world_obj[1], coord.SpectralCoord)
+
+    assert u.allclose(world_obj[0].spherical.lat, expected_world[0])
+    assert u.allclose(world_obj[0].spherical.lon, expected_world[2])
+    assert u.allclose(world_obj[1], expected_world[1])
+
+    obj_pixel = iwcs.world_to_pixel(*world_obj)
+    assert_allclose(obj_pixel, u.Quantity(input_pixel).to_value(u.pix))
+
+
+def test_reordered_celestial():
+    # This is a spatial model which is ordered lat, lon for the purposes of this test.
+    # Expected lat=45 deg, lon=20 arcsec
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix) | models.Mapping((1,0))
+
+    celestial_frame = cf.CelestialFrame(axes_order=(1, 0), unit=(u.arcsec, u.deg),
+                                        reference_frame=coord.ICRS())
+
+    input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
+                                     axes_order=list(range(2)), unit=[u.pix]*2)
+
+    iwcs = wcs.WCS(spatial, input_frame, celestial_frame)
+
+    input_pixel = [1*u.pix, 3*u.pix]
+    output_world = iwcs.pixel_to_world_values(*input_pixel)
+    output_pixel = iwcs.world_to_pixel_values(*output_world)
+    assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
+
+    expected_world = [45*u.deg, 20*u.arcsec]
+    assert_allclose(output_world, [e.value for e in expected_world])
+
+    world_obj = iwcs.pixel_to_world(*input_pixel)
+    assert isinstance(world_obj, coord.SkyCoord)
+
+    assert u.allclose(world_obj.spherical.lat, expected_world[0])
+    assert u.allclose(world_obj.spherical.lon, expected_world[1])
+
+    obj_pixel = iwcs.world_to_pixel(world_obj)
+    assert_allclose(obj_pixel, u.Quantity(input_pixel).to_value(u.pix))
+
+
+def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
+    """
+    This test checks that high level objects still work with a multi-stage
+    pipeline when doing forward transforms.
+    """
+    iwcs = gwcs_with_pipeline_celestial
+
+    input_pixel = [1*u.pix, 1*u.pix]
+
+    output_world = iwcs(*input_pixel)
+
+    assert output_world[0].unit == u.deg
+    assert output_world[1].unit == u.deg
+    assert u.allclose(output_world[0], 20*u.arcsec + 1*u.deg)
+    assert u.allclose(output_world[1], 15*u.deg + 2*u.deg)
+
+    # with_units=True puts the result in the frame units rather than in the
+    # model units.
+    output_world_with_units = iwcs(*input_pixel, with_units=True)
+    assert output_world_with_units[0].unit is u.arcsec
+    assert output_world_with_units[1].unit is u.arcsec
+
+    # This should be in model units of the spatial model
+    intermediate_world = iwcs.transform(
+        "input",
+        "celestial",
+        *input_pixel,
+    )
+    assert intermediate_world[0].unit == u.arcsec
+    assert intermediate_world[1].unit == u.deg
+    assert u.allclose(intermediate_world[0], 20*u.arcsec)
+    assert u.allclose(intermediate_world[1], 15*u.deg)
+
+    intermediate_world_with_units = iwcs.transform(
+        "input",
+        "celestial",
+        *input_pixel,
+        with_units=True
+    )
+    assert isinstance(intermediate_world_with_units, coord.SkyCoord)
+    sc = intermediate_world_with_units
+    assert u.allclose(sc.ra, 20*u.arcsec)
+    assert u.allclose(sc.dec, 15*u.deg)
+
+
+def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
+    """
+    This test checks that high level objects still work with a multi-stage
+    pipeline when doing backward transforms.
+    """
+    iwcs = gwcs_with_pipeline_celestial
+
+    input_world = [
+        20*u.arcsec + 1*u.deg,
+        15*u.deg + 2*u.deg,
+    ]
+    pixel = iwcs.invert(*input_world)
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1]*u.pix)
+
+    pixel = iwcs.invert(
+        *input_world,
+        with_units=True,
+    )
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1]*u.pix)
+
+    intermediate_world = iwcs.transform(
+        "output",
+        "celestial",
+        *input_world,
+    )
+    assert all(isinstance(p, u.Quantity) for p in intermediate_world)
+    assert u.allclose(intermediate_world, [20*u.arcsec, 15*u.deg])
+
+    intermediate_world = iwcs.transform(
+        "output",
+        "celestial",
+        *input_world,
+        with_units=True,
+    )
+    assert isinstance(intermediate_world, coord.SkyCoord)

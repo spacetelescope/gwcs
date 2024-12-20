@@ -531,7 +531,20 @@ class RegionsSelector(Model):
             raise ValueError('"0" and " " are not allowed as keys.')
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(RegionsSelector, self).__init__(n_models=1, name=name, **kwargs)
+        super().__init__(n_models=1, name=name, **kwargs)
+        # Validate uses_quantity at init time for nicer error message
+        self.uses_quantity  # noqa
+
+    @property
+    def uses_quantity(self):
+        all_uses_quantity = [t.uses_quantity for t in self._selector.values()]
+        not_all_uses_quantity = [not uq for uq in all_uses_quantity]
+        if all(all_uses_quantity):
+            return True
+        elif not_all_uses_quantity:
+            return False
+        else:
+            raise ValueError("You can not mix models which use quantity and do not use quantity inside a RegionSelector")
 
     def set_input(self, rid):
         """

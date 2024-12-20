@@ -1,10 +1,124 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-Defines coordinate frames and ties them to data axes.
+This module defines coordinate frames for describing the inputs and/or outputs
+of a transform.
+
+In the block diagram, the WCS pipeline has a two stage transformation (two
+astropy Model instances), with an input frame, an output frame and an
+intermediate frame.
+
+.. code-block::
+
+    ┌───────────────┐
+    │               │
+    │     Input     │
+    │     Frame     │
+    │               │
+    └───────┬───────┘
+            │
+      ┌─────▼─────┐
+      │ Transform │
+      └─────┬─────┘
+            │
+    ┌───────▼───────┐
+    │               │
+    │  Intermediate │
+    │     Frame     │
+    │               │
+    └───────┬───────┘
+            │
+      ┌─────▼─────┐
+      │ Transform │
+      └─────┬─────┘
+            │
+    ┌───────▼───────┐
+    │               │
+    │    Output     │
+    │     Frame     │
+    │               │
+    └───────────────┘
+
+
+Each frame instance is both metadata for the inputs/outputs of a transform and
+also a converter between those inputs/outputs and richer coordinate
+representations of those inputs/ouputs.
+
+For example, an output frame of type `~gwcs.coordinate_frames.SpectralFrame`
+provides metadata to the `.WCS` object such as the ``axes_type`` being
+``"SPECTRAL"`` and the unit of the output etc.  The output frame also provides a
+converter of the numeric output of the transform to a
+`~astropy.coordinates.SpectralCoord` object, by combining this metadata with the
+numerical values.
+
+``axes_order`` and conversion between objects and arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One of the key concepts regarding coordinate frames is the ``axes_order`` argument.
+This argument is used to map from the components of the frame to the inputs/outputs of the transform.
+To illustrate this consider this situation where you have a forward transform
+which outputs three coordinates ``[lat, lambda, lon]``.  These would be
+represented as a `.SpectralFrame` and a `.CelestialFrame`, however, the axes of
+a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two frames as
+
+.. code-block:: python
+
+  [SpectralFrame(axes_order=(1,)), CelestialFrame(axes_order=(2, 0))]
+
+we would map the outputs of this transform into the correct positions in the frames.
+ As shown below, this is also used when constructing the inputs to the inverse transform.
+
+
+When taking the output from the forward transform the following transformation is performed by the coordinate frames:
+
+.. code-block::
+
+                   lat, lambda, lon
+                   │      │     │
+                   └──────┼─────┼────────┐
+              ┌───────────┘     └──┐     │
+              │                    │     │
+    ┌─────────▼────────┐    ┌──────▼─────▼─────┐
+    │                  │    │                  │
+    │  SpectralFrame   │    │  CelestialFrame  │
+    │                  │    │                  │
+    │       (1,)       │    │      (2, 0)      │
+    │                  │    │                  │
+    └─────────┬────────┘    └──────────┬────┬──┘
+              │                        │    │
+              │                        │    │
+              ▼                        ▼    ▼
+   SpectralCoord(lambda)    SkyCoord((lon, lat))
+
+
+When considering the backward transform the following transformations take place in the coordinate frames before the transform is called:
+
+.. code-block::
+
+   SpectralCoord(lambda)    SkyCoord((lon, lat))
+              │                        │    │
+              └─────┐     ┌────────────┘    │
+                    │     │    ┌────────────┘
+                    ▼     ▼    ▼
+                [lambda, lon, lat]
+                    │     │    │
+                    │     │    │
+             ┌──────▼─────▼────▼────┐
+             │                      │
+             │  Sort by axes_order  │
+             │                      │
+             └────┬──────┬─────┬────┘
+                  │      │     │
+                  ▼      ▼     ▼
+                 lat, lambda, lon
+
 """
+
+import abc
 from collections import defaultdict
 import logging
+import numbers
 import numpy as np
+from dataclasses import dataclass, InitVar
 
 from astropy.utils.misc import isiterable
 from astropy import time
@@ -14,9 +128,10 @@ from astropy import coordinates as coord
 from astropy.wcs.wcsapi.low_level_api import (validate_physical_types,
                                               VALID_UCDS)
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
+from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 from astropy.coordinates import StokesCoord
 
-__all__ = ['Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
+__all__ = ['BaseCoordinateFrame', 'Frame2D', 'CelestialFrame', 'SpectralFrame', 'CompositeFrame',
            'CoordinateFrame', 'TemporalFrame', 'StokesFrame']
 
 
@@ -58,10 +173,6 @@ UCD1_TO_CTYPE = _ucd1_to_ctype_name_mapping(
 
 STANDARD_REFERENCE_FRAMES = [frame.upper() for frame in coord.builtin_frames.__all__]
 
-STANDARD_REFERENCE_POSITION = ["GEOCENTER", "BARYCENTER", "HELIOCENTER",
-                               "TOPOCENTER", "LSR", "LSRK", "LSRD",
-                               "GALACTIC_CENTER", "LOCAL_GROUP_CENTER"]
-
 
 def get_ctype_from_ucd(ucd):
     """
@@ -80,7 +191,188 @@ def get_ctype_from_ucd(ucd):
     return UCD1_TO_CTYPE.get(ucd, "")
 
 
-class CoordinateFrame:
+@dataclass
+class FrameProperties:
+    naxes: InitVar[int]
+    axes_type: tuple[str]
+    unit: tuple[u.Unit] = None
+    axes_names: tuple[str] = None
+    axis_physical_types: list[str] = None
+
+    def __post_init__(self, naxes):
+        if isinstance(self.axes_type, str):
+            self.axes_type = (self.axes_type,)
+        else:
+            self.axes_type = tuple(self.axes_type)
+
+        if len(self.axes_type) != naxes:
+            raise ValueError("Length of axes_type does not match number of axes.")
+
+        if self.unit is not None:
+            if astutil.isiterable(self.unit):
+                unit = tuple(self.unit)
+            else:
+                unit = (self.unit,)
+            if len(unit) != naxes:
+                raise ValueError("Number of units does not match number of axes.")
+            else:
+                self.unit = tuple(u.Unit(au) for au in unit)
+        else:
+            self.unit = tuple(u.dimensionless_unscaled for na in range(naxes))
+
+        if self.axes_names is not None:
+            if isinstance(self.axes_names, str):
+                self.axes_names = (self.axes_names,)
+            else:
+                self.axes_names = tuple(self.axes_names)
+            if len(self.axes_names) != naxes:
+                raise ValueError("Number of axes names does not match number of axes.")
+        else:
+            self.axes_names = tuple([""] * naxes)
+
+        if self.axis_physical_types is not None:
+            if isinstance(self.axis_physical_types, str):
+                self.axis_physical_types = (self.axis_physical_types,)
+            elif not isiterable(self.axis_physical_types):
+                raise TypeError("axis_physical_types must be of type string or iterable of strings")
+            if len(self.axis_physical_types) != naxes:
+                raise ValueError(f'"axis_physical_types" must be of length {naxes}')
+            ph_type = []
+            for axt in self.axis_physical_types:
+                if axt not in VALID_UCDS and not axt.startswith("custom:"):
+                    ph_type.append(f"custom:{axt}")
+                else:
+                    ph_type.append(axt)
+
+            validate_physical_types(ph_type)
+            self.axis_physical_types = tuple(ph_type)
+
+    @property
+    def _default_axis_physical_types(self):
+        """
+        The default physical types to use for this frame if none are specified
+        by the user.
+        """
+        return tuple("custom:{}".format(t) for t in self.axes_type)
+
+
+class BaseCoordinateFrame(abc.ABC):
+    """
+    API Definition for a Coordinate frame
+    """
+
+    _prop: FrameProperties
+    """
+    The FrameProperties object holding properties in native frame order.
+    """
+
+    @property
+    @abc.abstractmethod
+    def naxes(self) -> int:
+        """
+        The number of axes described by this frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """
+        The name of the coordinate frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def unit(self) -> tuple[u.Unit, ...]:
+        """
+        The units of the axes in this frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_names(self) -> tuple[str, ...]:
+        """
+        Names describing the axes of the frame.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_order(self) -> tuple[int, ...]:
+        """
+        The position of the axes in the frame in the transform.
+        """
+
+    @property
+    @abc.abstractmethod
+    def reference_frame(self):
+        """
+        The reference frame of the coordinates described by this frame.
+
+        This is usually an Astropy object such as ``SkyCoord`` or ``Time``.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axes_type(self):
+        """
+        An upcase string describing the type of the axis.
+
+        Known values are ``"SPATIAL", "TEMPORAL", "STOKES", "SPECTRAL", "PIXEL"``.
+        """
+
+    @property
+    @abc.abstractmethod
+    def axis_physical_types(self):
+        """
+        The UCD 1+ physical types for the axes, in frame order.
+        """
+
+    @property
+    @abc.abstractmethod
+    def world_axis_object_classes(self):
+        """
+        The APE 14 object classes for this frame.
+
+        See Also
+        --------
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_classes
+        """
+
+    @property
+    def world_axis_object_components(self):
+        """
+        The APE 14 object components for this frame.
+
+        See Also
+        --------
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components
+        """
+        if self.naxes == 1:
+            return self._native_world_axis_object_components
+
+        # If we have more than one axis then we should sort the native
+        # components by the axes_order.
+        ordered = np.array(self._native_world_axis_object_components,
+                           dtype=object)[np.argsort(self.axes_order)]
+        return list(map(tuple, ordered))
+
+    @property
+    @abc.abstractmethod
+    def _native_world_axis_object_components(self):
+        """
+        This property holds the "native" frame order of the components.
+
+        The native order of the componets is the order the frame assumes the
+        axes are in when creating the high level objects, for example
+        ``CelestialFrame`` creates ``SkyCoord`` objects which are in lon, lat
+        order (in their positional args).
+
+        This property is used both to construct the ordered
+        ``world_axis_object_components`` property as well as by `CompositeFrame`
+        to be able to get the components in their native order.
+        """
+
+
+class CoordinateFrame(BaseCoordinateFrame):
     """
     Base class for Coordinate Frames.
 
@@ -94,8 +386,6 @@ class CoordinateFrame:
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
         Reference frame (usually used with output_frame to convert to world coordinate objects).
-    reference_position : str
-        Reference position - one of ``STANDARD_REFERENCE_POSITION``
     unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
@@ -105,81 +395,44 @@ class CoordinateFrame:
     """
 
     def __init__(self, naxes, axes_type, axes_order, reference_frame=None,
-                 reference_position=None, unit=None, axes_names=None,
+                 unit=None, axes_names=None,
                  name=None, axis_physical_types=None):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
-        if isinstance(axes_type, str):
-            self._axes_type = (axes_type,)
-        else:
-            self._axes_type = tuple(axes_type)
-
         self._reference_frame = reference_frame
-        if unit is not None:
-            if astutil.isiterable(unit):
-                unit = tuple(unit)
-            else:
-                unit = (unit,)
-            if len(unit) != naxes:
-                raise ValueError("Number of units does not match number of axes.")
-            else:
-                self._unit = tuple([u.Unit(au) for au in unit])
-        else:
-            self._unit = tuple(u.Unit("") for na in range(naxes))
-        if axes_names is not None:
-            if isinstance(axes_names, str):
-                axes_names = (axes_names,)
-            else:
-                axes_names = tuple(axes_names)
-            if len(axes_names) != naxes:
-                raise ValueError("Number of axes names does not match number of axes.")
-        else:
-            axes_names = tuple([""] * naxes)
-        self._axes_names = axes_names
 
         if name is None:
             self._name = self.__class__.__name__
         else:
             self._name = name
 
-        self._reference_position = reference_position
-
-        if len(self._axes_type) != naxes:
-            raise ValueError("Length of axes_type does not match number of axes.")
         if len(self._axes_order) != naxes:
             raise ValueError("Length of axes_order does not match number of axes.")
 
-        super(CoordinateFrame, self).__init__()
-        # _axis_physical_types holds any user supplied physical types
-        self._axis_physical_types = self._set_axis_physical_types(axis_physical_types)
+        if isinstance(axes_type, str):
+            axes_type = (axes_type,)
 
-    def _set_axis_physical_types(self, pht):
-        """
-        Set the physical type of the coordinate axes using VO UCD1+ v1.23 definitions.
-        """
-        if pht is not None:
-            if isinstance(pht, str):
-                pht = (pht,)
-            elif not isiterable(pht):
-                raise TypeError("axis_physical_types must be of type string or iterable of strings")
-            if len(pht) != self.naxes:
-                raise ValueError('"axis_physical_types" must be of length {}'.format(self.naxes))
-            ph_type = []
-            for axt in pht:
-                if axt not in VALID_UCDS and not axt.startswith("custom:"):
-                    ph_type.append("custom:{}".format(axt))
-                else:
-                    ph_type.append(axt)
+        self._prop = FrameProperties(
+            naxes,
+            axes_type,
+            unit,
+            axes_names,
+            axis_physical_types or self._default_axis_physical_types(axes_type)
+        )
 
-            validate_physical_types(ph_type)
-            return tuple(ph_type)
+        super().__init__()
+
+    def _default_axis_physical_types(self, axes_type):
+        """
+        The default physical types to use for this frame if none are specified
+        by the user.
+        """
+        return tuple("custom:{}".format(t) for t in axes_type)
 
     def __repr__(self):
         fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
             self.__class__.__name__, self.name,
             self.unit, self.axes_names, self.axes_order)
-        if self.reference_position is not None:
-            fmt += ', reference_position="{0}"'.format(self.reference_position)
         if self.reference_frame is not None:
             fmt += ", reference_frame={0}".format(self.reference_frame)
         fmt += ")>"
@@ -189,6 +442,11 @@ class CoordinateFrame:
         if self._name is not None:
             return self._name
         return self.__class__.__name__
+
+    def _sort_property(self, property):
+        sorted_prop = sorted(zip(property, self.axes_order),
+                                 key=lambda x: x[1])
+        return tuple([t[0] for t in sorted_prop])
 
     @property
     def name(self):
@@ -208,12 +466,12 @@ class CoordinateFrame:
     @property
     def unit(self):
         """The unit of this frame."""
-        return self._unit
+        return self._sort_property(self._prop.unit)
 
     @property
     def axes_names(self):
         """ Names of axes in the frame."""
-        return self._axes_names
+        return self._sort_property(self._prop.axes_names)
 
     @property
     def axes_order(self):
@@ -226,40 +484,9 @@ class CoordinateFrame:
         return self._reference_frame
 
     @property
-    def reference_position(self):
-        """ Reference Position. """
-        return getattr(self, "_reference_position", None)
-
-    @property
     def axes_type(self):
         """ Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'. """
-        return self._axes_type
-
-    def coordinates(self, *args):
-        """ Create world coordinates object"""
-        coo = tuple([arg * un if not hasattr(arg, "to") else arg.to(un) for arg, un in zip(args, self.unit)])
-        if self.naxes == 1:
-            return coo[0]
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        """
-        Given a rich coordinate object return an astropy quantity object.
-        """
-        # NoOp leaves it to the model to handle
-        # If coords is a 1-tuple of quantity then return the element of the tuple
-        # This aligns the behavior with the other implementations
-        if not hasattr(coords, 'unit') and len(coords) == 1:
-            return coords[0]
-        return coords
-
-    @property
-    def _default_axis_physical_types(self):
-        """
-        The default physical types to use for this frame if none are specified
-        by the user.
-        """
-        return tuple("custom:{}".format(t) for t in self.axes_type)
+        return self._sort_property(self._prop.axes_type)
 
     @property
     def axis_physical_types(self):
@@ -268,23 +495,88 @@ class CoordinateFrame:
 
         These physical types are the types in frame order, not transform order.
         """
-        return self._axis_physical_types or self._default_axis_physical_types
+        return self._sort_property(self._prop.axis_physical_types)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {f"{at}{i}" if i != 0 else at: (u.Quantity,
                      (),
                      {'unit': unit})
-                for i, (at, unit) in enumerate(zip(self._axes_type, self.unit))}
+                for i, (at, unit) in enumerate(zip(self.axes_type, self.unit))}
 
     @property
-    def _world_axis_object_components(self):
-        return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._axes_type)]
+    def _native_world_axis_object_components(self):
+        return [(f"{at}{i}" if i != 0 else at, 0, 'value') for i, at in enumerate(self._prop.axes_type)]
+
+    @property
+    def serialized_classes(self):
+        """
+        This property is used by the low level WCS API in Astropy.
+
+        By providing it we can duck type as a low level WCS object.
+        """
+        return False
+
+    def to_high_level_coordinates(self, *values):
+        """
+        Convert "values" to high level coordinate objects described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        values : `numbers.Number`, `numpy.ndarray`, or `~astropy.units.Quantity`
+           ``naxis`` number of coordinates as scalars or arrays.
+
+        Returns
+        -------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+        """
+        # We allow Quantity-like objects here which values_to_high_level_objects does not.
+        values = [v.to_value(unit) if hasattr(v, "to_value") else v for v, unit in zip(values, self.unit)]
+
+        if not all([isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values]):
+            raise TypeError("All values should be a scalar number or a numpy array.")
+
+        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
+        if len(high_level) == 1:
+            high_level = high_level[0]
+        return high_level
+
+    def from_high_level_coordinates(self, *high_level_coords):
+        """
+        Convert high level coordinate objects to "values" as described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+
+        Returns
+        -------
+        values : `numbers.Number` or `numpy.ndarray`
+           ``naxis`` number of coordinates as scalars or arrays.
+        """
+        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
+        if len(values) == 1:
+            values = values[0]
+        return values
 
 
 class CelestialFrame(CoordinateFrame):
     """
-    Celestial Frame Representation
+    Representation of a Celesital coordinate system.
+
+    This class has a native order of longitude then latitude, meaning
+    ``axes_names``, ``unit`` and ``axis_physical_types`` should be lon, lat ordered.  If your transform is
+    in a different order this should be specified with ``axes_order``.
 
     Parameters
     ----------
@@ -298,6 +590,8 @@ class CelestialFrame(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
+    axis_physical_types : list
+        The UCD 1+ physical types for the axes, in frame order (lon, lat).
     """
 
     def __init__(self, axes_order=None, reference_frame=None,
@@ -313,91 +607,50 @@ class CelestialFrame(CoordinateFrame):
                     if axes_names is None:
                         axes_names = _axes_names
                     naxes = len(_axes_names)
-                    _unit = list(reference_frame.representation_component_units.values())
-                    if unit is None and _unit:
-                        unit = _unit
 
+        self.native_axes_order = tuple(range(naxes))
         if axes_order is None:
-            axes_order = tuple(range(naxes))
+            axes_order = self.native_axes_order
         if unit is None:
             unit = tuple([u.degree] * naxes)
         axes_type = ['SPATIAL'] * naxes
 
-        super(CelestialFrame, self).__init__(naxes=naxes, axes_type=axes_type,
-                                             axes_order=axes_order,
-                                             reference_frame=reference_frame,
-                                             unit=unit,
-                                             axes_names=axes_names,
-                                             name=name, axis_physical_types=axis_physical_types)
+        pht = axis_physical_types or self._default_axis_physical_types(reference_frame, axes_names)
+        super().__init__(naxes=naxes,
+                         axes_type=axes_type,
+                         axes_order=axes_order,
+                         reference_frame=reference_frame,
+                         unit=unit,
+                         axes_names=axes_names,
+                         name=name,
+                         axis_physical_types=pht)
 
-    @property
-    def _default_axis_physical_types(self):
-        if isinstance(self.reference_frame, coord.Galactic):
+    def _default_axis_physical_types(self, reference_frame, axes_names):
+        if isinstance(reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
-        elif isinstance(self.reference_frame, (coord.GeocentricTrueEcliptic,
-                                                coord.GCRS,
-                                                coord.PrecessedGeocentric)):
+        elif isinstance(reference_frame, (coord.GeocentricTrueEcliptic,
+                                          coord.GCRS,
+                                          coord.PrecessedGeocentric)):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
-        elif isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
+        elif isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
-        elif isinstance(self.reference_frame, coord.builtin_frames.BaseEclipticFrame):
+        elif isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
             return "pos.ecliptic.lon", "pos.ecliptic.lat"
         else:
-            return tuple("custom:{}".format(t) for t in self.axes_names)
+            return tuple("custom:{}".format(t) for t in axes_names)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'celestial': (
             coord.SkyCoord,
             (),
             {'frame': self.reference_frame,
-             'unit': self.unit})}
+             'unit': self._prop.unit})}
 
     @property
-    def _world_axis_object_components(self):
-        return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self.unit[0])),
-                ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self.unit[1]))]
-
-    def coordinates(self, *args):
-        """
-        Create a SkyCoord object.
-
-        Parameters
-        ----------
-        args : float
-            inputs to wcs.input_frame
-        """
-        if isinstance(args[0], coord.SkyCoord):
-            return args[0].transform_to(self.reference_frame)
-        return coord.SkyCoord(*args, unit=self.unit, frame=self.reference_frame)
-
-    def coordinate_to_quantity(self, *coords):
-        """ Convert a ``SkyCoord`` object to quantities."""
-        if len(coords) == 2:
-            arg = coords
-        elif len(coords) == 1:
-            arg = coords[0]
-        else:
-            raise ValueError("Unexpected number of coordinates in "
-                             "input to frame {} : "
-                             "expected 2, got  {}".format(self.name, len(coords)))
-
-        if isinstance(arg, coord.SkyCoord):
-            arg = arg.transform_to(self._reference_frame)
-            try:
-                lon = arg.data.lon
-                lat = arg.data.lat
-            except AttributeError:
-                lon = arg.spherical.lon
-                lat = arg.spherical.lat
-
-            return lon, lat
-
-        elif all(isinstance(a, u.Quantity) for a in arg):
-            return tuple(arg)
-
-        else:
-            raise ValueError("Could not convert input {} to lon and lat quantities.".format(arg))
+    def _native_world_axis_object_components(self):
+        return [('celestial', 0, lambda sc: sc.spherical.lon.to_value(self._prop.unit[0])),
+                ('celestial', 1, lambda sc: sc.spherical.lat.to_value(self._prop.unit[1]))]
 
 
 class SpectralFrame(CoordinateFrame):
@@ -416,63 +669,48 @@ class SpectralFrame(CoordinateFrame):
         Spectral axis name.
     name : str
         Name for this frame.
-    reference_position : str
-        Reference position - one of ``STANDARD_REFERENCE_POSITION``
 
     """
 
     def __init__(self, axes_order=(0,), reference_frame=None, unit=None,
-                 axes_names=None, name=None, axis_physical_types=None,
-                 reference_position=None):
+                 axes_names=None, name=None, axis_physical_types=None):
 
-        super(SpectralFrame, self).__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
-                                            axes_names=axes_names, reference_frame=reference_frame,
-                                            unit=unit, name=name,
-                                            reference_position=reference_position,
-                                            axis_physical_types=axis_physical_types)
+        if not isiterable(unit):
+            unit = (unit,)
+        unit = [u.Unit(un) for un in unit]
+        pht = axis_physical_types or self._default_axis_physical_types(unit)
 
-    @property
-    def _default_axis_physical_types(self):
-        if self.unit[0].physical_type == "frequency":
+        super().__init__(naxes=1, axes_type="SPECTRAL", axes_order=axes_order,
+                         axes_names=axes_names, reference_frame=reference_frame,
+                         unit=unit, name=name,
+                         axis_physical_types=pht)
+
+    def _default_axis_physical_types(self, unit):
+        if unit[0].physical_type == "frequency":
             return ("em.freq",)
-        elif self.unit[0].physical_type == "length":
+        elif unit[0].physical_type == "length":
             return ("em.wl",)
-        elif self.unit[0].physical_type == "energy":
+        elif unit[0].physical_type == "energy":
             return ("em.energy",)
-        elif self.unit[0].physical_type == "speed":
+        elif unit[0].physical_type == "speed":
             return ("spect.dopplerVeloc",)
             logging.warning("Physical type may be ambiguous. Consider "
                             "setting the physical type explicitly as "
                             "either 'spect.dopplerVeloc.optical' or "
                             "'spect.dopplerVeloc.radio'.")
         else:
-            return ("custom:{}".format(self.unit[0].physical_type),)
+            return ("custom:{}".format(unit[0].physical_type),)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'spectral': (
             coord.SpectralCoord,
             (),
             {'unit': self.unit[0]})}
 
     @property
-    def _world_axis_object_components(self):
+    def _native_world_axis_object_components(self):
         return [('spectral', 0, lambda sc: sc.to_value(self.unit[0]))]
-
-    def coordinates(self, *args):
-        # using SpectralCoord
-        if isinstance(args[0], coord.SpectralCoord):
-            return args[0].to(self.unit[0])
-        else:
-            if hasattr(args[0], 'unit'):
-                return coord.SpectralCoord(*args).to(self.unit[0])
-            else:
-                return coord.SpectralCoord(*args, self.unit[0])
-
-    def coordinate_to_quantity(self, *coords):
-        if hasattr(coords[0], 'unit'):
-            return coords[0]
-        return coords[0] * self.unit[0]
 
 
 class TemporalFrame(CoordinateFrame):
@@ -496,15 +734,17 @@ class TemporalFrame(CoordinateFrame):
         Name for this frame.
     """
 
-    def __init__(self, reference_frame, unit=None, axes_order=(0,),
+    def __init__(self, reference_frame, unit=u.s, axes_order=(0,),
                  axes_names=None, name=None, axis_physical_types=None):
         axes_names = axes_names or "{}({}; {}".format(reference_frame.format,
                                                       reference_frame.scale,
                                                       reference_frame.location)
 
+        pht = axis_physical_types or self._default_axis_physical_types()
+
         super().__init__(naxes=1, axes_type="TIME", axes_order=axes_order,
                          axes_names=axes_names, reference_frame=reference_frame,
-                         unit=unit, name=name, axis_physical_types=axis_physical_types)
+                         unit=unit, name=name, axis_physical_types=pht)
         self._attrs = {}
         for a in self.reference_frame.info._represent_as_dict_extra_attrs:
             try:
@@ -512,36 +752,8 @@ class TemporalFrame(CoordinateFrame):
             except AttributeError:
                 pass
 
-    @property
     def _default_axis_physical_types(self):
         return ("time",)
-
-    @property
-    def _world_axis_object_classes(self):
-        comp = (
-            time.Time,
-            (),
-            {'unit': self.unit[0], **self._attrs},
-            self._convert_to_time)
-
-        return {'temporal': comp}
-
-    @property
-    def _world_axis_object_components(self):
-        if isinstance(self.reference_frame.value, np.ndarray):
-            return [('temporal', 0, 'value')]
-
-        def offset_from_time_and_reference(time):
-            return (time - self.reference_frame).sec
-        return [('temporal', 0, offset_from_time_and_reference)]
-
-    def coordinates(self, *args):
-        if np.isscalar(args):
-            dt = args
-        else:
-            dt = args[0]
-
-        return self._convert_to_time(dt, unit=self.unit[0], **self._attrs)
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
         if (not isinstance(dt, time.TimeDelta) and
@@ -554,22 +766,24 @@ class TemporalFrame(CoordinateFrame):
 
         return self.reference_frame + dt
 
-    def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], time.Time):
-            ref_value = self.reference_frame.value
-            if not isinstance(ref_value, np.ndarray):
-                return (coords[0] - self.reference_frame).to(self.unit[0])
-            else:
-                # If we can't convert to a quantity just drop the object out
-                # and hope the transform can cope.
-                return coords[0]
-        # Is already a quantity
-        elif hasattr(coords[0], 'unit'):
-            return coords[0]
-        if isinstance(coords[0], np.ndarray):
-            return coords[0] * self.unit[0]
-        else:
-            raise ValueError("Can not convert {} to Quantity".format(coords[0]))
+    @property
+    def world_axis_object_classes(self):
+        comp = (
+            time.Time,
+            (),
+            {'unit': self.unit[0], **self._attrs},
+            self._convert_to_time)
+
+        return {'temporal': comp}
+
+    @property
+    def _native_world_axis_object_components(self):
+        if isinstance(self.reference_frame.value, np.ndarray):
+            return [('temporal', 0, 'value')]
+
+        def offset_from_time_and_reference(time):
+            return (time - self.reference_frame).sec
+        return [('temporal', 0, offset_from_time_and_reference)]
 
 
 class CompositeFrame(CoordinateFrame):
@@ -579,80 +793,52 @@ class CompositeFrame(CoordinateFrame):
     Parameters
     ----------
     frames : list
-        List of frames (TemporalFrame, CelestialFrame, SpectralFrame, CoordinateFrame).
+        List of constituient frames.
     name : str
         Name for this frame.
-
     """
 
     def __init__(self, frames, name=None):
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
-        axes_type = list(range(naxes))
-        unit = list(range(naxes))
-        axes_names = list(range(naxes))
+
         axes_order = []
-        ph_type = list(range(naxes))
+        axes_type = []
+        axes_names = []
+        unit = []
+        ph_type = []
+
         for frame in frames:
             axes_order.extend(frame.axes_order)
+
+        # Stack the raw (not-native) ordered properties
         for frame in frames:
-            for ind, axtype, un, n, pht in zip(frame.axes_order, frame.axes_type,
-                                               frame.unit, frame.axes_names, frame.axis_physical_types):
-                axes_type[ind] = axtype
-                axes_names[ind] = n
-                unit[ind] = un
-                ph_type[ind] = pht
+            axes_type += list(frame._prop.axes_type)
+            axes_names += list(frame._prop.axes_names)
+            unit += list(frame._prop.unit)
+            ph_type += list(frame._prop.axis_physical_types)
+
         if len(np.unique(axes_order)) != len(axes_order):
             raise ValueError("Incorrect numbering of axes, "
                              "axes_order should contain unique numbers, "
-                             "got {}.".format(axes_order))
+                             f"got {axes_order}.")
 
-        super(CompositeFrame, self).__init__(naxes, axes_type=axes_type,
-                                             axes_order=axes_order,
-                                             unit=unit, axes_names=axes_names,
-                                             name=name)
+        super().__init__(naxes, axes_type=axes_type,
+                         axes_order=axes_order,
+                         unit=unit, axes_names=axes_names,
+                         axis_physical_types=tuple(ph_type),
+                         name=name)
         self._axis_physical_types = tuple(ph_type)
 
     @property
     def frames(self):
+        """
+        The constituient frames that comprise this `CompositeFrame`.
+        """
         return self._frames
 
     def __repr__(self):
         return repr(self.frames)
-
-    def coordinates(self, *args):
-        coo = []
-        if len(args) == len(self.frames):
-            for frame, arg in zip(self.frames, args):
-                coo.append(frame.coordinates(arg))
-        else:
-            for frame in self.frames:
-                fargs = [args[i] for i in frame.axes_order]
-                coo.append(frame.coordinates(*fargs))
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        if len(coords) == len(self.frames):
-            args = coords
-        elif len(coords) == self.naxes:
-            args = []
-            for _frame in self.frames:
-                if _frame.naxes > 1:
-                    # Collect the arguments for this frame based on axes_order
-                    args.append([coords[i] for i in _frame.axes_order])
-                else:
-                    args.append(coords[_frame.axes_order[0]])
-        else:
-            raise ValueError("Incorrect number of arguments")
-
-        qs = []
-        for _frame, arg in zip(self.frames, args):
-            ret = _frame.coordinate_to_quantity(arg)
-            if isinstance(ret, tuple):
-                qs += list(ret)
-            else:
-                qs.append(ret)
-        return qs
 
     @property
     def _wao_classes_rename_map(self):
@@ -661,7 +847,7 @@ class CompositeFrame(CoordinateFrame):
         for frame in self.frames:
             # ensure the frame is in the mapper
             mapper[frame]
-            for key in frame._world_axis_object_classes.keys():
+            for key in frame.world_axis_object_classes.keys():
                 if key in seen_names:
                     new_key = f"{key}{seen_names.count(key)}"
                     mapper[frame][key] = new_key
@@ -673,7 +859,7 @@ class CompositeFrame(CoordinateFrame):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
             renamed_components = []
-            for comp in frame._world_axis_object_components:
+            for comp in frame._native_world_axis_object_components:
                 comp = list(comp)
                 rename = mapper[frame].get(comp[0])
                 if rename:
@@ -685,28 +871,27 @@ class CompositeFrame(CoordinateFrame):
     def _wao_renamed_classes_iter(self):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
-            for key, value in frame._world_axis_object_classes.items():
+            for key, value in frame.world_axis_object_classes.items():
                 rename = mapper[frame].get(key)
                 if rename:
                     key = rename
                 yield key, value
 
     @property
-    def _world_axis_object_components(self):
-        """
-        We need to generate the components respecting the axes_order.
-        """
+    def world_axis_object_components(self):
         out = [None] * self.naxes
+
         for frame, components in self._wao_renamed_components_iter:
             for i, ao in enumerate(frame.axes_order):
                 out[ao] = components[i]
 
         if any([o is None for o in out]):
             raise ValueError("axes_order leads to incomplete world_axis_object_components")
+
         return out
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return dict(self._wao_renamed_classes_iter)
 
 
@@ -723,16 +908,18 @@ class StokesFrame(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0,), axes_names=("stokes",), name=None, axis_physical_types=None):
-        super(StokesFrame, self).__init__(1, ["STOKES"], axes_order, name=name,
-                                          axes_names=axes_names, unit=u.one,
-                                          axis_physical_types=axis_physical_types)
 
-    @property
+        pht = axis_physical_types or self._default_axis_physical_types()
+
+        super().__init__(1, ["STOKES"], axes_order, name=name,
+                         axes_names=axes_names, unit=u.one,
+                         axis_physical_types=pht)
+
     def _default_axis_physical_types(self):
         return ("phys.polarization.stokes",)
 
     @property
-    def _world_axis_object_classes(self):
+    def world_axis_object_classes(self):
         return {'stokes': (
             StokesCoord,
             (),
@@ -740,21 +927,8 @@ class StokesFrame(CoordinateFrame):
         )}
 
     @property
-    def _world_axis_object_components(self):
+    def _native_world_axis_object_components(self):
         return [('stokes', 0, 'value')]
-
-    def coordinates(self, *args):
-        if isinstance(args[0], u.Quantity):
-            arg = args[0].value
-        else:
-            arg = args[0]
-
-        return StokesCoord(arg)
-
-    def coordinate_to_quantity(self, *coords):
-        if isinstance(coords[0], StokesCoord):
-            return coords[0].value << u.one
-        return coords[0]
 
 
 class Frame2D(CoordinateFrame):
@@ -774,38 +948,19 @@ class Frame2D(CoordinateFrame):
     """
 
     def __init__(self, axes_order=(0, 1), unit=(u.pix, u.pix), axes_names=('x', 'y'),
-                 name=None, axis_physical_types=None):
+                 name=None, axes_type=["SPATIAL", "SPATIAL"], axis_physical_types=None):
 
-        super(Frame2D, self).__init__(naxes=2, axes_type=["SPATIAL", "SPATIAL"],
-                                      axes_order=axes_order, name=name,
-                                      axes_names=axes_names, unit=unit,
-                                      axis_physical_types=axis_physical_types)
+        pht = axis_physical_types or self._default_axis_physical_types(axes_names, axes_type)
 
-    @property
-    def _default_axis_physical_types(self):
-        if all(self.axes_names):
-            ph_type = self.axes_names
+        super().__init__(naxes=2, axes_type=axes_type,
+                         axes_order=axes_order, name=name,
+                         axes_names=axes_names, unit=unit,
+                         axis_physical_types=pht)
+
+    def _default_axis_physical_types(self, axes_names, axes_type):
+        if axes_names is not None and all(axes_names):
+            ph_type = axes_names
         else:
-            ph_type = self.axes_type
+            ph_type = axes_type
+
         return tuple("custom:{}".format(t) for t in ph_type)
-
-    def coordinates(self, *args):
-        args = [args[i] for i in self.axes_order]
-        coo = tuple([arg * un for arg, un in zip(args, self.unit)])
-        return coo
-
-    def coordinate_to_quantity(self, *coords):
-        # list or tuple
-        if len(coords) == 1 and astutil.isiterable(coords[0]):
-            coords = list(coords[0])
-        elif len(coords) == 2:
-            coords = list(coords)
-        else:
-            raise ValueError("Unexpected number of coordinates in "
-                             "input to frame {} : "
-                             "expected 2, got  {}".format(self.name, len(coords)))
-
-        for i in range(2):
-            if not hasattr(coords[i], 'unit'):
-                coords[i] = coords[i] * self.unit[i]
-        return tuple(coords)
