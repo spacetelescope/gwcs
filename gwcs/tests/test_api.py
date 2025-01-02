@@ -290,7 +290,7 @@ def _compare_frame_output(wc1, wc2):
 
     else:
         msg = f"Can't Compare {type(wc1)}"
-        raise AssertionError(msg)
+        raise TypeError(msg)
 
 
 @fixture_all_wcses

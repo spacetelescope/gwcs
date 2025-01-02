@@ -63,7 +63,7 @@ def assert_selector_roundtrip(s, tmpdir, version=None):
             _assert_mapper_equal(s, rs)
         else:
             msg = "Unknown selector type"
-            raise AssertionError(msg)
+            raise TypeError(msg)
 
 
 def test_regions_selector(tmpdir):

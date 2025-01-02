@@ -1570,14 +1570,11 @@ class WCS(GWCSAPIMixin):
         if value is None:
             transform_0.bounding_box = value
         else:
-            try:
-                # Make sure the dimensions of the new bbox are correct.
-                if isinstance(value, CompoundBoundingBox):
-                    bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
-                else:
-                    bbox = Bbox.validate(transform_0, value, order="F")
-            except Exception:
-                raise
+            # Make sure the dimensions of the new bbox are correct.
+            if isinstance(value, CompoundBoundingBox):
+                bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
+            else:
+                bbox = Bbox.validate(transform_0, value, order="F")
 
             transform_0.bounding_box = bbox
 
@@ -3048,9 +3045,10 @@ class WCS(GWCSAPIMixin):
             self._approx_inverse = functools.partial(
                 self.backward_transform, with_bounding_box=False
             )
-            return
         except (NotImplementedError, KeyError):
             pass
+        else:
+            return
 
         if not isinstance(self.output_frame, cf.CelestialFrame):
             # The _calc_approx_inv method only works with celestial frame transforms
@@ -3259,10 +3257,10 @@ def _fit_2D_poly(
                     f"Maximum residual: {fit_error_i / plate_scale:.5g}"
                 )
 
-        except np.linalg.LinAlgError as e:
+        except np.linalg.LinAlgError:
             if single_degree:
                 # Nothing to do if failure is for the lowest degree
-                raise e
+                raise
             # Keep results from the previous iteration. Discard current fit
             break
 
