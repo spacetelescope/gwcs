@@ -150,8 +150,8 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     api_world = wcsobj.pixel_to_world_values(*api_pixel)
 
     # Check that call returns quantities and api doesn't
-    assert all(list(isinstance(a, u.Quantity) for a in call_world))
-    assert all(list(not isinstance(a, u.Quantity) for a in api_world))
+    assert all(isinstance(a, u.Quantity) for a in call_world)
+    assert all(not isinstance(a, u.Quantity) for a in api_world)
 
     # Check that they are the same (and implicitly in the same units)
     assert_allclose(u.Quantity(call_world).value, api_world)
@@ -222,13 +222,13 @@ def test_world_axis_object_components_4d(gwcs_4d_identity_units):
         ("spectral", 0),
         ("temporal", 0),
     ]
-    assert all([callable(last) for last in last_one])
+    assert all(callable(last) for last in last_one)
 
 
 def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):
     waoc = gwcs_2d_spatial_shift.world_axis_object_classes
     assert waoc["celestial"][0] is coord.SkyCoord
-    assert waoc["celestial"][1] == tuple()
+    assert waoc["celestial"][1] == ()
     assert "frame" in waoc["celestial"][2]
     assert "unit" in waoc["celestial"][2]
     assert isinstance(waoc["celestial"][2]["frame"], coord.ICRS)
@@ -239,8 +239,8 @@ def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
     waoc = gwcs_2d_quantity_shift.world_axis_object_classes
     assert waoc["SPATIAL"][0] is u.Quantity
     assert waoc["SPATIAL1"][0] is u.Quantity
-    assert waoc["SPATIAL"][1] == tuple()
-    assert waoc["SPATIAL1"][1] == tuple()
+    assert waoc["SPATIAL"][1] == ()
+    assert waoc["SPATIAL1"][1] == ()
     assert "unit" in waoc["SPATIAL"][2]
     assert "unit" in waoc["SPATIAL1"][2]
     assert waoc["SPATIAL"][2]["unit"] == u.km
@@ -250,7 +250,7 @@ def test_world_axis_object_classes_2d_generic(gwcs_2d_quantity_shift):
 def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
     waoc = gwcs_4d_identity_units.world_axis_object_classes
     assert waoc["celestial"][0] is coord.SkyCoord
-    assert waoc["celestial"][1] == tuple()
+    assert waoc["celestial"][1] == ()
     assert "frame" in waoc["celestial"][2]
     assert "unit" in waoc["celestial"][2]
     assert isinstance(waoc["celestial"][2]["frame"], coord.ICRS)
@@ -258,7 +258,7 @@ def test_world_axis_object_classes_4d(gwcs_4d_identity_units):
 
     temporal = waoc["temporal"]
     assert temporal[0] is time.Time
-    assert temporal[1] == tuple()
+    assert temporal[1] == ()
     assert temporal[2] == {
         "unit": u.s,
         "format": "isot",
@@ -612,7 +612,7 @@ def test_world_axis_object_components_units(gwcs_3d_identity_units):
         world[1].to_value(wcs.output_frame.unit[2]),
     ]
 
-    assert not any([isinstance(o, u.Quantity) for o in values])
+    assert not any(isinstance(o, u.Quantity) for o in values)
     np.testing.assert_allclose(values, expected_values)
 
 

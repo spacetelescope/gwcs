@@ -574,7 +574,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         ]
 
         if not all(
-            [isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values]
+            isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values
         ):
             msg = "All values should be a scalar number or a numpy array."
             raise TypeError(msg)
@@ -974,7 +974,7 @@ class CompositeFrame(CoordinateFrame):
             for i, ao in enumerate(frame.axes_order):
                 out[ao] = components[i]
 
-        if any([o is None for o in out]):
+        if any(o is None for o in out):
             msg = "axes_order leads to incomplete world_axis_object_components"
             raise ValueError(msg)
 

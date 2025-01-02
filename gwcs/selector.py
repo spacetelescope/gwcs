@@ -291,7 +291,7 @@ class LabelMapperDict(_LabelMapper):
         _no_label = 0
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        if not all([m.n_outputs == 1 for m in mapper.values()]):
+        if not all(m.n_outputs == 1 for m in mapper.values()):
             msg = "All transforms in mapper must have one output."
             raise TypeError(msg)
         self._input_units_strict = {key: False for key in self._inputs}
@@ -391,7 +391,7 @@ class LabelMapperRange(_LabelMapper):
         self._inputs = inputs
         self._n_inputs = len(inputs)
         _no_label = 0
-        if not all([m.n_outputs == 1 for m in mapper.values()]):
+        if not all(m.n_outputs == 1 for m in mapper.values()):
             msg = "All transforms in mapper must have one output."
             raise TypeError(msg)
         self._input_units_strict = {key: False for key in self._inputs}

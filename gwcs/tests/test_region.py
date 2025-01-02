@@ -134,7 +134,7 @@ def create_scalar_mapper():
         m.append(models.Polynomial2D(2, c0_0=c0_0, c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
     keys = [-1.95805483, -1.67833272, -1.39861060, -1.11888848, -8.39166358]
 
-    return {k: v for k, v in zip(keys, m, strict=False)}
+    return dict(zip(keys, m, strict=False))
 
 
 def test_LabelMapperDict():

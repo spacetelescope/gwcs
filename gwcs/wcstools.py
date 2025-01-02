@@ -89,7 +89,7 @@ def wcs_from_fiducial(
                 raise TypeError(msg) from err
             trans_from_fiducial.append(model)
         fiducial_transform = functools.reduce(
-            lambda x, y: x & y, [tr for tr in trans_from_fiducial]
+            lambda x, y: x & y, list(trans_from_fiducial)
         )
     else:
         # The case of one coordinate frame with more than 1 axes.

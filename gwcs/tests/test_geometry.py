@@ -159,11 +159,9 @@ def test_spherical_to_cartesian_mixed_Q(spher_to_cart, unit1, unit2):
 @pytest.mark.parametrize(
     ("x", "y", "z"),
     sorted(
-        list(
-            set(
-                tuple(permutations([1 * u.m, 1, 1]))
-                + tuple(permutations([1 * u.m, 1 * u.m, 1]))
-            )
+        set(
+            tuple(permutations([1 * u.m, 1, 1]))
+            + tuple(permutations([1 * u.m, 1 * u.m, 1]))
         ),
         key=str,
     ),

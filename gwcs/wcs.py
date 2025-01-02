@@ -1658,7 +1658,7 @@ class WCS(GWCSAPIMixin):
         else:
             bb = bounding_box
 
-        all_spatial = all([t.lower() == "spatial" for t in self.output_frame.axes_type])
+        all_spatial = all(t.lower() == "spatial" for t in self.output_frame.axes_type)
         if self.output_frame.naxes == 1:
             if isinstance(bb[0], u.Quantity):
                 bb = np.asarray([b.value for b in bb]) * bb[0].unit
