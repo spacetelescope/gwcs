@@ -28,7 +28,7 @@ def test_spherical_cartesian_inverse():
 
 
 @pytest.mark.parametrize(
-    "testval, unit, wrap_at",
+    ("testval", "unit", "wrap_at"),
     product(
         [
             (45.0, -90.0, (0.0, 0.0, -1.0)),
@@ -71,7 +71,7 @@ def test_spherical_to_cartesian(testval, unit, wrap_at):
 
 
 @pytest.mark.parametrize(
-    "lon, lat, unit, wrap_at",
+    ("lon", "lat", "unit", "wrap_at"),
     list(
         product(
             [0, 45, 90, 135, 180, 225, 270, 315, 360],
@@ -104,7 +104,7 @@ def test_cart2spher_at_pole(cart_to_spher):
 
 
 @pytest.mark.parametrize(
-    "lonlat, unit, wrap_at",
+    ("lonlat", "unit", "wrap_at"),
     list(
         product(
             [
@@ -146,7 +146,7 @@ def test_spher2cart_roundrip_arr(lonlat, unit, wrap_at):
     assert u.allclose(c2s(*s2c(lon, lat)), (olon, olat), atol=atol)
 
 
-@pytest.mark.parametrize("unit1, unit2", [(u.deg, 1), (1, u.deg)])
+@pytest.mark.parametrize(("unit1", "unit2"), [(u.deg, 1), (1, u.deg)])
 def test_spherical_to_cartesian_mixed_Q(spher_to_cart, unit1, unit2):
     with pytest.raises(TypeError) as arg_err:
         spher_to_cart(135.0 * unit1, 45.0 * unit2)
@@ -157,7 +157,7 @@ def test_spherical_to_cartesian_mixed_Q(spher_to_cart, unit1, unit2):
 
 
 @pytest.mark.parametrize(
-    "x, y, z",
+    ("x", "y", "z"),
     sorted(
         list(
             set(
@@ -180,21 +180,17 @@ def test_cartesian_to_spherical_mixed_Q(cart_to_spher, x, y, z):
 @pytest.mark.parametrize("wrap_at", ["1", 180.0, True, 180j, [180], -180, 0])
 def test_c2s2c_wrong_wrap_type(spher_to_cart, cart_to_spher, wrap_at):
     err_msg = "'wrap_lon_at' must be an integer number: 180 or 360"
-    with pytest.raises(ValueError) as arg_err:
+    with pytest.raises(ValueError, match=err_msg):
         geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
-    assert arg_err.value.args[0] == err_msg
 
-    with pytest.raises(ValueError) as arg_err:
+    with pytest.raises(ValueError, match=err_msg):
         spher_to_cart.wrap_lon_at = wrap_at
-    assert arg_err.value.args[0] == err_msg
 
-    with pytest.raises(ValueError) as arg_err:
+    with pytest.raises(ValueError, match=err_msg):
         geometry.CartesianToSpherical(wrap_lon_at=wrap_at)
-    assert arg_err.value.args[0] == err_msg
 
-    with pytest.raises(ValueError) as arg_err:
+    with pytest.raises(ValueError, match=err_msg):
         cart_to_spher.wrap_lon_at = wrap_at
-    assert arg_err.value.args[0] == err_msg
 
 
 def test_cartesian_spherical_asdf(tmpdir):

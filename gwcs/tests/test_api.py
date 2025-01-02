@@ -163,7 +163,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     [assert_allclose(n, p) for n, p in zip(new_api_pixel, api_pixel, strict=False)]
 
 
-@pytest.mark.parametrize(("x"), (x, xarr))
+@pytest.mark.parametrize(("x"), [x, xarr])
 def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     wcsobj = gwcs_1d_freq_quantity
 
@@ -456,7 +456,7 @@ def test_pixel_to_world_quantity(gwcs_2d_shift_scale, gwcs_2d_shift_scale_quanti
     assert_allclose(result1.data.lat, result2.data.lat)
 
     # test for pixel units
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         gwcs_2d_shift_scale.pixel_to_world(x * u.Jy, y * u.Jy)
 
 
@@ -483,7 +483,7 @@ def test_array_index_to_world_quantity(
     assert_allclose(result0.data.lat, result1.data.lat)
 
     # test for pixel units
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         gwcs_2d_shift_scale.array_index_to_world(x * u.Jy, y * u.Jy)
 
 

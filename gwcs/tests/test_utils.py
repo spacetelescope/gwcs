@@ -19,8 +19,8 @@ data_path = os.path.split(os.path.abspath(data.__file__))[0]
 
 
 def test_wrong_projcode():
+    ctype = {"CTYPE": ["RA---TAM", "DEC--TAM"]}
     with pytest.raises(UnsupportedProjectionError):
-        ctype = {"CTYPE": ["RA---TAM", "DEC--TAM"]}
         gwutils.get_projcode(ctype)
 
 

@@ -200,7 +200,7 @@ def test_RegionsSelector():
     mapper = selector.LabelMapperArray(labels)
     sel = {1: models.Shift(1) & models.Scale(1), 2: models.Shift(2) & models.Scale(2)}
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         # 0 can't be a key in ``selector``
         selector.RegionsSelector(
             inputs=("x", "y"),
@@ -259,7 +259,7 @@ def test_overalpping_ranges():
     for key in keys:
         rmapper[tuple(key)] = models.Const1D(4)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         selector.LabelMapperRange(("x", "y"), rmapper, inputs_mapping=((0,)))
 
 

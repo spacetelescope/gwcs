@@ -280,7 +280,7 @@ def test_bounding_box():
     pipeline = [("detector", trans3), ("sky", None)]
     w = wcs.WCS(pipeline)
     bb = ((-1, 10), (6, 15))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
     pipeline = [("detector", trans2), ("sky", None)]
@@ -292,7 +292,7 @@ def test_bounding_box():
     w = wcs.WCS(pipeline)
     w.bounding_box = (1, 5)
     assert w.bounding_box == w.forward_transform.bounding_box
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         w.bounding_box = ((1, 5), (2, 6))
 
 
@@ -333,7 +333,7 @@ def test_compound_bounding_box():
         w(13, 13, 4)
 
     # Test attaching a invalid bounding box (not ignoring input 'x')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         w.attach_compound_bounding_box(cbb, [("x", False)])
 
     # Test that bounding_box with quantities can be assigned and evaluates
@@ -375,7 +375,7 @@ def test_grid_from_bounding_box_step():
     assert_allclose(x, x1)
     assert_allclose(y, y1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         grid_from_bounding_box(bb, step=(1, 2, 1))
 
 
@@ -778,9 +778,9 @@ def test_to_fits_sip():
     assert_allclose(gwcsvalx, fitsvalx, atol=4e-11, rtol=0)
     assert_allclose(gwcsvaly, fitsvaly, atol=4e-11, rtol=0)
 
-    with pytest.raises(ValueError):
-        miriwcs.bounding_box = None
-        mirisip = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
+    miriwcs.bounding_box = None
+    with pytest.raises(ValueError):  # noqa: PT011
+        _ = miriwcs.to_fits_sip(bounding_box=None, max_inv_pix_error=0.1)
 
 
 @pytest.mark.parametrize(
@@ -918,8 +918,8 @@ def test_to_fits_tab_no_bb(gwcs_3d_galactic_spectral):
     w.bounding_box = None
 
     # FITS WCS -TAB:
-    with pytest.raises(ValueError):
-        hdr, bt = w.to_fits_tab()
+    with pytest.raises(ValueError):  # noqa: PT011
+        _, _ = w.to_fits_tab()
 
 
 def test_to_fits_tab_cube(gwcs_3d_galactic_spectral):
@@ -1346,7 +1346,6 @@ def test_iter_inv():
             quiet=False,
             with_bounding_box=False,
         )
-        assert np.allclose((x, y), (xp, yp))
 
     xp, yp = e.value.best_solution.T
     assert np.allclose((x[1:], y[1:]), (xp[1:], yp[1:]))

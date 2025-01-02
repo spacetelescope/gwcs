@@ -92,23 +92,22 @@ def sellmeier_zemax():
     return examples.sellmeier_zemax()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def gwcs_3d_galactic_spectral():
     return examples.gwcs_3d_galactic_spectral()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def gwcs_1d_spectral():
     return examples.gwcs_1d_spectral()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def gwcs_spec_cel_time_4d():
     return examples.gwcs_spec_cel_time_4d()
 
 
 @pytest.fixture(
-    scope="function",
     params=[
         (2, 1, 0),
         (2, 0, 1),
@@ -123,7 +122,6 @@ def gwcs_cube_with_separable_spectral(request):
 
 
 @pytest.fixture(
-    scope="function",
     params=[
         (2, 0, 1),
         (2, 1, 0),
@@ -140,7 +138,7 @@ def gwcs_cube_with_separable_time(request):
     return examples.gwcs_cube_with_separable_time(axes_order)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def gwcs_7d_complex_mapping():
     return examples.gwcs_7d_complex_mapping()
 

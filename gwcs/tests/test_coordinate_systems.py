@@ -205,17 +205,17 @@ def test_axes_type():
 
 
 def test_length_attributes():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CoordinateFrame(
             naxes=2, unit=(u.deg), axes_type=("SPATIAL", "SPATIAL"), axes_order=(0, 1)
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CoordinateFrame(
             naxes=2, unit=(u.deg, u.deg), axes_type=("SPATIAL",), axes_order=(0, 1)
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CoordinateFrame(
             naxes=2,
             unit=(u.deg, u.deg),
@@ -285,10 +285,10 @@ def test_coordinate_to_quantity_celestial(inp):
     assert_quantity_allclose(lon, 10 * u.deg)
     assert_quantity_allclose(lat, 20 * u.deg)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         coordinate_to_quantity(10 * u.deg, 2 * u.deg, 3 * u.deg, frame=cel)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         coordinate_to_quantity((1, 2), frame=cel)
 
 
@@ -407,14 +407,14 @@ def test_coordinate_to_quantity_frame_2d():
 
 def test_coordinate_to_quantity_error():
     frame = cf.Frame2D(unit=(u.one, u.arcsec))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         coordinate_to_quantity(1, frame=frame)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         coordinate_to_quantity((1, 1), 2, frame=frame)
 
     frame = cf.TemporalFrame(reference_frame=Time([], format="isot"), unit=u.s)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         coordinate_to_quantity(1, frame=frame)
 
 
@@ -450,7 +450,7 @@ def test_axis_physical_types():
     fr2d = cf.Frame2D(name="d", axis_physical_types=("pos.x", "pos.y"))
     assert fr2d.axis_physical_types == ("custom:pos.x", "custom:pos.y")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CelestialFrame(
             reference_frame=coord.ICRS(), axis_physical_types=("pos.eq.ra",)
         )
@@ -481,7 +481,7 @@ def test_axis_physical_types():
         naxes=1,
     )
     assert frame.axis_physical_types == ("custom:length",)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CoordinateFrame(
             name="custom_frame",
             axes_type=("SPATIAL",),
@@ -492,7 +492,7 @@ def test_axis_physical_types():
 
 
 def test_base_frame():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         cf.CoordinateFrame(
             name="custom_frame",
             axes_type=("SPATIAL",),
@@ -542,9 +542,10 @@ def test_ucd1_to_ctype(caplog):
         ctype_to_ucd=ctype_to_ucd, allowed_ucd_duplicates=cf._ALLOWED_UCD_DUPLICATES
     )
 
-    assert caplog.record_tuples[-1][1] == logging.WARNING and caplog.record_tuples[-1][
-        2
-    ].startswith("Found unsupported duplicate physical type")
+    assert caplog.record_tuples[-1][1] == logging.WARNING
+    assert caplog.record_tuples[-1][2].startswith(
+        "Found unsupported duplicate physical type"
+    )
 
     for k, v in cf._ALLOWED_UCD_DUPLICATES.items():
         assert inv_map.get(k, "") == v

@@ -1685,7 +1685,7 @@ class WCS(GWCSAPIMixin):
         if center:
             vertices = utils._toindex(vertices)
 
-        result = np.asarray(self.__call__(*vertices, **{"with_bounding_box": False}))
+        result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
 
         axis_type = axis_type.lower()
         if axis_type == "spatial" and all_spatial:
@@ -3389,8 +3389,8 @@ def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
     invcdmat = npla.inv(np.array(cdmat))
     degree = fit_poly_x.degree
     # Now loop through all remaining coefficients
-    for i in range(0, degree + 1):
-        for j in range(0, degree + 1):
+    for i in range(degree + 1):
+        for j in range(degree + 1):
             if (i + j > 1) and (i + j < degree + 1):
                 old_x = getattr(fit_poly_x, f"c{i}_{j}").value
                 old_y = getattr(fit_poly_y, f"c{i}_{j}").value
@@ -3407,8 +3407,8 @@ def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
     """
     mindeg = int(not keeplinear)
     degree = poly_model.degree
-    for i in range(0, degree + 1):
-        for j in range(0, degree + 1):
+    for i in range(degree + 1):
+        for j in range(degree + 1):
             if (i + j) > mindeg and (i + j < degree + 1):
                 hdr[f"{coeff_prefix}_{i}_{j}"] = getattr(poly_model, f"c{i}_{j}").value
 
