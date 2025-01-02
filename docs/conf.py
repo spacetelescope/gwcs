@@ -59,7 +59,7 @@ exclude_patterns.append("_templates")  # noqa: F405
 
 # This is added to the end of RST files - a good place to put substitutions to
 # be used globally.
-rst_epilog += """  
+rst_epilog += """
 """  # noqa: F405
 
 # Top-level directory containing ASDF schemas (relative to current directory)

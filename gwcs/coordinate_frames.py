@@ -54,21 +54,24 @@ numerical values.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One of the key concepts regarding coordinate frames is the ``axes_order`` argument.
-This argument is used to map from the components of the frame to the inputs/outputs of the transform.
-To illustrate this consider this situation where you have a forward transform
-which outputs three coordinates ``[lat, lambda, lon]``.  These would be
-represented as a `.SpectralFrame` and a `.CelestialFrame`, however, the axes of
-a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two frames as
+This argument is used to map from the components of the frame to the inputs/outputs
+of the transform.  To illustrate this consider this situation where you have a
+forward transform which outputs three coordinates ``[lat, lambda, lon]``. These
+would be represented as a `.SpectralFrame` and a `.CelestialFrame`, however, the
+axes of a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two
+frames as
 
 .. code-block:: python
 
   [SpectralFrame(axes_order=(1,)), CelestialFrame(axes_order=(2, 0))]
 
 we would map the outputs of this transform into the correct positions in the frames.
- As shown below, this is also used when constructing the inputs to the inverse transform.
+ As shown below, this is also used when constructing the inputs to the inverse
+ transform.
 
 
-When taking the output from the forward transform the following transformation is performed by the coordinate frames:
+When taking the output from the forward transform the following transformation
+is performed by the coordinate frames:
 
 .. code-block::
 
@@ -90,7 +93,8 @@ When taking the output from the forward transform the following transformation i
    SpectralCoord(lambda)    SkyCoord((lon, lat))
 
 
-When considering the backward transform the following transformations take place in the coordinate frames before the transform is called:
+When considering the backward transform the following transformations take place
+in the coordinate frames before the transform is called:
 
 .. code-block::
 
@@ -400,7 +404,8 @@ class CoordinateFrame(BaseCoordinateFrame):
     axes_order : tuple of int
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
-        Reference frame (usually used with output_frame to convert to world coordinate objects).
+        Reference frame (usually used with output_frame to convert to world
+        coordinate objects).
     unit : list of astropy.units.Unit
         Unit for each axis.
     axes_names : list
@@ -564,7 +569,8 @@ class CoordinateFrame(BaseCoordinateFrame):
         high_level_coordinates
             One (or more) high level object describing the coordinate.
         """
-        # We allow Quantity-like objects here which values_to_high_level_objects does not.
+        # We allow Quantity-like objects here which values_to_high_level_objects
+        # does not.
         values = [
             v.to_value(unit) if hasattr(v, "to_value") else v
             for v, unit in zip(values, self.unit)
@@ -609,8 +615,9 @@ class CelestialFrame(CoordinateFrame):
     Representation of a Celesital coordinate system.
 
     This class has a native order of longitude then latitude, meaning
-    ``axes_names``, ``unit`` and ``axis_physical_types`` should be lon, lat ordered.  If your transform is
-    in a different order this should be specified with ``axes_order``.
+    ``axes_names``, ``unit`` and ``axis_physical_types`` should be lon, lat
+    ordered. If your transform is in a different order this should be specified
+    with ``axes_order``.
 
     Parameters
     ----------
@@ -713,7 +720,8 @@ class SpectralFrame(CoordinateFrame):
     axes_order : tuple or int
         A dimension in the input data that corresponds to this axis.
     reference_frame : astropy.coordinates.builtin_frames
-        Reference frame (usually used with output_frame to convert to world coordinate objects).
+        Reference frame (usually used with output_frame to convert to world
+        coordinate objects).
     unit : str or units.Unit instance
         Spectral unit.
     axes_names : str

@@ -49,7 +49,7 @@ class WavelengthFromGratingEquation(Model):
     >>> print(lam)
     -1.7453292519934437e-10 m
 
-    """
+    """  # noqa: E501
 
     _separable = False
 
@@ -105,7 +105,7 @@ class AnglesFromGratingEquation3D(Model):
     >>> print(alpha_out, beta_out, gamma_out)
     0.04000174532925199 -1.7453292519934436e-06 0.9991996098716049
 
-    """
+    """  # noqa: E501
 
     _separable = False
     linear = False
@@ -382,11 +382,12 @@ class SellmeierZemax(Model):
             1.0 + (ref_temp - 15) * 3.4785e-3
         )
 
-        # Compute the relative index of the glass at Tref and Pref using Sellmeier equation I.
+        # Compute the relative index of the glass at Tref and Pref using
+        # Sellmeier equation I.
         lamrel = wavelength * nair_obs / nair_ref
         nrel = SellmeierGlass.evaluate(lamrel[0], B_coef, C_coef)
-        # Convert the relative index of refraction at the reference temperature and pressure
-        # to absolute.
+        # Convert the relative index of refraction at the reference temperature
+        # and pressure to absolute.
         nabs_ref = nrel * nair_ref
 
         # Compute the absolute index of the glass

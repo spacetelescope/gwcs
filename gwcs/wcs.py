@@ -143,8 +143,9 @@ class WCS(GWCSAPIMixin):
     forward_transform : `~astropy.modeling.Model` or a list
         The transform between ``input_frame`` and ``output_frame``.
         A list of (frame, transform) tuples where ``frame`` is the starting frame and
-        ``transform`` is the transform from this frame to the next one or ``output_frame``.
-        The last tuple is (transform, None), where None indicates the end of the pipeline.
+        ``transform`` is the transform from this frame to the next one or
+        ``output_frame``.  The last tuple is (transform, None), where None indicates
+        the end of the pipeline.
     input_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
         A coordinates object or a string name.
     output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
@@ -204,7 +205,8 @@ class WCS(GWCSAPIMixin):
                     "(frame, transform) list, got {0}".format(type(forward_transform))
                 )
         else:
-            # Initialize a WCS without a forward_transform - allows building a WCS programmatically.
+            # Initialize a WCS without a forward_transform - allows building a
+            # WCS programmatically.
             if output_frame is None:
                 raise CoordinateFrameError(
                     "An output_frame must be specified " "if forward_transform is None."
@@ -302,8 +304,8 @@ class WCS(GWCSAPIMixin):
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box to it
-            # before evaluating it. The order Model.bounding_box is reversed.
+            # bounding boxes. Get the forward transform and assign the bounding_box
+            # to it before evaluating it. The order Model.bounding_box is reversed.
             transform.bounding_box = self.bounding_box
 
         return transform
@@ -311,7 +313,8 @@ class WCS(GWCSAPIMixin):
     @property
     def backward_transform(self):
         """
-        Return the total backward transform if available - from output to input coordinate system.
+        Return the total backward transform if available - from output to input
+        coordinate system.
 
         Raises
         ------
@@ -520,7 +523,8 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
+        args : float, array like, `~astropy.coordinates.SkyCoord` or
+               `~astropy.units.Unit`
             Coordinates to be inverted. The number of arguments must be equal
             to the number of world coordinates given by ``world_n_dim``.
 
@@ -533,8 +537,8 @@ class WCS(GWCSAPIMixin):
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
         with_units : bool, optional
-            If ``True`` then high level astropy object (i.e. ``Quantity``) will be returned.
-            Optional, default=False.
+            If ``True`` then high level astropy object (i.e. ``Quantity``) will
+            be returned.  Optional, default=False.
 
         Other Parameters
         ----------------
@@ -923,10 +927,11 @@ class WCS(GWCSAPIMixin):
          [3.65405005e+04 1.31364188e+04]
          [2.76552923e-05 1.14789013e-05]]
 
-        """
+        """  # noqa: E501
         if kwargs.pop("with_units", False):
             raise ValueError(
-                "Support for with_units in numerical_inverse has been removed, use inverse"
+                "Support for with_units in numerical_inverse has been removed, "
+                "use inverse"
             )
 
         args_shape = np.shape(args)
@@ -1313,8 +1318,8 @@ class WCS(GWCSAPIMixin):
             If ``True`` - returns a `~astropy.coordinates.SkyCoord` or
             `~astropy.coordinates.SpectralCoord` object.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of the inputs being
-             outside the bounding_box are set to ``fill_value``.
+             If True(default) values in the result which correspond to any of
+             the inputs being outside the bounding_box are set to ``fill_value``.
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is np.nan).
         """
@@ -1530,9 +1535,12 @@ class WCS(GWCSAPIMixin):
             and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
         ):
             warnings.warn(
-                "The bounding_box was set in C order on the transform prior to being used in the gwcs!\n"
-                "Check that you intended that ordering for the bounding_box, and consider setting it in F order.\n"
-                "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS.",
+                "The bounding_box was set in C order on the transform prior to "
+                "being used in the gwcs!\n"
+                "Check that you intended that ordering for the bounding_box, "
+                "and consider setting it in F order.\n"
+                "The bounding_box will remain meaning the same but will be "
+                "converted to F order for consistency in the GWCS.",
                 GwcsBoundingBoxWarning,
             )
             self.bounding_box = bb.bounding_box(order="F")
@@ -1546,7 +1554,8 @@ class WCS(GWCSAPIMixin):
         Set the range of acceptable values for each input axis.
 
         The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        For two inputs and axes_order(0, 1) the bounding box is ((xlow, xhigh), (ylow, yhigh)).
+        For two inputs and axes_order(0, 1) the bounding box is
+        ((xlow, xhigh), (ylow, yhigh)).
 
         Parameters
         ----------
@@ -1660,8 +1669,8 @@ class WCS(GWCSAPIMixin):
         else:
             vertices = np.array(list(itertools.product(*bb))).T
 
-        # workaround an issue with bbox with quantity, interval needs to be a cquantity, not a list of quantities
-        # strip units
+        # workaround an issue with bbox with quantity, interval needs to be a cquantity,
+        # not a list of quantities strip units
         if center:
             vertices = utils._toindex(vertices)
 
@@ -3458,8 +3467,15 @@ class Step:
         return self.transform
 
     def __str__(self):
-        return f"{self.frame_name}\t {getattr(self.transform, 'name', 'None') or self.transform.__class__.__name__}"
+        return (
+            f"{self.frame_name}\t "
+            f"{getattr(self.transform, 'name', 'None') or
+               type(self.transform).__name__}"
+        )
 
     def __repr__(self):
-        return f"Step(frame={self.frame_name}, \
-                      transform={getattr(self.transform, 'name', 'None') or self.transform.__class__.__name__})"
+        return (
+            f"Step(frame={self.frame_name}, "
+            f"transform={getattr(self.transform, 'name', 'None') or
+                         type(self.transform).__name__})"
+        )

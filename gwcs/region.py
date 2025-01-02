@@ -59,7 +59,8 @@ class Region:
         Parameters
         ----------
         mask : ndarray
-            An array with the shape of the mask to be uised in `~gwcs.selector.RegionsSelector`.
+            An array with the shape of the mask to be uised in
+            `~gwcs.selector.RegionsSelector`.
 
         Returns
         -------

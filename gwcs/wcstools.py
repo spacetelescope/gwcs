@@ -54,9 +54,10 @@ def wcs_from_fiducial(
     bounding_box : tuple
         The bounding box over which the WCS is valid.
         It is a tuple of tuples of size 2 where each tuple
-        represents a range of (low, high) values. The ``bounding_box`` is in the order of
-        the axes, `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        For two inputs and axes_order(0, 1) the bounding box is ((xlow, xhigh), (ylow, yhigh)).
+        represents a range of (low, high) values. The ``bounding_box`` is in the
+        order of the axes, `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        For two inputs and axes_order(0, 1) the bounding box is
+        ((xlow, xhigh), (ylow, yhigh)).
     input_frame : ~gwcs.coordinate_frames.CoordinateFrame`
         The input coordinate frame.
     """
@@ -177,7 +178,8 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
 
     Parameters
     ----------
-    bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox | ~astropy.modeling.bounding_box.CompoundBoundingBox
+    bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox |
+                   ~astropy.modeling.bounding_box.CompoundBoundingBox
         The bounding_box of a WCS object, `~gwcs.wcs.WCS.bounding_box`.
     step : scalar or tuple
         Step size for grid in each dimension.  Scalar applies to all dimensions.

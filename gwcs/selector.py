@@ -20,9 +20,10 @@ An instance of a ``LabelMapper`` class is passed to `RegionsSelector`.
 The labels are used by `RegionsSelector` to match inputs to transforms.
 Finally, `RegionsSelector` evaluates the transforms on the corresponding inputs.
 Label mappers and transforms take the same inputs as
-`RegionsSelector`. The inputs should be filtered appropriately using the ``inputs_mapping``
-argument which is ian instance of `~astropy.modeling.mappings.Mapping`.
-The transforms in "transform_selector" should have the same number of inputs and outputs.
+`RegionsSelector`. The inputs should be filtered appropriately using the
+``inputs_mapping`` argument which is ian instance of
+`~astropy.modeling.mappings.Mapping`.  The transforms in "transform_selector"
+should have the same number of inputs and outputs.
 
 This is illustrated below using two regions, labeled 1 and 2 ::
 
@@ -239,7 +240,7 @@ class LabelMapperArray(_LabelMapper):
         ...           }
         >>> mapper = LabelMapperArray.from_vertices((2400, 2400), regions)
 
-        """
+        """  # noqa: E501
         labels = np.array(list(regions.keys()))
         mask = np.zeros(shape, dtype=labels.dtype)
 
@@ -565,7 +566,8 @@ class RegionsSelector(Model):
             return False
         else:
             raise ValueError(
-                "You can not mix models which use quantity and do not use quantity inside a RegionSelector"
+                "You can not mix models which use quantity and do not use "
+                "quantity inside a RegionSelector"
             )
 
     def set_input(self, rid):
