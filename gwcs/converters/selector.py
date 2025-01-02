@@ -47,24 +47,22 @@ class LabelMapperConverter(TransformConverterBase):
                 msg = "GWCS currently only supports 2D masks."
                 raise NotImplementedError(msg)
             return LabelMapperArray(mapper, inputs_mapping)
-        elif isinstance(mapper, Model):
+        if isinstance(mapper, Model):
             inputs = node.get("inputs")
             return LabelMapper(
                 inputs, mapper, inputs_mapping=inputs_mapping, no_label=no_label
             )
-        else:
-            inputs = node.get("inputs", None)
-            if inputs is not None:
-                inputs = tuple(inputs)
-            labels = mapper.get("labels")
-            transforms = mapper.get("models")
-            if isiterable(labels[0]):
-                labels = [tuple(label) for label in labels]
-                dict_mapper = dict(zip(labels, transforms, strict=False))
-                return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
-            else:
-                dict_mapper = dict(zip(labels, transforms, strict=False))
-                return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
+        inputs = node.get("inputs", None)
+        if inputs is not None:
+            inputs = tuple(inputs)
+        labels = mapper.get("labels")
+        transforms = mapper.get("models")
+        if isiterable(labels[0]):
+            labels = [tuple(label) for label in labels]
+            dict_mapper = dict(zip(labels, transforms, strict=False))
+            return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
+        dict_mapper = dict(zip(labels, transforms, strict=False))
+        return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..selector import (

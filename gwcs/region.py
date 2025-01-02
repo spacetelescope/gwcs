@@ -345,13 +345,12 @@ class Edge:
             earr = np.asarray([self._start, self._stop])
             if np.diff(earr[:, 1]).item() == 0:
                 return None
-            else:
-                entry = [
-                    self._ymax,
-                    self._yminx,
-                    (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(),
-                    None,
-                ]
+            entry = [
+                self._ymax,
+                self._yminx,
+                (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(),
+                None,
+            ]
         return entry
 
     def compute_AET_entry(self, edge):

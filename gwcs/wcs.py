@@ -1283,21 +1283,20 @@ class WCS(GWCSAPIMixin):
                     slow_conv=ind,
                     divergent=None,
                 )
-            else:
-                msg = (
-                    "'WCS.numerical_inverse' failed to "
-                    "converge to the requested accuracy.\n"
-                    f"After {k:d} iterations, the solution is diverging "
-                    "at least for one input point."
-                )
-                raise NoConvergence(
-                    msg,
-                    best_solution=pix,
-                    accuracy=np.abs(dpix),
-                    niter=k,
-                    slow_conv=ind,
-                    divergent=inddiv,
-                )
+            msg = (
+                "'WCS.numerical_inverse' failed to "
+                "converge to the requested accuracy.\n"
+                f"After {k:d} iterations, the solution is diverging "
+                "at least for one input point."
+            )
+            raise NoConvergence(
+                msg,
+                best_solution=pix,
+                accuracy=np.abs(dpix),
+                niter=k,
+                slow_conv=ind,
+                divergent=inddiv,
+            )
 
         if with_bounding_box and self.bounding_box is not None:
             # find points outside the bounding box and replace their values
@@ -1372,8 +1371,7 @@ class WCS(GWCSAPIMixin):
                 step.frame if isinstance(step.frame, str) else step.frame.name
                 for step in self._pipeline
             ]
-        else:
-            return None
+        return None
 
     def insert_transform(self, frame, transform, after=False):
         """
@@ -1442,7 +1440,7 @@ class WCS(GWCSAPIMixin):
                 f"{input_name} and {output_name} already exist"
             )
             raise ValueError(msg)
-        elif new_frames == 2:
+        if new_frames == 2:
             msg = (
                 "Could not insert frame as neither frame "
                 f"{input_name} nor {output_name} exists"
@@ -1488,8 +1486,7 @@ class WCS(GWCSAPIMixin):
             if not isinstance(frame, str):
                 frame = frame.name
             return getattr(self, frame)
-        else:
-            return None
+        return None
 
     @property
     def input_frame(self):
@@ -1499,8 +1496,7 @@ class WCS(GWCSAPIMixin):
             if not isinstance(frame, str):
                 frame = frame.name
             return getattr(self, frame)
-        else:
-            return None
+        return None
 
     @property
     def name(self):
@@ -1852,7 +1848,7 @@ class WCS(GWCSAPIMixin):
             msg = "The to_fits_sip requires an output celestial frame."
             raise ValueError(msg)
 
-        hdr = self._to_fits_sip(
+        return self._to_fits_sip(
             celestial_group=celestial_group,
             keep_axis_position=False,
             bounding_box=bounding_box,
@@ -1866,8 +1862,6 @@ class WCS(GWCSAPIMixin):
             matrix_type="CD",
             verbose=verbose,
         )
-
-        return hdr
 
     def _to_fits_sip(
         self,
@@ -2432,8 +2426,7 @@ class WCS(GWCSAPIMixin):
 
         if detect_celestial:
             return axes_groups, world_axes, celestial_group
-        else:
-            return axes_groups, world_axes
+        return axes_groups, world_axes
 
     def to_fits_tab(
         self,
@@ -3273,9 +3266,8 @@ def _fit_2D_poly(
             if single_degree:
                 # Nothing to do if failure is for the lowest degree
                 raise e
-            else:
-                # Keep results from the previous iteration. Discard current fit
-                break
+            # Keep results from the previous iteration. Discard current fit
+            break
 
         if not np.isfinite(cond):
             # Ill-conditioned system
@@ -3360,8 +3352,7 @@ def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     Compute the distance residuals and return the rms and maximum values.
     """
     dist = np.sqrt((undist_x - fit_poly_x) ** 2 + (undist_y - fit_poly_y) ** 2)
-    max_resid = dist.max()
-    return max_resid
+    return dist.max()
 
 
 def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
@@ -3435,9 +3426,7 @@ def _fix_transform_inputs(transform, inputs):
     for k in range(1, transform.n_inputs):
         input_fixer &= Const1D(inputs[k]) if k in inputs else Identity(1)
 
-    transform = in_selector | input_fixer | transform
-
-    return transform
+    return in_selector | input_fixer | transform
 
 
 class Step:

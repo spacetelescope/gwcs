@@ -105,8 +105,7 @@ def coordinate_to_quantity(*inputs, frame):
     results = frame.from_high_level_coordinates(*inputs)
     if not isinstance(results, list):
         results = [results]
-    results = [r << unit for r, unit in zip(results, frame.unit, strict=False)]
-    return results
+    return [r << unit for r, unit in zip(results, frame.unit, strict=False)]
 
 
 @pytest.mark.parametrize("inputs", inputs2)

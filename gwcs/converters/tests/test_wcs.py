@@ -24,7 +24,7 @@ def _assert_frame_equal(a, b):
     assert type(a) is type(b)
 
     if a is None:
-        return
+        return None
 
     if not isinstance(a, cf.CoordinateFrame):
         return a == b
@@ -34,6 +34,7 @@ def _assert_frame_equal(a, b):
     assert a.axes_names == b.axes_names  # nosec
     assert a.unit == b.unit  # nosec
     assert a.reference_frame == b.reference_frame  # nosec
+    return None
 
 
 def assert_frame_roundtrip(frame, tmpdir, version=None):
@@ -106,7 +107,7 @@ def test_composite_frame(tmpdir):
 def create_test_frames():
     """Creates an array of frames to be used for testing."""
 
-    frames = [
+    return [
         cf.CelestialFrame(reference_frame=coord.ICRS()),
         cf.CelestialFrame(reference_frame=coord.FK5(equinox=time.Time("2010-01-01"))),
         cf.CelestialFrame(
@@ -147,8 +148,6 @@ def create_test_frames():
         cf.StokesFrame(),
         cf.TemporalFrame(time.Time("2011-01-01")),
     ]
-
-    return frames
 
 
 def test_frames(tmpdir):

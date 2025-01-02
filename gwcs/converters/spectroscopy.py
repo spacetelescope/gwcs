@@ -27,11 +27,10 @@ class SellmeierGlassConverter(TransformConverterBase):
         return SellmeierGlass(node["B_coef"], node["C_coef"])
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        node = {
+        return {
             "B_coef": parameter_to_value(model.B_coef),
             "C_coef": parameter_to_value(model.C_coef),
         }
-        return node
 
 
 class SellmeierZemaxConverter(TransformConverterBase):
@@ -53,7 +52,7 @@ class SellmeierZemaxConverter(TransformConverterBase):
         )
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        node = {
+        return {
             "B_coef": parameter_to_value(model.B_coef),
             "C_coef": parameter_to_value(model.C_coef),
             "D_coef": parameter_to_value(model.D_coef),
@@ -63,7 +62,6 @@ class SellmeierZemaxConverter(TransformConverterBase):
             "pressure": parameter_to_value(model.pressure),
             "ref_pressure": parameter_to_value(model.ref_pressure),
         }
-        return node
 
 
 class Snell3DConverter(TransformConverterBase):

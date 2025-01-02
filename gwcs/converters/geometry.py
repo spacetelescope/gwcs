@@ -21,11 +21,10 @@ class DirectionCosinesConverter(TransformConverterBase):
         transform_type = node["transform_type"]
         if transform_type == "to_direction_cosines":
             return ToDirectionCosines()
-        elif transform_type == "from_direction_cosines":
+        if transform_type == "from_direction_cosines":
             return FromDirectionCosines()
-        else:
-            msg = f"Unknown model_type {transform_type}"
-            raise TypeError(msg)
+        msg = f"Unknown model_type {transform_type}"
+        raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..geometry import FromDirectionCosines, ToDirectionCosines
@@ -37,8 +36,7 @@ class DirectionCosinesConverter(TransformConverterBase):
         else:
             msg = f"Model of type {model.__class__} is not supported."
             raise TypeError(msg)
-        node = {"transform_type": transform_type}
-        return node
+        return {"transform_type": transform_type}
 
 
 class SphericalCartesianConverter(TransformConverterBase):
@@ -55,11 +53,10 @@ class SphericalCartesianConverter(TransformConverterBase):
         wrap_lon_at = node["wrap_lon_at"]
         if transform_type == "spherical_to_cartesian":
             return SphericalToCartesian(wrap_lon_at=wrap_lon_at)
-        elif transform_type == "cartesian_to_spherical":
+        if transform_type == "cartesian_to_spherical":
             return CartesianToSpherical(wrap_lon_at=wrap_lon_at)
-        else:
-            msg = f"Unknown model_type {transform_type}"
-            raise TypeError(msg)
+        msg = f"Unknown model_type {transform_type}"
+        raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..geometry import CartesianToSpherical, SphericalToCartesian
@@ -72,5 +69,4 @@ class SphericalCartesianConverter(TransformConverterBase):
             msg = f"Model of type {model.__class__} is not supported."
             raise TypeError(msg)
 
-        node = {"transform_type": transform_type, "wrap_lon_at": model.wrap_lon_at}
-        return node
+        return {"transform_type": transform_type, "wrap_lon_at": model.wrap_lon_at}

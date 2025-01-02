@@ -435,8 +435,7 @@ class LabelMapperRange(_LabelMapper):
         end = values[:, 1]
         if any((end - start)[:-1] > 0) or any(start[-1] > end):
             return True
-        else:
-            return False
+        return False
 
     # move this to utils?
     def _find_range(self, value_range, value):
@@ -461,10 +460,9 @@ class LabelMapperRange(_LabelMapper):
         if ind.size > 1:
             msg = "There are overlapping ranges."
             raise ValueError(msg)
-        elif ind.size == 0:
+        if ind.size == 0:
             return None
-        else:
-            return ind.item()
+        return ind.item()
 
     def evaluate(self, *args):
         shape = args[0].shape
@@ -565,14 +563,13 @@ class RegionsSelector(Model):
         not_all_uses_quantity = [not uq for uq in all_uses_quantity]
         if all(all_uses_quantity):
             return True
-        elif not_all_uses_quantity:
+        if not_all_uses_quantity:
             return False
-        else:
-            msg = (
-                "You can not mix models which use quantity and do not use "
-                "quantity inside a RegionSelector"
-            )
-            raise ValueError(msg)
+        msg = (
+            "You can not mix models which use quantity and do not use "
+            "quantity inside a RegionSelector"
+        )
+        raise ValueError(msg)
 
     def set_input(self, rid):
         """
@@ -580,9 +577,8 @@ class RegionsSelector(Model):
         """
         if rid in self._selector:
             return self._selector[rid]
-        else:
-            msg = f"Region {rid} not found"
-            raise RegionError(msg)
+        msg = f"Region {rid} not found"
+        raise RegionError(msg)
 
     def inverse(self):
         if self.label_mapper.inverse is not None:
@@ -599,12 +595,11 @@ class RegionsSelector(Model):
             return self.__class__(
                 self.outputs, self.inputs, transforms_inv, self.label_mapper.inverse
             )
-        else:
-            msg = (
-                "The label mapper must have an inverse "
-                "for RegionsSelector to have an inverse."
-            )
-            raise NotImplementedError(msg)
+        msg = (
+            "The label mapper must have an inverse "
+            "for RegionsSelector to have an inverse."
+        )
+        raise NotImplementedError(msg)
 
     def evaluate(self, *args):
         """

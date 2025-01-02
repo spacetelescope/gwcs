@@ -158,7 +158,7 @@ def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
             if ucd not in allowed_ucd_duplicates:
                 new_ucd.add(ucd)
             continue
-        elif ucd in allowed_ucd_duplicates:
+        if ucd in allowed_ucd_duplicates:
             inv_map[ucd] = allowed_ucd_duplicates[ucd]
         else:
             inv_map[ucd] = kwd
@@ -231,8 +231,7 @@ class FrameProperties:
             if len(unit) != naxes:
                 msg = "Number of units does not match number of axes."
                 raise ValueError(msg)
-            else:
-                self.unit = tuple(u.Unit(au) for au in unit)
+            self.unit = tuple(u.Unit(au) for au in unit)
         else:
             self.unit = tuple(u.dimensionless_unscaled for na in range(naxes))
 
@@ -685,17 +684,16 @@ class CelestialFrame(CoordinateFrame):
     def _default_axis_physical_types(self, reference_frame, axes_names):
         if isinstance(reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
-        elif isinstance(
+        if isinstance(
             reference_frame,
             coord.GeocentricTrueEcliptic | coord.GCRS | coord.PrecessedGeocentric,
         ):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
-        elif isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
+        if isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
-        elif isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
+        if isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
             return "pos.ecliptic.lon", "pos.ecliptic.lat"
-        else:
-            return tuple(f"custom:{t}" for t in axes_names)
+        return tuple(f"custom:{t}" for t in axes_names)
 
     @property
     def world_axis_object_classes(self):
@@ -763,11 +761,11 @@ class SpectralFrame(CoordinateFrame):
     def _default_axis_physical_types(self, unit):
         if unit[0].physical_type == "frequency":
             return ("em.freq",)
-        elif unit[0].physical_type == "length":
+        if unit[0].physical_type == "length":
             return ("em.wl",)
-        elif unit[0].physical_type == "energy":
+        if unit[0].physical_type == "energy":
             return ("em.energy",)
-        elif unit[0].physical_type == "speed":
+        if unit[0].physical_type == "speed":
             return ("spect.dopplerVeloc",)
             logging.warning(
                 "Physical type may be ambiguous. Consider "
@@ -775,8 +773,7 @@ class SpectralFrame(CoordinateFrame):
                 "either 'spect.dopplerVeloc.optical' or "
                 "'spect.dopplerVeloc.radio'."
             )
-        else:
-            return (f"custom:{unit[0].physical_type}",)
+        return (f"custom:{unit[0].physical_type}",)
 
     @property
     def world_axis_object_classes(self):

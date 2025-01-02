@@ -68,8 +68,7 @@ def _toindex(value):
     >>> _toindex(np.array([1.5, 2.49999]))
     array([2, 2])
     """
-    indx = np.asarray(np.floor(np.asarray(value) + 0.5), dtype=int)
-    return indx
+    return np.asarray(np.floor(np.asarray(value) + 0.5), dtype=int)
 
 
 def get_values(units, *args):
@@ -291,7 +290,7 @@ def _is_skysys_consistent(ctype, sky_inmap):
                 msg = "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
                 raise ValueError(msg)
             break
-        elif ctype[sky_inmap[1]] == item[0]:
+        if ctype[sky_inmap[1]] == item[0]:
             if ctype[sky_inmap[0]] != item[1]:
                 msg = "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
                 raise ValueError(msg)

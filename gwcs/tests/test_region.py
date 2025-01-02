@@ -122,10 +122,9 @@ def create_range_mapper():
     for k, v in zip(keys, m, strict=False):
         rmapper[tuple(k)] = v
 
-    sel = selector.LabelMapperRange(
+    return selector.LabelMapperRange(
         ("x", "y"), rmapper, inputs_mapping=models.Mapping((0,), n_inputs=2)
     )
-    return sel
 
 
 def create_scalar_mapper():

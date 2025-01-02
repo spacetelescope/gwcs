@@ -251,13 +251,12 @@ class SellmeierGlass(Model):
         B1, B2, B3 = B_coef[0]
         C1, C2, C3 = C_coef[0]
 
-        n = np.sqrt(
+        return np.sqrt(
             1.0
             + B1 * wavelength**2 / (wavelength**2 - C1)
             + B2 * wavelength**2 / (wavelength**2 - C2)
             + B3 * wavelength**2 / (wavelength**2 - C3)
         )
-        return n
 
     @property
     def input_units(self):
@@ -400,5 +399,4 @@ class SellmeierZemax(Model):
         nabs_obs = nabs_ref + delnabs
 
         # Define the relative index at the system's operating T and P.
-        n = nabs_obs / nair_obs
-        return n
+        return nabs_obs / nair_obs

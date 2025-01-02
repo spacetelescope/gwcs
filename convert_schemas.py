@@ -142,105 +142,102 @@ def format_type(schema, root):
     if "anyOf" in schema:
         return " :soft:`or` ".join(format_type(x, root) for x in schema["anyOf"])
 
-    elif "allOf" in schema:
+    if "allOf" in schema:
         return " :soft:`and` ".join(format_type(x, root) for x in schema["allOf"])
 
-    elif "$ref" in schema:
+    if "$ref" in schema:
         ref = schema["$ref"]
         if ref.startswith("#/"):
             return f":ref:`{ref[2:]} <{root}/{ref[2:]}>`"
-        else:
-            basename = os.path.basename(ref)
-            if "tag:stsci.edu:asdf" in ref or "tag:astropy.org:astropy" in ref:
-                return f"`{basename} <{ref}>`"
-            else:
-                return f":doc:`{basename} <{ref}>`"
+        basename = os.path.basename(ref)
+        if "tag:stsci.edu:asdf" in ref or "tag:astropy.org:astropy" in ref:
+            return f"`{basename} <{ref}>`"
+        return f":doc:`{basename} <{ref}>`"
+
+    type = schema.get("type")  # noqa: A001
+    if isinstance(type, list):
+        parts = [" or ".join(type)]
+
+    elif type is None:
+        parts = ["any"]
 
     else:
-        type = schema.get("type")  # noqa: A001
-        if isinstance(type, list):
-            parts = [" or ".join(type)]
+        parts = [type]
 
-        elif type is None:
-            parts = ["any"]
-
-        else:
-            parts = [type]
-
-        if type == "string":
-            range = format_range(  # noqa: A001
-                "*len*",
-                "*len*",
-                schema.get("minLength"),
-                schema.get("maxLength"),
-                False,
-                False,
-            )
-            if range is not None or "pattern" in schema or "format" in schema:
-                parts.append("(")
-                if range is not None:
-                    parts.append(range)
-                if "pattern" in schema:
-                    pattern = schema["pattern"].encode("unicode_escape")
-                    pattern = pattern.decode("ascii")
-                    parts.append(f":soft:`regex` :regexp:`{pattern}`")
-                if "format" in schema:
-                    parts.append(":soft:`format` {}".format(schema["format"]))
-                parts.append(")")
-
-        elif type in ("integer", "number"):
-            range = format_range(  # noqa: A001
-                "*x*",
-                "",
-                schema.get("minimum"),
-                schema.get("maximum"),
-                schema.get("exclusiveMinimum"),
-                schema.get("exclusiveMaximum"),
-            )
+    if type == "string":
+        range = format_range(  # noqa: A001
+            "*len*",
+            "*len*",
+            schema.get("minLength"),
+            schema.get("maxLength"),
+            False,
+            False,
+        )
+        if range is not None or "pattern" in schema or "format" in schema:
+            parts.append("(")
             if range is not None:
                 parts.append(range)
-            # TODO: multipleOf
+            if "pattern" in schema:
+                pattern = schema["pattern"].encode("unicode_escape")
+                pattern = pattern.decode("ascii")
+                parts.append(f":soft:`regex` :regexp:`{pattern}`")
+            if "format" in schema:
+                parts.append(":soft:`format` {}".format(schema["format"]))
+            parts.append(")")
 
-        elif type == "object":
-            range = format_range(  # noqa: A001
-                "*len*",
-                "*len*",
-                schema.get("minProperties"),
-                schema.get("maxProperties"),
-                False,
-                False,
-            )
-            if range is not None:
-                parts.append(range)
-            # TODO: Dependencies
-            # TODO: Pattern properties
+    elif type in ("integer", "number"):
+        range = format_range(  # noqa: A001
+            "*x*",
+            "",
+            schema.get("minimum"),
+            schema.get("maximum"),
+            schema.get("exclusiveMinimum"),
+            schema.get("exclusiveMaximum"),
+        )
+        if range is not None:
+            parts.append(range)
+        # TODO: multipleOf
 
-        elif type == "array":
-            items = schema.get("items")
-            if schema.get("items") and isinstance(items, dict):
-                if schema.get("uniqueItems"):
-                    parts.append(":soft:`of unique`")
-                else:
-                    parts.append(":soft:`of`")
-                parts.append("(")
-                parts.append(format_type(items, root))
-                parts.append(")")
-            range = format_range(  # noqa: A001
-                "*len*",
-                "*len*",
-                schema.get("minItems"),
-                schema.get("maxItems"),
-                False,
-                False,
-            )
-            if range is not None:
-                parts.append(range)
+    elif type == "object":
+        range = format_range(  # noqa: A001
+            "*len*",
+            "*len*",
+            schema.get("minProperties"),
+            schema.get("maxProperties"),
+            False,
+            False,
+        )
+        if range is not None:
+            parts.append(range)
+        # TODO: Dependencies
+        # TODO: Pattern properties
 
-        if "enum" in schema:
-            parts.append(":soft:`from`")
-            parts.append(json.dumps(schema["enum"]))
+    elif type == "array":
+        items = schema.get("items")
+        if schema.get("items") and isinstance(items, dict):
+            if schema.get("uniqueItems"):
+                parts.append(":soft:`of unique`")
+            else:
+                parts.append(":soft:`of`")
+            parts.append("(")
+            parts.append(format_type(items, root))
+            parts.append(")")
+        range = format_range(  # noqa: A001
+            "*len*",
+            "*len*",
+            schema.get("minItems"),
+            schema.get("maxItems"),
+            False,
+            False,
+        )
+        if range is not None:
+            parts.append(range)
 
-        return " ".join(parts)
+    if "enum" in schema:
+        parts.append(":soft:`from`")
+        parts.append(json.dumps(schema["enum"]))
+
+    return " ".join(parts)
 
 
 def reindent(content, indent):

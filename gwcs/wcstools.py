@@ -154,10 +154,7 @@ def _spectral_transform(fiducial, **kwargs):
 
 
 def _frame2D_transform(fiducial, **kwargs):
-    fiducial_transform = functools.reduce(
-        lambda x, y: x & y, [models.Shift(val) for val in fiducial]
-    )
-    return fiducial_transform
+    return functools.reduce(lambda x, y: x & y, [models.Shift(val) for val in fiducial])
 
 
 frame2transform = {

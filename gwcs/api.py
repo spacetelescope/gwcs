@@ -157,8 +157,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         """
         if self._pixel_shape is None:
             return None
-        else:
-            return self._pixel_shape[::-1]
+        return self._pixel_shape[::-1]
 
     @array_shape.setter
     def array_shape(self, value):
