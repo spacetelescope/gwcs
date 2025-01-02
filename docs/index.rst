@@ -100,7 +100,7 @@ To install the latest release::
 
     pip install gwcs
 
-The latest release of GWCS is also available as part of `astroconda <https://github.com/astroconda/astroconda>`__.
+The latest release of GWCS is also available as a conda package via `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__.
 
 
 .. _getting-started:
@@ -240,13 +240,7 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
-.. doctest-skip::
-
-  >>> wcsobj.invert(*sky)
-  (0.9999999996185807, 1.999999999186798)
-
-GWCS supports the common WCS interface which defines several methods
-to work with high level Astropy objects:
+GWCS supports the :ref:`wcsapi` which defines several methods to work with high level Astropy objects:
 
 .. doctest-skip::
 

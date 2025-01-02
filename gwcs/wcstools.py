@@ -327,7 +327,7 @@ def wcs_from_points(xy, world_coords, proj_point='center',
                          "Only one of {} is supported.".format(polynomial_type,
                                                                supported_poly_types.keys()))
 
-    skyrot = models.RotateCelestial2Native(crval[0].deg, crval[1].deg, 180)
+    skyrot = models.RotateCelestial2Native(crval[0].to_value(u.deg), crval[1].to_value(u.deg), 180)
     trans = (skyrot | projection)
     projection_x, projection_y = trans(lon, lat)
     poly = supported_poly_types[polynomial_type](poly_degree)

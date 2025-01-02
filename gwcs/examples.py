@@ -44,7 +44,7 @@ def gwcs_2d_spatial_reordered():
     A simple one step spatial WCS, in ICRS with a 1 and 2 px shift.
     """
     out_frame = cf.CelestialFrame(reference_frame=coord.ICRS(),
-                                   axes_order=(1, 0))
+                                  axes_order=(1, 0))
     return wcs.WCS(MODEL_2D_SHIFT | models.Mapping((1, 0)), input_frame=DETECTOR_2D_FRAME, output_frame=out_frame)
 
 
@@ -265,7 +265,7 @@ def gwcs_3d_galactic_spectral():
 
     shift = models.Shift(-crpix3) & models.Shift(-crpix1)
     scale = models.Multiply(cdelt3) & models.Multiply(cdelt1)
-    proj = models.Pix2Sky_CAR()
+    proj = models.Pix2Sky_TAN()
     skyrot = models.RotateNative2Celestial(crval3, 90 + crval1, 180)
     celestial = shift | scale | proj | skyrot
 
@@ -510,3 +510,28 @@ def gwcs_7d_complex_mapping():
     w.pixel_shape = (16, 32, 21, 11, 11, 2)
 
     return w
+
+
+def gwcs_with_pipeline_celestial():
+    input_frame = cf.CoordinateFrame(2, ["PIXEL"]*2,
+                                     axes_order=list(range(2)),
+                                     unit=[u.pix]*2,
+                                     name="input")
+
+    spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
+
+    celestial_frame = cf.CelestialFrame(axes_order=(0, 1), unit=(u.arcsec, u.deg),
+                                        reference_frame=coord.ICRS(), name="celestial")
+
+    custom = models.Shift(1*u.deg) & models.Shift(2*u.deg)
+
+    output_frame = cf.CoordinateFrame(2, ["CUSTOM"]*2,
+                                      axes_order=list(range(2)), unit=[u.arcsec]*2, name="output")
+
+    pipeline = [
+        (input_frame, spatial),
+        (celestial_frame, custom),
+        (output_frame, None),
+    ]
+
+    return wcs.WCS(pipeline)
