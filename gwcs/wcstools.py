@@ -69,7 +69,6 @@ def wcs_from_fiducial(
         msg = "Expected transform to be an instanceof astropy.modeling.Model"
         raise UnsupportedTransformError(msg)
 
-    # transform_outputs = transform.n_outputs
     if isinstance(fiducial, coord.SkyCoord):
         coordinate_frame = CelestialFrame(
             reference_frame=fiducial.frame,

@@ -1575,7 +1575,7 @@ def test_split_frame_wcs():
     # that we are pretending that this model is ordered lon, lat because that's
     # what the projections require in astropy.
 
-    # Input is (lat, wave, lon)
+    # Input is lat, wave, lon
     # lat: multiply by 20 arcsec, lon: multiply by 15 deg
     # result should be 20 arcsec, 10nm, 45 deg
     spatial = models.Multiply(20 * u.arcsec / u.pix) & models.Multiply(
@@ -1592,11 +1592,8 @@ def test_split_frame_wcs():
         reference_frame=coord.ICRS(),
         axes_names=("lon", "lat"),
     )
-    # celestial_frame = cf.CelestialFrame(axes_order=(2, 0), unit=(u.arcsec, u.deg),
-    #                                    reference_frame=coord.ICRS())
     spectral_frame = cf.SpectralFrame(axes_order=(1,), unit=u.nm, axes_names="wave")
     output_frame = cf.CompositeFrame([spectral_frame, celestial_frame])
-    # output_frame = cf.CompositeFrame([celestial_frame, spectral_frame])
 
     input_frame = cf.CoordinateFrame(
         3, ["PIXEL"] * 3, axes_order=list(range(3)), unit=[u.pix] * 3
@@ -1609,7 +1606,6 @@ def test_split_frame_wcs():
     assert_allclose(output_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
     expected_world = [20 * u.arcsec, 10 * u.nm, 45 * u.deg]
-    # expected_world = [15*u.deg, 20*u.nm, 60*u.arcsec]
     for expected, output in zip(expected_world, output_world, strict=False):
         assert_allclose(output, expected.value)
 

@@ -192,8 +192,6 @@ def read_wcs_from_header(header):
     wcs_info["RADESYS"] = header.get("RADESYS", "ICRS")
     wcs_info["VAFACTOR"] = header.get("VAFACTOR", 1)
     wcs_info["NAXIS"] = header.get("NAXIS", 0)
-    # date keyword?
-    # wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
     wcs_info["EQUINOX"] = header.get("EQUINOX", None)
     wcs_info["EPOCH"] = header.get("EPOCH", None)
     wcs_info["DATEOBS"] = header.get("MJD-OBS", header.get("DATE-OBS", None))
@@ -392,11 +390,6 @@ def fitswcs_linear(header):
 
     # if wcsaxes == 2:
     rotation = astmodels.AffineTransformation2D(matrix=pc, name="pc_matrix")
-    # elif wcsaxes == 3 :
-    # rotation = AffineTransformation3D(matrix=matrix)
-    # else:
-    # raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
-    # "{0} given".format(wcsaxes))
 
     translation_models = [
         astmodels.Shift(-(shift - 1), name="crpix" + str(i + 1))

@@ -611,7 +611,6 @@ def gwcs_7d_complex_mapping():
         unit=(u.pix, u.pix, u.pix, u.pix, u.pix, u.pix),
     )
 
-    # pipeline = [('detector', wcs_forward), (comp_frm, None)]
     w = wcs.WCS(
         forward_transform=wcs_forward, output_frame=comp_frm, input_frame=detector_frame
     )

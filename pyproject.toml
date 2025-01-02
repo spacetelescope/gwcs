@@ -139,11 +139,10 @@ select = [
     "RET",    # flake8-return (best practices for return statements)
     "SIM",    # flake8-simplify (suggest simplifications to code where possible)
     "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
-    # "TCH",    # flake8-type-checking (move type checking imports into type checking blocks)
-    # "INT",    # flake8-gettext (when to use printf style strings)
+    "INT",    # flake8-gettext (when to use printf style strings)
     # "ARG",    # flake8-unused-arguments (prevent unused arguments)
     #"PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
-    # "ERA",    # eradicate (remove commented out code)
+    "ERA",    # eradicate (remove commented out code)
     # "PGH",    # pygrep (simple grep checks)
     #"PL",     # pylint (general linting, flake8 alternative)
     "TRY",    # tryceratops (linting for try/except blocks)
@@ -160,4 +159,4 @@ ignore = [
 [tool.ruff.lint.extend-per-file-ignores]
 "gwcs/tests/*" = ["S101"]
 "gwcs/converters/tests/*" = ["S101"]
-"docs/conf.py" = ["INP001"]
+"docs/conf.py" = ["INP001", "ERA001"]

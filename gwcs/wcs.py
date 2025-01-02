@@ -1467,7 +1467,6 @@ class WCS(GWCSAPIMixin):
         """The unit of the coordinates in the output coordinate system."""
         if self._pipeline:
             try:
-                # return getattr(self, self._pipeline[-1][0].name).unit
                 return self._pipeline[-1].frame.unit
             except AttributeError:
                 return None
@@ -2030,8 +2029,6 @@ class WCS(GWCSAPIMixin):
             k: bb_center[k] for k in set(range(self.pixel_n_dim)).difference(input_axes)
         }
 
-        # transform = fix_inputs(self.forward_transform, fixi_dict)
-        # This is a workaround to the bug in https://github.com/astropy/astropy/issues/11360
         # Once that bug is fixed, the code below can be replaced with fix_inputs
         # statement commented out immediately above.
         transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
@@ -3013,12 +3010,6 @@ class WCS(GWCSAPIMixin):
                         hdr[f"PC{k1:d}_{k1:d}"] = 0.0
                     hdr[f"PC{k1:d}_{m1:d}"] = 1.0
                     hdr[f"CDELT{k1:d}"] = 1
-
-                # Uncomment 3 lines below to enable use of degenerate axes:
-                # hdr['NAXIS'] = hdr['NAXIS'] + 1
-                # naxisi_max = max(int(k[5:]) for k in  hdr['naxis*'] if k[5:].strip())
-                # hdr.insert(f'NAXIS{naxisi_max:d}', (f'NAXIS{m1:d}', 1), after=True)
-                # NOTE: in this case make sure NAXIS=WCSAXES
 
                 coord = coord[None, :]
 
