@@ -80,12 +80,12 @@ def coordinate_to_quantity(*inputs, frame):
 
 @pytest.mark.parametrize('inputs', inputs2)
 def test_coordinates_spatial(inputs):
-    sky_coo = coordinates(*inputs, frame=icrs)
-    assert isinstance(sky_coo, coord.SkyCoord)
-    assert_allclose((sky_coo.ra.value, sky_coo.dec.value), inputs)
-    focal_coo = coordinates(*inputs, frame=focal)
-    assert_allclose([coo.value for coo in focal_coo], inputs)
-    assert [coo.unit for coo in focal_coo] == [u.m, u.m]
+    sky_coord = coordinates(*inputs, frame=icrs)
+    assert isinstance(sky_coord, coord.SkyCoord)
+    assert_allclose((sky_coord.ra.value, sky_coord.dec.value), inputs)
+    focal_coord = coordinates(*inputs, frame=focal)
+    assert_allclose([coord.value for coord in focal_coord], inputs)
+    assert [coord.unit for coord in focal_coord] == [u.m, u.m]
 
 
 @pytest.mark.parametrize('inputs', inputs1)

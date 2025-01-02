@@ -1416,7 +1416,7 @@ def test_bounding_box_is_returned_F():
 def test_no_bounding_box_if_read_from_file(tmp_path):
     bad_wcs = gwcs_2d_bad_bounding_box_order()
 
-    # Check the waring is issued for the bounding box of this WCS object
+    # Check the warning is issued for the bounding box of this WCS object
     with pytest.warns(wcs.GwcsBoundingBoxWarning):
         bad_wcs.bounding_box
 
@@ -1447,7 +1447,7 @@ def test_split_frame_wcs():
     # what the projections require in astropy.
 
     # Input is (lat, wave, lon)
-    # lat: multuply by 20 arcsec, lon: multiply by 15 deg
+    # lat: multiply by 20 arcsec, lon: multiply by 15 deg
     # result should be 20 arcsec, 10nm, 45 deg
     spatial = models.Multiply(20*u.arcsec/u.pix) & models.Multiply(15*u.deg/u.pix)
     compound = models.Linear1D(intercept=0*u.nm, slope=10*u.nm/u.pix) & spatial

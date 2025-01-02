@@ -249,7 +249,7 @@ def get_axes(header):
     Returns
     -------
     sky_inmap, spectral_inmap, unknown : lists
-        indices in the input representing sky and spectral cordinates.
+        indices in the input representing sky and spectral coordinates.
 
     """
     if isinstance(header, fits.Header):
@@ -282,7 +282,7 @@ def get_axes(header):
 
 
 def _is_skysys_consistent(ctype, sky_inmap):
-    """ Determine if the sky axes in CTYPE mathch to form a standard celestial system."""
+    """ Determine if the sky axes in CTYPE match to form a standard celestial system."""
 
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
@@ -430,7 +430,7 @@ def fitswcs_nonlinear(header):
     if sky_axes:
         phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
         # TODO: write "def compute_lonpole(projcode, l)"
-        # Set a defaul tvalue for now
+        # Set a default tvalue for now
         thetap = 180
         n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
         transforms.append(n2c)

@@ -98,7 +98,7 @@ a specific label.
 Custom model storing transforms in a dictionary
 -----------------------------------------------
 
-In case a pixel to slice mapping is not available, one can write a custom mdoel
+In case a pixel to slice mapping is not available, one can write a custom model
 storing transforms in a dictionary. The model would look like this:
 
 .. code::

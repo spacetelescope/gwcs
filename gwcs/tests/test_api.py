@@ -64,7 +64,7 @@ fixture_all_wcses = pytest.mark.parametrize("wcsobj", all_wcses_names, indirect=
 @fixture_all_wcses
 def test_lowlevel_types(wcsobj):
     try:
-        # Skip this on older versions of astropy where it dosen't exist.
+        # Skip this on older versions of astropy where it doesn't exist.
         from astropy.wcs.wcsapi.tests.utils import validate_low_level_wcs_types
     except ImportError:
         return
@@ -123,7 +123,7 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     call_world = wcsobj(*call_pixel)
     api_world = wcsobj.pixel_to_world_values(*api_pixel)
 
-    # Check that call returns quantities and api dosen't
+    # Check that call returns quantities and api doesn't
     assert all(list(isinstance(a, u.Quantity) for a in call_world))
     assert all(list(not isinstance(a, u.Quantity) for a in api_world))
 
@@ -147,7 +147,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     call_world = wcsobj(call_pixel)
     api_world = wcsobj.pixel_to_world_values(api_pixel)
 
-    # Check that call returns quantities and api dosen't
+    # Check that call returns quantities and api doesn't
     assert isinstance(call_world, u.Quantity)
     assert not isinstance(api_world, u.Quantity)
 

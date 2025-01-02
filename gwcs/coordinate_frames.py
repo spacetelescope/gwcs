@@ -41,7 +41,7 @@ intermediate frame.
 
 Each frame instance is both metadata for the inputs/outputs of a transform and
 also a converter between those inputs/outputs and richer coordinate
-representations of those inputs/ouputs.
+representations of those inputs/outputs.
 
 For example, an output frame of type `~gwcs.coordinate_frames.SpectralFrame`
 provides metadata to the `.WCS` object such as the ``axes_type`` being
@@ -361,7 +361,7 @@ class BaseCoordinateFrame(abc.ABC):
         """
         This property holds the "native" frame order of the components.
 
-        The native order of the componets is the order the frame assumes the
+        The native order of the components is the order the frame assumes the
         axes are in when creating the high level objects, for example
         ``CelestialFrame`` creates ``SkyCoord`` objects which are in lon, lat
         order (in their positional args).

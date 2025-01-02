@@ -44,13 +44,14 @@ repos:
       - id: text-unicode-replacement-char
         # Forbid files which have a UTF-8 Unicode replacement character.
 
-  # - repo: https://github.com/codespell-project/codespell
-  #   rev: v2.3.0
-  #   hooks:
-  #     - id: codespell
-  #       args: ["--write-changes"]
-  #       additional_dependencies:
-  #         - tomli
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args: ["--write-changes"]
+        additional_dependencies:
+          - tomli
+        exclude: ".*.asdf"
 
   # - repo: https://github.com/astral-sh/ruff-pre-commit
   #   rev: v0.6.9

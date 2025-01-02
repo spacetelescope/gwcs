@@ -324,10 +324,10 @@ class SellmeierZemax(Model):
             temp = temp.to(u.Celsius)
             ref_temp = ref_temp.to(u.Celsius)
         else:
-            KtoC = 273.15  # kelvin to celcius conversion
+            KtoC = 273.15  # kelvin to celsius conversion
             temp -= KtoC
             ref_temp -= KtoC
-        delt = temp - ref_temp
+        delta = temp - ref_temp
         D0, D1, D2 = D_coef[0]
         E0, E1, lam_tk = E_coef[0]
 
@@ -347,8 +347,8 @@ class SellmeierZemax(Model):
 
         # Compute the absolute index of the glass
         delnabs = (0.5 * (nrel ** 2 - 1.) / nrel) * \
-                    (D0 * delt + D1 * delt ** 2 + D2 * delt ** 3 + \
-                    (E0 * delt + E1 * delt ** 2) / (lamrel ** 2  - lam_tk ** 2))
+                    (D0 * delta + D1 * delta ** 2 + D2 * delta ** 3 + \
+                    (E0 * delta + E1 * delta ** 2) / (lamrel ** 2  - lam_tk ** 2))
         nabs_obs = nabs_ref + delnabs
 
         # Define the relative index at the system's operating T and P.

@@ -221,7 +221,7 @@ New Features
 - Added ``insert_frame`` method to modify the pipeline of a ``WCS`` object. [#299]
 
 - Added ``to_fits_tab`` method to generate FITS header and binary table
-  extension following FITS WCS ``-TAB`` convension. [#295]
+  extension following FITS WCS ``-TAB`` conversion. [#295]
 
 - Added ``in_image`` function for testing whether a point in world coordinates
   maps back to the domain of definition of the forward transformation. [#322]
@@ -277,7 +277,7 @@ New Features
 
 - Removed astropy-helpers from package. [#249]
 
-- Added a method ``fix_inputs`` which rturns an unique WCS from a compound
+- Added a method ``fix_inputs`` which returns an unique WCS from a compound
   WCS by fixing inputs. [#254]
 
 - Added two new transforms - ``ToDirectionCosines`` and ``FromDirectionCosines``. [#256]

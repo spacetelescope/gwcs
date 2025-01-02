@@ -223,7 +223,7 @@ def test_RegionsSelector():
 
     # test inverse
     rsinv = reg_selector.inverse
-    # The label_mapper arays should be the same
+    # The label_mapper arrays should be the same
     assert_equal(reg_selector.label_mapper.mapper, rsinv.label_mapper.mapper)
     # the transforms of the inverse ``RegionsSelector`` should be the inverse of the
     # transforms of the ``RegionsSelector`` model.

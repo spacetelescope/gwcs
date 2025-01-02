@@ -74,7 +74,7 @@ def format_range(var_middle, var_end, minimum, maximum,
         the ``x`` in ``0 ≤ x ≤ 2``.
 
     var_end : str or None
-        The string to put at one end of a single comparision, such as
+        The string to put at one end of a single comparison, such as
         the ``x`` in ``x ≤ 0``.
 
     minimum : number

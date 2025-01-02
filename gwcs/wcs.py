@@ -100,7 +100,7 @@ class _WorldAxisInfo():
             Index of this axis in `gwcs.WCS.output_frame.axes_order`
 
         cunit : str
-            Axis unit using FITS convension (``CUNIT``).
+            Axis unit using FITS conversion (``CUNIT``).
 
         ctype : str
             Axis FITS type (``CTYPE``).
@@ -1394,7 +1394,7 @@ class WCS(GWCSAPIMixin):
         ):
             warnings.warn(
                 "The bounding_box was set in C order on the transform prior to being used in the gwcs!\n"
-                "Check that you indended that ordering for the bounding_box, and consider setting it in F order.\n"
+                "Check that you intended that ordering for the bounding_box, and consider setting it in F order.\n"
                 "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS.",
                 GwcsBoundingBoxWarning
             )
@@ -2208,7 +2208,7 @@ class WCS(GWCSAPIMixin):
         bin_ext_name : str, optional
             Extension name for the `~astropy.io.fits.BinTableHDU` HDU for those
             axes groups that will be converted using FITW WCS' ``-TAB``
-            algorith. Extension version will be determined automatically
+            algorithm. Extension version will be determined automatically
             based on the number of separable group of axes.
 
         coord_col_name : str, optional
@@ -2311,7 +2311,7 @@ class WCS(GWCSAPIMixin):
             ``max_inv_pix_error``, ``inv_degree``, and ``projection``)
             are ignored. When a WCS, in addition to celestial
             frame, contains other types of axes, SIP distortion fitting is
-            disabled (ony linear terms are fitted for celestial frame).
+            disabled (only linear terms are fitted for celestial frame).
 
         Parameters
         ----------
@@ -2385,7 +2385,7 @@ class WCS(GWCSAPIMixin):
         bin_ext_name : str, optional
             Extension name for the `~astropy.io.fits.BinTableHDU` HDU for those
             axes groups that will be converted using FITW WCS' ``-TAB``
-            algorith. Extension version will be determined automatically
+            algorithm. Extension version will be determined automatically
             based on the number of separable group of axes.
 
         coord_col_name : str, optional
@@ -2764,7 +2764,7 @@ class WCS(GWCSAPIMixin):
     def _calc_approx_inv(self, max_inv_pix_error=5, inv_degree=None, npoints=16):
         """
         Compute polynomial fit for the inverse transformation to be used as
-        initial aproximation/guess for the iterative solution.
+        initial approximation/guess for the iterative solution.
         """
         self._approx_inverse = None
 

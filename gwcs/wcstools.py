@@ -39,7 +39,7 @@ def wcs_from_fiducial(fiducial, coordinate_frame=None, projection=None,
         Projection instance - required if there is a celestial component in
         the fiducial.
     transform : `~astropy.modeling.Model` (optional)
-        An optional tranform to be prepended to the transform constructed by
+        An optional transform to be prepended to the transform constructed by
         the fiducial point. The number of outputs of this transform must equal
         the number of axes in the coordinate frame.
     name : str
@@ -213,18 +213,18 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
 
     # 1D case
     if np.isscalar(bounding_box[0]):
-        nd = 1
+        ndim = 1
         bounding_box = (bounding_box, )
     else:
-        nd = len(bounding_box)
+        ndim = len(bounding_box)
     if center:
         bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box])
     else:
         bb = bounding_box
 
     step = np.atleast_1d(step)
-    if nd > 1 and len(step) == 1:
-        step = np.repeat(step, nd)
+    if ndim > 1 and len(step) == 1:
+        step = np.repeat(step, ndim)
 
     if len(step) != len(bb):
         raise ValueError('`step` must be a scalar, or tuple with length '
@@ -234,7 +234,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     for d, s in zip(bb, step):
         slices.append(slice(d[0], d[1] + s, s))
     grid = np.mgrid[slices[::-1]][::-1]
-    if nd == 1:
+    if ndim == 1:
         return grid[0]
     return grid
 
@@ -251,7 +251,7 @@ def wcs_from_points(xy, world_coords, proj_point='center',
     ``world_coords`` are transformed to a projection plane using the specified
     projection. A polynomial fits ``xy`` and the projected coordinates.
     The fitted polynomials and the projection transforms are combined into a
-    tranform from detector to sky. The input coordinate frame is set to
+    transform from detector to sky. The input coordinate frame is set to
     ``detector``. The output coordinate frame is initialized based on the frame
     in the fiducial.
 
@@ -259,7 +259,7 @@ def wcs_from_points(xy, world_coords, proj_point='center',
     Parameters
     ----------
     xy : tuple of 2 ndarrays
-        Points in the input cooridnate frame - x, y inputs.
+        Points in the input coordinate frame - x, y inputs.
     world_coords : `~astropy.coordinates.SkyCoord`
         Points in the output coordinate frame.
         The order matches the order of ``xy``.
