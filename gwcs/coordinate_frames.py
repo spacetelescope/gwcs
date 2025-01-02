@@ -220,7 +220,8 @@ class FrameProperties:
             self.axes_type = tuple(self.axes_type)
 
         if len(self.axes_type) != naxes:
-            raise ValueError("Length of axes_type does not match number of axes.")
+            msg = "Length of axes_type does not match number of axes."
+            raise ValueError(msg)
 
         if self.unit is not None:
             if astutil.isiterable(self.unit):
@@ -228,7 +229,8 @@ class FrameProperties:
             else:
                 unit = (self.unit,)
             if len(unit) != naxes:
-                raise ValueError("Number of units does not match number of axes.")
+                msg = "Number of units does not match number of axes."
+                raise ValueError(msg)
             else:
                 self.unit = tuple(u.Unit(au) for au in unit)
         else:
@@ -240,7 +242,8 @@ class FrameProperties:
             else:
                 self.axes_names = tuple(self.axes_names)
             if len(self.axes_names) != naxes:
-                raise ValueError("Number of axes names does not match number of axes.")
+                msg = "Number of axes names does not match number of axes."
+                raise ValueError(msg)
         else:
             self.axes_names = tuple([""] * naxes)
 
@@ -248,11 +251,13 @@ class FrameProperties:
             if isinstance(self.axis_physical_types, str):
                 self.axis_physical_types = (self.axis_physical_types,)
             elif not isiterable(self.axis_physical_types):
-                raise TypeError(
+                msg = (
                     "axis_physical_types must be of type string or iterable of strings"
                 )
+                raise TypeError(msg)
             if len(self.axis_physical_types) != naxes:
-                raise ValueError(f'"axis_physical_types" must be of length {naxes}')
+                msg = f'"axis_physical_types" must be of length {naxes}'
+                raise ValueError(msg)
             ph_type = []
             for axt in self.axis_physical_types:
                 if axt not in VALID_UCDS and not axt.startswith("custom:"):
@@ -433,7 +438,8 @@ class CoordinateFrame(BaseCoordinateFrame):
             self._name = name
 
         if len(self._axes_order) != naxes:
-            raise ValueError("Length of axes_order does not match number of axes.")
+            msg = "Length of axes_order does not match number of axes."
+            raise ValueError(msg)
 
         if isinstance(axes_type, str):
             axes_type = (axes_type,)
@@ -576,7 +582,8 @@ class CoordinateFrame(BaseCoordinateFrame):
         if not all(
             [isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values]
         ):
-            raise TypeError("All values should be a scalar number or a numpy array.")
+            msg = "All values should be a scalar number or a numpy array."
+            raise TypeError(msg)
 
         high_level = values_to_high_level_objects(*values, low_level_wcs=self)
         if len(high_level) == 1:
@@ -904,11 +911,12 @@ class CompositeFrame(CoordinateFrame):
             ph_type += list(frame._prop.axis_physical_types)
 
         if len(np.unique(axes_order)) != len(axes_order):
-            raise ValueError(
+            msg = (
                 "Incorrect numbering of axes, "
                 "axes_order should contain unique numbers, "
                 f"got {axes_order}."
             )
+            raise ValueError(msg)
 
         super().__init__(
             naxes,
@@ -977,9 +985,8 @@ class CompositeFrame(CoordinateFrame):
                 out[ao] = components[i]
 
         if any([o is None for o in out]):
-            raise ValueError(
-                "axes_order leads to incomplete world_axis_object_components"
-            )
+            msg = "axes_order leads to incomplete world_axis_object_components"
+            raise ValueError(msg)
 
         return out
 

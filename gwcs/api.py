@@ -221,11 +221,12 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
             return
         wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
-            raise ValueError(
+            msg = (
                 "The number of data axes, "
                 f"{wcs_naxes}, does not equal the "
                 f"shape {len(value)}."
             )
+            raise ValueError(msg)
 
         self._pixel_shape = tuple(value)
 

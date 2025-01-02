@@ -33,17 +33,19 @@ class LabelMapperConverter(TransformConverterBase):
         if inputs_mapping is not None and not isinstance(
             inputs_mapping, models.Mapping
         ):
-            raise TypeError(
+            msg = (
                 "inputs_mapping must be an instance"
                 "of astropy.modeling.models.Mapping."
             )
+            raise TypeError(msg)
         mapper = node["mapper"]
         atol = node.get("atol", 1e-8)
         no_label = node.get("no_label", np.nan)
 
         if isinstance(mapper, NDArrayType):
             if mapper.ndim != 2:
-                raise NotImplementedError("GWCS currently only supports 2D masks.")
+                msg = "GWCS currently only supports 2D masks."
+                raise NotImplementedError(msg)
             return LabelMapperArray(mapper, inputs_mapping)
         elif isinstance(mapper, Model):
             inputs = node.get("inputs")
@@ -98,7 +100,8 @@ class LabelMapperConverter(TransformConverterBase):
             node["mapper"] = mapper
             node["inputs"] = list(model.inputs)
         else:
-            raise TypeError(f"Unrecognized type of LabelMapper - {model}")
+            msg = f"Unrecognized type of LabelMapper - {model}"
+            raise TypeError(msg)
 
         return node
 

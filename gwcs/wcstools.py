@@ -67,9 +67,8 @@ def wcs_from_fiducial(
 
     if transform is not None:
         if not isinstance(transform, Model):
-            raise UnsupportedTransformError(
-                "Expected transform to be an instance" "of astropy.modeling.Model"
-            )
+            msg = "Expected transform to be an instance" "of astropy.modeling.Model"
+            raise UnsupportedTransformError(msg)
 
     # transform_outputs = transform.n_outputs
     if isinstance(fiducial, coord.SkyCoord):
@@ -87,7 +86,8 @@ def wcs_from_fiducial(
                     fiducial[ind], projection=projection
                 )
             except KeyError as err:
-                raise TypeError(f"Coordinate frame {item} is not supported") from err
+                msg = f"Coordinate frame {item} is not supported"
+                raise TypeError(msg) from err
             trans_from_fiducial.append(model)
         fiducial_transform = functools.reduce(
             lambda x, y: x & y, [tr for tr in trans_from_fiducial]
@@ -99,9 +99,8 @@ def wcs_from_fiducial(
                 fiducial, projection=projection
             )
         except KeyError as err:
-            raise TypeError(
-                f"Coordinate frame {coordinate_frame} is not supported"
-            ) from err
+            msg = f"Coordinate frame {coordinate_frame} is not supported"
+            raise TypeError(msg) from err
 
     if transform is not None:
         forward_transform = transform | fiducial_transform
@@ -109,10 +108,11 @@ def wcs_from_fiducial(
         forward_transform = fiducial_transform
     if bounding_box is not None:
         if len(bounding_box) != forward_transform.n_outputs:
-            raise ValueError(
+            msg = (
                 "Expected the number of items in 'bounding_box' to be equal to the "
                 "number of outputs of the forawrd transform."
             )
+            raise ValueError(msg)
         forward_transform.bounding_box = bounding_box[::-1]
     if input_frame is None:
         input_frame = "detector"
@@ -126,9 +126,8 @@ def wcs_from_fiducial(
 
 def _verify_projection(projection):
     if projection is None:
-        raise ValueError(
-            "Celestial coordinate frame requires a projection to be specified."
-        )
+        msg = "Celestial coordinate frame requires a projection to be specified."
+        raise ValueError(msg)
     if not isinstance(projection, projections.Projection):
         raise UnsupportedProjectionError(projection)
 
@@ -223,13 +222,13 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
         return (np.floor(bbox[0] + 0.5), np.ceil(bbox[1] - 0.5))
 
     if selector is not None and not isinstance(bounding_box, CompoundBoundingBox):
-        raise ValueError("Cannot use selector with a non-CompoundBoundingBox")
+        msg = "Cannot use selector with a non-CompoundBoundingBox"
+        raise ValueError(msg)
 
     if isinstance(bounding_box, CompoundBoundingBox):
         if selector is None:
-            raise ValueError(
-                "selector must be set when bounding_box is a CompoundBoundingBox"
-            )
+            msg = "selector must be set when bounding_box is a CompoundBoundingBox"
+            raise ValueError(msg)
 
         bounding_box = bounding_box[selector]
 
@@ -259,9 +258,8 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
         step = np.repeat(step, ndim)
 
     if len(step) != len(bb):
-        raise ValueError(
-            "`step` must be a scalar, or tuple with length " "matching `bounding_box`"
-        )
+        msg = "`step` must be a scalar, or tuple with length " "matching `bounding_box`"
+        raise ValueError(msg)
 
     slices = []
     for d, s in zip(bb, step, strict=False):
@@ -335,7 +333,8 @@ def wcs_from_points(
     x, y = xy
 
     if not isinstance(world_coords, coord.SkyCoord):
-        raise TypeError("`world_coords` must be an `~astropy.coordinates.SkyCoord`")
+        msg = "`world_coords` must be an `~astropy.coordinates.SkyCoord`"
+        raise TypeError(msg)
     try:
         lon, lat = world_coords.data.lon.deg, world_coords.data.lat.deg
     except AttributeError:
@@ -363,13 +362,15 @@ def wcs_from_points(
         )
 
     if not isinstance(projection, projections.Projection):
-        raise UnsupportedProjectionError(f"Unsupported projection code {projection}")
+        msg = f"Unsupported projection code {projection}"
+        raise UnsupportedProjectionError(msg)
 
     if polynomial_type not in supported_poly_types.keys():
-        raise ValueError(
+        msg = (
             f"Unsupported polynomial_type: {polynomial_type}. "
             f"Only one of {supported_poly_types.keys()} is supported."
         )
+        raise ValueError(msg)
 
     skyrot = models.RotateCelestial2Native(
         crval[0].to_value(u.deg), crval[1].to_value(u.deg), 180

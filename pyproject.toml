@@ -127,7 +127,7 @@ select = [
     "A",      # flake8-builtins (prevent shadowing of builtins)
     # "C4",     # flake8-comprehensions (best practices for comprehensions)
     # "T10",    # flake8-debugger (prevent debugger statements in code)
-    #"EM",     # flake8-errormessages (best practices for error messages)
+    "EM",     # flake8-errormessages (best practices for error messages)
     # "FA",     # flake8-future-annotations (correct usage future annotations)
     # "ISC",    # flake8-implicit-str-concat (prevent implicit string concat)
     # "ICN",    # flake8-import-conventions (enforce import conventions)

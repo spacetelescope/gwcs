@@ -157,7 +157,8 @@ def get_projcode(wcs_info):
         return None
     projcode = wcs_info["CTYPE"][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
-        raise UnsupportedProjectionError(f"Projection code {projcode}, not recognized")
+        msg = f"Projection code {projcode}, not recognized"
+        raise UnsupportedProjectionError(msg)
     return projcode
 
 
@@ -256,7 +257,8 @@ def get_axes(header):
     elif isinstance(header, dict):
         wcs_info = header
     else:
-        raise TypeError("Expected a FITS Header or a dict.")
+        msg = "Expected a FITS Header or a dict."
+        raise TypeError(msg)
 
     # Split each CTYPE value at "-" and take the first part.
     # This should represent the coordinate system.
@@ -286,15 +288,13 @@ def _is_skysys_consistent(ctype, sky_inmap):
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
-                raise ValueError(
-                    "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
-                )
+                msg = "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
+                raise ValueError(msg)
             break
         elif ctype[sky_inmap[1]] == item[0]:
             if ctype[sky_inmap[0]] != item[1]:
-                raise ValueError(
-                    "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
-                )
+                msg = "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
+                raise ValueError(msg)
             sky_inmap = sky_inmap[::-1]
             break
 
@@ -338,7 +338,8 @@ def make_fitswcs_transform(header):
     elif isinstance(header, dict):
         wcs_info = header
     else:
-        raise TypeError("Expected a FITS Header or a dict.")
+        msg = "Expected a FITS Header or a dict."
+        raise TypeError(msg)
     transforms = []
     wcs_linear = fitswcs_linear(wcs_info)
     transforms.append(wcs_linear)
@@ -363,7 +364,8 @@ def fitswcs_linear(header):
     elif isinstance(header, dict):
         wcs_info = header
     else:
-        raise TypeError("Expected a FITS Header or a dict.")
+        msg = "Expected a FITS Header or a dict."
+        raise TypeError(msg)
 
     pc = wcs_info["PC"]
     # get the part of the PC matrix corresponding to the imaging axes
@@ -434,7 +436,8 @@ def fitswcs_nonlinear(header):
     elif isinstance(header, dict):
         wcs_info = header
     else:
-        raise TypeError("Expected a FITS Header or a dict.")
+        msg = "Expected a FITS Header or a dict."
+        raise TypeError(msg)
 
     transforms = []
     projcode = get_projcode(wcs_info)
@@ -501,10 +504,11 @@ def is_high_level(*args, low_level_wcs):
         return True
 
     if any(types_are_high_level):
-        raise TypeError(
+        msg = (
             "Invalid types were passed, got "
             f"({', '.join(tm[0].__name__ for tm in type_match)}) expected "
             f"({', '.join(tm[1].__name__ for tm in type_match)})."
         )
+        raise TypeError(msg)
 
     return False

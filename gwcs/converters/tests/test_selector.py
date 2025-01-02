@@ -62,7 +62,8 @@ def assert_selector_roundtrip(s, tmpdir, version=None):
         elif isinstance(s, selector._LabelMapper):
             _assert_mapper_equal(s, rs)
         else:
-            raise AssertionError("Unknown selector type")
+            msg = "Unknown selector type"
+            raise AssertionError(msg)
 
 
 def test_regions_selector(tmpdir):

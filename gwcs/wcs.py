@@ -176,10 +176,11 @@ class WCS(GWCSAPIMixin):
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
                 if output_frame is None:
-                    raise CoordinateFrameError(
+                    msg = (
                         "An output_frame must be specified "
                         "if forward_transform is a model."
                     )
+                    raise CoordinateFrameError(msg)
 
                 _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
                 _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
@@ -199,17 +200,19 @@ class WCS(GWCSAPIMixin):
                     super().__setattr__(name, frame_obj)
                     self._pipeline = forward_transform
             else:
-                raise TypeError(
+                msg = (
                     "Expected forward_transform to be a model or a "
                     f"(frame, transform) list, got {type(forward_transform)}"
                 )
+                raise TypeError(msg)
         else:
             # Initialize a WCS without a forward_transform - allows building a
             # WCS programmatically.
             if output_frame is None:
-                raise CoordinateFrameError(
+                msg = (
                     "An output_frame must be specified " "if forward_transform is None."
                 )
+                raise CoordinateFrameError(msg)
             _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
             _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
             super().__setattr__(_input_frame, inp_frame_obj)
@@ -263,28 +266,25 @@ class WCS(GWCSAPIMixin):
         to_name, to_obj = self._get_frame_name(to_frame)
         if not self._pipeline:
             if from_name != self._input_frame:
-                raise CoordinateFrameError(
-                    f"Expected 'from_frame' to be {self._input_frame}"
-                )
+                msg = f"Expected 'from_frame' to be {self._input_frame}"
+                raise CoordinateFrameError(msg)
             if to_frame != self._output_frame:
-                raise CoordinateFrameError(
-                    f"Expected 'to_frame' to be {self._output_frame}"
-                )
+                msg = f"Expected 'to_frame' to be {self._output_frame}"
+                raise CoordinateFrameError(msg)
         try:
             from_ind = self._get_frame_index(from_name)
         except ValueError as err:
-            raise CoordinateFrameError(
-                f"Frame {from_name} is not in the available frames"
-            ) from err
+            msg = f"Frame {from_name} is not in the available frames"
+            raise CoordinateFrameError(msg) from err
         try:
             to_ind = self._get_frame_index(to_name)
         except ValueError as err:
-            raise CoordinateFrameError(
-                f"Frame {to_name} is not in the available frames"
-            ) from err
+            msg = f"Frame {to_name} is not in the available frames"
+            raise CoordinateFrameError(msg) from err
 
         if from_ind + 1 != to_ind:
-            raise ValueError(f"Frames {from_name} and {to_name} are not  in sequence")
+            msg = f"Frames {from_name} and {to_name} are not  in sequence"
+            raise ValueError(msg)
         self._pipeline[from_ind].transform = transform
 
     @property
@@ -322,9 +322,8 @@ class WCS(GWCSAPIMixin):
         try:
             backward = self.forward_transform.inverse
         except NotImplementedError as err:
-            raise NotImplementedError(
-                f"Could not construct backward transform. \n{err}"
-            ) from err
+            msg = f"Could not construct backward transform. \n{err}"
+            raise NotImplementedError(msg) from err
         try:
             _ = backward.inverse
         except NotImplementedError:  # means "hasattr" won't work
@@ -342,7 +341,8 @@ class WCS(GWCSAPIMixin):
             step.frame for step in self._pipeline if step.frame.name == frame_name
         ]
         if len(frames) > 1:
-            raise ValueError(f"There is more than one frame named {frame_name}")
+            msg = f"There is more than one frame named {frame_name}"
+            raise ValueError(msg)
         if len(frames) == 0:
             return ValueError(f"No frame found matching {frame_name}")
         return frames[0]
@@ -360,9 +360,8 @@ class WCS(GWCSAPIMixin):
         try:
             return frame_names.index(frame)
         except ValueError as e:
-            raise CoordinateFrameError(
-                f"Frame {frame} is not in the available frames"
-            ) from e
+            msg = f"Frame {frame} is not in the available frames"
+            raise CoordinateFrameError(msg) from e
 
     def _get_frame_name(self, frame):
         """
@@ -461,7 +460,8 @@ class WCS(GWCSAPIMixin):
             to_frame = self.output_frame
 
         if transform is None:
-            raise NotImplementedError("WCS.forward_transform is not implemented.")
+            msg = "WCS.forward_transform is not implemented."
+            raise NotImplementedError(msg)
 
         # Validate that the input type matches what the transform expects
         input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
@@ -929,27 +929,30 @@ class WCS(GWCSAPIMixin):
 
         """  # noqa: E501
         if kwargs.pop("with_units", False):
-            raise ValueError(
+            msg = (
                 "Support for with_units in numerical_inverse has been removed, "
                 "use inverse"
             )
+            raise ValueError(msg)
 
         args_shape = np.shape(args)
         nargs = args_shape[0]
         arg_dim = len(args_shape) - 1
 
         if nargs != self.world_n_dim:
-            raise ValueError(
+            msg = (
                 "Number of input coordinates is different from "
                 "the number of defined world coordinates in the "
                 f"WCS ({self.world_n_dim:d})"
             )
+            raise ValueError(msg)
 
         if self.world_n_dim != self.pixel_n_dim:
-            raise NotImplementedError(
+            msg = (
                 "Support for iterative inverse for transformations with "
                 "different number of inputs and outputs was not implemented."
             )
+            raise NotImplementedError(msg)
 
         # initial guess:
         if nargs == 2 and self._approx_inverse is None:
@@ -1267,10 +1270,13 @@ class WCS(GWCSAPIMixin):
         # ############################################################
         if (ind is not None or inddiv is not None) and not quiet:
             if inddiv is None:
-                raise NoConvergence(
+                msg = (
                     "'WCS.numerical_inverse' failed to "
                     f"converge to the requested accuracy after {k:d} "
-                    "iterations.",
+                    "iterations."
+                )
+                raise NoConvergence(
+                    msg,
                     best_solution=pix,
                     accuracy=np.abs(dpix),
                     niter=k,
@@ -1278,11 +1284,14 @@ class WCS(GWCSAPIMixin):
                     divergent=None,
                 )
             else:
-                raise NoConvergence(
+                msg = (
                     "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy.\n"
                     f"After {k:d} iterations, the solution is diverging "
-                    "at least for one input point.",
+                    "at least for one input point."
+                )
+                raise NoConvergence(
+                    msg,
                     best_solution=pix,
                     accuracy=np.abs(dpix),
                     niter=k,
@@ -1416,29 +1425,29 @@ class WCS(GWCSAPIMixin):
         except CoordinateFrameError as err:
             input_index = None
             if input_frame_obj is None:
-                raise ValueError(
-                    f"New coordinate frame {input_name} must be defined"
-                ) from err
+                msg = f"New coordinate frame {input_name} must be defined"
+                raise ValueError(msg) from err
         try:
             output_index = self._get_frame_index(output_frame)
         except CoordinateFrameError as err:
             output_index = None
             if output_frame_obj is None:
-                raise ValueError(
-                    f"New coordinate frame {output_name} must be defined"
-                ) from err
+                msg = f"New coordinate frame {output_name} must be defined"
+                raise ValueError(msg) from err
 
         new_frames = [input_index, output_index].count(None)
         if new_frames == 0:
-            raise ValueError(
+            msg = (
                 "Could not insert frame as both frames "
                 f"{input_name} and {output_name} already exist"
             )
+            raise ValueError(msg)
         elif new_frames == 2:
-            raise ValueError(
+            msg = (
                 "Could not insert frame as neither frame "
                 f"{input_name} nor {output_name} exists"
             )
+            raise ValueError(msg)
 
         if input_index is None:
             self._pipeline = (
@@ -1655,7 +1664,8 @@ class WCS(GWCSAPIMixin):
 
         if bounding_box is None:
             if self.bounding_box is None:
-                raise TypeError("Need a valid bounding_box to compute the footprint.")
+                msg = "Need a valid bounding_box to compute the footprint."
+                raise TypeError(msg)
             bb = self.bounding_box.bounding_box(order="F")
         else:
             bb = bounding_box
@@ -1686,7 +1696,8 @@ class WCS(GWCSAPIMixin):
                 np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
             )
             if not axtyp_ind.any():
-                raise ValueError(f'This WCS does not have axis of type "{axis_type}".')
+                msg = f'This WCS does not have axis of type "{axis_type}".'
+                raise ValueError(msg)
             if len(axtyp_ind) > 1:
                 result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
@@ -1838,7 +1849,8 @@ class WCS(GWCSAPIMixin):
         """
         _, _, celestial_group = self._separable_groups(detect_celestial=True)
         if celestial_group is None:
-            raise ValueError("The to_fits_sip requires an output celestial frame.")
+            msg = "The to_fits_sip requires an output celestial frame."
+            raise ValueError(msg)
 
         hdr = self._to_fits_sip(
             celestial_group=celestial_group,
@@ -1949,12 +1961,12 @@ class WCS(GWCSAPIMixin):
             matrix_type = matrix_type.upper()
 
         if matrix_type not in ["CD", "PC-CDELT1", "PC-SUM1", "PC-DET1", "PC-SCALE"]:
-            raise ValueError(f"Unsupported 'matrix_type' value: {matrix_type!r}.")
+            msg = f"Unsupported 'matrix_type' value: {matrix_type!r}."
+            raise ValueError(msg)
 
         if npoints < 8:
-            raise ValueError(
-                "Number of sampling points is too small. 'npoints' must be >= 8."
-            )
+            msg = "Number of sampling points is too small. 'npoints' must be >= 8."
+            raise ValueError(msg)
 
         if isinstance(projection, str):
             projection = projection.upper()
@@ -1963,9 +1975,8 @@ class WCS(GWCSAPIMixin):
                     name=projection
                 )
             except AttributeError as err:
-                raise ValueError(
-                    f"Unsupported FITS WCS sky projection: {projection}"
-                ) from err
+                msg = f"Unsupported FITS WCS sky projection: {projection}"
+                raise ValueError(msg) from err
 
         elif isinstance(projection, projections.Sky2PixProjection):
             sky2pix_proj = projection
@@ -1975,19 +1986,20 @@ class WCS(GWCSAPIMixin):
                 or not isinstance(projection, str)
                 or len(projection) != 3
             ):
-                raise ValueError(f"Unsupported FITS WCS sky projection: {sky2pix_proj}")
+                msg = f"Unsupported FITS WCS sky projection: {sky2pix_proj}"
+                raise ValueError(msg)
             try:
                 getattr(projections, f"Sky2Pix_{projection}")()
             except AttributeError as err:
-                raise ValueError(
-                    f"Unsupported FITS WCS sky projection: {projection}"
-                ) from err
+                msg = f"Unsupported FITS WCS sky projection: {projection}"
+                raise ValueError(msg) from err
 
         else:
-            raise TypeError(
+            msg = (
                 "'projection' must be either a FITS WCS string projection code "
                 "or an instance of astropy.modeling.projections.Pix2SkyProjection."
             )
+            raise TypeError(msg)
 
         frame = celestial_group[0].frame
 
@@ -2001,10 +2013,11 @@ class WCS(GWCSAPIMixin):
         input_axes = sorted(set(input_axes))
 
         if len(input_axes) != 2:
-            raise ValueError(
+            msg = (
                 "Only CelestialFrame that correspond to two "
                 "input axes are supported."
             )
+            raise ValueError(msg)
 
         # Axis number for FITS axes.
         # iax? - image axes; nlon, nlat - celestial axes:
@@ -2019,7 +2032,8 @@ class WCS(GWCSAPIMixin):
 
         # Determine reference points.
         if bounding_box is None and self.bounding_box is None:
-            raise ValueError("A bounding_box is needed to proceed.")
+            msg = "A bounding_box is needed to proceed."
+            raise ValueError(msg)
         if bounding_box is None:
             bounding_box = self.bounding_box
 
@@ -2052,7 +2066,8 @@ class WCS(GWCSAPIMixin):
 
         # check that the bounding box has some reasonable size:
         if (xmax - xmin) < 1 or (ymax - ymin) < 1:
-            raise ValueError("Bounding box is too small for fitting a SIP polynomial")
+            msg = "Bounding box is too small for fitting a SIP polynomial"
+            raise ValueError(msg)
 
         lon, lat = transform(crpix1, crpix2)
 
@@ -2320,10 +2335,11 @@ class WCS(GWCSAPIMixin):
                 if axis_number in frame.axes_order:
                     return frame
             else:
-                raise RuntimeError(
+                msg = (
                     "Encountered an output axes that does not "
                     "belong to any output coordinate frames."
                 )
+                raise RuntimeError(msg)
 
         # use correlation matrix to find separable axes:
         corr_mat = self.axis_correlation_matrix
@@ -2408,10 +2424,11 @@ class WCS(GWCSAPIMixin):
             or max(input_axes) + 1 != n_inputs
             or min(input_axes) < 0
         ):
-            raise ValueError(
+            msg = (
                 "Input axes indices are inconsistent with the "
                 "forward transformation."
             )
+            raise ValueError(msg)
 
         if detect_celestial:
             return axes_groups, world_axes, celestial_group
@@ -2488,7 +2505,8 @@ class WCS(GWCSAPIMixin):
         """
         if bounding_box is None:
             if self.bounding_box is None:
-                raise ValueError("Need a valid bounding_box to compute the footprint.")
+                msg = "Need a valid bounding_box to compute the footprint."
+                raise ValueError(msg)
             bounding_box = self.bounding_box
 
         else:
@@ -2501,18 +2519,20 @@ class WCS(GWCSAPIMixin):
             bounding_box = [bounding_box]
 
         if self.pixel_n_dim > self.world_n_dim:
-            raise RuntimeError(
+            msg = (
                 "The case when the number of input axes is larger than the "
                 "number of output axes is not supported."
             )
+            raise RuntimeError(msg)
 
         try:
             sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
         except ValueError as err:
-            raise ValueError(
+            msg = (
                 "Number of sampling values either must be 1 "
                 "or it must match the number of pixel axes."
-            ) from err
+            )
+            raise ValueError(msg) from err
 
         _, world_axes = self._separable_groups(detect_celestial=False)
 
@@ -2680,7 +2700,8 @@ class WCS(GWCSAPIMixin):
         """
         if bounding_box is None:
             if self.bounding_box is None:
-                raise ValueError("Need a valid bounding_box to compute the footprint.")
+                msg = "Need a valid bounding_box to compute the footprint."
+                raise ValueError(msg)
             bounding_box = self.bounding_box
 
         else:
@@ -2693,18 +2714,20 @@ class WCS(GWCSAPIMixin):
             bounding_box = [bounding_box]
 
         if self.pixel_n_dim > self.world_n_dim:
-            raise RuntimeError(
+            msg = (
                 "The case when the number of input axes is larger than the "
                 "number of output axes is not supported."
             )
+            raise RuntimeError(msg)
 
         try:
             sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
         except ValueError as err:
-            raise ValueError(
+            msg = (
                 "Number of sampling values either must be 1 "
                 "or it must match the number of pixel axes."
-            ) from err
+            )
+            raise ValueError(msg) from err
 
         world_axes_groups, _, celestial_group = self._separable_groups(
             detect_celestial=True
@@ -2968,7 +2991,8 @@ class WCS(GWCSAPIMixin):
             k1 = k + 1
             ct = cf.get_ctype_from_ucd(self.world_axis_physical_types[k])
             if len(ct) > 4:
-                raise ValueError("Axis type name too long.")
+                msg = "Axis type name too long."
+                raise ValueError(msg)
 
             hdr[f"CTYPE{k1:d}"] = ct + (4 - len(ct)) * "-" + "-TAB"
             hdr[f"CUNIT{k1:d}"] = self.world_axis_units[k]
@@ -3172,14 +3196,12 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
             poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
             poly_coeff_y = linalg.lu_solve(lu_piv, by).astype(float)
         except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
-            raise np.linalg.LinAlgError(
-                f"Failed to fit SIP. Reported error:\n{e.args[0]}"
-            ) from e
+            msg = f"Failed to fit SIP. Reported error:\n{e.args[0]}"
+            raise np.linalg.LinAlgError(msg) from e
 
     if not np.all(np.isfinite([poly_coeff_x, poly_coeff_y])):
-        raise np.linalg.LinAlgError(
-            "Failed to fit SIP. Computed coefficients are not finite."
-        )
+        msg = "Failed to fit SIP. Computed coefficients are not finite."
+        raise np.linalg.LinAlgError(msg)
 
     cond = np.linalg.cond(a.astype(float))
 
@@ -3216,11 +3238,13 @@ def _fit_2D_poly(
     elif hasattr(degree, "__iter__"):
         deglist = sorted(map(int, degree))
         if deglist[0] < 1 or deglist[-1] > 9:
-            raise ValueError("Allowed values for SIP degree are [1...9]")
+            msg = "Allowed values for SIP degree are [1...9]"
+            raise ValueError(msg)
     else:
         degree = int(degree)
         if degree < 1 or degree > 9:
-            raise ValueError("Allowed values for SIP degree are [1...9]")
+            msg = "Allowed values for SIP degree are [1...9]"
+            raise ValueError(msg)
         deglist = [degree]
 
     single_degree = len(deglist) == 1
@@ -3440,9 +3464,8 @@ class Step:
     @frame.setter
     def frame(self, val):
         if not isinstance(val, cf.CoordinateFrame | str):
-            raise TypeError(
-                '"frame" should be an instance of CoordinateFrame or a string.'
-            )
+            msg = '"frame" should be an instance of CoordinateFrame or a string.'
+            raise TypeError(msg)
 
         self._frame = val
 
@@ -3453,9 +3476,8 @@ class Step:
     @transform.setter
     def transform(self, val):
         if val is not None and not isinstance(val, (Model)):
-            raise TypeError(
-                '"transform" should be an instance of astropy.modeling.Model.'
-            )
+            msg = '"transform" should be an instance of astropy.modeling.Model.'
+            raise TypeError(msg)
         self._transform = val
 
     @property
@@ -3472,7 +3494,8 @@ class Step:
             stacklevel=2,
         )
         if ind not in (0, 1):
-            raise IndexError("Allowed inices are 0 (frame) and 1 (transform).")
+            msg = "Allowed inices are 0 (frame) and 1 (transform)."
+            raise IndexError(msg)
         if ind == 0:
             return self.frame
         return self.transform

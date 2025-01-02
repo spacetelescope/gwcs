@@ -91,7 +91,8 @@ class Polygon(Region):
 
     def __init__(self, rid, vertices, coord_system="Cartesian"):
         if len(vertices) < 4:
-            raise ValueError("Expected vertices to be a list of minimum 4 tuples (x,y)")
+            msg = "Expected vertices to be a list of minimum 4 tuples (x,y)"
+            raise ValueError(msg)
 
         super().__init__(rid, coord_system)
 

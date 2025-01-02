@@ -115,14 +115,14 @@ class SphericalToCartesian(Model):
     @wrap_lon_at.setter
     def wrap_lon_at(self, wrap_angle):
         if not (isinstance(wrap_angle, numbers.Integral) and wrap_angle in [180, 360]):
-            raise ValueError("'wrap_lon_at' must be an integer number: 180 or 360")
+            msg = "'wrap_lon_at' must be an integer number: 180 or 360"
+            raise ValueError(msg)
         self._wrap_lon_at = wrap_angle
 
     def evaluate(self, lon, lat):
         if isinstance(lon, u.Quantity) != isinstance(lat, u.Quantity):
-            raise TypeError(
-                "All arguments must be of the same type " "(i.e., quantity or not)."
-            )
+            msg = "All arguments must be of the same type " "(i.e., quantity or not)."
+            raise TypeError(msg)
 
         lon = np.deg2rad(lon)
         lat = np.deg2rad(lat)
@@ -194,15 +194,15 @@ class CartesianToSpherical(Model):
     @wrap_lon_at.setter
     def wrap_lon_at(self, wrap_angle):
         if not (isinstance(wrap_angle, numbers.Integral) and wrap_angle in [180, 360]):
-            raise ValueError("'wrap_lon_at' must be an integer number: 180 or 360")
+            msg = "'wrap_lon_at' must be an integer number: 180 or 360"
+            raise ValueError(msg)
         self._wrap_lon_at = wrap_angle
 
     def evaluate(self, x, y, z):
         nquant = [isinstance(i, u.Quantity) for i in (x, y, z)].count(True)
         if nquant in [1, 2]:
-            raise TypeError(
-                "All arguments must be of the same type " "(i.e., quantity or not)."
-            )
+            msg = "All arguments must be of the same type " "(i.e., quantity or not)."
+            raise TypeError(msg)
 
         h = np.hypot(x, y)
         lat = np.rad2deg(np.arctan2(z, h))

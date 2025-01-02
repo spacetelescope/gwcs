@@ -130,7 +130,8 @@ class AnglesFromGratingEquation3D(Model):
 
     def evaluate(self, wavelength, alpha_in, beta_in, groove_density, spectral_order):
         if alpha_in.shape != beta_in.shape:
-            raise ValueError("Expected input arrays to have the same shape.")
+            msg = "Expected input arrays to have the same shape."
+            raise ValueError(msg)
 
         if isinstance(groove_density, u.Quantity):
             alpha_in = u.Quantity(alpha_in)

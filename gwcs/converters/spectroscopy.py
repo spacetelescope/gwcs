@@ -104,9 +104,8 @@ class GratingEquationConverter(TransformConverterBase):
                 groove_density=groove_density, spectral_order=order
             )
         else:
-            raise ValueError(
-                "Can't create a GratingEquation model with " f"output {output}"
-            )
+            msg = "Can't create a GratingEquation model with " f"output {output}"
+            raise ValueError(msg)
         return model
 
     def to_yaml_tree_transform(self, model, tag, ctx):
@@ -127,7 +126,6 @@ class GratingEquationConverter(TransformConverterBase):
         elif isinstance(model, WavelengthFromGratingEquation):
             node["output"] = "wavelength"
         else:
-            raise TypeError(
-                f"Can't serialize an instance of {model.__class__.__name__}"
-            )
+            msg = f"Can't serialize an instance of {model.__class__.__name__}"
+            raise TypeError(msg)
         return node

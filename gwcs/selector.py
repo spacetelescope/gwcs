@@ -104,7 +104,8 @@ def get_unique_regions(regions):
         for key in regions.keys():
             unique_regions.append(regions[key](key))
     else:
-        raise TypeError("Unable to get unique regions.")
+        msg = "Unable to get unique regions."
+        raise TypeError(msg)
     return unique_regions
 
 
@@ -154,7 +155,8 @@ class _LabelMapper(Model):
         return self._no_label
 
     def evaluate(self, *args):
-        raise NotImplementedError("Subclasses should implement this method.")
+        msg = "Subclasses should implement this method."
+        raise NotImplementedError(msg)
 
 
 class LabelMapperArray(_LabelMapper):
@@ -291,7 +293,8 @@ class LabelMapperDict(_LabelMapper):
         self._inputs = inputs
         self._n_inputs = len(inputs)
         if not all([m.n_outputs == 1 for m in mapper.values()]):
-            raise TypeError("All transforms in mapper must have one output.")
+            msg = "All transforms in mapper must have one output."
+            raise TypeError(msg)
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
@@ -384,12 +387,14 @@ class LabelMapperRange(_LabelMapper):
 
     def __init__(self, inputs, mapper, inputs_mapping=None, name=None, **kwargs):
         if self._has_overlapping(np.array(list(mapper.keys()))):
-            raise ValueError("Overlapping ranges of values are not supported.")
+            msg = "Overlapping ranges of values are not supported."
+            raise ValueError(msg)
         self._inputs = inputs
         self._n_inputs = len(inputs)
         _no_label = 0
         if not all([m.n_outputs == 1 for m in mapper.values()]):
-            raise TypeError("All transforms in mapper must have one output.")
+            msg = "All transforms in mapper must have one output."
+            raise TypeError(msg)
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
@@ -454,7 +459,8 @@ class LabelMapperRange(_LabelMapper):
         a, b = value_range[:, 0], value_range[:, 1]
         ind = np.logical_and(value >= a, value <= b).nonzero()[0]
         if ind.size > 1:
-            raise ValueError("There are overlapping ranges.")
+            msg = "There are overlapping ranges."
+            raise ValueError(msg)
         elif ind.size == 0:
             return None
         else:
@@ -545,7 +551,8 @@ class RegionsSelector(Model):
         self._selector = selector  # copy.deepcopy(selector)
 
         if " " in selector.keys() or 0 in selector.keys():
-            raise ValueError('"0" and " " are not allowed as keys.')
+            msg = '"0" and " " are not allowed as keys.'
+            raise ValueError(msg)
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(n_models=1, name=name, **kwargs)
@@ -561,10 +568,11 @@ class RegionsSelector(Model):
         elif not_all_uses_quantity:
             return False
         else:
-            raise ValueError(
+            msg = (
                 "You can not mix models which use quantity and do not use "
                 "quantity inside a RegionSelector"
             )
+            raise ValueError(msg)
 
     def set_input(self, rid):
         """
@@ -573,7 +581,8 @@ class RegionsSelector(Model):
         if rid in self._selector:
             return self._selector[rid]
         else:
-            raise RegionError(f"Region {rid} not found")
+            msg = f"Region {rid} not found"
+            raise RegionError(msg)
 
     def inverse(self):
         if self.label_mapper.inverse is not None:
@@ -582,18 +591,20 @@ class RegionsSelector(Model):
                 for rid in self._selector:
                     transforms_inv[rid] = self._selector[rid].inverse
             except AttributeError as err:
-                raise NotImplementedError(
+                msg = (
                     "The inverse of all regions must be defined"
                     "for RegionsSelector to have an inverse."
-                ) from err
+                )
+                raise NotImplementedError(msg) from err
             return self.__class__(
                 self.outputs, self.inputs, transforms_inv, self.label_mapper.inverse
             )
         else:
-            raise NotImplementedError(
+            msg = (
                 "The label mapper must have an inverse "
                 "for RegionsSelector to have an inverse."
             )
+            raise NotImplementedError(msg)
 
     def evaluate(self, *args):
         """
@@ -720,9 +731,8 @@ class LabelMapper(_LabelMapper):
         elif inputs_mapping is not None and not isinstance(
             inputs_mapping, astmodels.Mapping
         ):
-            raise TypeError(
-                "inputs_mapping must be an instance of astropy.modeling.Mapping."
-            )
+            msg = "inputs_mapping must be an instance of astropy.modeling.Mapping."
+            raise TypeError(msg)
 
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper

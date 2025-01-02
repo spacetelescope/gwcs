@@ -403,8 +403,9 @@ def construct_mapping(self, node, deep=False):
         try:
             hash(key)
         except TypeError as exc:
+            msg = "while constructing a mapping"
             raise yaml.constructor.ConstructorError(
-                "while constructing a mapping",
+                msg,
                 node.start_mark,
                 f"found unacceptable key ({exc})",
                 key_node.start_mark,

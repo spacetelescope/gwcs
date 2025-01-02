@@ -24,7 +24,8 @@ class DirectionCosinesConverter(TransformConverterBase):
         elif transform_type == "from_direction_cosines":
             return FromDirectionCosines()
         else:
-            raise TypeError(f"Unknown model_type {transform_type}")
+            msg = f"Unknown model_type {transform_type}"
+            raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..geometry import FromDirectionCosines, ToDirectionCosines
@@ -34,7 +35,8 @@ class DirectionCosinesConverter(TransformConverterBase):
         elif isinstance(model, ToDirectionCosines):
             transform_type = "to_direction_cosines"
         else:
-            raise TypeError(f"Model of type {model.__class__} is not supported.")
+            msg = f"Model of type {model.__class__} is not supported."
+            raise TypeError(msg)
         node = {"transform_type": transform_type}
         return node
 
@@ -56,7 +58,8 @@ class SphericalCartesianConverter(TransformConverterBase):
         elif transform_type == "cartesian_to_spherical":
             return CartesianToSpherical(wrap_lon_at=wrap_lon_at)
         else:
-            raise TypeError(f"Unknown model_type {transform_type}")
+            msg = f"Unknown model_type {transform_type}"
+            raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..geometry import CartesianToSpherical, SphericalToCartesian
@@ -66,7 +69,8 @@ class SphericalCartesianConverter(TransformConverterBase):
         elif isinstance(model, CartesianToSpherical):
             transform_type = "cartesian_to_spherical"
         else:
-            raise TypeError(f"Model of type {model.__class__} is not supported.")
+            msg = f"Model of type {model.__class__} is not supported."
+            raise TypeError(msg)
 
         node = {"transform_type": transform_type, "wrap_lon_at": model.wrap_lon_at}
         return node

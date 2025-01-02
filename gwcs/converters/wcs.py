@@ -165,7 +165,8 @@ class CompositeFrameConverter(FrameConverter):
         from ..coordinate_frames import CompositeFrame
 
         if len(node) != 2:
-            raise ValueError("CompositeFrame has extra properties")
+            msg = "CompositeFrame has extra properties"
+            raise ValueError(msg)
 
         name = node["name"]
         frames = node["frames"]
