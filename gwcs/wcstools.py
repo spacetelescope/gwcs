@@ -66,7 +66,7 @@ def wcs_from_fiducial(
     from .wcs import WCS
 
     if transform is not None and not isinstance(transform, Model):
-        msg = "Expected transform to be an instance" "of astropy.modeling.Model"
+        msg = "Expected transform to be an instanceof astropy.modeling.Model"
         raise UnsupportedTransformError(msg)
 
     # transform_outputs = transform.n_outputs
@@ -251,7 +251,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
         step = np.repeat(step, ndim)
 
     if len(step) != len(bb):
-        msg = "`step` must be a scalar, or tuple with length " "matching `bounding_box`"
+        msg = "`step` must be a scalar, or tuple with length matching `bounding_box`"
         raise ValueError(msg)
 
     slices = []
@@ -348,11 +348,12 @@ def wcs_from_points(
         crval = (midpoint_sc.data.lon, midpoint_sc.data.lat)
         frame = sc1.frame
     else:
-        raise ValueError(
+        msg = (
             "`proj_point` must be set to 'center', or an"
-            + "`~astropy.coordinates.SkyCoord` object with "
-            + "a pair of points."
+            "`~astropy.coordinates.SkyCoord` object with "
+            "a pair of points."
         )
+        raise ValueError(msg)
 
     if not isinstance(projection, projections.Projection):
         msg = f"Unsupported projection code {projection}"

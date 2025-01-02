@@ -209,9 +209,7 @@ class WCS(GWCSAPIMixin):
             # Initialize a WCS without a forward_transform - allows building a
             # WCS programmatically.
             if output_frame is None:
-                msg = (
-                    "An output_frame must be specified " "if forward_transform is None."
-                )
+                msg = "An output_frame must be specified if forward_transform is None."
                 raise CoordinateFrameError(msg)
             _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
             _output_frame, outp_frame_obj = self._get_frame_name(output_frame)

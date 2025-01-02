@@ -121,7 +121,7 @@ class SphericalToCartesian(Model):
 
     def evaluate(self, lon, lat):
         if isinstance(lon, u.Quantity) != isinstance(lat, u.Quantity):
-            msg = "All arguments must be of the same type " "(i.e., quantity or not)."
+            msg = "All arguments must be of the same type (i.e., quantity or not)."
             raise TypeError(msg)
 
         lon = np.deg2rad(lon)
@@ -201,7 +201,7 @@ class CartesianToSpherical(Model):
     def evaluate(self, x, y, z):
         nquant = [isinstance(i, u.Quantity) for i in (x, y, z)].count(True)
         if nquant in [1, 2]:
-            msg = "All arguments must be of the same type " "(i.e., quantity or not)."
+            msg = "All arguments must be of the same type (i.e., quantity or not)."
             raise TypeError(msg)
 
         h = np.hypot(x, y)
