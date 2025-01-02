@@ -150,7 +150,7 @@ select = [
     #"PL",     # pylint (general linting, flake8 alternative)
     "TRY",    # tryceratops (linting for try/except blocks)
     # "FLY",    # flynt (f-string conversion where possible)
-    #"NPY",    # NumPy-specific checks (recommendations from NumPy)
+    "NPY",    # NumPy-specific checks (recommendations from NumPy)
     #"PERF",   # Perflint (performance linting)
     # "LOG",
     "RUF",    # ruff specific checks

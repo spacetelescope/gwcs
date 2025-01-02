@@ -274,7 +274,8 @@ def test_outside_range():
 
 def test_unique_labels():
     labels = (np.arange(10) * np.ones((1023, 10))).T
-    np.random.shuffle(labels)
+    rng = np.random.default_rng(0)
+    rng.shuffle(labels)
     expected = np.arange(1, 10)
     result = selector.get_unique_regions(labels)
     assert_equal(expected, result)
@@ -289,7 +290,7 @@ def test_unique_labels():
         "S200B1",
         "",
     ] * 1000
-    np.random.shuffle(labels)
+    rng.shuffle(labels)
 
     expected = ["S100A1", "S1600", "S200A2", "S200B1", "S400A1"]
     result = selector.get_unique_regions(labels)
