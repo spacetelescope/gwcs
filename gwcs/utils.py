@@ -85,7 +85,7 @@ def get_values(units, *args):
         Quantity inputs.
     """
     if units is not None:
-        result = [a.to_value(unit) for a, unit in zip(args, units)]
+        result = [a.to_value(unit) for a, unit in zip(args, units, strict=False)]
     else:
         result = [a.value for a in args]
     return result
@@ -470,11 +470,11 @@ def create_projection_transform(projcode):
         Projection transform.
     """
 
-    projklassname = "Pix2Sky_" + projcode
+    projklassname = f"Pix2Sky_{projcode}"
     try:
         projklass = getattr(projections, projklassname)
-    except AttributeError:
-        raise UnsupportedProjectionError(projcode)
+    except AttributeError as err:
+        raise UnsupportedProjectionError(projcode) from err
 
     projparams = {}
     return projklass(**projparams)
@@ -490,7 +490,9 @@ def is_high_level(*args, low_level_wcs):
 
     type_match = [
         (type(arg), waoc[0])
-        for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())
+        for arg, waoc in zip(
+            args, low_level_wcs.world_axis_object_classes.values(), strict=False
+        )
     ]
 
     types_are_high_level = [argt is t for argt, t in type_match]

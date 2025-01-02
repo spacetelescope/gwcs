@@ -408,7 +408,7 @@ def construct_mapping(self, node, deep=False):
                 node.start_mark,
                 f"found unacceptable key ({exc})",
                 key_node.start_mark,
-            )
+            ) from exc
         value = self.construct_object(value_node, deep=deep)
         mapping[key] = value
     return mapping
@@ -418,7 +418,7 @@ yaml.SafeLoader.add_constructor("tag:yaml.org,2002:map", construct_mapping)
 
 
 def main(src, dst):
-    for root, dirs, files in os.walk(src):
+    for root, _, files in os.walk(src):
         for fname in files:
             if not fname.endswith(".yaml"):
                 continue

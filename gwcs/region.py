@@ -236,7 +236,7 @@ class Polygon(Region):
                 y += 1
                 continue
 
-            for i, j in zip(xnew[::2], xnew[1::2]):
+            for i, j in zip(xnew[::2], xnew[1::2], strict=False):
                 xstart = max(0, i + self._shiftx)
                 xend = min(j + self._shiftx, nx - 1)
                 data[ysh][xstart : xend + 1] = self._rid

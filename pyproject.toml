@@ -118,14 +118,12 @@ select = [
     "F",      # Pyflakes (part of default flake8)
     "W", "E", # pycodestyle (part of default flake8)
     "I",      # isort (import sorting)
-    # "N",      # pep8-naming
-    #"D",      # pydocstyle (docstring style guide)
     "UP",     # pyupgrade (upgrade code to modern python)
-    # "YTT",    # flake8-2020 (system version info)
-    # "ANN",    # flake8-annotations (best practices for type annotations)
-    #"S",      # flake8-bandit (security checks)
-    # "BLE",    # flake8-blind-except (prevent blind except statements)
-    #"B",      # flake8-bugbear (prevent common gotcha bugs)
+    "YTT",    # flake8-2020 (system version info)
+    #"ANN",    # flake8-annotations (best practices for type annotations)
+    "S",      # flake8-bandit (security checks)
+    "BLE",    # flake8-blind-except (prevent blind except statements)
+    "B",      # flake8-bugbear (prevent common gotcha bugs)
     # "A",      # flake8-builtins (prevent shadowing of builtins)
     # "C4",     # flake8-comprehensions (best practices for comprehensions)
     # "T10",    # flake8-debugger (prevent debugger statements in code)
@@ -158,4 +156,7 @@ select = [
     #"PERF",   # Perflint (performance linting)
     # "LOG",
     "RUF",    # ruff specific checks
+]
+ignore = [
+    "S101",  # Bandit: Use of assert detected
 ]

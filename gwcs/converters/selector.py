@@ -58,10 +58,10 @@ class LabelMapperConverter(TransformConverterBase):
             transforms = mapper.get("models")
             if isiterable(labels[0]):
                 labels = [tuple(label) for label in labels]
-                dict_mapper = dict(zip(labels, transforms))
+                dict_mapper = dict(zip(labels, transforms, strict=False))
                 return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
             else:
-                dict_mapper = dict(zip(labels, transforms))
+                dict_mapper = dict(zip(labels, transforms, strict=False))
                 return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
@@ -115,7 +115,7 @@ class RegionsSelectorConverter(TransformConverterBase):
         label_mapper = node["label_mapper"]
         undefined_transform_value = node["undefined_transform_value"]
         sel = node["selector"]
-        sel = dict(zip(sel["labels"], sel["transforms"]))
+        sel = dict(zip(sel["labels"], sel["transforms"], strict=False))
         return RegionsSelector(
             inputs, outputs, sel, label_mapper, undefined_transform_value
         )

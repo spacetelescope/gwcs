@@ -62,7 +62,7 @@ def assert_selector_roundtrip(s, tmpdir, version=None):
         elif isinstance(s, selector._LabelMapper):
             _assert_mapper_equal(s, rs)
         else:
-            assert False
+            raise AssertionError("Unknown selector type")
 
 
 def test_regions_selector(tmpdir):
@@ -120,7 +120,7 @@ def test_LabelMapperRange(tmpdir):
         ]
     )
     rmapper = {}
-    for k, v in zip(keys, m):
+    for k, v in zip(keys, m, strict=False):
         rmapper[tuple(k)] = v
     sel = selector.LabelMapperRange(
         ("x", "y"), rmapper, inputs_mapping=Mapping((0,), n_inputs=2)

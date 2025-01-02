@@ -211,7 +211,7 @@ def test_backward_transform():
     poly = models.Polynomial1D(1, c0=4)
     w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
     with pytest.raises(NotImplementedError):
-        w.backward_transform
+        _ = w.backward_transform
 
     # test backward transform
     poly.inverse = models.Shift(-4)
@@ -970,7 +970,7 @@ def test_to_fits_tab_7d(gwcs_7d_complex_mapping):
     np.random.seed(1)
     npts = 100
     pts = np.zeros((len(w.bounding_box) + 1, npts))
-    for k, r in enumerate(w.bounding_box):
+    for k in range(len(w.bounding_box)):
         xmin, xmax = w.bounding_box[k]
         pts[k, :] = xmin + (xmax - xmin) * np.random.random(npts)
 
@@ -1001,7 +1001,7 @@ def test_to_fits_mixed_4d(gwcs_spec_cel_time_4d):
     np.random.seed(1)
     npts = 100
     pts = np.zeros((len(w.bounding_box), npts))
-    for k, r in enumerate(w.bounding_box):
+    for k in range(len(w.bounding_box)):
         xmin, xmax = w.bounding_box[k]
         pts[k, :] = xmin + (xmax - xmin) * np.random.random(npts)
 
@@ -1506,7 +1506,7 @@ def test_bounding_box_is_returned_F():
 
     # Demonstrate that model_2d_shift does not have a bounding box
     with pytest.raises(NotImplementedError):
-        model_2d_shift.bounding_box
+        _ = model_2d_shift.bounding_box
 
     # Demonstrate that model_2d_shift_bbox does have a bounding box
     assert model_2d_shift_bbox.bounding_box == bbox_tuple
@@ -1528,7 +1528,7 @@ def test_bounding_box_is_returned_F():
 
     # Check that first access in this case will raise a warning
     with pytest.warns(wcs.GwcsBoundingBoxWarning):
-        gwcs_object_before.bounding_box
+        _ = gwcs_object_before.bounding_box
 
     # Check order is returned as F
     assert gwcs_object_before.bounding_box.order == "F"
@@ -1547,12 +1547,12 @@ def test_no_bounding_box_if_read_from_file(tmp_path):
 
     # Check the warning is issued for the bounding box of this WCS object
     with pytest.warns(wcs.GwcsBoundingBoxWarning):
-        bad_wcs.bounding_box
+        _ = bad_wcs.bounding_box
 
     # Check that the warning is not issued again the second time
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        bad_wcs.bounding_box
+        _ = bad_wcs.bounding_box
 
     # Write a bad wcs bounding box to an asdf file
     asdf_file = tmp_path / "bad_wcs.asdf"
@@ -1567,7 +1567,7 @@ def test_no_bounding_box_if_read_from_file(tmp_path):
     # Check that no warning is issued for the bounding box of this WCS object
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        wcs_from_file.bounding_box
+        _ = wcs_from_file.bounding_box
 
 
 def test_split_frame_wcs():
@@ -1612,7 +1612,7 @@ def test_split_frame_wcs():
 
     expected_world = [20 * u.arcsec, 10 * u.nm, 45 * u.deg]
     # expected_world = [15*u.deg, 20*u.nm, 60*u.arcsec]
-    for expected, output in zip(expected_world, output_world):
+    for expected, output in zip(expected_world, output_world, strict=False):
         assert_allclose(output, expected.value)
 
     world_obj = iwcs.pixel_to_world(*input_pixel)

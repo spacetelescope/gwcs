@@ -119,7 +119,7 @@ def create_range_mapper():
     )
 
     rmapper = {}
-    for k, v in zip(keys, m):
+    for k, v in zip(keys, m, strict=False):
         rmapper[tuple(k)] = v
 
     sel = selector.LabelMapperRange(
@@ -136,7 +136,7 @@ def create_scalar_mapper():
     keys = [-1.95805483, -1.67833272, -1.39861060, -1.11888848, -8.39166358]
 
     dmapper = {}
-    for k, v in zip(keys, m):
+    for k, v in zip(keys, m, strict=False):
         dmapper[k] = v
     return dmapper
 
@@ -216,7 +216,7 @@ def test_RegionsSelector():
         inputs=("x", "y"), outputs=("x", "y"), label_mapper=mapper, selector=sel
     )
     with pytest.raises(NotImplementedError):
-        reg_selector.inverse
+        _ = reg_selector.inverse
 
     mapper.inverse = mapper.copy()
     assert_allclose(reg_selector(2, 1), sel[1](2, 1))

@@ -86,8 +86,8 @@ def wcs_from_fiducial(
                 model = frame2transform[item.__class__](
                     fiducial[ind], projection=projection
                 )
-            except KeyError:
-                raise TypeError(f"Coordinate frame {item} is not supported")
+            except KeyError as err:
+                raise TypeError(f"Coordinate frame {item} is not supported") from err
             trans_from_fiducial.append(model)
         fiducial_transform = functools.reduce(
             lambda x, y: x & y, [tr for tr in trans_from_fiducial]
@@ -98,8 +98,10 @@ def wcs_from_fiducial(
             fiducial_transform = frame2transform[coordinate_frame.__class__](
                 fiducial, projection=projection
             )
-        except KeyError:
-            raise TypeError(f"Coordinate frame {coordinate_frame} is not supported")
+        except KeyError as err:
+            raise TypeError(
+                f"Coordinate frame {coordinate_frame} is not supported"
+            ) from err
 
     if transform is not None:
         forward_transform = transform | fiducial_transform
@@ -262,7 +264,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
         )
 
     slices = []
-    for d, s in zip(bb, step):
+    for d, s in zip(bb, step, strict=False):
         slices.append(slice(d[0], d[1] + s, s))
     grid = np.mgrid[slices[::-1]][::-1]
     if ndim == 1:
@@ -274,7 +276,7 @@ def wcs_from_points(
     xy,
     world_coords,
     proj_point="center",
-    projection=projections.Sky2Pix_TAN(),
+    projection=None,
     poly_degree=4,
     polynomial_type="polynomial",
 ):
@@ -321,6 +323,8 @@ def wcs_from_points(
         a WCS object for this observation.
     """
     from .wcs import WCS
+
+    projection = projections.Sky2Pix_TAN() if projection is None else projection
 
     supported_poly_types = {
         "polynomial": models.Polynomial2D,

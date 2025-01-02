@@ -202,7 +202,7 @@ class LabelMapperArray(_LabelMapper):
         try:
             result = self._mapper[args[::-1]]
         except IndexError as e:
-            raise LabelMapperArrayIndexingError(e)
+            raise LabelMapperArrayIndexingError(e) from e
         return result
 
     @classmethod
@@ -490,7 +490,9 @@ class LabelMapperRange(_LabelMapper):
                 continue
         res.shape = shape
         if len(np.nonzero(res)[0]) == 0:
-            warnings.warn(f"All data is outside the valid range - {self.name}.")
+            warnings.warn(
+                f"All data is outside the valid range - {self.name}.", stacklevel=2
+            )
         return res
 
 
@@ -548,7 +550,7 @@ class RegionsSelector(Model):
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(n_models=1, name=name, **kwargs)
         # Validate uses_quantity at init time for nicer error message
-        self.uses_quantity
+        _ = self.uses_quantity
 
     @property
     def uses_quantity(self):
@@ -579,11 +581,11 @@ class RegionsSelector(Model):
                 transforms_inv = {}
                 for rid in self._selector:
                     transforms_inv[rid] = self._selector[rid].inverse
-            except AttributeError:
+            except AttributeError as err:
                 raise NotImplementedError(
                     "The inverse of all regions must be defined"
                     "for RegionsSelector to have an inverse."
-                )
+                ) from err
             return self.__class__(
                 self.outputs, self.inputs, transforms_inv, self.label_mapper.inverse
             )
@@ -605,7 +607,9 @@ class RegionsSelector(Model):
         rids = self.label_mapper(*args).flatten()
         # Raise an error if all pixels are outside regions
         if (rids == self.label_mapper.no_label).all():
-            warnings.warn("The input positions are not inside any region.")
+            warnings.warn(
+                "The input positions are not inside any region.", stacklevel=2
+            )
 
         # Create output arrays and set any pixels not within regions to
         # "undefined_transform_value"

@@ -471,7 +471,9 @@ class CoordinateFrame(BaseCoordinateFrame):
         return self.__class__.__name__
 
     def _sort_property(self, property):
-        sorted_prop = sorted(zip(property, self.axes_order), key=lambda x: x[1])
+        sorted_prop = sorted(
+            zip(property, self.axes_order, strict=False), key=lambda x: x[1]
+        )
         return tuple([t[0] for t in sorted_prop])
 
     @property
@@ -527,7 +529,7 @@ class CoordinateFrame(BaseCoordinateFrame):
     def world_axis_object_classes(self):
         return {
             f"{at}{i}" if i != 0 else at: (u.Quantity, (), {"unit": unit})
-            for i, (at, unit) in enumerate(zip(self.axes_type, self.unit))
+            for i, (at, unit) in enumerate(zip(self.axes_type, self.unit, strict=False))
         }
 
     @property
@@ -568,7 +570,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         # does not.
         values = [
             v.to_value(unit) if hasattr(v, "to_value") else v
-            for v, unit in zip(values, self.unit)
+            for v, unit in zip(values, self.unit, strict=False)
         ]
 
         if not all(
@@ -1057,9 +1059,11 @@ class Frame2D(CoordinateFrame):
         unit=(u.pix, u.pix),
         axes_names=("x", "y"),
         name=None,
-        axes_type=["SPATIAL", "SPATIAL"],
+        axes_type=None,
         axis_physical_types=None,
     ):
+        if axes_type is None:
+            axes_type = ["SPATIAL", "SPATIAL"]
         pht = axis_physical_types or self._default_axis_physical_types(
             axes_names, axes_type
         )

@@ -105,7 +105,7 @@ def coordinate_to_quantity(*inputs, frame):
     results = frame.from_high_level_coordinates(*inputs)
     if not isinstance(results, list):
         results = [results]
-    results = [r << unit for r, unit in zip(results, frame.unit)]
+    results = [r << unit for r, unit in zip(results, frame.unit, strict=False)]
     return results
 
 
@@ -342,7 +342,7 @@ def test_coordinate_to_quantity_composite(inp):
     coords = coordinate_to_quantity(*inp, frame=comp)
 
     expected = (211 * u.AA, 0 * u.s, 0 * u.arcsec, 0 * u.arcsec)
-    for output, exp in zip(coords, expected):
+    for output, exp in zip(coords, expected, strict=False):
         assert_quantity_allclose(output, exp)
 
 
@@ -365,7 +365,7 @@ def test_coordinate_to_quantity_composite_split():
     coords = coordinate_to_quantity(*inp, frame=comp)
 
     expected = (0 * u.arcsec, 211 * u.AA, 0 * u.arcsec, 0 * u.s)
-    for output, exp in zip(coords, expected):
+    for output, exp in zip(coords, expected, strict=False):
         assert_quantity_allclose(output, exp)
 
 
@@ -392,7 +392,7 @@ def test_coordinate_to_quantity_frame2d_composite():
     coords = coordinate_to_quantity(*inp, frame=comp)
 
     expected = (211 * u.AA, 0 * u.s, 0 * u.one, 0 * u.one)
-    for output, exp in zip(coords, expected):
+    for output, exp in zip(coords, expected, strict=False):
         assert_quantity_allclose(output, exp)
 
 
@@ -401,7 +401,7 @@ def test_coordinate_to_quantity_frame_2d():
     inp = (1 * u.one, 2 * u.arcsec)
     expected = (1 * u.one, 2 * u.arcsec)
     result = coordinate_to_quantity(*inp, frame=frame)
-    for output, exp in zip(result, expected):
+    for output, exp in zip(result, expected, strict=False):
         assert_quantity_allclose(output, exp)
 
 

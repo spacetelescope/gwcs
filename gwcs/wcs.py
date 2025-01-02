@@ -272,16 +272,16 @@ class WCS(GWCSAPIMixin):
                 )
         try:
             from_ind = self._get_frame_index(from_name)
-        except ValueError:
+        except ValueError as err:
             raise CoordinateFrameError(
                 f"Frame {from_name} is not in the available frames"
-            )
+            ) from err
         try:
             to_ind = self._get_frame_index(to_name)
-        except ValueError:
+        except ValueError as err:
             raise CoordinateFrameError(
                 f"Frame {to_name} is not in the available frames"
-            )
+            ) from err
 
         if from_ind + 1 != to_ind:
             raise ValueError(f"Frames {from_name} and {to_name} are not  in sequence")
@@ -324,9 +324,9 @@ class WCS(GWCSAPIMixin):
         except NotImplementedError as err:
             raise NotImplementedError(
                 f"Could not construct backward transform. \n{err}"
-            )
+            ) from err
         try:
-            backward.inverse
+            _ = backward.inverse
         except NotImplementedError:  # means "hasattr" won't work
             backward.inverse = self.forward_transform
         return backward
@@ -391,7 +391,8 @@ class WCS(GWCSAPIMixin):
     def _add_units_input(self, arrays, frame):
         if frame is not None:
             return tuple(
-                u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit)
+                u.Quantity(array, unit)
+                for array, unit in zip(arrays, frame.unit, strict=False)
             )
 
         return arrays
@@ -400,7 +401,7 @@ class WCS(GWCSAPIMixin):
         if frame is not None:
             return tuple(
                 array.to_value(unit) if isinstance(array, u.Quantity) else array
-                for array, unit in zip(arrays, frame.unit)
+                for array, unit in zip(arrays, frame.unit, strict=False)
             )
 
         return arrays
@@ -630,7 +631,9 @@ class WCS(GWCSAPIMixin):
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
 
-            for idim, (coord, phys) in enumerate(zip(world_arrays, axes_phys_types)):
+            for idim, (coord, phys) in enumerate(
+                zip(world_arrays, axes_phys_types, strict=False)
+            ):
                 coord = _tofloat(coord)
                 if np.asarray(ind).sum() > 1:
                     axis_range = footprint[:, idim]
@@ -1293,7 +1296,7 @@ class WCS(GWCSAPIMixin):
             valid = np.logical_not(invalid)
             in_bb = np.ones_like(invalid, dtype=np.bool_)
 
-            for c, (x1, x2) in zip(pix[valid].T, self.bounding_box):
+            for c, (x1, x2) in zip(pix[valid].T, self.bounding_box, strict=False):
                 in_bb[valid] &= (c >= x1) & (c <= x2)
             pix[np.logical_not(in_bb)] = fill_value
 
@@ -1410,20 +1413,20 @@ class WCS(GWCSAPIMixin):
         output_name, output_frame_obj = self._get_frame_name(output_frame)
         try:
             input_index = self._get_frame_index(input_frame)
-        except CoordinateFrameError:
+        except CoordinateFrameError as err:
             input_index = None
             if input_frame_obj is None:
                 raise ValueError(
-                    f"New coordinate frame {input_name} must " "be defined"
-                )
+                    f"New coordinate frame {input_name} must be defined"
+                ) from err
         try:
             output_index = self._get_frame_index(output_frame)
-        except CoordinateFrameError:
+        except CoordinateFrameError as err:
             output_index = None
             if output_frame_obj is None:
                 raise ValueError(
-                    f"New coordinate frame {output_name} must " "be defined"
-                )
+                    f"New coordinate frame {output_name} must be defined"
+                ) from err
 
         new_frames = [input_index, output_index].count(None)
         if new_frames == 0:
@@ -1539,6 +1542,7 @@ class WCS(GWCSAPIMixin):
                 "The bounding_box will remain meaning the same but will be "
                 "converted to F order for consistency in the GWCS.",
                 GwcsBoundingBoxWarning,
+                stacklevel=2,
             )
             self.bounding_box = bb.bounding_box(order="F")
             bb = self.bounding_box
@@ -1958,8 +1962,10 @@ class WCS(GWCSAPIMixin):
                 sky2pix_proj = getattr(projections, f"Sky2Pix_{projection}")(
                     name=projection
                 )
-            except AttributeError:
-                raise ValueError("Unsupported FITS WCS sky projection: {projection}")
+            except AttributeError as err:
+                raise ValueError(
+                    f"Unsupported FITS WCS sky projection: {projection}"
+                ) from err
 
         elif isinstance(projection, projections.Sky2PixProjection):
             sky2pix_proj = projection
@@ -1969,11 +1975,13 @@ class WCS(GWCSAPIMixin):
                 or not isinstance(projection, str)
                 or len(projection) != 3
             ):
-                raise ValueError("Unsupported FITS WCS sky projection: {sky2pix_proj}")
+                raise ValueError(f"Unsupported FITS WCS sky projection: {sky2pix_proj}")
             try:
                 getattr(projections, f"Sky2Pix_{projection}")()
-            except AttributeError:
-                raise ValueError("Unsupported FITS WCS sky projection: {projection}")
+            except AttributeError as err:
+                raise ValueError(
+                    f"Unsupported FITS WCS sky projection: {projection}"
+                ) from err
 
         else:
             raise TypeError(
@@ -2500,11 +2508,11 @@ class WCS(GWCSAPIMixin):
 
         try:
             sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "Number of sampling values either must be 1 "
                 "or it must match the number of pixel axes."
-            )
+            ) from err
 
         _, world_axes = self._separable_groups(detect_celestial=False)
 
@@ -2692,11 +2700,11 @@ class WCS(GWCSAPIMixin):
 
         try:
             sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "Number of sampling values either must be 1 "
                 "or it must match the number of pixel axes."
-            )
+            ) from err
 
         world_axes_groups, _, celestial_group = self._separable_groups(
             detect_celestial=True
@@ -2714,7 +2722,8 @@ class WCS(GWCSAPIMixin):
                     warnings.warn(
                         "SIP distortion is not supported when the number\n"
                         "of axes in WCS is larger than 2. Setting 'degree'\n"
-                        "to 1 and 'max_inv_pix_error' to None."
+                        "to 1 and 'max_inv_pix_error' to None.",
+                        stacklevel=2,
                     )
                 degree = 1
                 max_inv_pix_error = None
@@ -2917,7 +2926,7 @@ class WCS(GWCSAPIMixin):
         gcrds = []
         cdelt = []
         bb = [bounding_box[k] for k in input_axes]
-        for (xmin, xmax), s in zip(bb, sampling):
+        for (xmin, xmax), s in zip(bb, sampling, strict=False):
             npix = max(2, 1 + int(np.ceil(abs((xmax - xmin) / s))))
             gcrds.append(np.linspace(xmin, xmax, npix))
             cdelt.append((npix - 1) / (xmax - xmin) if xmin != xmax else 1)
@@ -2953,7 +2962,7 @@ class WCS(GWCSAPIMixin):
         if hdr is None:
             hdr = fits.Header()
 
-        for m, axis_info in enumerate(world_axes_group):
+        for axis_info in world_axes_group:
             k = axis_info.axis
             widx = world_axes_idx.index(k)
             k1 = k + 1
@@ -3165,7 +3174,7 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
         except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
             raise np.linalg.LinAlgError(
                 f"Failed to fit SIP. Reported error:\n{e.args[0]}"
-            )
+            ) from e
 
     if not np.all(np.isfinite([poly_coeff_x, poly_coeff_y])):
         raise np.linalg.LinAlgError(
@@ -3247,7 +3256,7 @@ def _fit_2D_poly(
         if not np.isfinite(cond):
             # Ill-conditioned system
             if single_degree:
-                warnings.warn("The fit may be poorly conditioned.")
+                warnings.warn("The fit may be poorly conditioned.", stacklevel=2)
                 cfx = cfx_i
                 cfy = cfy_i
                 fit_error = fit_error_i
@@ -3273,12 +3282,12 @@ def _fit_2D_poly(
 
     fit_poly_x = Polynomial2D(degree=deg, c0_0=0.0)
     fit_poly_y = Polynomial2D(degree=deg, c0_0=0.0)
-    for cx, cy, (p, q) in zip(cfx, cfy, powers):
+    for cx, cy, (p, q) in zip(cfx, cfy, powers, strict=False):
         setattr(fit_poly_x, f"c{p:1d}_{q:1d}", cx)
         setattr(fit_poly_y, f"c{p:1d}_{q:1d}", cy)
 
     if fit_warning_msg:
-        warnings.warn(fit_warning_msg, linalg.LinAlgWarning)
+        warnings.warn(fit_warning_msg, linalg.LinAlgWarning, stacklevel=2)
 
     if fit_error <= max_error or single_degree:
         # Check to see if double sampling meets error requirement.
@@ -3294,7 +3303,8 @@ def _fit_2D_poly(
         if max_resid > min(5.0 * fit_error, max_error):
             warnings.warn(
                 "Double sampling check FAILED: Sampling may be too coarse for "
-                "the distortion model being fitted."
+                "the distortion model being fitted.",
+                stacklevel=2,
             )
 
         # Residuals on the double-dense grid may be better estimates
@@ -3459,6 +3469,7 @@ class Step:
             "Indexing a WCS.pipeline step is deprecated. "
             "Use the `frame` and `transform` attributes instead.",
             DeprecationWarning,
+            stacklevel=2,
         )
         if ind not in (0, 1):
             raise IndexError("Allowed inices are 0 (frame) and 1 (transform).")

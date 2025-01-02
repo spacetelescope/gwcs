@@ -72,7 +72,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
 
             result = tuple(
                 r.to_value(unit) if isinstance(r, u.Quantity) else r
-                for r, unit in zip(result, frame.unit)
+                for r, unit in zip(result, frame.unit, strict=False)
             )
 
         # If we only have one output axes, we shouldn't return a tuple.

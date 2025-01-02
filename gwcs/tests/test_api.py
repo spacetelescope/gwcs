@@ -133,13 +133,13 @@ def test_world_axis_units(wcs_ndim_types_units):
     assert wcsobj.world_axis_units == world_units
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
+@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
 def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
     assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y))
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
+@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
 def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     wcsobj = gwcs_2d_shift_scale_quantity
 
@@ -157,10 +157,10 @@ def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     assert_allclose(u.Quantity(call_world).value, api_world)
 
     new_call_pixel = wcsobj.invert(*call_world)
-    [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel)]
+    [assert_allclose(n, p) for n, p in zip(new_call_pixel, call_pixel, strict=False)]
 
     new_api_pixel = wcsobj.world_to_pixel_values(*api_world)
-    [assert_allclose(n, p) for n, p in zip(new_api_pixel, api_pixel)]
+    [assert_allclose(n, p) for n, p in zip(new_api_pixel, api_pixel, strict=False)]
 
 
 @pytest.mark.parametrize(("x"), (x, xarr))
@@ -187,7 +187,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     assert_allclose(new_api_pixel, api_pixel)
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr)))
+@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
 def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
     assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x))
@@ -292,7 +292,7 @@ def _compare_frame_output(wc1, wc2):
         assert wc1 == wc2
 
     else:
-        assert False, f"Can't Compare {type(wc1)}"
+        raise AssertionError(f"Can't Compare {type(wc1)}")
 
 
 @fixture_all_wcses
@@ -313,7 +313,7 @@ def test_high_level_wrapper(wcsobj, request):
     assert type(wc1) is type(wc2)
 
     if isinstance(wc1, list | tuple):
-        for w1, w2 in zip(wc1, wc2):
+        for w1, w2 in zip(wc1, wc2, strict=False):
             _compare_frame_output(w1, w2)
     else:
         _compare_frame_output(wc1, wc2)
@@ -330,7 +330,8 @@ def test_high_level_wrapper(wcsobj, request):
 
     if wcsobj.forward_transform.uses_quantity:
         pix_out2 = tuple(
-            p.to_value(unit) for p, unit in zip(pix_out2, wcsobj.input_frame.unit)
+            p.to_value(unit)
+            for p, unit in zip(pix_out2, wcsobj.input_frame.unit, strict=False)
         )
 
     np.testing.assert_allclose(pix_out1, pixel_input)

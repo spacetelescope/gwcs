@@ -54,7 +54,7 @@ def _assert_wcs_equal(a, b):
     assert a.name == b.name  # nosec
     assert a.pixel_shape == b.pixel_shape
     assert len(a.available_frames) == len(b.available_frames)  # nosec
-    for a_step, b_step in zip(a.pipeline, b.pipeline):
+    for a_step, b_step in zip(a.pipeline, b.pipeline, strict=False):
         _assert_frame_equal(a_step.frame, b_step.frame)
         assert_model_equal(a_step.transform, b_step.transform)
 
