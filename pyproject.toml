@@ -157,5 +157,5 @@ select = [
     #"NPY",    # NumPy-specific checks (recommendations from NumPy)
     #"PERF",   # Perflint (performance linting)
     # "LOG",
-    #"RUF",    # ruff specific checks
+    "RUF",    # ruff specific checks
 ]

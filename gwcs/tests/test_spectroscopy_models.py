@@ -3,8 +3,8 @@ import astropy.units as u
 from astropy.modeling.models import Identity
 import numpy as np
 from numpy.testing import assert_allclose
-from .. import spectroscopy as sp  # noqa
-from .. import geometry  # noqa
+from .. import spectroscopy as sp
+from .. import geometry
 
 
 def test_angles_grating_equation():

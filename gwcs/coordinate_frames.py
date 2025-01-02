@@ -139,13 +139,13 @@ from astropy.coordinates import StokesCoord
 
 __all__ = [
     "BaseCoordinateFrame",
-    "Frame2D",
     "CelestialFrame",
-    "SpectralFrame",
     "CompositeFrame",
     "CoordinateFrame",
-    "TemporalFrame",
+    "Frame2D",
+    "SpectralFrame",
     "StokesFrame",
+    "TemporalFrame",
 ]
 
 
@@ -168,9 +168,7 @@ def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
             "Found unsupported duplicate physical type in 'astropy' mapping to CTYPE.\n"
             "Update 'gwcs' to the latest version or notify 'gwcs' developer.\n"
             "Duplicate physical types will be mapped to the following CTYPEs:\n"
-            + "\n".join(
-                [f"{repr(ucd):s} --> {repr(inv_map[ucd]):s}" for ucd in new_ucd]
-            )
+            + "\n".join([f"{ucd!r:s} --> {inv_map[ucd]!r:s}" for ucd in new_ucd])
         )
 
     return inv_map
@@ -841,10 +839,8 @@ class TemporalFrame(CoordinateFrame):
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
         if (
-            not isinstance(dt, time.TimeDelta)
-            and isinstance(dt, time.Time)
-            or isinstance(self.reference_frame.value, np.ndarray)
-        ):
+            not isinstance(dt, time.TimeDelta) and isinstance(dt, time.Time)
+        ) or isinstance(self.reference_frame.value, np.ndarray):
             return time.Time(dt, **kwargs)
 
         if not hasattr(dt, "unit"):

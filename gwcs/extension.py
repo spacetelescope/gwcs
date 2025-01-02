@@ -78,7 +78,7 @@ if len(TRANSFORM_EXTENSIONS) > 1:
 
     class _EmptyExtension(Extension):
         extension_uri = "asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0"
-        legacy_class_names = ["gwcs.extension.GWCSExtension"]
+        legacy_class_names = ("gwcs.extension.GWCSExtension",)
 
     TRANSFORM_EXTENSIONS.append(_EmptyExtension())
 

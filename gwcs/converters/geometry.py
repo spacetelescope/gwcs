@@ -10,8 +10,11 @@ __all__ = ["DirectionCosinesConverter", "SphericalCartesianConverter"]
 
 
 class DirectionCosinesConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/direction_cosines-*"]
-    types = ["gwcs.geometry.ToDirectionCosines", "gwcs.geometry.FromDirectionCosines"]
+    tags = ("tag:stsci.edu:gwcs/direction_cosines-*",)
+    types = (
+        "gwcs.geometry.ToDirectionCosines",
+        "gwcs.geometry.FromDirectionCosines",
+    )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..geometry import ToDirectionCosines, FromDirectionCosines
@@ -38,8 +41,11 @@ class DirectionCosinesConverter(TransformConverterBase):
 
 
 class SphericalCartesianConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/spherical_cartesian-*"]
-    types = ["gwcs.geometry.SphericalToCartesian", "gwcs.geometry.CartesianToSpherical"]
+    tags = ("tag:stsci.edu:gwcs/spherical_cartesian-*",)
+    types = (
+        "gwcs.geometry.SphericalToCartesian",
+        "gwcs.geometry.CartesianToSpherical",
+    )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..geometry import SphericalToCartesian, CartesianToSpherical

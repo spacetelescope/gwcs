@@ -10,11 +10,11 @@ import astropy.units as u
 
 
 __all__ = [
-    "WavelengthFromGratingEquation",
     "AnglesFromGratingEquation3D",
-    "Snell3D",
     "SellmeierGlass",
     "SellmeierZemax",
+    "Snell3D",
+    "WavelengthFromGratingEquation",
 ]
 
 

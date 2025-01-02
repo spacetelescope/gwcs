@@ -12,7 +12,7 @@ import abc
 from collections import OrderedDict
 import numpy as np
 
-__all__ = ["Region", "Edge", "Polygon"]
+__all__ = ["Edge", "Polygon", "Region"]
 
 _INTERSECT_ATOL = 1e2 * np.finfo(float).eps
 
@@ -286,7 +286,7 @@ class Edge:
 
     """
 
-    def __init__(self, name=None, start=None, stop=None, next=None):  # noqa: A002
+    def __init__(self, name=None, start=None, stop=None, next=None):
         self._start = None
         if start is not None:
             self._start = np.asarray(start)
@@ -375,11 +375,11 @@ class Edge:
         return fmt
 
     @property
-    def next(self):  # noqa: A003
+    def next(self):
         return self._next
 
     @next.setter
-    def next(self, edge):  # noqa: A003
+    def next(self, edge):
         if self._name is None:
             self._name = edge._name
             self._stop = edge._stop

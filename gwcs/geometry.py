@@ -10,10 +10,10 @@ from astropy import units as u
 
 
 __all__ = [
-    "ToDirectionCosines",
+    "CartesianToSpherical",
     "FromDirectionCosines",
     "SphericalToCartesian",
-    "CartesianToSpherical",
+    "ToDirectionCosines",
 ]
 
 

@@ -77,11 +77,11 @@ from .utils import RegionError, _toindex
 
 
 __all__ = [
+    "LabelMapper",
     "LabelMapperArray",
     "LabelMapperDict",
     "LabelMapperRange",
     "RegionsSelector",
-    "LabelMapper",
 ]
 
 
@@ -554,7 +554,7 @@ class RegionsSelector(Model):
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(n_models=1, name=name, **kwargs)
         # Validate uses_quantity at init time for nicer error message
-        self.uses_quantity  # noqa
+        self.uses_quantity
 
     @property
     def uses_quantity(self):

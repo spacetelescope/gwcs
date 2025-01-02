@@ -1043,9 +1043,9 @@ class WCS(GWCSAPIMixin):
             crpix = np.mean(self.bounding_box, axis=-1)
 
         l1, phi1 = np.deg2rad(self.__call__(*(crpix - 0.5)))
-        l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))
+        l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))  # noqa: RUF005
         l3, phi3 = np.deg2rad(self.__call__(*(crpix + 0.5)))
-        l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))
+        l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))  # noqa: RUF005
         area = np.abs(
             0.5
             * (
@@ -1950,7 +1950,7 @@ class WCS(GWCSAPIMixin):
             matrix_type = matrix_type.upper()
 
         if matrix_type not in ["CD", "PC-CDELT1", "PC-SUM1", "PC-DET1", "PC-SCALE"]:
-            raise ValueError(f"Unsupported 'matrix_type' value: {repr(matrix_type)}.")
+            raise ValueError(f"Unsupported 'matrix_type' value: {matrix_type!r}.")
 
         if npoints < 8:
             raise ValueError(
@@ -2947,7 +2947,12 @@ class WCS(GWCSAPIMixin):
 
         coord = np.stack(transform(*xyz), axis=-1)
 
-        coord = coord.reshape(shape + (len(world_axes_group),))
+        coord = coord.reshape(
+            (
+                *shape,
+                len(world_axes_group),
+            )
+        )
 
         # create header with WCS info:
         if hdr is None:

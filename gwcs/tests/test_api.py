@@ -74,7 +74,8 @@ fixture_names = [
 fixture_wcs_ndim_types_units = pytest.mark.parametrize(
     "wcs_ndim_types_units", fixture_names, indirect=True
 )
-all_wcses_names = fixture_names + [
+all_wcses_names = [
+    *fixture_names,
     "gwcs_3d_identity_units",
     "gwcs_stokes_lookup",
     "gwcs_3d_galactic_spectral",
@@ -623,7 +624,7 @@ def test_mismatched_high_level_types(gwcs_3d_identity_units):
         TypeError,
         match=(
             "Invalid types were passed.*(tuple, SpectralCoord)"
-            ".*(SkyCoord, SpectralCoord).*",
+            ".*(SkyCoord, SpectralCoord).*"
         ),
     ):
         wcs.invert((1 * u.deg, 2 * u.deg), coord.SpectralCoord(10 * u.nm))

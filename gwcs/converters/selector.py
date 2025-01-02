@@ -15,13 +15,13 @@ __all__ = ["LabelMapperConverter", "RegionsSelectorConverter"]
 
 
 class LabelMapperConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/label_mapper-*"]
-    types = [
+    tags = ("tag:stsci.edu:gwcs/label_mapper-*",)
+    types = (
         "gwcs.selector.LabelMapperArray",
         "gwcs.selector.LabelMapperDict",
         "gwcs.selector.LabelMapperRange",
         "gwcs.selector.LabelMapper",
-    ]
+    )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..selector import (
@@ -106,8 +106,8 @@ class LabelMapperConverter(TransformConverterBase):
 
 
 class RegionsSelectorConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/regions_selector-*"]
-    types = ["gwcs.selector.RegionsSelector"]
+    tags = ("tag:stsci.edu:gwcs/regions_selector-*",)
+    types = ("gwcs.selector.RegionsSelector",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..selector import RegionsSelector

@@ -19,8 +19,8 @@ __all__ = [
 
 
 class SellmeierGlassConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/sellmeier_glass-*"]
-    types = ["gwcs.spectroscopy.SellmeierGlass"]
+    tags = ("tag:stsci.edu:gwcs/sellmeier_glass-*",)
+    types = ("gwcs.spectroscopy.SellmeierGlass",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..spectroscopy import SellmeierGlass
@@ -36,8 +36,8 @@ class SellmeierGlassConverter(TransformConverterBase):
 
 
 class SellmeierZemaxConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/sellmeier_zemax-*"]
-    types = ["gwcs.spectroscopy.SellmeierZemax"]
+    tags = ("tag:stsci.edu:gwcs/sellmeier_zemax-*",)
+    types = ("gwcs.spectroscopy.SellmeierZemax",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..spectroscopy import SellmeierZemax
@@ -68,8 +68,8 @@ class SellmeierZemaxConverter(TransformConverterBase):
 
 
 class Snell3DConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/snell3d-*"]
-    types = ["gwcs.spectroscopy.Snell3D"]
+    tags = ("tag:stsci.edu:gwcs/snell3d-*",)
+    types = ("gwcs.spectroscopy.Snell3D",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..spectroscopy import Snell3D
@@ -81,11 +81,11 @@ class Snell3DConverter(TransformConverterBase):
 
 
 class GratingEquationConverter(TransformConverterBase):
-    tags = ["tag:stsci.edu:gwcs/grating_equation-*"]
-    types = [
+    tags = ("tag:stsci.edu:gwcs/grating_equation-*",)
+    types = (
         "gwcs.spectroscopy.AnglesFromGratingEquation3D",
         "gwcs.spectroscopy.WavelengthFromGratingEquation",
-    ]
+    )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..spectroscopy import (

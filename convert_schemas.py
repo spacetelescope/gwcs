@@ -315,19 +315,19 @@ def recurse(o, name, schema, path, level, required=False):
         o.write(indent)
         o.write(":category:`Definitions:`\n\n")
         for key, val in schema["definitions"].items():
-            recurse(o, key, val, path + ["definitions", key], level + 1)
+            recurse(o, key, val, [*path, "definitions", key], level + 1)
 
     if "anyOf" in schema and len(schema["anyOf"]) > 1:
         o.write(indent)
         o.write(":category:`Any of:`\n\n")
         for i, subschema in enumerate(schema["anyOf"]):
-            recurse(o, "—", subschema, path + ["anyOf", str(i)], level + 1)
+            recurse(o, "—", subschema, [*path, "anyOf", str(i)], level + 1)
 
     elif "allOf" in schema and len(schema["allOf"]) > 1:
         o.write(indent)
         o.write(":category:`All of:`\n\n")
         for i, subschema in enumerate(schema["allOf"]):
-            recurse(o, i, subschema, path + ["allOf", str(i)], level + 1)
+            recurse(o, i, subschema, [*path, "allOf", str(i)], level + 1)
 
     if schema.get("type") == "object":
         o.write(indent)
@@ -337,7 +337,7 @@ def recurse(o, name, schema, path, level, required=False):
                 o,
                 key,
                 val,
-                path + ["properties", key],
+                [*path, "properties", key],
                 level + 1,
                 key in schema.get("required", []),
             )
@@ -347,11 +347,11 @@ def recurse(o, name, schema, path, level, required=False):
         o.write(":category:`Items:`\n\n")
         items = schema.get("items")
         if isinstance(items, dict):
-            recurse(o, "items", items, path + ["items"], level + 1)
+            recurse(o, "items", items, [*path, "items"], level + 1)
         elif isinstance(items, list):
             for i, val in enumerate(items):
                 name = "index[{0}]".format(i)
-                recurse(o, name, val, path + [str(i)], level + 1)
+                recurse(o, name, val, [*path, str(i)], level + 1)
 
     if "examples" in schema:
         o.write(indent)
