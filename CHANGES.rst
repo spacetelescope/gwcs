@@ -1,4 +1,4 @@
-0.22.0 (unreleased)
+0.22.0 (2024-12-19)
 -------------------
 
 - Coordinate frames now have a "native" order and then are sorted based on ``axes_order``. [#457]
