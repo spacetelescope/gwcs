@@ -3,9 +3,9 @@ import warnings
 
 import asdf
 import asdf_wcs_schemas
-import gwcs.extension
-
 import pytest
+
+import gwcs.extension
 
 
 @pytest.mark.skipif(

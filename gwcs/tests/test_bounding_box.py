@@ -1,8 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
-
 import pytest
-
+from numpy.testing import assert_allclose, assert_array_equal
 
 x = [-1, 2, 4, 13]
 y = [np.nan, np.nan, 4, np.nan]

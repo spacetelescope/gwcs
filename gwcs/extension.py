@@ -2,17 +2,8 @@
 import importlib.resources
 
 from asdf.extension import Extension, ManifestExtension
-from .converters.wcs import (
-    CelestialFrameConverter,
-    CompositeFrameConverter,
-    FrameConverter,
-    Frame2DConverter,
-    SpectralFrameConverter,
-    StepConverter,
-    StokesFrameConverter,
-    TemporalFrameConverter,
-    WCSConverter,
-)
+
+from .converters.geometry import DirectionCosinesConverter, SphericalCartesianConverter
 from .converters.selector import LabelMapperConverter, RegionsSelectorConverter
 from .converters.spectroscopy import (
     GratingEquationConverter,
@@ -20,8 +11,17 @@ from .converters.spectroscopy import (
     SellmeierZemaxConverter,
     Snell3DConverter,
 )
-from .converters.geometry import DirectionCosinesConverter, SphericalCartesianConverter
-
+from .converters.wcs import (
+    CelestialFrameConverter,
+    CompositeFrameConverter,
+    Frame2DConverter,
+    FrameConverter,
+    SpectralFrameConverter,
+    StepConverter,
+    StokesFrameConverter,
+    TemporalFrameConverter,
+    WCSConverter,
+)
 
 WCS_MODEL_CONVERTERS = [
     CelestialFrameConverter(),

@@ -1,9 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 import pytest
-
-from astropy.modeling.models import Identity
 from astropy import units as u
+from astropy.modeling.models import Identity
 
 try:
     from asdf_astropy.testing.helpers import assert_model_roundtrip
@@ -12,9 +11,8 @@ except ImportError:
         assert_model_roundtrip,
     )
 
-from ... import spectroscopy as sp
 from ... import geometry
-
+from ... import spectroscopy as sp
 
 sell_glass = sp.SellmeierGlass(
     B_coef=[0.58339748, 0.46085267, 3.8915394],

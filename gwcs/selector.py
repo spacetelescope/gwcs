@@ -68,13 +68,13 @@ label mappers.
 """
 
 import warnings
+
 import numpy as np
-from astropy.modeling.core import Model
 from astropy.modeling import models as astmodels
+from astropy.modeling.core import Model
 
 from . import region
 from .utils import RegionError, _toindex
-
 
 __all__ = [
     "LabelMapper",

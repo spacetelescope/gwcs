@@ -1,12 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-import numpy as np
-from numpy.testing import assert_array_equal
-from astropy.modeling.models import Mapping, Shift, Scale, Polynomial2D
 import asdf
+import numpy as np
+from astropy.modeling.models import Mapping, Polynomial2D, Scale, Shift
+from numpy.testing import assert_array_equal
 
-from ...tests.test_region import create_scalar_mapper
 from ... import selector
+from ...tests.test_region import create_scalar_mapper
 
 
 def _assert_mapper_equal(a, b):

@@ -1,19 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 import os.path
+
 import pytest
 
 astropy = pytest.importorskip("astropy", minversion="3.0")
-
-from astropy.modeling import models  # noqa: E402
-from astropy import coordinates as coord  # noqa: E402
-from astropy import units as u  # noqa: E402
-from astropy import time  # noqa: E402
 
 import asdf  # noqa: E402
 from asdf_astropy.testing.helpers import (  # noqa: E402
     assert_model_equal,
 )
+from astropy import coordinates as coord  # noqa: E402
+from astropy import time  # noqa: E402
+from astropy import units as u  # noqa: E402
+from astropy.modeling import models  # noqa: E402
 
 from ... import coordinate_frames as cf  # noqa: E402
 from ... import wcs  # noqa: E402

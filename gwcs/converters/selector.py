@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from collections import OrderedDict
+
 import numpy as np
+from asdf.tags.core.ndarray import NDArrayType
+from asdf_astropy.converters.transform.core import TransformConverterBase
 from astropy.modeling import models
 from astropy.modeling.core import Model
 from astropy.utils.misc import isiterable
-
-from asdf.tags.core.ndarray import NDArrayType
-from asdf_astropy.converters.transform.core import TransformConverterBase
-
 
 __all__ = ["LabelMapperConverter", "RegionsSelectorConverter"]
 
@@ -25,10 +24,10 @@ class LabelMapperConverter(TransformConverterBase):
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from ..selector import (
+            LabelMapper,
             LabelMapperArray,
             LabelMapperDict,
             LabelMapperRange,
-            LabelMapper,
         )
 
         inputs_mapping = node.get("inputs_mapping", None)
@@ -68,10 +67,10 @@ class LabelMapperConverter(TransformConverterBase):
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         from ..selector import (
+            LabelMapper,
             LabelMapperArray,
             LabelMapperDict,
             LabelMapperRange,
-            LabelMapper,
         )
 
         node = OrderedDict()

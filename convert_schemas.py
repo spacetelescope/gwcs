@@ -1,12 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
 import io
 import json
 import os
 import sys
 import textwrap
+from collections import OrderedDict
 
 import yaml
 

@@ -1,11 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from itertools import product, permutations
 import io
-
-import pytest
+from itertools import permutations, product
 
 import asdf
 import numpy as np
+import pytest
 from astropy import units as u
 
 try:
@@ -16,7 +15,6 @@ except ImportError:
     )
 
 from .. import geometry
-
 
 _INV_SQRT2 = 1.0 / np.sqrt(2.0)
 

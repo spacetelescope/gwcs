@@ -4,13 +4,15 @@ Test regions
 """
 
 import warnings
+
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
-from astropy.modeling import models
 import pytest
-from gwcs import region, selector, WCS
-from gwcs import utils as gwutils
+from astropy.modeling import models
+from numpy.testing import assert_allclose, assert_equal
+
+from gwcs import WCS, region, selector
 from gwcs import coordinate_frames as cf
+from gwcs import utils as gwutils
 
 
 def test_LabelMapperArray_from_vertices_int():

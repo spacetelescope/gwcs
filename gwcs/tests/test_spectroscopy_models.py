@@ -1,10 +1,11 @@
-import pytest
 import astropy.units as u
-from astropy.modeling.models import Identity
 import numpy as np
+import pytest
+from astropy.modeling.models import Identity
 from numpy.testing import assert_allclose
-from .. import spectroscopy as sp
+
 from .. import geometry
+from .. import spectroscopy as sp
 
 
 def test_angles_grating_equation():

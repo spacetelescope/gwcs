@@ -1,19 +1,17 @@
 import numpy as np
-
-from astropy.modeling.models import (
-    Shift,
-    Polynomial2D,
-    Pix2Sky_TAN,
-    RotateNative2Celestial,
-    Mapping,
-)
-
 from astropy import coordinates as coord
 from astropy import units
 from astropy import wcs as fits_wcs
+from astropy.modeling.models import (
+    Mapping,
+    Pix2Sky_TAN,
+    Polynomial2D,
+    RotateNative2Celestial,
+    Shift,
+)
 
-from ..wcs import WCS
 from .. import coordinate_frames as cf
+from ..wcs import WCS
 
 
 def _gwcs_from_hst_fits_wcs(header, hdu=None):

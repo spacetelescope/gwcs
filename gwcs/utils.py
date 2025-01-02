@@ -4,16 +4,16 @@ Utility function for WCS
 
 """
 
-import re
 import functools
-import numpy as np
-from astropy.modeling import models as astmodels
-from astropy.modeling import core, projections
-from astropy.io import fits
-from astropy import coordinates as coords
-import astropy.units as u
-from astropy.wcs import Celprm
+import re
 
+import astropy.units as u
+import numpy as np
+from astropy import coordinates as coords
+from astropy.io import fits
+from astropy.modeling import core, projections
+from astropy.modeling import models as astmodels
+from astropy.wcs import Celprm
 
 # these ctype values do not include yzLN and yzLT pairs
 sky_pairs = {

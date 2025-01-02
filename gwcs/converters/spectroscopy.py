@@ -3,12 +3,11 @@ ASDF tags for spectroscopy related models.
 
 """
 
-from astropy import units as u
 from asdf_astropy.converters.transform.core import (
     TransformConverterBase,
     parameter_to_value,
 )
-
+from astropy import units as u
 
 __all__ = [
     "GratingEquationConverter",

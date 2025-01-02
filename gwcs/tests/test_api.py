@@ -3,17 +3,17 @@
 Tests the API defined in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
 
+import astropy.modeling.models as m
+import astropy.units as u
 import numpy as np
 import pytest
+from astropy import coordinates as coord
+from astropy import time
+from astropy.wcs.wcsapi import HighLevelWCSWrapper
 from numpy.testing import assert_allclose, assert_array_equal
 
-import astropy.units as u
-from astropy import time
-from astropy import coordinates as coord
-from astropy.wcs.wcsapi import HighLevelWCSWrapper
-import astropy.modeling.models as m
-import gwcs.coordinate_frames as cf
 import gwcs
+import gwcs.coordinate_frames as cf
 
 
 # Shorthand the name of the 2d gwcs fixture

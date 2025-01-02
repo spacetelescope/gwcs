@@ -4,10 +4,10 @@ Models for general analytical geometry transformations.
 """
 
 import numbers
-import numpy as np
-from astropy.modeling.core import Model
-from astropy import units as u
 
+import numpy as np
+from astropy import units as u
+from astropy.modeling.core import Model
 
 __all__ = [
     "CartesianToSpherical",

@@ -5,9 +5,9 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
 
-from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
-from astropy.modeling import separable
 import astropy.units as u
+from astropy.modeling import separable
+from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 
 from gwcs import utils
 

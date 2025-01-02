@@ -3,11 +3,10 @@
 Spectroscopy related models.
 """
 
+import astropy.units as u
 import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
-import astropy.units as u
-
 
 __all__ = [
     "AnglesFromGratingEquation3D",

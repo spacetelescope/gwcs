@@ -1,9 +1,8 @@
-import numpy as np
-
 import astropy.units as u
-from astropy.time import Time
+import numpy as np
 from astropy import coordinates as coord
 from astropy.modeling import models
+from astropy.time import Time
 
 from . import coordinate_frames as cf
 from . import spectroscopy as sp

@@ -10,6 +10,7 @@ Polygon filling algorithm.
 
 import abc
 from collections import OrderedDict
+
 import numpy as np
 
 __all__ = ["Edge", "Polygon", "Region"]

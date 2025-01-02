@@ -1,21 +1,20 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import pytest
 import logging
-import numpy as np
-from numpy.testing import assert_allclose
 
+import astropy
 import astropy.units as u
-from astropy.time import Time, TimeDelta
+import numpy as np
+import pytest
 from astropy import coordinates as coord
-from astropy.tests.helper import assert_quantity_allclose
+from astropy.coordinates import SpectralCoord, StokesCoord
 from astropy.modeling import models as m
+from astropy.tests.helper import assert_quantity_allclose
+from astropy.time import Time, TimeDelta
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
-from astropy.coordinates import StokesCoord, SpectralCoord
+from numpy.testing import assert_allclose
 
 from .. import WCS
 from .. import coordinate_frames as cf
-
-import astropy
 
 astropy_version = astropy.__version__
 

@@ -1,31 +1,28 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import warnings
 import os.path
+import warnings
 
-import pytest
-
+import asdf
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-
-from astropy.modeling import models, bind_compound_bounding_box
-from astropy.modeling.bounding_box import ModelBoundingBox
+import pytest
 from astropy import coordinates as coord
-from astropy.io import fits
 from astropy import units as u
 from astropy import wcs as astwcs
-from astropy.wcs import wcsapi
+from astropy.io import fits
+from astropy.modeling import bind_compound_bounding_box, models
+from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy.time import Time
 from astropy.utils.introspection import minversion
-import asdf
+from astropy.wcs import wcsapi
+from numpy.testing import assert_allclose, assert_equal
 
-from gwcs import wcs
-from gwcs.wcstools import wcs_from_fiducial, grid_from_bounding_box, wcs_from_points
 from gwcs import coordinate_frames as cf
-from gwcs.utils import CoordinateFrameError
-from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
-from gwcs.tests import data
+from gwcs import wcs
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
-
+from gwcs.tests import data
+from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
+from gwcs.utils import CoordinateFrameError
+from gwcs.wcstools import grid_from_bounding_box, wcs_from_fiducial, wcs_from_points
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
 
@@ -881,7 +878,7 @@ def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
 
 
 def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral):
-    from inspect import signature, Parameter
+    from inspect import Parameter, signature
 
     w, axes_order = gwcs_cube_with_separable_spectral
     _, _, celestial_group = w._separable_groups(detect_celestial=True)

@@ -117,7 +117,7 @@ exclude_lines = [
 select = [
     "F",      # Pyflakes (part of default flake8)
     "W", "E", # pycodestyle (part of default flake8)
-    #"I",      # isort (import sorting)
+    "I",      # isort (import sorting)
     # "N",      # pep8-naming
     #"D",      # pydocstyle (docstring style guide)
     #"UP",     # pyupgrade (upgrade code to modern python)

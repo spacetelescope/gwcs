@@ -3,8 +3,8 @@
 
 import warnings
 from contextlib import suppress
-from asdf.extension import Converter
 
+from asdf.extension import Converter
 
 __all__ = [
     "CelestialFrameConverter",

@@ -1,21 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os.path
-import numpy as np
-from astropy.io import fits
-from astropy import wcs as fitswcs
-from astropy import units as u
-from astropy import coordinates as coord
-from astropy.modeling import models
 
-from astropy.tests.helper import assert_quantity_allclose
+import numpy as np
 import pytest
+from astropy import coordinates as coord
+from astropy import units as u
+from astropy import wcs as fitswcs
+from astropy.io import fits
+from astropy.modeling import models
+from astropy.tests.helper import assert_quantity_allclose
 from numpy.testing import assert_allclose
 
 from .. import utils as gwutils
 from ..utils import UnsupportedProjectionError
-
 from . import data
-
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]
 

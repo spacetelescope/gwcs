@@ -3,8 +3,8 @@ import functools
 import itertools
 import warnings
 
-import astropy.units as u
 import astropy.io.fits as fits
+import astropy.units as u
 import numpy as np
 import numpy.linalg as npla
 from astropy import utils as astutil
@@ -27,7 +27,6 @@ from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
 )
-
 from scipy import linalg, optimize
 
 from . import coordinate_frames as cf
