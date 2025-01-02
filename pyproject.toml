@@ -124,7 +124,7 @@ select = [
     "S",      # flake8-bandit (security checks)
     "BLE",    # flake8-blind-except (prevent blind except statements)
     "B",      # flake8-bugbear (prevent common gotcha bugs)
-    # "A",      # flake8-builtins (prevent shadowing of builtins)
+    "A",      # flake8-builtins (prevent shadowing of builtins)
     # "C4",     # flake8-comprehensions (best practices for comprehensions)
     # "T10",    # flake8-debugger (prevent debugger statements in code)
     #"EM",     # flake8-errormessages (best practices for error messages)

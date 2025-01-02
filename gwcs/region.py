@@ -287,7 +287,7 @@ class Edge:
 
     """
 
-    def __init__(self, name=None, start=None, stop=None, next=None):
+    def __init__(self, name=None, start=None, stop=None, next=None):  # noqa: A002
         self._start = None
         if start is not None:
             self._start = np.asarray(start)

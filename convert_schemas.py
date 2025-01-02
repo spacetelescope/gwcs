@@ -157,7 +157,7 @@ def format_type(schema, root):
                 return f":doc:`{basename} <{ref}>`"
 
     else:
-        type = schema.get("type")
+        type = schema.get("type")  # noqa: A001
         if isinstance(type, list):
             parts = [" or ".join(type)]
 
@@ -168,7 +168,7 @@ def format_type(schema, root):
             parts = [type]
 
         if type == "string":
-            range = format_range(
+            range = format_range(  # noqa: A001
                 "*len*",
                 "*len*",
                 schema.get("minLength"),
@@ -189,7 +189,7 @@ def format_type(schema, root):
                 parts.append(")")
 
         elif type in ("integer", "number"):
-            range = format_range(
+            range = format_range(  # noqa: A001
                 "*x*",
                 "",
                 schema.get("minimum"),
@@ -202,7 +202,7 @@ def format_type(schema, root):
             # TODO: multipleOf
 
         elif type == "object":
-            range = format_range(
+            range = format_range(  # noqa: A001
                 "*len*",
                 "*len*",
                 schema.get("minProperties"),
@@ -225,7 +225,7 @@ def format_type(schema, root):
                 parts.append("(")
                 parts.append(format_type(items, root))
                 parts.append(")")
-            range = format_range(
+            range = format_range(  # noqa: A001
                 "*len*",
                 "*len*",
                 schema.get("minItems"),
@@ -372,7 +372,7 @@ def convert_schema_to_rst(src, dst):
 
     o = io.StringIO()
 
-    id = schema.get("id", "#")
+    id = schema.get("id", "#")  # noqa: A001
     name = os.path.basename(src[:-5])
     if "title" in schema:
         name += ": " + schema["title"].strip()

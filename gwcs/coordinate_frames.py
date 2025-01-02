@@ -470,9 +470,9 @@ class CoordinateFrame(BaseCoordinateFrame):
             return self._name
         return self.__class__.__name__
 
-    def _sort_property(self, property):
+    def _sort_property(self, prop):
         sorted_prop = sorted(
-            zip(property, self.axes_order, strict=False), key=lambda x: x[1]
+            zip(prop, self.axes_order, strict=False), key=lambda x: x[1]
         )
         return tuple([t[0] for t in sorted_prop])
 

@@ -80,7 +80,7 @@ with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as metadata_fil
     metadata = configuration["project"]
 project = metadata["name"]
 author = metadata["authors"][0]["name"]
-copyright = f"{datetime.now().year}, {author}"
+copyright = f"{datetime.now().year}, {author}"  # noqa: A001
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
