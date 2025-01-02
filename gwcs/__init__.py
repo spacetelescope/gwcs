@@ -63,7 +63,7 @@ import importlib.metadata
 with contextlib.suppress(importlib.metadata.PackageNotFoundError):
     __version__ = importlib.metadata.version(__name__)
 
-from .wcs import *  # noqa
-from .wcstools import *  # noqa
-from .coordinate_frames import *  # noqa
-from .selector import *  # noqa
+from .coordinate_frames import *  # noqa: F403
+from .selector import *  # noqa: F403
+from .wcs import *  # noqa: F403
+from .wcstools import *  # noqa: F403
