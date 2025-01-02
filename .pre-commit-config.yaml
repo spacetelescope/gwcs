@@ -53,9 +53,9 @@ repos:
           - tomli
         exclude: ".*.asdf"
 
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.6.9
-  #   hooks:
-  #     - id: ruff
-  #       args: ["--fix", "--show-fixes"]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix", "--show-fixes"]
   #     - id: ruff-format

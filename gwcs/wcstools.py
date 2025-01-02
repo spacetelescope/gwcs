@@ -9,7 +9,7 @@ from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy import coordinates as coord
 from astropy import units as u
 
-from .coordinate_frames import *  # noqa
+from .coordinate_frames import CelestialFrame, SpectralFrame, Frame2D, CompositeFrame
 from .utils import UnsupportedTransformError, UnsupportedProjectionError
 from .utils import _compute_lon_pole
 

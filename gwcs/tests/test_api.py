@@ -195,7 +195,7 @@ def test_world_axis_object_components_4d(gwcs_4d_identity_units):
                          ('celestial', 1),
                          ('spectral', 0),
                          ('temporal', 0)]
-    assert all([callable(l) for l in last_one])
+    assert all([callable(last) for last in last_one])
 
 
 def test_world_axis_object_classes_2d(gwcs_2d_spatial_shift):

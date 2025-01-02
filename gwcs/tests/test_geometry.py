@@ -21,10 +21,10 @@ _INV_SQRT2 = 1.0 / np.sqrt(2.0)
 
 def test_spherical_cartesian_inverse():
     t = geometry.SphericalToCartesian()
-    assert type(t.inverse) == geometry.CartesianToSpherical
+    assert isinstance(t.inverse, geometry.CartesianToSpherical)
 
     t = geometry.CartesianToSpherical()
-    assert type(t.inverse) == geometry.SphericalToCartesian
+    assert isinstance(t.inverse, geometry.SphericalToCartesian)
 
 
 @pytest.mark.parametrize(
@@ -123,7 +123,7 @@ def test_spher2cart_roundrip_arr(lonlat, unit, wrap_at):
         if isinstance(lon, np.ndarray):
             lon = np.mod(lon - 180.0, 360.0) - 180.0
         else:
-            lon = [((l - 180.0) % 360.0) - 180.0 for l in lon]
+            lon = [((deg - 180.0) % 360.0) - 180.0 for deg in lon]
 
     atol = 1e-15
     if unit is None:

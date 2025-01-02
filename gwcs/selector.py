@@ -415,12 +415,12 @@ class LabelMapperRange(_LabelMapper):
         start = ranges[:, 0]
         end = ranges[:, 1]
         start.sort()
-        l = []
+        values = []
         for v in start:
-            l.append([v, d[v]])
-        l = np.array(l)
-        start = np.roll(l[:, 0], -1)
-        end = l[:, 1]
+            values.append([v, d[v]])
+        values = np.array(values)
+        start = np.roll(values[:, 0], -1)
+        end = values[:, 1]
         if any((end - start)[:-1] > 0) or any(start[-1] > end):
             return True
         else:

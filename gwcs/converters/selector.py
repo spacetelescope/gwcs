@@ -44,7 +44,7 @@ class LabelMapperConverter(TransformConverterBase):
             labels = mapper.get('labels')
             transforms = mapper.get('models')
             if isiterable(labels[0]):
-                labels = [tuple(l) for l in labels]
+                labels = [tuple(label) for label in labels]
                 dict_mapper = dict(zip(labels, transforms))
                 return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
             else:
@@ -74,7 +74,7 @@ class LabelMapperConverter(TransformConverterBase):
             for k in labels:
                 transforms.append(model.mapper[k])
             if isiterable(labels[0]):
-                labels = [list(l) for l in labels]
+                labels = [list(label) for label in labels]
             mapper['labels'] = labels
             mapper['models'] = transforms
             node['mapper'] = mapper
@@ -105,8 +105,8 @@ class RegionsSelectorConverter(TransformConverterBase):
         node = OrderedDict()
         labels = list(model.selector)
         values = []
-        for l in labels:
-            values.append(model.selector[l])
+        for label in labels:
+            values.append(model.selector[label])
         selector['labels'] = labels
         selector['transforms'] = values
         node['inputs'] = list(model.inputs)
