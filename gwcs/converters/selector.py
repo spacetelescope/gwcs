@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# -*- coding: utf-8 -*-
 
 from collections import OrderedDict
 
@@ -83,7 +82,7 @@ class LabelMapperConverter(TransformConverterBase):
         elif isinstance(model, LabelMapper):
             node["mapper"] = model.mapper
             node["inputs"] = list(model.inputs)
-        elif isinstance(model, (LabelMapperDict, LabelMapperRange)):
+        elif isinstance(model, (LabelMapperDict, LabelMapperRange)):  # noqa: UP038
             if hasattr(model, "atol"):
                 node["atol"] = model.atol
             mapper = OrderedDict()
@@ -99,7 +98,7 @@ class LabelMapperConverter(TransformConverterBase):
             node["mapper"] = mapper
             node["inputs"] = list(model.inputs)
         else:
-            raise TypeError("Unrecognized type of LabelMapper - {0}".format(model))
+            raise TypeError(f"Unrecognized type of LabelMapper - {model}")
 
         return node
 

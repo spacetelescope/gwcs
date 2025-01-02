@@ -87,7 +87,7 @@ def wcs_from_fiducial(
                     fiducial[ind], projection=projection
                 )
             except KeyError:
-                raise TypeError("Coordinate frame {0} is not supported".format(item))
+                raise TypeError(f"Coordinate frame {item} is not supported")
             trans_from_fiducial.append(model)
         fiducial_transform = functools.reduce(
             lambda x, y: x & y, [tr for tr in trans_from_fiducial]
@@ -99,9 +99,7 @@ def wcs_from_fiducial(
                 fiducial, projection=projection
             )
         except KeyError:
-            raise TypeError(
-                "Coordinate frame {0} is not supported".format(coordinate_frame)
-            )
+            raise TypeError(f"Coordinate frame {coordinate_frame} is not supported")
 
     if transform is not None:
         forward_transform = transform | fiducial_transform
@@ -361,15 +359,12 @@ def wcs_from_points(
         )
 
     if not isinstance(projection, projections.Projection):
-        raise UnsupportedProjectionError(
-            "Unsupported projection code {0}".format(projection)
-        )
+        raise UnsupportedProjectionError(f"Unsupported projection code {projection}")
 
     if polynomial_type not in supported_poly_types.keys():
         raise ValueError(
-            "Unsupported polynomial_type: {}. " "Only one of {} is supported.".format(
-                polynomial_type, supported_poly_types.keys()
-            )
+            f"Unsupported polynomial_type: {polynomial_type}. "
+            f"Only one of {supported_poly_types.keys()} is supported."
         )
 
     skyrot = models.RotateCelestial2Native(

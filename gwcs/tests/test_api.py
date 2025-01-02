@@ -312,20 +312,20 @@ def test_high_level_wrapper(wcsobj, request):
 
     assert type(wc1) is type(wc2)
 
-    if isinstance(wc1, (list, tuple)):
+    if isinstance(wc1, list | tuple):
         for w1, w2 in zip(wc1, wc2):
             _compare_frame_output(w1, w2)
     else:
         _compare_frame_output(wc1, wc2)
 
     # we have just asserted that wc1 and wc2 are equal
-    if not isinstance(wc1, (list, tuple)):
+    if not isinstance(wc1, list | tuple):
         wc1 = (wc1,)
 
     pix_out1 = hlvl.world_to_pixel(*wc1)
     pix_out2 = wcsobj.invert(*wc1)
 
-    if not isinstance(pix_out2, (list, tuple)):
+    if not isinstance(pix_out2, list | tuple):
         pix_out2 = (pix_out2,)
 
     if wcsobj.forward_transform.uses_quantity:

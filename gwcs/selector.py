@@ -110,7 +110,7 @@ def get_unique_regions(regions):
 
 class LabelMapperArrayIndexingError(Exception):
     def __init__(self, message):
-        super(LabelMapperArrayIndexingError, self).__init__(message)
+        super().__init__(message)
 
 
 class _LabelMapper(Model):
@@ -139,7 +139,7 @@ class _LabelMapper(Model):
         self._no_label = no_label
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
-        super(_LabelMapper, self).__init__(name=name, **kwargs)
+        super().__init__(name=name, **kwargs)
 
     @property
     def mapper(self):
@@ -193,7 +193,7 @@ class LabelMapperArray(_LabelMapper):
             _no_label = 0
         else:
             _no_label = ""
-        super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
+        super().__init__(mapper, _no_label, name=name, **kwargs)
         self.inputs = ("x", "y")
         self.outputs = ("label",)
 
@@ -294,9 +294,7 @@ class LabelMapperDict(_LabelMapper):
             raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(LabelMapperDict, self).__init__(
-            mapper, _no_label, inputs_mapping, name=name, **kwargs
-        )
+        super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
         self.outputs = ("labels",)
 
     @property
@@ -394,9 +392,7 @@ class LabelMapperRange(_LabelMapper):
             raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(LabelMapperRange, self).__init__(
-            mapper, _no_label, inputs_mapping, name=name, **kwargs
-        )
+        super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
         self.outputs = ("labels",)
 
     @property
@@ -494,9 +490,7 @@ class LabelMapperRange(_LabelMapper):
                 continue
         res.shape = shape
         if len(np.nonzero(res)[0]) == 0:
-            warnings.warn(
-                "All data is outside the valid range - {0}.".format(self.name)
-            )
+            warnings.warn(f"All data is outside the valid range - {self.name}.")
         return res
 
 
@@ -577,7 +571,7 @@ class RegionsSelector(Model):
         if rid in self._selector:
             return self._selector[rid]
         else:
-            raise RegionError("Region {0} not found".format(rid))
+            raise RegionError(f"Region {rid} not found")
 
     def inverse(self):
         if self.label_mapper.inverse is not None:
@@ -716,9 +710,7 @@ class LabelMapper(_LabelMapper):
         self._no_label = no_label
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        self._outputs = tuple(
-            ["x{0}".format(ind) for ind in list(range(mapper.n_outputs))]
-        )
+        self._outputs = tuple([f"x{ind}" for ind in list(range(mapper.n_outputs))])
         if isinstance(inputs_mapping, tuple):
             inputs_mapping = astmodels.Mapping(inputs_mapping)
         elif inputs_mapping is not None and not isinstance(

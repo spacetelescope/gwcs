@@ -634,7 +634,7 @@ def test_high_level_api():
     assert_allclose(k1, xv)
 
 
-class TestImaging(object):
+class TestImaging:
     def setup_class(self):
         hdr = fits.Header.fromtextfile(
             os.path.join(data_path, "acs.hdr"), endcard=False

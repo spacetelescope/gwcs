@@ -35,7 +35,7 @@ from .api import GWCSAPIMixin
 from .utils import CoordinateFrameError
 from .wcstools import grid_from_bounding_box
 
-__all__ = ["WCS", "Step", "NoConvergence"]
+__all__ = ["WCS", "NoConvergence", "Step"]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
 
@@ -183,8 +183,8 @@ class WCS(GWCSAPIMixin):
 
                 _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
                 _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-                super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
-                super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
+                super().__setattr__(_input_frame, inp_frame_obj)
+                super().__setattr__(_output_frame, outp_frame_obj)
 
                 self._pipeline = [
                     (input_frame, forward_transform.copy()),
@@ -196,12 +196,12 @@ class WCS(GWCSAPIMixin):
                         name, frame_obj = self._get_frame_name(item.frame)
                     else:
                         name, frame_obj = self._get_frame_name(item[0])
-                    super(WCS, self).__setattr__(name, frame_obj)
+                    super().__setattr__(name, frame_obj)
                     self._pipeline = forward_transform
             else:
                 raise TypeError(
                     "Expected forward_transform to be a model or a "
-                    "(frame, transform) list, got {0}".format(type(forward_transform))
+                    f"(frame, transform) list, got {type(forward_transform)}"
                 )
         else:
             # Initialize a WCS without a forward_transform - allows building a
@@ -212,8 +212,8 @@ class WCS(GWCSAPIMixin):
                 )
             _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
             _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-            super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
-            super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
+            super().__setattr__(_input_frame, inp_frame_obj)
+            super().__setattr__(_output_frame, outp_frame_obj)
             self._pipeline = [(_input_frame, None), (_output_frame, None)]
 
     def get_transform(self, from_frame, to_frame):
@@ -264,29 +264,27 @@ class WCS(GWCSAPIMixin):
         if not self._pipeline:
             if from_name != self._input_frame:
                 raise CoordinateFrameError(
-                    "Expected 'from_frame' to be {0}".format(self._input_frame)
+                    f"Expected 'from_frame' to be {self._input_frame}"
                 )
             if to_frame != self._output_frame:
                 raise CoordinateFrameError(
-                    "Expected 'to_frame' to be {0}".format(self._output_frame)
+                    f"Expected 'to_frame' to be {self._output_frame}"
                 )
         try:
             from_ind = self._get_frame_index(from_name)
         except ValueError:
             raise CoordinateFrameError(
-                "Frame {0} is not in the available frames".format(from_name)
+                f"Frame {from_name} is not in the available frames"
             )
         try:
             to_ind = self._get_frame_index(to_name)
         except ValueError:
             raise CoordinateFrameError(
-                "Frame {0} is not in the available frames".format(to_name)
+                f"Frame {to_name} is not in the available frames"
             )
 
         if from_ind + 1 != to_ind:
-            raise ValueError(
-                "Frames {0} and {1} are not  in sequence".format(from_name, to_name)
-            )
+            raise ValueError(f"Frames {from_name} and {to_name} are not  in sequence")
         self._pipeline[from_ind].transform = transform
 
     @property
@@ -325,7 +323,7 @@ class WCS(GWCSAPIMixin):
             backward = self.forward_transform.inverse
         except NotImplementedError as err:
             raise NotImplementedError(
-                "Could not construct backward transform. \n{0}".format(err)
+                f"Could not construct backward transform. \n{err}"
             )
         try:
             backward.inverse
@@ -465,7 +463,7 @@ class WCS(GWCSAPIMixin):
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
         # Validate that the input type matches what the transform expects
-        input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
+        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
         if not input_is_quantity and transform.uses_quantity:
             args = self._add_units_input(args, from_frame)
         if not transform.uses_quantity and input_is_quantity:
@@ -587,7 +585,7 @@ class WCS(GWCSAPIMixin):
 
         if transform is not None:
             # Validate that the input type matches what the transform expects
-            input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
+            input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
             if not input_is_quantity and transform.uses_quantity:
                 args = self._add_units_input(args, self.output_frame)
             if not transform.uses_quantity and input_is_quantity:
@@ -630,7 +628,7 @@ class WCS(GWCSAPIMixin):
                 *world_arrays, low_level_wcs=self
             )
         for axtyp in axes_types:
-            ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
+            ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
 
             for idim, (coord, phys) in enumerate(zip(world_arrays, axes_phys_types)):
                 coord = _tofloat(coord)
@@ -1268,8 +1266,8 @@ class WCS(GWCSAPIMixin):
             if inddiv is None:
                 raise NoConvergence(
                     "'WCS.numerical_inverse' failed to "
-                    "converge to the requested accuracy after {:d} "
-                    "iterations.".format(k),
+                    f"converge to the requested accuracy after {k:d} "
+                    "iterations.",
                     best_solution=pix,
                     accuracy=np.abs(dpix),
                     niter=k,
@@ -1280,8 +1278,8 @@ class WCS(GWCSAPIMixin):
                 raise NoConvergence(
                     "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy.\n"
-                    "After {:d} iterations, the solution is diverging "
-                    "at least for one input point.".format(k),
+                    f"After {k:d} iterations, the solution is diverging "
+                    "at least for one input point.",
                     best_solution=pix,
                     accuracy=np.abs(dpix),
                     niter=k,
@@ -1445,7 +1443,7 @@ class WCS(GWCSAPIMixin):
                 + [Step(input_frame_obj, transform)]
                 + self._pipeline[output_index:]
             )
-            super(WCS, self).__setattr__(input_name, input_frame_obj)
+            super().__setattr__(input_name, input_frame_obj)
         else:
             split_step = self._pipeline[input_index]
             self._pipeline = (
@@ -1456,7 +1454,7 @@ class WCS(GWCSAPIMixin):
                 ]
                 + self._pipeline[input_index + 1 :]
             )
-            super(WCS, self).__setattr__(output_name, output_frame_obj)
+            super().__setattr__(output_name, output_frame_obj)
 
     @property
     def unit(self):
@@ -1613,10 +1611,10 @@ class WCS(GWCSAPIMixin):
         return str(t)
 
     def __repr__(self):
-        fmt = "<WCS(output_frame={0}, input_frame={1}, forward_transform={2})>".format(
-            self.output_frame, self.input_frame, self.forward_transform
+        return (
+            f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame},"
+            f"forward_transform={self.forward_transform})>"
         )
-        return fmt
 
     def footprint(self, bounding_box=None, center=False, axis_type="all"):
         """
@@ -1684,9 +1682,7 @@ class WCS(GWCSAPIMixin):
                 np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
             )
             if not axtyp_ind.any():
-                raise ValueError(
-                    'This WCS does not have axis of type "{}".'.format(axis_type)
-                )
+                raise ValueError(f'This WCS does not have axis of type "{axis_type}".')
             if len(axtyp_ind) > 1:
                 result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
@@ -3433,7 +3429,7 @@ class Step:
 
     @frame.setter
     def frame(self, val):
-        if not isinstance(val, (cf.CoordinateFrame, str)):
+        if not isinstance(val, cf.CoordinateFrame | str):
             raise TypeError(
                 '"frame" should be an instance of CoordinateFrame or a string.'
             )

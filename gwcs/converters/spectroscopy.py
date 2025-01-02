@@ -105,7 +105,7 @@ class GratingEquationConverter(TransformConverterBase):
             )
         else:
             raise ValueError(
-                "Can't create a GratingEquation model with " "output {0}".format(output)
+                "Can't create a GratingEquation model with " f"output {output}"
             )
         return model
 
@@ -128,6 +128,6 @@ class GratingEquationConverter(TransformConverterBase):
             node["output"] = "wavelength"
         else:
             raise TypeError(
-                "Can't serialize an instance of {0}".format(model.__class__.__name__)
+                f"Can't serialize an instance of {model.__class__.__name__}"
             )
         return node

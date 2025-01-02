@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# -*- coding: utf-8 -*-
 import asdf
 import numpy as np
 from astropy.modeling.models import Mapping, Polynomial2D, Scale, Shift

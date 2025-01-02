@@ -30,23 +30,23 @@ radesys = ["ICRS", "FK5", "FK4", "FK4-NO-E", "GAPPT", "GALACTIC"]
 
 class UnsupportedTransformError(Exception):
     def __init__(self, message):
-        super(UnsupportedTransformError, self).__init__(message)
+        super().__init__(message)
 
 
 class UnsupportedProjectionError(Exception):
     def __init__(self, code):
-        message = "Unsupported projection: {0}".format(code)
-        super(UnsupportedProjectionError, self).__init__(message)
+        message = f"Unsupported projection: {code}"
+        super().__init__(message)
 
 
 class RegionError(Exception):
     def __init__(self, message):
-        super(RegionError, self).__init__(message)
+        super().__init__(message)
 
 
 class CoordinateFrameError(Exception):
     def __init__(self, message):
-        super(CoordinateFrameError, self).__init__(message)
+        super().__init__(message)
 
 
 def _toindex(value):
@@ -157,9 +157,7 @@ def get_projcode(wcs_info):
         return None
     projcode = wcs_info["CTYPE"][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
-        raise UnsupportedProjectionError(
-            "Projection code %s, not recognized" % projcode
-        )
+        raise UnsupportedProjectionError(f"Projection code {projcode}, not recognized")
     return projcode
 
 
@@ -206,11 +204,11 @@ def read_wcs_from_header(header):
     crval = []
     cdelt = []
     for i in range(1, wcsaxes + 1):
-        ctype.append(header["CTYPE{0}".format(i)])
-        cunit.append(header.get("CUNIT{0}".format(i), None))
-        crpix.append(header.get("CRPIX{0}".format(i), 0.0))
-        crval.append(header.get("CRVAL{0}".format(i), 0.0))
-        cdelt.append(header.get("CDELT{0}".format(i), 1.0))
+        ctype.append(header[f"CTYPE{i}"])
+        cunit.append(header.get(f"CUNIT{i}", None))
+        crpix.append(header.get(f"CRPIX{i}", 0.0))
+        crval.append(header.get(f"CRVAL{i}", 0.0))
+        cdelt.append(header.get(f"CDELT{i}", 1.0))
 
     if "CD1_1" in header:
         wcs_info["has_cd"] = True
@@ -221,9 +219,9 @@ def read_wcs_from_header(header):
         for j in range(1, wcsaxes + 1):
             try:
                 if wcs_info["has_cd"]:
-                    pc[i - 1, j - 1] = header["CD{0}_{1}".format(i, j)]
+                    pc[i - 1, j - 1] = header[f"CD{i}_{j}"]
                 else:
-                    pc[i - 1, j - 1] = header["PC{0}_{1}".format(i, j)]
+                    pc[i - 1, j - 1] = header[f"PC{i}_{j}"]
             except KeyError:
                 if i == j:
                     pc[i - 1, j - 1] = 1.0
@@ -289,13 +287,13 @@ def _is_skysys_consistent(ctype, sky_inmap):
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype)
+                    "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
                 )
             break
         elif ctype[sky_inmap[1]] == item[0]:
             if ctype[sky_inmap[0]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype)
+                    "Inconsistent ctype for sky coordinates {} and {}".format(*ctype)
                 )
             sky_inmap = sky_inmap[::-1]
             break
@@ -446,7 +444,7 @@ def fitswcs_nonlinear(header):
     # Create the sky rotation transform
     sky_axes, _, _ = get_axes(wcs_info)
     if sky_axes:
-        phip, lonp = [wcs_info["CRVAL"][i] for i in sky_axes]
+        phip, lonp = (wcs_info["CRVAL"][i] for i in sky_axes)
         # TODO: write "def compute_lonpole(projcode, l)"
         # Set a default tvalue for now
         thetap = 180

@@ -269,7 +269,7 @@ class FrameProperties:
         The default physical types to use for this frame if none are specified
         by the user.
         """
-        return tuple("custom:{}".format(t) for t in self.axes_type)
+        return tuple(f"custom:{t}" for t in self.axes_type)
 
 
 class BaseCoordinateFrame(abc.ABC):
@@ -453,18 +453,15 @@ class CoordinateFrame(BaseCoordinateFrame):
         The default physical types to use for this frame if none are specified
         by the user.
         """
-        return tuple("custom:{}".format(t) for t in axes_type)
+        return tuple(f"custom:{t}" for t in axes_type)
 
     def __repr__(self):
-        fmt = '<{0}(name="{1}", unit={2}, axes_names={3}, axes_order={4}'.format(
-            self.__class__.__name__,
-            self.name,
-            self.unit,
-            self.axes_names,
-            self.axes_order,
+        fmt = (
+            f'<{self.__class__.__name__}(name="{self.name}", unit={self.unit}, '
+            f"axes_names={self.axes_names}, axes_order={self.axes_order}"
         )
         if self.reference_frame is not None:
-            fmt += ", reference_frame={0}".format(self.reference_frame)
+            fmt += f", reference_frame={self.reference_frame}"
         fmt += ")>"
         return fmt
 
@@ -681,7 +678,7 @@ class CelestialFrame(CoordinateFrame):
             return "pos.galactic.lon", "pos.galactic.lat"
         elif isinstance(
             reference_frame,
-            (coord.GeocentricTrueEcliptic, coord.GCRS, coord.PrecessedGeocentric),
+            coord.GeocentricTrueEcliptic | coord.GCRS | coord.PrecessedGeocentric,
         ):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
         elif isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
@@ -689,7 +686,7 @@ class CelestialFrame(CoordinateFrame):
         elif isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
             return "pos.ecliptic.lon", "pos.ecliptic.lat"
         else:
-            return tuple("custom:{}".format(t) for t in axes_names)
+            return tuple(f"custom:{t}" for t in axes_names)
 
     @property
     def world_axis_object_classes(self):
@@ -770,7 +767,7 @@ class SpectralFrame(CoordinateFrame):
                 "'spect.dopplerVeloc.radio'."
             )
         else:
-            return ("custom:{}".format(unit[0].physical_type),)
+            return (f"custom:{unit[0].physical_type}",)
 
     @property
     def world_axis_object_classes(self):
@@ -811,8 +808,10 @@ class TemporalFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        axes_names = axes_names or "{}({}; {}".format(
-            reference_frame.format, reference_frame.scale, reference_frame.location
+        axes_names = (
+            axes_names
+            or f"{reference_frame.format}({reference_frame.scale}; "
+            f"{reference_frame.location}"
         )
 
         pht = axis_physical_types or self._default_axis_physical_types()
@@ -1081,4 +1080,4 @@ class Frame2D(CoordinateFrame):
         else:
             ph_type = axes_type
 
-        return tuple("custom:{}".format(t) for t in ph_type)
+        return tuple(f"custom:{t}" for t in ph_type)

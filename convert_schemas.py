@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-# -*- coding: utf-8 -*-
 
 import io
 import json
@@ -31,7 +30,7 @@ def write_if_different(filename, data):
         original_data = None
 
     if original_data != data:
-        print("Converting schema {0}".format(os.path.basename(filename)))
+        print(f"Converting schema {os.path.basename(filename)}")
         with open(filename, "wb") as fd:
             fd.write(data)
 
@@ -52,7 +51,7 @@ def write_header(o, content, level):
     """
     levels = "=-~^."
     if level >= len(levels):
-        o.write("**{0}**\n\n".format(content))
+        o.write(f"**{content}**\n\n")
     else:
         o.write(content)
         o.write("\n")
@@ -95,35 +94,35 @@ def format_range(
         The formatted range expression
     """
     if minimum is not None and maximum is not None:
-        part = "{0} ".format(minimum)
+        part = f"{minimum} "
         if exclusiveMinimum:
             part += "<"
         else:
             part += "≤"
-        part += " {0} ".format(var_middle)
+        part += f" {var_middle} "
         if exclusiveMaximum:
             part += "<"
         else:
             part += "≤"
-        part += " {0}".format(maximum)
+        part += f" {maximum}"
     elif minimum is not None:
         if var_end is not None:
-            part = "{0} ".format(var_end)
+            part = f"{var_end} "
         else:
             part = ""
         if exclusiveMinimum:
-            part += "> {0}".format(minimum)
+            part += f"> {minimum}"
         else:
-            part += "≥ {0}".format(minimum)
+            part += f"≥ {minimum}"
     elif maximum is not None:
         if var_end is not None:
-            part = "{0} ".format(var_end)
+            part = f"{var_end} "
         else:
             part = ""
         if exclusiveMaximum:
-            part += "< {0}".format(maximum)
+            part += f"< {maximum}"
         else:
-            part += "≤ {0}".format(maximum)
+            part += f"≤ {maximum}"
     else:
         return None
     return part
@@ -149,13 +148,13 @@ def format_type(schema, root):
     elif "$ref" in schema:
         ref = schema["$ref"]
         if ref.startswith("#/"):
-            return ":ref:`{0} <{1}/{2}>`".format(ref[2:], root, ref[2:])
+            return f":ref:`{ref[2:]} <{root}/{ref[2:]}>`"
         else:
             basename = os.path.basename(ref)
             if "tag:stsci.edu:asdf" in ref or "tag:astropy.org:astropy" in ref:
-                return "`{0} <{1}>`".format(basename, ref)
+                return f"`{basename} <{ref}>`"
             else:
-                return ":doc:`{0} <{1}>`".format(basename, ref)
+                return f":doc:`{basename} <{ref}>`"
 
     else:
         type = schema.get("type")
@@ -184,9 +183,9 @@ def format_type(schema, root):
                 if "pattern" in schema:
                     pattern = schema["pattern"].encode("unicode_escape")
                     pattern = pattern.decode("ascii")
-                    parts.append(":soft:`regex` :regexp:`{0}`".format(pattern))
+                    parts.append(f":soft:`regex` :regexp:`{pattern}`")
                 if "format" in schema:
-                    parts.append(":soft:`format` {0}".format(schema["format"]))
+                    parts.append(":soft:`format` {}".format(schema["format"]))
                 parts.append(")")
 
         elif type in ("integer", "number"):
@@ -281,13 +280,13 @@ def recurse(o, name, schema, path, level, required=False):
     indent = "  " * max(level, 0)
     o.write("\n\n")
     o.write(indent)
-    o.write(".. _{0}:\n\n".format(os.path.join(*path)))
+    o.write(f".. _{os.path.join(*path)}:\n\n")
     if level == 0:
         write_header(o, name, level)
     else:
         if name != "items":
             o.write(indent)
-            o.write(":entry:`{0}`\n\n".format(name))
+            o.write(f":entry:`{name}`\n\n")
 
     o.write(indent)
     if path[0].startswith("tag:stsci.edu:asdf"):
@@ -308,7 +307,7 @@ def recurse(o, name, schema, path, level, required=False):
 
     if "default" in schema:
         o.write(indent)
-        o.write(":soft:`Default:` {0}".format(json.dumps(schema["default"])))
+        o.write(":soft:`Default:` {}".format(json.dumps(schema["default"])))
         o.write("\n\n")
 
     if "definitions" in schema:
@@ -350,7 +349,7 @@ def recurse(o, name, schema, path, level, required=False):
             recurse(o, "items", items, [*path, "items"], level + 1)
         elif isinstance(items, list):
             for i, val in enumerate(items):
-                name = "index[{0}]".format(i)
+                name = f"index[{i}]"
                 recurse(o, name, val, [*path, str(i)], level + 1)
 
     if "examples" in schema:
@@ -395,7 +394,7 @@ def construct_mapping(self, node, deep=False):
         raise yaml.constructor.ConstructorError(
             None,
             None,
-            "expected a mapping node, but found %s" % node.id,
+            f"expected a mapping node, but found {node.id}",
             node.start_mark,
         )
     mapping = OrderedDict()
@@ -407,7 +406,7 @@ def construct_mapping(self, node, deep=False):
             raise yaml.constructor.ConstructorError(
                 "while constructing a mapping",
                 node.start_mark,
-                "found unacceptable key (%s)" % exc,
+                f"found unacceptable key ({exc})",
                 key_node.start_mark,
             )
         value = self.construct_object(value_node, deep=deep)

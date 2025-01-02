@@ -120,7 +120,7 @@ select = [
     "I",      # isort (import sorting)
     # "N",      # pep8-naming
     #"D",      # pydocstyle (docstring style guide)
-    #"UP",     # pyupgrade (upgrade code to modern python)
+    "UP",     # pyupgrade (upgrade code to modern python)
     # "YTT",    # flake8-2020 (system version info)
     # "ANN",    # flake8-annotations (best practices for type annotations)
     #"S",      # flake8-bandit (security checks)
