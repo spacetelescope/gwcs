@@ -11,8 +11,9 @@ from astropy.modeling import models
 from astropy.tests.helper import assert_quantity_allclose
 from numpy.testing import assert_allclose
 
-from .. import utils as gwutils
-from ..utils import UnsupportedProjectionError
+from gwcs import utils as gwutils
+from gwcs.utils import UnsupportedProjectionError
+
 from . import data
 
 data_path = os.path.split(os.path.abspath(data.__file__))[0]

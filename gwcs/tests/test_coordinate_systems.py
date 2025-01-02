@@ -14,8 +14,8 @@ from astropy.time import Time, TimeDelta
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 from numpy.testing import assert_allclose
 
-from .. import WCS
-from .. import coordinate_frames as cf
+from gwcs import WCS
+from gwcs import coordinate_frames as cf
 
 astropy_version = astropy.__version__
 

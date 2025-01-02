@@ -16,7 +16,7 @@ class DirectionCosinesConverter(TransformConverterBase):
     )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..geometry import FromDirectionCosines, ToDirectionCosines
+        from gwcs.geometry import FromDirectionCosines, ToDirectionCosines
 
         transform_type = node["transform_type"]
         if transform_type == "to_direction_cosines":
@@ -27,7 +27,7 @@ class DirectionCosinesConverter(TransformConverterBase):
         raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        from ..geometry import FromDirectionCosines, ToDirectionCosines
+        from gwcs.geometry import FromDirectionCosines, ToDirectionCosines
 
         if isinstance(model, FromDirectionCosines):
             transform_type = "from_direction_cosines"
@@ -47,7 +47,7 @@ class SphericalCartesianConverter(TransformConverterBase):
     )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..geometry import CartesianToSpherical, SphericalToCartesian
+        from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 
         transform_type = node["transform_type"]
         wrap_lon_at = node["wrap_lon_at"]
@@ -59,7 +59,7 @@ class SphericalCartesianConverter(TransformConverterBase):
         raise TypeError(msg)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        from ..geometry import CartesianToSpherical, SphericalToCartesian
+        from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 
         if isinstance(model, SphericalToCartesian):
             transform_type = "spherical_to_cartesian"

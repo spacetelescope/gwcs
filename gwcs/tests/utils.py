@@ -10,8 +10,8 @@ from astropy.modeling.models import (
     Shift,
 )
 
-from .. import coordinate_frames as cf
-from ..wcs import WCS
+from gwcs import coordinate_frames as cf
+from gwcs.wcs import WCS
 
 
 def _gwcs_from_hst_fits_wcs(header, hdu=None):

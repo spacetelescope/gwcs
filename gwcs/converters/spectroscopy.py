@@ -22,7 +22,7 @@ class SellmeierGlassConverter(TransformConverterBase):
     types = ("gwcs.spectroscopy.SellmeierGlass",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..spectroscopy import SellmeierGlass
+        from gwcs.spectroscopy import SellmeierGlass
 
         return SellmeierGlass(node["B_coef"], node["C_coef"])
 
@@ -38,7 +38,7 @@ class SellmeierZemaxConverter(TransformConverterBase):
     types = ("gwcs.spectroscopy.SellmeierZemax",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..spectroscopy import SellmeierZemax
+        from gwcs.spectroscopy import SellmeierZemax
 
         return SellmeierZemax(
             node["temperature"],
@@ -69,7 +69,7 @@ class Snell3DConverter(TransformConverterBase):
     types = ("gwcs.spectroscopy.Snell3D",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..spectroscopy import Snell3D
+        from gwcs.spectroscopy import Snell3D
 
         return Snell3D()
 
@@ -85,7 +85,7 @@ class GratingEquationConverter(TransformConverterBase):
     )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..spectroscopy import (
+        from gwcs.spectroscopy import (
             AnglesFromGratingEquation3D,
             WavelengthFromGratingEquation,
         )
@@ -107,7 +107,7 @@ class GratingEquationConverter(TransformConverterBase):
         return model
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        from ..spectroscopy import (
+        from gwcs.spectroscopy import (
             AnglesFromGratingEquation3D,
             WavelengthFromGratingEquation,
         )

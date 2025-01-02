@@ -138,7 +138,7 @@ select = [
     "RSE",    # flake8-raise (best practices for raising exceptions)
     "RET",    # flake8-return (best practices for return statements)
     "SIM",    # flake8-simplify (suggest simplifications to code where possible)
-    # "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
+    "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
     # "TCH",    # flake8-type-checking (move type checking imports into type checking blocks)
     # "INT",    # flake8-gettext (when to use printf style strings)
     # "ARG",    # flake8-unused-arguments (prevent unused arguments)

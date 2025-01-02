@@ -4,8 +4,8 @@ import numpy as np
 from astropy.modeling.models import Mapping, Polynomial2D, Scale, Shift
 from numpy.testing import assert_array_equal
 
-from ... import selector
-from ...tests.test_region import create_scalar_mapper
+from gwcs import selector
+from gwcs.tests.test_region import create_scalar_mapper
 
 
 def _assert_mapper_equal(a, b):

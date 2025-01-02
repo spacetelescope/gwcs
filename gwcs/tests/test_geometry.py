@@ -14,7 +14,7 @@ except ImportError:
         assert_model_roundtrip,
     )
 
-from .. import geometry
+from gwcs import geometry
 
 _INV_SQRT2 = 1.0 / np.sqrt(2.0)
 

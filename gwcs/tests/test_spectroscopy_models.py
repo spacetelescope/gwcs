@@ -4,8 +4,8 @@ import pytest
 from astropy.modeling.models import Identity
 from numpy.testing import assert_allclose
 
-from .. import geometry
-from .. import spectroscopy as sp
+from gwcs import geometry
+from gwcs import spectroscopy as sp
 
 
 def test_angles_grating_equation():

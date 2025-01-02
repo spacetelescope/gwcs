@@ -22,7 +22,7 @@ class WCSConverter(Converter):
     types = ("gwcs.wcs.WCS",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..wcs import WCS, GwcsBoundingBoxWarning
+        from gwcs.wcs import WCS, GwcsBoundingBoxWarning
 
         gwcsobj = WCS(node["steps"], name=node["name"])
         if "pixel_shape" in node:
@@ -49,7 +49,7 @@ class StepConverter(Converter):
     types = ("gwcs.wcs.Step",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..wcs import Step
+        from gwcs.wcs import Step
 
         return Step(frame=node["frame"], transform=node.get("transform", None))
 
@@ -85,7 +85,7 @@ class FrameConverter(Converter):
         return kwargs
 
     def _to_yaml_tree(self, frame, tag, ctx):
-        from ..coordinate_frames import CoordinateFrame
+        from gwcs.coordinate_frames import CoordinateFrame
 
         node = {}
 
@@ -114,7 +114,7 @@ class FrameConverter(Converter):
         return node
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import CoordinateFrame
+        from gwcs.coordinate_frames import CoordinateFrame
 
         node = self._from_yaml_tree(node, tag, ctx)
         return CoordinateFrame(**node)
@@ -128,7 +128,7 @@ class Frame2DConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.Frame2D",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import Frame2D
+        from gwcs.coordinate_frames import Frame2D
 
         node = self._from_yaml_tree(node, tag, ctx)
         return Frame2D(**node)
@@ -139,7 +139,7 @@ class CelestialFrameConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.CelestialFrame",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import CelestialFrame
+        from gwcs.coordinate_frames import CelestialFrame
 
         node = self._from_yaml_tree(node, tag, ctx)
         return CelestialFrame(**node)
@@ -150,7 +150,7 @@ class SpectralFrameConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.SpectralFrame",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import SpectralFrame
+        from gwcs.coordinate_frames import SpectralFrame
 
         node = self._from_yaml_tree(node, tag, ctx)
 
@@ -162,7 +162,7 @@ class CompositeFrameConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.CompositeFrame",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import CompositeFrame
+        from gwcs.coordinate_frames import CompositeFrame
 
         if len(node) != 2:
             msg = "CompositeFrame has extra properties"
@@ -182,7 +182,7 @@ class TemporalFrameConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.TemporalFrame",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import TemporalFrame
+        from gwcs.coordinate_frames import TemporalFrame
 
         node = self._from_yaml_tree(node, tag, ctx)
         return TemporalFrame(**node)
@@ -193,7 +193,7 @@ class StokesFrameConverter(FrameConverter):
     types = ("gwcs.coordinate_frames.StokesFrame",)
 
     def from_yaml_tree(self, node, tag, ctx):
-        from ..coordinate_frames import StokesFrame
+        from gwcs.coordinate_frames import StokesFrame
 
         node = self._from_yaml_tree(node, tag, ctx)
         return StokesFrame(**node)

@@ -4,7 +4,7 @@ This file contains a set of pytest fixtures which are different gwcses for testi
 
 import pytest
 
-from .. import examples, geometry
+from gwcs import examples, geometry
 
 
 @pytest.fixture

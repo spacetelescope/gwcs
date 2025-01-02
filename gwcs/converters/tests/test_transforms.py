@@ -10,8 +10,8 @@ except ImportError:
         assert_model_roundtrip,
     )
 
-from ... import geometry
-from ... import spectroscopy as sp
+from gwcs import geometry
+from gwcs import spectroscopy as sp
 
 sell_glass = sp.SellmeierGlass(
     B_coef=[0.58339748, 0.46085267, 3.8915394],

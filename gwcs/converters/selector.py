@@ -22,7 +22,7 @@ class LabelMapperConverter(TransformConverterBase):
     )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..selector import (
+        from gwcs.selector import (
             LabelMapper,
             LabelMapperArray,
             LabelMapperDict,
@@ -65,7 +65,7 @@ class LabelMapperConverter(TransformConverterBase):
         return LabelMapperDict(inputs, dict_mapper, inputs_mapping, atol=atol)
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        from ..selector import (
+        from gwcs.selector import (
             LabelMapper,
             LabelMapperArray,
             LabelMapperDict,
@@ -107,7 +107,7 @@ class RegionsSelectorConverter(TransformConverterBase):
     types = ("gwcs.selector.RegionsSelector",)
 
     def from_yaml_tree_transform(self, node, tag, ctx):
-        from ..selector import RegionsSelector
+        from gwcs.selector import RegionsSelector
 
         inputs = node["inputs"]
         outputs = node["outputs"]
