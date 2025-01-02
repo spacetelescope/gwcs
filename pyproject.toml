@@ -128,12 +128,11 @@ select = [
     "C4",     # flake8-comprehensions (best practices for comprehensions)
     "T10",    # flake8-debugger (prevent debugger statements in code)
     "EM",     # flake8-errormessages (best practices for error messages)
-    # "FA",     # flake8-future-annotations (correct usage future annotations)
     "ISC",    # flake8-implicit-str-concat (prevent implicit string concat)
     "ICN",    # flake8-import-conventions (enforce import conventions)
-    # "INP",    # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
+    "INP",    # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
     "PIE",    # flake8-pie (misc suggested improvement linting)
-    # "T20",    # flake8-print (prevent print statements in code)
+    "T20",    # flake8-print (prevent print statements in code)
     "PT",     # flake8-pytest-style (best practices for pytest)
     "Q",      # flake8-quotes (best practices for quotes)
     "RSE",    # flake8-raise (best practices for raising exceptions)
@@ -155,6 +154,10 @@ select = [
     "RUF",    # ruff specific checks
 ]
 ignore = [
-    "S101",  # Bandit: Use of assert detected
     "ISC001",  # conflicts with formatter at times
 ]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"gwcs/tests/*" = ["S101"]
+"gwcs/converters/tests/*" = ["S101"]
+"docs/conf.py" = ["INP001"]

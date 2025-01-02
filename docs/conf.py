@@ -38,7 +38,7 @@ import importlib.metadata
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
-    print(
+    print(  # noqa: T201
         "ERROR: the documentation requires the sphinx-astropy package to be installed"
     )
     sys.exit(1)

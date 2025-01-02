@@ -58,7 +58,6 @@ def test_2d_spatial_coordinate_reordered(gwcs_2d_spatial_reordered, input_, outp
 def test_1d_freq(gwcs_1d_freq, input_, output):
     w = gwcs_1d_freq
     w.bounding_box = (-0.5, 21)
-    print(f"input {input_}, {output}")
     assert_array_equal(w.invert(w(input_)), output)
     assert_array_equal(w.world_to_pixel_values(w.pixel_to_world_values(input_)), output)
     assert_array_equal(w.world_to_pixel(w.pixel_to_world(input_)), output)

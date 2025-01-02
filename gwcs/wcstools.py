@@ -335,7 +335,9 @@ def wcs_from_points(
         lon, lat = unit_sph.lon.deg, unit_sph.lat.deg
 
     if isinstance(proj_point, coord.SkyCoord):
-        assert proj_point.size == 1
+        if proj_point.size != 1:
+            msg = "proj_point must be a SkyCoord object with a single point."
+            raise ValueError(msg)
         proj_point.transform_to(world_coords)
         crval = (proj_point.data.lon, proj_point.data.lat)
         frame = proj_point.frame

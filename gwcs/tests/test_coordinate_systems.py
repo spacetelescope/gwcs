@@ -581,7 +581,6 @@ def test_celestial_ordering():
 
 
 def test_composite_ordering():
-    print("boo")
     c1 = cf.CelestialFrame(
         reference_frame=coord.ICRS(),
         axes_order=(1, 0),

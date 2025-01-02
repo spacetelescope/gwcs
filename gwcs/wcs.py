@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
 import itertools
+import sys
 import warnings
 
 import astropy.io.fits as fits
@@ -2091,7 +2092,7 @@ class WCS(GWCSAPIMixin):
 
         # The fitting section.
         if verbose:
-            print("\nFitting forward SIP ...")
+            sys.stdout.write("\nFitting forward SIP ...")
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
             degree,
             max_pix_error,
@@ -2122,7 +2123,7 @@ class WCS(GWCSAPIMixin):
 
         if max_inv_pix_error:
             if verbose:
-                print("\nFitting inverse SIP ...")
+                sys.stdout.write("\nFitting inverse SIP ...")
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
                 inv_degree,
                 max_inv_pix_error,
@@ -2150,7 +2151,9 @@ class WCS(GWCSAPIMixin):
         hdr.insert(0, ("NAXIS", 2, "number of array dimensions"))
         hdr.insert(1, (f"NAXIS{iax1:d}", int(xmax) + 1))
         hdr.insert(2, (f"NAXIS{iax2:d}", int(ymax) + 1))
-        assert len(hdr["NAXIS*"]) == 3
+        if len(hdr["NAXIS*"]) != 3:
+            msg = "NAXIS* should have 3 axes"
+            raise ValueError(msg)
 
         # list of celestial axes related keywords:
         cel_kwd = ["CRVAL", "CTYPE", "CUNIT"]
@@ -3238,7 +3241,7 @@ def _fit_2D_poly(
 
     fit_error = np.inf
     if verbose and not single_degree:
-        print(f"Maximum specified SIP approximation error: {max_error}")
+        sys.stdout.write(f"Maximum specified SIP approximation error: {max_error}")
     max_error *= plate_scale
 
     fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
@@ -3251,7 +3254,7 @@ def _fit_2D_poly(
                 xin, yin, xout, yout, degree=deg, coord_pow=coord_pow
             )
             if verbose and not single_degree:
-                print(
+                sys.stdout.write(
                     f"   - SIP degree: {deg}. "
                     f"Maximum residual: {fit_error_i / plate_scale:.5g}"
                 )
@@ -3305,7 +3308,7 @@ def _fit_2D_poly(
             xoutd, youtd, fit_poly_x(xind, yind), fit_poly_y(xind, yind)
         )
         if verbose:
-            print(
+            sys.stdout.write(
                 "* Maximum residual, double sampled grid: "
                 f"{max_resid / plate_scale:.5g}"
             )
@@ -3324,9 +3327,9 @@ def _fit_2D_poly(
 
     if verbose:
         if single_degree:
-            print(f"Maximum residual: {fit_error / plate_scale:.5g}")
+            sys.stdout.write(f"Maximum residual: {fit_error / plate_scale:.5g}")
         else:
-            print(
+            sys.stdout.write(
                 f"* Final SIP degree: {deg}. "
                 f"Maximum residual: {fit_error / plate_scale:.5g}"
             )

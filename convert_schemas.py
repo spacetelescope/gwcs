@@ -30,7 +30,7 @@ def write_if_different(filename, data):
         original_data = None
 
     if original_data != data:
-        print(f"Converting schema {os.path.basename(filename)}")
+        print(f"Converting schema {os.path.basename(filename)}")  # noqa: T201
         with open(filename, "wb") as fd:
             fd.write(data)
 
