@@ -272,10 +272,9 @@ def recurse(o, name, schema, path, level, required=False):
     o.write(f".. _{os.path.join(*path)}:\n\n")
     if level == 0:
         write_header(o, name, level)
-    else:
-        if name != "items":
-            o.write(indent)
-            o.write(f":entry:`{name}`\n\n")
+    elif name != "items":
+        o.write(indent)
+        o.write(f":entry:`{name}`\n\n")
 
     o.write(indent)
     if path[0].startswith("tag:stsci.edu:asdf"):

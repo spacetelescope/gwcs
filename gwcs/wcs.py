@@ -4,11 +4,11 @@ import itertools
 import sys
 import warnings
 
-import astropy.io.fits as fits
 import astropy.units as u
 import numpy as np
 import numpy.linalg as npla
 from astropy import utils as astutil
+from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -630,10 +630,10 @@ class WCS(GWCSAPIMixin):
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
 
-            for idim, (coord, phys) in enumerate(
+            for idim, (coordinate, phys) in enumerate(
                 zip(world_arrays, axes_phys_types, strict=False)
             ):
-                coord = _tofloat(coord)
+                coord = _tofloat(coordinate)
                 if np.asarray(ind).sum() > 1:
                     axis_range = footprint[:, idim]
                 else:
@@ -678,9 +678,9 @@ class WCS(GWCSAPIMixin):
                 if np.isscalar(pix):
                     pixel_arrays[idim] = np.nan
                 else:
-                    pix = pixel_arrays[idim].astype(float, copy=True)
-                    pix[outside] = np.nan
-                    pixel_arrays[idim] = pix
+                    pix_ = pixel_arrays[idim].astype(float, copy=True)
+                    pix_[outside] = np.nan
+                    pixel_arrays[idim] = pix_
         if self.input_frame.naxes == 1:
             pixel_arrays = pixel_arrays[0]
         return pixel_arrays
@@ -2241,13 +2241,12 @@ class WCS(GWCSAPIMixin):
                     axis_rename[f"{kwd:s}{iold:d}"] = f"{kwd:s}{inew:d}"
 
         # construct new header cards with remapped axes:
-        new_cards = []
-        for c in hdr.cards:
-            if c[0] in axis_rename:
-                c = fits.Card(
-                    keyword=axis_rename[c.keyword], value=c.value, comment=c.comment
-                )
-            new_cards.append(c)
+        new_cards = [
+            fits.Card(keyword=axis_rename[c.keyword], value=c.value, comment=c.comment)
+            if c[0] in axis_rename
+            else c
+            for c in hdr.cards
+        ]
 
         hdr = fits.Header(new_cards)
         hdr["WCSAXES"] = 2
@@ -2320,12 +2319,11 @@ class WCS(GWCSAPIMixin):
             for frame in frames:
                 if axis_number in frame.axes_order:
                     return frame
-            else:
-                msg = (
-                    "Encountered an output axes that does not "
-                    "belong to any output coordinate frames."
-                )
-                raise RuntimeError(msg)
+            msg = (
+                "Encountered an output axes that does not "
+                "belong to any output coordinate frames."
+            )
+            raise RuntimeError(msg)
 
         # use correlation matrix to find separable axes:
         corr_mat = self.axis_correlation_matrix
@@ -2361,17 +2359,17 @@ class WCS(GWCSAPIMixin):
             # Find the frame to which the first axis in the group belongs.
             # Most likely this frame will be the frame of all other axes in
             # this group; if not, we will update it later.
-            s = sorted(s)
-            frame = find_frame(s[0])
+            axis = sorted(s)
+            frame = find_frame(axis[0])
 
             celestial = (
                 detect_celestial
-                and len(s) == 2
+                and len(axis) == 2
                 and len(frame.axes_order) == 2
                 and isinstance(frame, cf.CelestialFrame)
             )
 
-            for axno in s:
+            for axno in axis:
                 if axno not in frame.axes_order:
                     frame = find_frame(axno)
                     celestial = False  # Celestial axes must belong to the same frame

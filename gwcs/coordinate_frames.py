@@ -948,8 +948,8 @@ class CompositeFrame(CoordinateFrame):
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
             renamed_components = []
-            for comp in frame._native_world_axis_object_components:
-                comp = list(comp)
+            for component in frame._native_world_axis_object_components:
+                comp = list(component)
                 rename = mapper[frame].get(comp[0])
                 if rename:
                     comp[0] = rename
@@ -962,9 +962,7 @@ class CompositeFrame(CoordinateFrame):
         for frame in self.frames:
             for key, value in frame.world_axis_object_classes.items():
                 rename = mapper[frame].get(key)
-                if rename:
-                    key = rename
-                yield key, value
+                yield rename if rename else key, value
 
     @property
     def world_axis_object_components(self):

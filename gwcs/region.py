@@ -106,10 +106,8 @@ class Polygon(Region):
         self._shifty = 0
         for vertex in vertices:
             x, y = vertex
-            if x < self._shiftx:
-                self._shiftx = x
-            if y < self._shifty:
-                self._shifty = y
+            self._shiftx = min(x, self._shiftx)
+            self._shifty = min(y, self._shifty)
         v = [(i - self._shiftx, j - self._shifty) for i, j in vertices]
 
         # convert to integer coordinates:

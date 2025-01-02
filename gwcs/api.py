@@ -184,11 +184,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         # Iterate over the bounding box and convert from quantity if required.
         bounding_box = list(bounding_box)
         for i, bb_axes in enumerate(bounding_box):
-            bb = []
-            for lim in bb_axes:
-                if isinstance(lim, u.Quantity):
-                    lim = lim.value
-                bb.append(lim)
+            bb = [lim.value if isinstance(lim, u.Quantity) else lim for lim in bb_axes]
 
             bounding_box[i] = tuple(bb)
 

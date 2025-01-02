@@ -218,11 +218,10 @@ def read_wcs_from_header(header):
             key = f"CD{i}_{j}" if wcs_info["has_cd"] else f"PC{i}_{j}"
             if key in header:
                 pc[i - 1, j - 1] = header[key]
+            elif i == j:
+                pc[i - 1, j - 1] = 1.0
             else:
-                if i == j:
-                    pc[i - 1, j - 1] = 1.0
-                else:
-                    pc[i - 1, j - 1] = 0.0
+                pc[i - 1, j - 1] = 0.0
     wcs_info["CTYPE"] = ctype
     wcs_info["CUNIT"] = cunit
     wcs_info["CRPIX"] = crpix
