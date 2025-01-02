@@ -12,9 +12,10 @@ import abc
 from collections import OrderedDict
 import numpy as np
 
-__all__ = ['Region', 'Edge', 'Polygon']
+__all__ = ["Region", "Edge", "Polygon"]
 
 _INTERSECT_ATOL = 1e2 * np.finfo(float).eps
+
 
 class Region:
     """

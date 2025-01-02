@@ -6,9 +6,16 @@ from contextlib import suppress
 from asdf.extension import Converter
 
 
-__all__ = ["WCSConverter", "CelestialFrameConverter", "CompositeFrameConverter",
-           "FrameConverter", "SpectralFrameConverter", "StepConverter",
-           "TemporalFrameConverter", "StokesFrameConverter"]
+__all__ = [
+    "WCSConverter",
+    "CelestialFrameConverter",
+    "CompositeFrameConverter",
+    "FrameConverter",
+    "SpectralFrameConverter",
+    "StepConverter",
+    "TemporalFrameConverter",
+    "StokesFrameConverter",
+]
 
 
 class WCSConverter(Converter):
@@ -17,23 +24,24 @@ class WCSConverter(Converter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..wcs import WCS, GwcsBoundingBoxWarning
-        gwcsobj = WCS(node['steps'], name=node['name'])
-        if 'pixel_shape' in node:
-            gwcsobj.pixel_shape = node['pixel_shape']
+
+        gwcsobj = WCS(node["steps"], name=node["name"])
+        if "pixel_shape" in node:
+            gwcsobj.pixel_shape = node["pixel_shape"]
 
         # Ignore the warning about the bounding box order for data read from a
         # file. This is causing issues with files from MAST.
         with suppress(AttributeError), warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=GwcsBoundingBoxWarning)
+            warnings.filterwarnings("ignore", category=GwcsBoundingBoxWarning)
             _ = gwcsobj.bounding_box
 
         return gwcsobj
 
     def to_yaml_tree(self, gwcsobj, tag, ctx):
         return {
-            'name': gwcsobj.name,
-            'steps': gwcsobj.pipeline,
-            'pixel_shape': gwcsobj.pixel_shape,
+            "name": gwcsobj.name,
+            "steps": gwcsobj.pipeline,
+            "pixel_shape": gwcsobj.pixel_shape,
         }
 
 
@@ -43,13 +51,11 @@ class StepConverter(Converter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..wcs import Step
-        return Step(frame=node['frame'], transform=node.get('transform', None))
+
+        return Step(frame=node["frame"], transform=node.get("transform", None))
 
     def to_yaml_tree(self, step, tag, ctx):
-        return {
-            'frame': step.frame,
-            'transform': step.transform
-        }
+        return {"frame": step.frame, "transform": step.transform}
 
 
 class FrameConverter(Converter):
@@ -57,27 +63,25 @@ class FrameConverter(Converter):
     types = ["gwcs.coordinate_frames.CoordinateFrame"]
 
     def _from_yaml_tree(self, node, tag, ctx):
-        kwargs = {'name': node['name']}
+        kwargs = {"name": node["name"]}
 
-        if 'axes_type' in node and 'naxes' in node:
-            kwargs.update({
-                'axes_type': node['axes_type'],
-                'naxes': node['naxes']})
+        if "axes_type" in node and "naxes" in node:
+            kwargs.update({"axes_type": node["axes_type"], "naxes": node["naxes"]})
 
-        if 'axes_names' in node:
-            kwargs['axes_names'] = node['axes_names']
+        if "axes_names" in node:
+            kwargs["axes_names"] = node["axes_names"]
 
-        if 'reference_frame' in node:
-            kwargs['reference_frame'] = node['reference_frame']
+        if "reference_frame" in node:
+            kwargs["reference_frame"] = node["reference_frame"]
 
-        if 'axes_order' in node:
-            kwargs['axes_order'] = tuple(node['axes_order'])
+        if "axes_order" in node:
+            kwargs["axes_order"] = tuple(node["axes_order"])
 
-        if 'unit' in node:
-            kwargs['unit'] = tuple(node['unit'])
+        if "unit" in node:
+            kwargs["unit"] = tuple(node["unit"])
 
-        if 'axis_physical_types' in node:
-            kwargs['axis_physical_types'] = tuple(node['axis_physical_types'])
+        if "axis_physical_types" in node:
+            kwargs["axis_physical_types"] = tuple(node["axis_physical_types"])
 
         return kwargs
 
@@ -86,32 +90,33 @@ class FrameConverter(Converter):
 
         node = {}
 
-        node['name'] = frame.name
+        node["name"] = frame.name
 
         # We want to check that it is exactly this type and not a subclass
         if type(frame) is CoordinateFrame:
-            node['axes_type'] = frame.axes_type
-            node['naxes'] = frame.naxes
+            node["axes_type"] = frame.axes_type
+            node["naxes"] = frame.naxes
 
         if frame.axes_order is not None:
-            node['axes_order'] = list(frame.axes_order)
+            node["axes_order"] = list(frame.axes_order)
 
         if frame.axes_names is not None:
-            node['axes_names'] = list(frame.axes_names)
+            node["axes_names"] = list(frame.axes_names)
 
         if frame.reference_frame is not None:
-            node['reference_frame'] = frame.reference_frame
+            node["reference_frame"] = frame.reference_frame
 
         if frame.unit is not None:
-            node['unit'] = list(frame.unit)
+            node["unit"] = list(frame.unit)
 
         if frame.axis_physical_types is not None:
-            node['axis_physical_types'] = list(frame.axis_physical_types)
+            node["axis_physical_types"] = list(frame.axis_physical_types)
 
         return node
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import CoordinateFrame
+
         node = self._from_yaml_tree(node, tag, ctx)
         return CoordinateFrame(**node)
 
@@ -125,6 +130,7 @@ class Frame2DConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import Frame2D
+
         node = self._from_yaml_tree(node, tag, ctx)
         return Frame2D(**node)
 
@@ -135,6 +141,7 @@ class CelestialFrameConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import CelestialFrame
+
         node = self._from_yaml_tree(node, tag, ctx)
         return CelestialFrame(**node)
 
@@ -145,6 +152,7 @@ class SpectralFrameConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import SpectralFrame
+
         node = self._from_yaml_tree(node, tag, ctx)
 
         return SpectralFrame(**node)
@@ -156,19 +164,17 @@ class CompositeFrameConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import CompositeFrame
+
         if len(node) != 2:
             raise ValueError("CompositeFrame has extra properties")
 
-        name = node['name']
-        frames = node['frames']
+        name = node["name"]
+        frames = node["frames"]
 
         return CompositeFrame(frames, name)
 
     def to_yaml_tree(self, frame, tag, ctx):
-        return {
-            'name': frame.name,
-            'frames': frame.frames
-        }
+        return {"name": frame.name, "frames": frame.frames}
 
 
 class TemporalFrameConverter(FrameConverter):
@@ -177,6 +183,7 @@ class TemporalFrameConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import TemporalFrame
+
         node = self._from_yaml_tree(node, tag, ctx)
         return TemporalFrame(**node)
 
@@ -187,14 +194,15 @@ class StokesFrameConverter(FrameConverter):
 
     def from_yaml_tree(self, node, tag, ctx):
         from ..coordinate_frames import StokesFrame
+
         node = self._from_yaml_tree(node, tag, ctx)
         return StokesFrame(**node)
 
     def to_yaml_tree(self, frame, tag, ctx):
         node = {}
 
-        node['name'] = frame.name
+        node["name"] = frame.name
         if frame.axes_order:
-            node['axes_order'] = list(frame.axes_order)
+            node["axes_order"] = list(frame.axes_order)
 
         return node

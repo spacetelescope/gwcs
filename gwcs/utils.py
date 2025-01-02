@@ -3,6 +3,7 @@
 Utility function for WCS
 
 """
+
 import re
 import functools
 import numpy as np
@@ -15,19 +16,19 @@ from astropy.wcs import Celprm
 
 
 # these ctype values do not include yzLN and yzLT pairs
-sky_pairs = {"equatorial": ["RA", "DEC"],
-             "ecliptic": ["ELON", "ELAT"],
-             "galactic": ["GLON", "GLAT"],
-             "helioecliptic": ["HLON", "HLAT"],
-             "supergalactic": ["SLON", "SLAT"],
-             # "spec": specsystems
-            }
+sky_pairs = {
+    "equatorial": ["RA", "DEC"],
+    "ecliptic": ["ELON", "ELAT"],
+    "galactic": ["GLON", "GLAT"],
+    "helioecliptic": ["HLON", "HLAT"],
+    "supergalactic": ["SLON", "SLAT"],
+    # "spec": specsystems
+}
 
-radesys = ['ICRS', 'FK5', 'FK4', 'FK4-NO-E', 'GAPPT', 'GALACTIC']
+radesys = ["ICRS", "FK5", "FK4", "FK4-NO-E", "GAPPT", "GALACTIC"]
 
 
 class UnsupportedTransformError(Exception):
-
     def __init__(self, message):
         super(UnsupportedTransformError, self).__init__(message)
 
@@ -39,13 +40,11 @@ class UnsupportedProjectionError(Exception):
 
 
 class RegionError(Exception):
-
     def __init__(self, message):
         super(RegionError, self).__init__(message)
 
 
 class CoordinateFrameError(Exception):
-
     def __init__(self, message):
         super(CoordinateFrameError, self).__init__(message)
 
@@ -156,9 +155,11 @@ def get_projcode(wcs_info):
     sky_axes, _, _ = get_axes(wcs_info)
     if not sky_axes:
         return None
-    projcode = wcs_info['CTYPE'][sky_axes[0]][5:8].upper()
+    projcode = wcs_info["CTYPE"][sky_axes[0]][5:8].upper()
     if projcode not in projections.projcodes:
-        raise UnsupportedProjectionError('Projection code %s, not recognized' % projcode)
+        raise UnsupportedProjectionError(
+            "Projection code %s, not recognized" % projcode
+        )
     return projcode
 
 
@@ -179,25 +180,25 @@ def read_wcs_from_header(header):
     wcs_info = {}
 
     try:
-        wcs_info['WCSAXES'] = header['WCSAXES']
+        wcs_info["WCSAXES"] = header["WCSAXES"]
     except KeyError:
-        p = re.compile(r'ctype[\d]*', re.IGNORECASE)
-        ctypes = header['CTYPE*']
+        p = re.compile(r"ctype[\d]*", re.IGNORECASE)
+        ctypes = header["CTYPE*"]
         keys = list(ctypes.keys())
         for key in keys[::-1]:
             if p.split(key)[-1] != "":
                 keys.remove(key)
-        wcs_info['WCSAXES'] = len(keys)
-    wcsaxes = wcs_info['WCSAXES']
+        wcs_info["WCSAXES"] = len(keys)
+    wcsaxes = wcs_info["WCSAXES"]
     # if not present call get_csystem
-    wcs_info['RADESYS'] = header.get('RADESYS', 'ICRS')
-    wcs_info['VAFACTOR'] = header.get('VAFACTOR', 1)
-    wcs_info['NAXIS'] = header.get('NAXIS', 0)
+    wcs_info["RADESYS"] = header.get("RADESYS", "ICRS")
+    wcs_info["VAFACTOR"] = header.get("VAFACTOR", 1)
+    wcs_info["NAXIS"] = header.get("NAXIS", 0)
     # date keyword?
     # wcs_info['DATEOBS'] = header.get('DATE-OBS', 'DATEOBS')
-    wcs_info['EQUINOX'] = header.get("EQUINOX", None)
-    wcs_info['EPOCH'] = header.get("EPOCH", None)
-    wcs_info['DATEOBS'] = header.get("MJD-OBS", header.get("DATE-OBS", None))
+    wcs_info["EQUINOX"] = header.get("EQUINOX", None)
+    wcs_info["EPOCH"] = header.get("EPOCH", None)
+    wcs_info["DATEOBS"] = header.get("MJD-OBS", header.get("DATE-OBS", None))
 
     ctype = []
     cunit = []
@@ -205,35 +206,35 @@ def read_wcs_from_header(header):
     crval = []
     cdelt = []
     for i in range(1, wcsaxes + 1):
-        ctype.append(header['CTYPE{0}'.format(i)])
-        cunit.append(header.get('CUNIT{0}'.format(i), None))
-        crpix.append(header.get('CRPIX{0}'.format(i), 0.0))
-        crval.append(header.get('CRVAL{0}'.format(i), 0.0))
-        cdelt.append(header.get('CDELT{0}'.format(i), 1.0))
+        ctype.append(header["CTYPE{0}".format(i)])
+        cunit.append(header.get("CUNIT{0}".format(i), None))
+        crpix.append(header.get("CRPIX{0}".format(i), 0.0))
+        crval.append(header.get("CRVAL{0}".format(i), 0.0))
+        cdelt.append(header.get("CDELT{0}".format(i), 1.0))
 
-    if 'CD1_1' in header:
-        wcs_info['has_cd'] = True
+    if "CD1_1" in header:
+        wcs_info["has_cd"] = True
     else:
-        wcs_info['has_cd'] = False
+        wcs_info["has_cd"] = False
     pc = np.zeros((wcsaxes, wcsaxes))
     for i in range(1, wcsaxes + 1):
         for j in range(1, wcsaxes + 1):
             try:
-                if wcs_info['has_cd']:
-                    pc[i - 1, j - 1] = header['CD{0}_{1}'.format(i, j)]
+                if wcs_info["has_cd"]:
+                    pc[i - 1, j - 1] = header["CD{0}_{1}".format(i, j)]
                 else:
-                    pc[i - 1, j - 1] = header['PC{0}_{1}'.format(i, j)]
+                    pc[i - 1, j - 1] = header["PC{0}_{1}".format(i, j)]
             except KeyError:
                 if i == j:
-                    pc[i - 1, j - 1] = 1.
+                    pc[i - 1, j - 1] = 1.0
                 else:
-                    pc[i - 1, j - 1] = 0.
-    wcs_info['CTYPE'] = ctype
-    wcs_info['CUNIT'] = cunit
-    wcs_info['CRPIX'] = crpix
-    wcs_info['CRVAL'] = crval
-    wcs_info['CDELT'] = cdelt
-    wcs_info['PC'] = pc
+                    pc[i - 1, j - 1] = 0.0
+    wcs_info["CTYPE"] = ctype
+    wcs_info["CUNIT"] = cunit
+    wcs_info["CRPIX"] = crpix
+    wcs_info["CRVAL"] = crval
+    wcs_info["CDELT"] = cdelt
+    wcs_info["PC"] = pc
     return wcs_info
 
 
@@ -261,7 +262,7 @@ def get_axes(header):
 
     # Split each CTYPE value at "-" and take the first part.
     # This should represent the coordinate system.
-    ctype = [ax.split('-')[0].upper() for ax in wcs_info['CTYPE']]
+    ctype = [ax.split("-")[0].upper() for ax in wcs_info["CTYPE"]]
     sky_inmap = []
     spec_inmap = []
     unknown = []
@@ -282,32 +283,45 @@ def get_axes(header):
 
 
 def _is_skysys_consistent(ctype, sky_inmap):
-    """ Determine if the sky axes in CTYPE match to form a standard celestial system."""
+    """Determine if the sky axes in CTYPE match to form a standard celestial system."""
 
     for item in sky_pairs.values():
         if ctype[sky_inmap[0]] == item[0]:
             if ctype[sky_inmap[1]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
+                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype)
+                )
             break
         elif ctype[sky_inmap[1]] == item[0]:
             if ctype[sky_inmap[0]] != item[1]:
                 raise ValueError(
-                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype))
+                    "Inconsistent ctype for sky coordinates {0} and {1}".format(*ctype)
+                )
             sky_inmap = sky_inmap[::-1]
             break
 
 
-specsystems = ["WAVE", "FREQ", "ENER", "WAVEN", "AWAV",
-               "VRAD", "VOPT", "ZOPT", "BETA", "VELO"]
+specsystems = [
+    "WAVE",
+    "FREQ",
+    "ENER",
+    "WAVEN",
+    "AWAV",
+    "VRAD",
+    "VOPT",
+    "ZOPT",
+    "BETA",
+    "VELO",
+]
 
-sky_systems_map = {'ICRS': coords.ICRS,
-                   'FK5': coords.FK5,
-                   'FK4': coords.FK4,
-                   'FK4NOE': coords.FK4NoETerms,
-                   'GAL': coords.Galactic,
-                   'HOR': coords.AltAz
-                  }
+sky_systems_map = {
+    "ICRS": coords.ICRS,
+    "FK5": coords.FK5,
+    "FK4": coords.FK4,
+    "FK4NOE": coords.FK4NoETerms,
+    "GAL": coords.Galactic,
+    "HOR": coords.AltAz,
+}
 
 
 def make_fitswcs_transform(header):
@@ -333,7 +347,7 @@ def make_fitswcs_transform(header):
     wcs_nonlinear = fitswcs_nonlinear(wcs_info)
     if wcs_nonlinear is not None:
         transforms.append(wcs_nonlinear)
-    return functools.reduce(core._model_oper('|'), transforms)
+    return functools.reduce(core._model_oper("|"), transforms)
 
 
 def fitswcs_linear(header):
@@ -353,7 +367,7 @@ def fitswcs_linear(header):
     else:
         raise TypeError("Expected a FITS Header or a dict.")
 
-    pc = wcs_info['PC']
+    pc = wcs_info["PC"]
     # get the part of the PC matrix corresponding to the imaging axes
     sky_axes, spec_axes, unknown = get_axes(wcs_info)
     if pc.shape != (2, 2):
@@ -373,28 +387,32 @@ def fitswcs_linear(header):
         crpix = []
         cdelt = []
         for i in sky_axes:
-            crpix.append(wcs_info['CRPIX'][i])
-            cdelt.append(wcs_info['CDELT'][i])
+            crpix.append(wcs_info["CRPIX"][i])
+            cdelt.append(wcs_info["CDELT"][i])
     else:
-        cdelt = wcs_info['CDELT']
-        crpix = wcs_info['CRPIX']
+        cdelt = wcs_info["CDELT"]
+        crpix = wcs_info["CRPIX"]
 
     # if wcsaxes == 2:
-    rotation = astmodels.AffineTransformation2D(matrix=pc, name='pc_matrix')
+    rotation = astmodels.AffineTransformation2D(matrix=pc, name="pc_matrix")
     # elif wcsaxes == 3 :
     # rotation = AffineTransformation3D(matrix=matrix)
     # else:
     # raise DimensionsError("WCSLinearTransform supports only 2 or 3 dimensions, "
     # "{0} given".format(wcsaxes))
 
-    translation_models = [astmodels.Shift(-(shift - 1), name='crpix' + str(i + 1))
-                          for i, shift in enumerate(crpix)]
+    translation_models = [
+        astmodels.Shift(-(shift - 1), name="crpix" + str(i + 1))
+        for i, shift in enumerate(crpix)
+    ]
     translation = functools.reduce(lambda x, y: x & y, translation_models)
 
-    if not wcs_info['has_cd']:
+    if not wcs_info["has_cd"]:
         # Do not compute scaling since CDELT* = 1 if CD is present.
-        scaling_models = [astmodels.Scale(scale, name='cdelt' + str(i + 1))
-                          for i, scale in enumerate(cdelt)]
+        scaling_models = [
+            astmodels.Scale(scale, name="cdelt" + str(i + 1))
+            for i, scale in enumerate(cdelt)
+        ]
 
         scaling = functools.reduce(lambda x, y: x & y, scaling_models)
         wcs_linear = translation | rotation | scaling
@@ -428,14 +446,14 @@ def fitswcs_nonlinear(header):
     # Create the sky rotation transform
     sky_axes, _, _ = get_axes(wcs_info)
     if sky_axes:
-        phip, lonp = [wcs_info['CRVAL'][i] for i in sky_axes]
+        phip, lonp = [wcs_info["CRVAL"][i] for i in sky_axes]
         # TODO: write "def compute_lonpole(projcode, l)"
         # Set a default tvalue for now
         thetap = 180
         n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
         transforms.append(n2c)
     if transforms:
-        return functools.reduce(core._model_oper('|'), transforms)
+        return functools.reduce(core._model_oper("|"), transforms)
     return None
 
 
@@ -454,7 +472,7 @@ def create_projection_transform(projcode):
         Projection transform.
     """
 
-    projklassname = 'Pix2Sky_' + projcode
+    projklassname = "Pix2Sky_" + projcode
     try:
         projklass = getattr(projections, projklassname)
     except AttributeError:
@@ -472,8 +490,10 @@ def is_high_level(*args, low_level_wcs):
     if len(args) != len(low_level_wcs.world_axis_object_classes):
         return False
 
-    type_match = [(type(arg), waoc[0])
-                  for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())]
+    type_match = [
+        (type(arg), waoc[0])
+        for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())
+    ]
 
     types_are_high_level = [argt is t for argt, t in type_match]
 
@@ -484,6 +504,7 @@ def is_high_level(*args, low_level_wcs):
         raise TypeError(
             "Invalid types were passed, got "
             f"({', '.join(tm[0].__name__ for tm in type_match)}) expected "
-            f"({', '.join(tm[1].__name__ for tm in type_match)}).")
+            f"({', '.join(tm[1].__name__ for tm in type_match)})."
+        )
 
     return False

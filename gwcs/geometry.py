@@ -9,14 +9,19 @@ from astropy.modeling.core import Model
 from astropy import units as u
 
 
-__all__ = ['ToDirectionCosines', 'FromDirectionCosines',
-           'SphericalToCartesian', 'CartesianToSpherical']
+__all__ = [
+    "ToDirectionCosines",
+    "FromDirectionCosines",
+    "SphericalToCartesian",
+    "CartesianToSpherical",
+]
 
 
 class ToDirectionCosines(Model):
     """
     Transform a vector to direction cosines.
     """
+
     _separable = False
 
     n_inputs = 3
@@ -24,14 +29,14 @@ class ToDirectionCosines(Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.inputs = ('x', 'y', 'z')
-        self.outputs = ('cosa', 'cosb', 'cosc', 'length')
+        self.inputs = ("x", "y", "z")
+        self.outputs = ("cosa", "cosb", "cosc", "length")
 
     def evaluate(self, x, y, z):
-        vabs = np.sqrt(1. + x**2 + y**2)
+        vabs = np.sqrt(1.0 + x**2 + y**2)
         cosa = x / vabs
         cosb = y / vabs
-        cosc = 1. / vabs
+        cosc = 1.0 / vabs
         return cosa, cosb, cosc, vabs
 
     def inverse(self):
@@ -42,6 +47,7 @@ class FromDirectionCosines(Model):
     """
     Transform directional cosines to vector.
     """
+
     _separable = False
 
     n_inputs = 4
@@ -49,8 +55,8 @@ class FromDirectionCosines(Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.inputs = ('cosa', 'cosb', 'cosc', 'length')
-        self.outputs = ('x', 'y', 'z')
+        self.inputs = ("cosa", "cosb", "cosc", "length")
+        self.outputs = ("x", "y", "z")
 
     def evaluate(self, cosa, cosb, cosc, length):
         return cosa * length, cosb * length, cosc * length
@@ -68,6 +74,7 @@ class SphericalToCartesian(Model):
     (or *elevation angle*) in range ``[-90, 90]``.
 
     """
+
     _separable = False
 
     _input_units_allow_dimensionless = True
@@ -88,13 +95,13 @@ class SphericalToCartesian(Model):
 
         """
         super().__init__(**kwargs)
-        self.inputs = ('lon', 'lat')
-        self.outputs = ('x', 'y', 'z')
+        self.inputs = ("lon", "lat")
+        self.outputs = ("x", "y", "z")
         self.wrap_lon_at = wrap_lon_at
 
     @property
     def wrap_lon_at(self):
-        """ An **integer number** that specifies the range of the longitude
+        """An **integer number** that specifies the range of the longitude
         (azimuthal) angle.
 
         Allowed values are 180 and 360. When ``wrap_lon_at``
@@ -113,8 +120,9 @@ class SphericalToCartesian(Model):
 
     def evaluate(self, lon, lat):
         if isinstance(lon, u.Quantity) != isinstance(lat, u.Quantity):
-            raise TypeError("All arguments must be of the same type "
-                            "(i.e., quantity or not).")
+            raise TypeError(
+                "All arguments must be of the same type " "(i.e., quantity or not)."
+            )
 
         lon = np.deg2rad(lon)
         lat = np.deg2rad(lat)
@@ -131,7 +139,7 @@ class SphericalToCartesian(Model):
 
     @property
     def input_units(self):
-        return {'lon': u.deg, 'lat': u.deg}
+        return {"lon": u.deg, "lat": u.deg}
 
 
 class CartesianToSpherical(Model):
@@ -145,6 +153,7 @@ class CartesianToSpherical(Model):
     range ``[-90, 90]``.
 
     """
+
     _separable = False
 
     _input_units_allow_dimensionless = True
@@ -165,13 +174,13 @@ class CartesianToSpherical(Model):
 
         """
         super().__init__(**kwargs)
-        self.inputs = ('x', 'y', 'z')
-        self.outputs = ('lon', 'lat')
+        self.inputs = ("x", "y", "z")
+        self.outputs = ("lon", "lat")
         self.wrap_lon_at = wrap_lon_at
 
     @property
     def wrap_lon_at(self):
-        """ An **integer number** that specifies the range of the longitude
+        """An **integer number** that specifies the range of the longitude
         (azimuthal) angle.
 
         Allowed values are 180 and 360. When ``wrap_lon_at``
@@ -191,8 +200,9 @@ class CartesianToSpherical(Model):
     def evaluate(self, x, y, z):
         nquant = [isinstance(i, u.Quantity) for i in (x, y, z)].count(True)
         if nquant in [1, 2]:
-            raise TypeError("All arguments must be of the same type "
-                            "(i.e., quantity or not).")
+            raise TypeError(
+                "All arguments must be of the same type " "(i.e., quantity or not)."
+            )
 
         h = np.hypot(x, y)
         lat = np.rad2deg(np.arctan2(z, h))
@@ -200,7 +210,9 @@ class CartesianToSpherical(Model):
         lon[h == 0] *= 0
 
         if self._wrap_lon_at != 180:
-            lon = np.mod(lon, 360.0 * u.deg if nquant else 360.0, where=np.isfinite(lon), out=lon)
+            lon = np.mod(
+                lon, 360.0 * u.deg if nquant else 360.0, where=np.isfinite(lon), out=lon
+            )
 
         return lon, lat
 

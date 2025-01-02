@@ -63,15 +63,17 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         specification document, units that do not follow this standard are still
         allowed, but just not recommended).
         """
-        return tuple(unit.to_string(format='vounit') for unit in self.output_frame.unit)
+        return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
     def _remove_quantity_output(self, result, frame):
         if self.forward_transform.uses_quantity:
             if frame.naxes == 1:
                 result = [result]
 
-            result = tuple(r.to_value(unit) if isinstance(r, u.Quantity) else r
-                           for r, unit in zip(result, frame.unit))
+            result = tuple(
+                r.to_value(unit) if isinstance(r, u.Quantity) else r
+                for r, unit in zip(result, frame.unit)
+            )
 
         # If we only have one output axes, we shouldn't return a tuple.
         if self.output_frame.naxes == 1 and isinstance(result, tuple):
@@ -219,9 +221,11 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
             return
         wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
-            raise ValueError("The number of data axes, "
-                             "{}, does not equal the "
-                             "shape {}.".format(wcs_naxes, len(value)))
+            raise ValueError(
+                "The number of data axes, "
+                "{}, does not equal the "
+                "shape {}.".format(wcs_naxes, len(value))
+            )
 
         self._pixel_shape = tuple(value)
 
@@ -260,7 +264,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         """
         if self.input_frame is not None:
             return self.input_frame.axes_names
-        return tuple([''] * self.pixel_n_dim)
+        return tuple([""] * self.pixel_n_dim)
 
     @property
     def world_axis_names(self):
@@ -269,4 +273,4 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         """
         if self.output_frame is not None:
             return self.output_frame.axes_names
-        return tuple([''] * self.world_n_dim)
+        return tuple([""] * self.world_n_dim)

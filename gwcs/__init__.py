@@ -66,7 +66,7 @@ except importlib.metadata.PackageNotFoundError:  # pragma: no cover
     pass  # pragma: no cover
 
 
-from .wcs import *   # noqa
-from .wcstools import *   # noqa
+from .wcs import *  # noqa
+from .wcstools import *  # noqa
 from .coordinate_frames import *  # noqa
-from .selector import *   # noqa
+from .selector import *  # noqa

@@ -18,13 +18,13 @@ def _assert_mapper_equal(a, b):
     assert type(a) is type(b)
 
     if isinstance(a.mapper, dict):
-        assert(a.mapper.__class__ == b.mapper.__class__) # nosec
-        assert(np.isin(list(a.mapper), list(b.mapper)).all()) # nosec
+        assert a.mapper.__class__ == b.mapper.__class__  # nosec
+        assert np.isin(list(a.mapper), list(b.mapper)).all()  # nosec
         for k in a.mapper:
-            assert (a.mapper[k].__class__ == b.mapper[k].__class__) # nosec
-            assert(all(a.mapper[k].parameters == b.mapper[k].parameters))  # nosec
-        assert (a.inputs == b.inputs) # nosec
-        assert (a.inputs_mapping.mapping == b.inputs_mapping.mapping) # nosec
+            assert a.mapper[k].__class__ == b.mapper[k].__class__  # nosec
+            assert all(a.mapper[k].parameters == b.mapper[k].parameters)  # nosec
+        assert a.inputs == b.inputs  # nosec
+        assert a.inputs_mapping.mapping == b.inputs_mapping.mapping  # nosec
     else:
         assert_array_equal(a.mapper, b.mapper)
 
@@ -74,53 +74,56 @@ def test_regions_selector(tmpdir):
     a[:, 1:3] = 1
     a[:, 4:5] = 2
     mask = selector.LabelMapperArray(a)
-    rs = selector.RegionsSelector(inputs=('x', 'y'), outputs=('ra', 'dec', 'lam'),
-                                  selector=sel, label_mapper=mask)
+    rs = selector.RegionsSelector(
+        inputs=("x", "y"), outputs=("ra", "dec", "lam"), selector=sel, label_mapper=mask
+    )
     assert_selector_roundtrip(rs, tmpdir)
 
 
 def test_LabelMapperArray_str(tmpdir):
-    a = np.array([["label1", "", "label2"],
-                  ["label1", "", ""],
-                  ["label1", "label2", "label2"]])
+    a = np.array(
+        [["label1", "", "label2"], ["label1", "", ""], ["label1", "label2", "label2"]]
+    )
     mask = selector.LabelMapperArray(a)
     assert_selector_roundtrip(mask, tmpdir)
 
 
 def test_labelMapperArray_int(tmpdir):
-
-    a = np.array([[1, 0, 2],
-                  [1, 0, 0],
-                  [1, 2, 2]])
+    a = np.array([[1, 0, 2], [1, 0, 0], [1, 2, 2]])
     mask = selector.LabelMapperArray(a)
     assert_selector_roundtrip(mask, tmpdir)
 
 
 def test_LabelMapperDict(tmpdir):
     dmapper = create_scalar_mapper()
-    sel = selector.LabelMapperDict(('x', 'y'), dmapper,
-                                   inputs_mapping=Mapping((0,), n_inputs=2), atol=1e-3)
+    sel = selector.LabelMapperDict(
+        ("x", "y"), dmapper, inputs_mapping=Mapping((0,), n_inputs=2), atol=1e-3
+    )
     assert_selector_roundtrip(sel, tmpdir)
 
 
 def test_LabelMapperRange(tmpdir):
     m = []
-    for i in np.arange(9) * .1:
+    for i in np.arange(9) * 0.1:
         c0_0, c1_0, c0_1, c1_1 = np.ones((4,)) * i
-        m.append(Polynomial2D(2, c0_0=c0_0,
-                              c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
-    keys = np.array([[4.88, 5.64],
-                     [5.75, 6.5],
-                     [6.67, 7.47],
-                     [7.7, 8.63],
-                     [8.83, 9.96],
-                     [10.19, 11.49],
-                     [11.77, 13.28],
-                     [13.33, 15.34],
-                     [15.56, 18.09]])
+        m.append(Polynomial2D(2, c0_0=c0_0, c1_0=c1_0, c0_1=c0_1, c1_1=c1_1))
+    keys = np.array(
+        [
+            [4.88, 5.64],
+            [5.75, 6.5],
+            [6.67, 7.47],
+            [7.7, 8.63],
+            [8.83, 9.96],
+            [10.19, 11.49],
+            [11.77, 13.28],
+            [13.33, 15.34],
+            [15.56, 18.09],
+        ]
+    )
     rmapper = {}
     for k, v in zip(keys, m):
         rmapper[tuple(k)] = v
-    sel = selector.LabelMapperRange(('x', 'y'), rmapper,
-                                    inputs_mapping=Mapping((0,), n_inputs=2))
+    sel = selector.LabelMapperRange(
+        ("x", "y"), rmapper, inputs_mapping=Mapping((0,), n_inputs=2)
+    )
     assert_selector_roundtrip(sel, tmpdir)

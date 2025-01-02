@@ -12,12 +12,21 @@ from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
 from astropy.modeling.core import Model
-from astropy.modeling.models import (Const1D, Identity, Mapping, Polynomial2D,
-                                     RotateCelestial2Native, Shift,
-                                     Sky2Pix_TAN)
+from astropy.modeling.models import (
+    Const1D,
+    Identity,
+    Mapping,
+    Polynomial2D,
+    RotateCelestial2Native,
+    Shift,
+    Sky2Pix_TAN,
+)
 from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
-from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
+from astropy.wcs.wcsapi.high_level_api import (
+    high_level_objects_to_values,
+    values_to_high_level_objects,
+)
 
 from scipy import linalg, optimize
 
@@ -27,9 +36,9 @@ from .api import GWCSAPIMixin
 from .utils import CoordinateFrameError
 from .wcstools import grid_from_bounding_box
 
-__all__ = ['WCS', 'Step', 'NoConvergence']
+__all__ = ["WCS", "Step", "NoConvergence"]
 
-_ITER_INV_KWARGS = ['tolerance', 'maxiter', 'adaptive', 'detect_divergence', 'quiet']
+_ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
 
 
 class NoConvergence(Exception):
@@ -66,8 +75,16 @@ class NoConvergence(Exception):
         then ``slow_conv`` will be set to `None`.
 
     """
-    def __init__(self, *args, best_solution=None, accuracy=None, niter=None,
-                 divergent=None, slow_conv=None):
+
+    def __init__(
+        self,
+        *args,
+        best_solution=None,
+        accuracy=None,
+        niter=None,
+        divergent=None,
+        slow_conv=None,
+    ):
         super().__init__(*args)
 
         self.best_solution = best_solution
@@ -83,7 +100,7 @@ class GwcsBoundingBoxWarning(UserWarning):
     """
 
 
-class _WorldAxisInfo():
+class _WorldAxisInfo:
     def __init__(self, axis, frame, world_axis_order, cunit, ctype, input_axes):
         """
         A class for holding information about a world axis from an output frame.
@@ -137,8 +154,9 @@ class WCS(GWCSAPIMixin):
 
     """
 
-    def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
-                 name=""):
+    def __init__(
+        self, forward_transform=None, input_frame="detector", output_frame=None, name=""
+    ):
         self._approx_inverse = None
         self._available_frames = []
         self._pipeline = []
@@ -158,16 +176,20 @@ class WCS(GWCSAPIMixin):
         if forward_transform is not None:
             if isinstance(forward_transform, Model):
                 if output_frame is None:
-                    raise CoordinateFrameError("An output_frame must be specified "
-                                               "if forward_transform is a model.")
+                    raise CoordinateFrameError(
+                        "An output_frame must be specified "
+                        "if forward_transform is a model."
+                    )
 
                 _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
                 _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
                 super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
                 super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
 
-                self._pipeline = [(input_frame, forward_transform.copy()),
-                                  (output_frame, None)]
+                self._pipeline = [
+                    (input_frame, forward_transform.copy()),
+                    (output_frame, None),
+                ]
             elif isinstance(forward_transform, list):
                 for item in forward_transform:
                     if isinstance(item, Step):
@@ -177,20 +199,21 @@ class WCS(GWCSAPIMixin):
                     super(WCS, self).__setattr__(name, frame_obj)
                     self._pipeline = forward_transform
             else:
-                raise TypeError("Expected forward_transform to be a model or a "
-                                "(frame, transform) list, got {0}".format(
-                                    type(forward_transform)))
+                raise TypeError(
+                    "Expected forward_transform to be a model or a "
+                    "(frame, transform) list, got {0}".format(type(forward_transform))
+                )
         else:
             # Initialize a WCS without a forward_transform - allows building a WCS programmatically.
             if output_frame is None:
-                raise CoordinateFrameError("An output_frame must be specified "
-                                           "if forward_transform is None.")
+                raise CoordinateFrameError(
+                    "An output_frame must be specified " "if forward_transform is None."
+                )
             _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
             _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
             super(WCS, self).__setattr__(_input_frame, inp_frame_obj)
             super(WCS, self).__setattr__(_output_frame, outp_frame_obj)
-            self._pipeline = [(_input_frame, None),
-                              (_output_frame, None)]
+            self._pipeline = [(_input_frame, None), (_output_frame, None)]
 
     def get_transform(self, from_frame, to_frame):
         """
@@ -214,12 +237,12 @@ class WCS(GWCSAPIMixin):
         from_ind = self._get_frame_index(from_frame)
         to_ind = self._get_frame_index(to_frame)
         if to_ind < from_ind:
-            transforms = [step.transform for step in self._pipeline[to_ind: from_ind]]
+            transforms = [step.transform for step in self._pipeline[to_ind:from_ind]]
             transforms = [tr.inverse for tr in transforms[::-1]]
         elif to_ind == from_ind:
             return None
         else:
-            transforms = [step.transform for step in self._pipeline[from_ind: to_ind]]
+            transforms = [step.transform for step in self._pipeline[from_ind:to_ind]]
         return functools.reduce(lambda x, y: x | y, transforms)
 
     def set_transform(self, from_frame, to_frame, transform):
@@ -240,21 +263,29 @@ class WCS(GWCSAPIMixin):
         if not self._pipeline:
             if from_name != self._input_frame:
                 raise CoordinateFrameError(
-                    "Expected 'from_frame' to be {0}".format(self._input_frame))
+                    "Expected 'from_frame' to be {0}".format(self._input_frame)
+                )
             if to_frame != self._output_frame:
                 raise CoordinateFrameError(
-                    "Expected 'to_frame' to be {0}".format(self._output_frame))
+                    "Expected 'to_frame' to be {0}".format(self._output_frame)
+                )
         try:
             from_ind = self._get_frame_index(from_name)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(from_name))
+            raise CoordinateFrameError(
+                "Frame {0} is not in the available frames".format(from_name)
+            )
         try:
             to_ind = self._get_frame_index(to_name)
         except ValueError:
-            raise CoordinateFrameError("Frame {0} is not in the available frames".format(to_name))
+            raise CoordinateFrameError(
+                "Frame {0} is not in the available frames".format(to_name)
+            )
 
         if from_ind + 1 != to_ind:
-            raise ValueError("Frames {0} and {1} are not  in sequence".format(from_name, to_name))
+            raise ValueError(
+                "Frames {0} and {1} are not  in sequence".format(from_name, to_name)
+            )
         self._pipeline[from_ind].transform = transform
 
     @property
@@ -265,7 +296,9 @@ class WCS(GWCSAPIMixin):
         if not self._pipeline:
             return None
 
-        transform = functools.reduce(lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]])
+        transform = functools.reduce(
+            lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]]
+        )
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model
@@ -289,7 +322,9 @@ class WCS(GWCSAPIMixin):
         try:
             backward = self.forward_transform.inverse
         except NotImplementedError as err:
-            raise NotImplementedError("Could not construct backward transform. \n{0}".format(err))
+            raise NotImplementedError(
+                "Could not construct backward transform. \n{0}".format(err)
+            )
         try:
             backward.inverse
         except NotImplementedError:  # means "hasattr" won't work
@@ -303,7 +338,9 @@ class WCS(GWCSAPIMixin):
         if not isinstance(frame_name, str):
             return frame_name
 
-        frames = [step.frame for step in self._pipeline if step.frame.name == frame_name]
+        frames = [
+            step.frame for step in self._pipeline if step.frame.name == frame_name
+        ]
         if len(frames) > 1:
             raise ValueError(f"There is more than one frame named {frame_name}")
         if len(frames) == 0:
@@ -316,11 +353,16 @@ class WCS(GWCSAPIMixin):
         """
         if isinstance(frame, cf.CoordinateFrame):
             frame = frame.name
-        frame_names = [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline]
+        frame_names = [
+            step.frame if isinstance(step.frame, str) else step.frame.name
+            for step in self._pipeline
+        ]
         try:
             return frame_names.index(frame)
         except ValueError as e:
-            raise CoordinateFrameError(f"Frame {frame} is not in the available frames") from e
+            raise CoordinateFrameError(
+                f"Frame {frame} is not in the available frames"
+            ) from e
 
     def _get_frame_name(self, frame):
         """
@@ -348,14 +390,18 @@ class WCS(GWCSAPIMixin):
 
     def _add_units_input(self, arrays, frame):
         if frame is not None:
-            return tuple(u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit))
+            return tuple(
+                u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit)
+            )
 
         return arrays
 
     def _remove_units_input(self, arrays, frame):
         if frame is not None:
-            return tuple(array.to_value(unit) if isinstance(array, u.Quantity) else array
-                         for array, unit in zip(arrays, frame.unit))
+            return tuple(
+                array.to_value(unit) if isinstance(array, u.Quantity) else array
+                for array, unit in zip(arrays, frame.unit)
+            )
 
         return arrays
 
@@ -392,8 +438,15 @@ class WCS(GWCSAPIMixin):
             return high_level
         return results
 
-    def _call_forward(self, *args, from_frame=None, to_frame=None,
-                      with_bounding_box=True, fill_value=np.nan, **kwargs):
+    def _call_forward(
+        self,
+        *args,
+        from_frame=None,
+        to_frame=None,
+        with_bounding_box=True,
+        fill_value=np.nan,
+        **kwargs,
+    ):
         """
         Executes the forward transform, but values only.
         """
@@ -416,10 +469,9 @@ class WCS(GWCSAPIMixin):
         if not transform.uses_quantity and input_is_quantity:
             args = self._remove_units_input(args, from_frame)
 
-        return transform(*args,
-                         with_bounding_box=with_bounding_box,
-                         fill_value=fill_value,
-                         **kwargs)
+        return transform(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
     def in_image(self, *args, **kwargs):
         """
@@ -500,7 +552,7 @@ class WCS(GWCSAPIMixin):
 
         """
         # must pop before calling the model
-        with_units = kwargs.pop('with_units', False)
+        with_units = kwargs.pop("with_units", False)
 
         if utils.is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
@@ -510,14 +562,18 @@ class WCS(GWCSAPIMixin):
         if with_units:
             # values are always expected to be arrays or scalars not quantities
             results = self._remove_units_input(results, self.input_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self.input_frame)
+            high_level = values_to_high_level_objects(
+                *results, low_level_wcs=self.input_frame
+            )
             if len(high_level) == 1:
                 high_level = high_level[0]
             return high_level
 
         return results
 
-    def _call_backward(self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs):
+    def _call_backward(
+        self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs
+    ):
         try:
             transform = self.backward_transform
         except NotImplementedError:
@@ -536,11 +592,21 @@ class WCS(GWCSAPIMixin):
 
             # remove iterative inverse-specific keyword arguments:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **akwargs)
+            result = transform(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **akwargs,
+            )
         else:
             # Always strip units for numerical inverse
             args = self._remove_units_input(args, self.output_frame)
-            result = self.numerical_inverse(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs)
+            result = self.numerical_inverse(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **kwargs,
+            )
 
         # deal with values outside the bounding box
         if with_bounding_box and self.bounding_box is not None:
@@ -557,7 +623,9 @@ class WCS(GWCSAPIMixin):
         not_numerical = False
         if utils.is_high_level(world_arrays[0], low_level_wcs=self):
             not_numerical = True
-            world_arrays = high_level_objects_to_values(*world_arrays, low_level_wcs=self)
+            world_arrays = high_level_objects_to_values(
+                *world_arrays, low_level_wcs=self
+            )
         for axtyp in axes_types:
             ind = np.asarray((np.asarray(self.output_frame.axes_type) == axtyp))
 
@@ -570,14 +638,17 @@ class WCS(GWCSAPIMixin):
                 min_ax = axis_range.min()
                 max_ax = axis_range.max()
 
-                if (axtyp == 'SPATIAL' and str(phys).endswith((".ra", ".lon"))
-                    and (max_ax - min_ax) > 180):
-                        # most likely this coordinate is wrapped at 360
-                        d = 0.5 * (min_ax + max_ax)
-                        m = (axis_range <= d)
-                        min_ax = axis_range[m].max()
-                        max_ax = axis_range[~m].min()
-                        outside = (coord > min_ax) & (coord < max_ax)
+                if (
+                    axtyp == "SPATIAL"
+                    and str(phys).endswith((".ra", ".lon"))
+                    and (max_ax - min_ax) > 180
+                ):
+                    # most likely this coordinate is wrapped at 360
+                    d = 0.5 * (min_ax + max_ax)
+                    m = axis_range <= d
+                    min_ax = axis_range[m].max()
+                    max_ax = axis_range[~m].min()
+                    outside = (coord > min_ax) & (coord < max_ax)
                 else:
                     outside = (coord < min_ax) | (coord > max_ax)
                 if np.any(outside):
@@ -587,9 +658,10 @@ class WCS(GWCSAPIMixin):
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
         if not_numerical:
-            world_arrays = values_to_high_level_objects(*world_arrays, low_level_wcs=self)
+            world_arrays = values_to_high_level_objects(
+                *world_arrays, low_level_wcs=self
+            )
         return world_arrays
-
 
     def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
@@ -610,9 +682,18 @@ class WCS(GWCSAPIMixin):
             pixel_arrays = pixel_arrays[0]
         return pixel_arrays
 
-    def numerical_inverse(self, *args, tolerance=1e-5, maxiter=30, adaptive=True,
-                          detect_divergence=True, quiet=True, with_bounding_box=True,
-                          fill_value=np.nan, **kwargs):
+    def numerical_inverse(
+        self,
+        *args,
+        tolerance=1e-5,
+        maxiter=30,
+        adaptive=True,
+        detect_divergence=True,
+        quiet=True,
+        with_bounding_box=True,
+        fill_value=np.nan,
+        **kwargs,
+    ):
         """
         Invert coordinates from output frame to input frame using numerical
         inverse.
@@ -844,16 +925,20 @@ class WCS(GWCSAPIMixin):
 
         """
         if kwargs.pop("with_units", False):
-            raise ValueError("Support for with_units in numerical_inverse has been removed, use inverse")
+            raise ValueError(
+                "Support for with_units in numerical_inverse has been removed, use inverse"
+            )
 
         args_shape = np.shape(args)
         nargs = args_shape[0]
         arg_dim = len(args_shape) - 1
 
         if nargs != self.world_n_dim:
-            raise ValueError("Number of input coordinates is different from "
-                             "the number of defined world coordinates in the "
-                             f"WCS ({self.world_n_dim:d})")
+            raise ValueError(
+                "Number of input coordinates is different from "
+                "the number of defined world coordinates in the "
+                f"WCS ({self.world_n_dim:d})"
+            )
 
         if self.world_n_dim != self.pixel_n_dim:
             raise NotImplementedError(
@@ -879,16 +964,21 @@ class WCS(GWCSAPIMixin):
                 if not np.all(np.isfinite(x0)):
                     return [np.array(np.nan) for _ in range(nargs)]
 
-            result = tuple(self._vectorized_fixed_point(
-                x0, argsi,
-                tolerance=tolerance,
-                maxiter=maxiter,
-                adaptive=adaptive,
-                detect_divergence=detect_divergence,
-                quiet=quiet,
-                with_bounding_box=with_bounding_box,
-                fill_value=fill_value
-            ).T.ravel().tolist())
+            result = tuple(
+                self._vectorized_fixed_point(
+                    x0,
+                    argsi,
+                    tolerance=tolerance,
+                    maxiter=maxiter,
+                    adaptive=adaptive,
+                    detect_divergence=detect_divergence,
+                    quiet=quiet,
+                    with_bounding_box=with_bounding_box,
+                    fill_value=fill_value,
+                )
+                .T.ravel()
+                .tolist()
+            )
 
         else:
             arg_shape = args_shape[1:]
@@ -902,23 +992,33 @@ class WCS(GWCSAPIMixin):
                 x0 = np.array(self._approx_inverse(*args)).T
 
             result = self._vectorized_fixed_point(
-                x0, args.T,
+                x0,
+                args.T,
                 tolerance=tolerance,
                 maxiter=maxiter,
                 adaptive=adaptive,
                 detect_divergence=detect_divergence,
                 quiet=quiet,
                 with_bounding_box=with_bounding_box,
-                fill_value=fill_value
+                fill_value=fill_value,
             ).T
 
             result = tuple(np.reshape(result, args_shape))
 
         return result
 
-    def _vectorized_fixed_point(self, pix0, world, tolerance, maxiter,
-                                adaptive, detect_divergence, quiet,
-                                with_bounding_box, fill_value):
+    def _vectorized_fixed_point(
+        self,
+        pix0,
+        world,
+        tolerance,
+        maxiter,
+        adaptive,
+        detect_divergence,
+        quiet,
+        with_bounding_box,
+        fill_value,
+    ):
         # ############################################################
         # #            INITIALIZE ITERATIVE PROCESS:                ##
         # ############################################################
@@ -941,8 +1041,13 @@ class WCS(GWCSAPIMixin):
         l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))
         l3, phi3 = np.deg2rad(self.__call__(*(crpix + 0.5)))
         l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))
-        area = np.abs(0.5 * ((l4 - l2) * (np.sin(phi1) - np.sin(phi3)) +
-                             (l1 - l3) * (np.sin(phi2) - np.sin(phi4))))
+        area = np.abs(
+            0.5
+            * (
+                (l4 - l2) * (np.sin(phi1) - np.sin(phi3))
+                + (l1 - l3) * (np.sin(phi2) - np.sin(phi4))
+            )
+        )
         inv_pscale = 1 / np.rad2deg(np.sqrt(area))
 
         # form equation:
@@ -952,7 +1057,14 @@ class WCS(GWCSAPIMixin):
             return np.add(inv_pscale * dw, x)
 
         def froot(x):
-            return np.mod(np.subtract(self.__call__(*x, with_bounding_box=False), worldi) - 180.0, 360.0) - 180.0
+            return (
+                np.mod(
+                    np.subtract(self.__call__(*x, with_bounding_box=False), worldi)
+                    - 180.0,
+                    360.0,
+                )
+                - 180.0
+            )
 
         # compute correction:
         def correction(pix):
@@ -981,16 +1093,16 @@ class WCS(GWCSAPIMixin):
         inddiv = None
 
         # Turn off numpy runtime warnings for 'invalid' and 'over':
-        old_invalid = np.geterr()['invalid']
-        old_over = np.geterr()['over']
-        np.seterr(invalid='ignore', over='ignore')
+        old_invalid = np.geterr()["invalid"]
+        old_over = np.geterr()["over"]
+        np.seterr(invalid="ignore", over="ignore")
 
         # ############################################################
         # #                NON-ADAPTIVE ITERATIONS:                 ##
         # ############################################################
         if not adaptive:
             # Fixed-point iterations:
-            while (np.nanmax(dn) >= tol2 and k < maxiter):
+            while np.nanmax(dn) >= tol2 and k < maxiter:
                 # Find correction to the previous solution:
                 dpix = correction(pix)
 
@@ -1002,16 +1114,16 @@ class WCS(GWCSAPIMixin):
                 # scenario when successive approximations converge):
 
                 if detect_divergence:
-                    divergent = (dn >= dnprev)
+                    divergent = dn >= dnprev
                     if np.any(divergent):
                         # Find solutions that have not yet converged:
-                        slowconv = (dn >= tol2)
-                        inddiv, = np.where(divergent & slowconv)
+                        slowconv = dn >= tol2
+                        (inddiv,) = np.where(divergent & slowconv)
 
                         if inddiv.shape[0] > 0:
                             # Update indices of elements that
                             # still need correction:
-                            conv = (dn < dnprev)
+                            conv = dn < dnprev
                             iconv = np.where(conv)
 
                             # Apply correction:
@@ -1022,7 +1134,7 @@ class WCS(GWCSAPIMixin):
                             # For the next iteration choose
                             # non-divergent points that have not yet
                             # converged to the requested accuracy:
-                            ind, = np.where(slowconv & conv)
+                            (ind,) = np.where(slowconv & conv)
                             world = world[ind]
                             dnprev[ind] = dn[ind]
                             k += 1
@@ -1043,11 +1155,11 @@ class WCS(GWCSAPIMixin):
         # ############################################################
         if adaptive:
             if ind is None:
-                ind, = np.where(np.isfinite(pix).all(axis=1))
+                (ind,) = np.where(np.isfinite(pix).all(axis=1))
                 world = world[ind]
 
             # "Adaptive" fixed-point iterations:
-            while (ind.shape[0] > 0 and k < maxiter):
+            while ind.shape[0] > 0 and k < maxiter:
                 # Find correction to the previous solution:
                 dpixnew = correction(pix[ind])
 
@@ -1074,7 +1186,7 @@ class WCS(GWCSAPIMixin):
                     # Find indices of solutions that have not yet
                     # converged to the requested accuracy
                     # AND that do not diverge:
-                    subind, = np.where((dnnew >= tol2) & conv)
+                    (subind,) = np.where((dnnew >= tol2) & conv)
 
                 else:
                     # Apply correction:
@@ -1083,7 +1195,7 @@ class WCS(GWCSAPIMixin):
 
                     # Find indices of solutions that have not yet
                     # converged to the requested accuracy:
-                    subind, = np.where(dnnew >= tol2)
+                    (subind,) = np.where(dnnew >= tol2)
 
                 # Choose solutions that need more iterations:
                 ind = ind[subind]
@@ -1096,13 +1208,14 @@ class WCS(GWCSAPIMixin):
         # #         AND FAILED-TO-CONVERGE POINTS                   ##
         # ############################################################
         # Identify diverging and/or invalid points:
-        invalid = ((~np.all(np.isfinite(pix), axis=1)) &
-                   (np.all(np.isfinite(world0), axis=1)))
+        invalid = (~np.all(np.isfinite(pix), axis=1)) & (
+            np.all(np.isfinite(world0), axis=1)
+        )
 
         # When detect_divergence is False, dnprev is outdated
         # (it is the norm of the very first correction).
         # Still better than nothing...
-        inddiv, = np.where(((dn >= tol2) & (dn >= dnprev)) | invalid)
+        (inddiv,) = np.where(((dn >= tol2) & (dn >= dnprev)) | invalid)
         if inddiv.shape[0] == 0:
             inddiv = None
 
@@ -1115,13 +1228,13 @@ class WCS(GWCSAPIMixin):
                 result = optimize.root(
                     froot,
                     pix0[idx],
-                    method='hybr',
+                    method="hybr",
                     tol=tolerance / (np.linalg.norm(pix0[idx]) + 1),
-                    options={'maxfev': 2 * maxiter}
+                    options={"maxfev": 2 * maxiter},
                 )
 
-                if result['success']:
-                    pix[idx, :] = result['x']
+                if result["success"]:
+                    pix[idx, :] = result["x"]
                     invalid[idx] = False
                 else:
                     bad.append(idx)
@@ -1134,7 +1247,7 @@ class WCS(GWCSAPIMixin):
         # Identify points that did not converge within 'maxiter'
         # iterations:
         if k >= maxiter:
-            ind, = np.where((dn >= tol2) & (dn < dnprev) & (~invalid))
+            (ind,) = np.where((dn >= tol2) & (dn < dnprev) & (~invalid))
             if ind.shape[0] == 0:
                 ind = None
         else:
@@ -1152,18 +1265,25 @@ class WCS(GWCSAPIMixin):
                 raise NoConvergence(
                     "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy after {:d} "
-                    "iterations.".format(k), best_solution=pix,
-                    accuracy=np.abs(dpix), niter=k,
-                    slow_conv=ind, divergent=None)
+                    "iterations.".format(k),
+                    best_solution=pix,
+                    accuracy=np.abs(dpix),
+                    niter=k,
+                    slow_conv=ind,
+                    divergent=None,
+                )
             else:
                 raise NoConvergence(
                     "'WCS.numerical_inverse' failed to "
                     "converge to the requested accuracy.\n"
                     "After {:d} iterations, the solution is diverging "
-                    "at least for one input point."
-                    .format(k), best_solution=pix,
-                    accuracy=np.abs(dpix), niter=k,
-                    slow_conv=ind, divergent=inddiv)
+                    "at least for one input point.".format(k),
+                    best_solution=pix,
+                    accuracy=np.abs(dpix),
+                    niter=k,
+                    slow_conv=ind,
+                    divergent=inddiv,
+                )
 
         if with_bounding_box and self.bounding_box is not None:
             # find points outside the bounding box and replace their values
@@ -1210,7 +1330,9 @@ class WCS(GWCSAPIMixin):
         if backward and utils.is_high_level(*args, low_level_wcs=from_frame):
             args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
 
-        results = self._call_forward(*args, from_frame=from_frame, to_frame=to_frame, **kwargs)
+        results = self._call_forward(
+            *args, from_frame=from_frame, to_frame=to_frame, **kwargs
+        )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
@@ -1232,7 +1354,10 @@ class WCS(GWCSAPIMixin):
             {frame_name: frame_object or None}
         """
         if self._pipeline:
-            return [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline ]
+            return [
+                step.frame if isinstance(step.frame, str) else step.frame.name
+                for step in self._pipeline
+            ]
         else:
             return None
 
@@ -1286,35 +1411,47 @@ class WCS(GWCSAPIMixin):
         except CoordinateFrameError:
             input_index = None
             if input_frame_obj is None:
-                raise ValueError(f"New coordinate frame {input_name} must "
-                                 "be defined")
+                raise ValueError(
+                    f"New coordinate frame {input_name} must " "be defined"
+                )
         try:
             output_index = self._get_frame_index(output_frame)
         except CoordinateFrameError:
             output_index = None
             if output_frame_obj is None:
-                raise ValueError(f"New coordinate frame {output_name} must "
-                                 "be defined")
+                raise ValueError(
+                    f"New coordinate frame {output_name} must " "be defined"
+                )
 
         new_frames = [input_index, output_index].count(None)
         if new_frames == 0:
-            raise ValueError("Could not insert frame as both frames "
-                             f"{input_name} and {output_name} already exist")
+            raise ValueError(
+                "Could not insert frame as both frames "
+                f"{input_name} and {output_name} already exist"
+            )
         elif new_frames == 2:
-            raise ValueError("Could not insert frame as neither frame "
-                             f"{input_name} nor {output_name} exists")
+            raise ValueError(
+                "Could not insert frame as neither frame "
+                f"{input_name} nor {output_name} exists"
+            )
 
         if input_index is None:
-            self._pipeline = (self._pipeline[:output_index] +
-                              [Step(input_frame_obj, transform)] +
-                              self._pipeline[output_index:])
+            self._pipeline = (
+                self._pipeline[:output_index]
+                + [Step(input_frame_obj, transform)]
+                + self._pipeline[output_index:]
+            )
             super(WCS, self).__setattr__(input_name, input_frame_obj)
         else:
             split_step = self._pipeline[input_index]
-            self._pipeline = (self._pipeline[:input_index] +
-                              [Step(split_step.frame, transform),
-                               Step(output_frame_obj, split_step.transform)] +
-                              self._pipeline[input_index + 1:])
+            self._pipeline = (
+                self._pipeline[:input_index]
+                + [
+                    Step(split_step.frame, transform),
+                    Step(output_frame_obj, split_step.transform),
+                ]
+                + self._pipeline[input_index + 1 :]
+            )
             super(WCS, self).__setattr__(output_name, output_frame_obj)
 
     @property
@@ -1322,7 +1459,7 @@ class WCS(GWCSAPIMixin):
         """The unit of the coordinates in the output coordinate system."""
         if self._pipeline:
             try:
-                #return getattr(self, self._pipeline[-1][0].name).unit
+                # return getattr(self, self._pipeline[-1][0].name).unit
                 return self._pipeline[-1].frame.unit
             except AttributeError:
                 return None
@@ -1396,7 +1533,7 @@ class WCS(GWCSAPIMixin):
                 "The bounding_box was set in C order on the transform prior to being used in the gwcs!\n"
                 "Check that you intended that ordering for the bounding_box, and consider setting it in F order.\n"
                 "The bounding_box will remain meaning the same but will be converted to F order for consistency in the GWCS.",
-                GwcsBoundingBoxWarning
+                GwcsBoundingBoxWarning,
             )
             self.bounding_box = bb.bounding_box(order="F")
             bb = self.bounding_box
@@ -1424,9 +1561,9 @@ class WCS(GWCSAPIMixin):
             try:
                 # Make sure the dimensions of the new bbox are correct.
                 if isinstance(value, CompoundBoundingBox):
-                    bbox = CompoundBoundingBox.validate(transform_0, value, order='F')
+                    bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
                 else:
-                    bbox = Bbox.validate(transform_0, value, order='F')
+                    bbox = Bbox.validate(transform_0, value, order="F")
             except Exception:
                 raise
 
@@ -1438,8 +1575,9 @@ class WCS(GWCSAPIMixin):
         frames = self.available_frames
         transform_0 = self.get_transform(frames[0], frames[1])
 
-        self.bounding_box = CompoundBoundingBox.validate(transform_0, cbbox, selector_args=selector_args,
-                                                            order='F')
+        self.bounding_box = CompoundBoundingBox.validate(
+            transform_0, cbbox, selector_args=selector_args, order="F"
+        )
 
     def _get_axes_indices(self):
         try:
@@ -1454,7 +1592,7 @@ class WCS(GWCSAPIMixin):
 
         col1 = [step.frame for step in self._pipeline]
         col2 = []
-        for item in self._pipeline[: -1]:
+        for item in self._pipeline[:-1]:
             model = item.transform
             if model is None:
                 col2.append(None)
@@ -1463,12 +1601,13 @@ class WCS(GWCSAPIMixin):
             else:
                 col2.append(model.__class__.__name__)
         col2.append(None)
-        t = Table([col1, col2], names=['From', 'Transform'])
+        t = Table([col1, col2], names=["From", "Transform"])
         return str(t)
 
     def __repr__(self):
         fmt = "<WCS(output_frame={0}, input_frame={1}, forward_transform={2})>".format(
-            self.output_frame, self.input_frame, self.forward_transform)
+            self.output_frame, self.input_frame, self.forward_transform
+        )
         return fmt
 
     def footprint(self, bounding_box=None, center=False, axis_type="all"):
@@ -1493,14 +1632,21 @@ class WCS(GWCSAPIMixin):
             is clockwise, starting from the bottom left corner.
 
         """
+
         def _order_clockwise(v):
-            return np.asarray([[v[0][0], v[1][0]], [v[0][0], v[1][1]],
-                               [v[0][1], v[1][1]], [v[0][1], v[1][0]]]).T
+            return np.asarray(
+                [
+                    [v[0][0], v[1][0]],
+                    [v[0][0], v[1][1]],
+                    [v[0][1], v[1][1]],
+                    [v[0][1], v[1][0]],
+                ]
+            ).T
 
         if bounding_box is None:
             if self.bounding_box is None:
                 raise TypeError("Need a valid bounding_box to compute the footprint.")
-            bb = self.bounding_box.bounding_box(order='F')
+            bb = self.bounding_box.bounding_box(order="F")
         else:
             bb = bounding_box
 
@@ -1519,16 +1665,20 @@ class WCS(GWCSAPIMixin):
         if center:
             vertices = utils._toindex(vertices)
 
-        result = np.asarray(self.__call__(*vertices, **{'with_bounding_box': False}))
+        result = np.asarray(self.__call__(*vertices, **{"with_bounding_box": False}))
 
         axis_type = axis_type.lower()
-        if axis_type == 'spatial' and all_spatial:
+        if axis_type == "spatial" and all_spatial:
             return result.T
 
         if axis_type != "all":
-            axtyp_ind = np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
+            axtyp_ind = (
+                np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
+            )
             if not axtyp_ind.any():
-                raise ValueError('This WCS does not have axis of type "{}".'.format(axis_type))
+                raise ValueError(
+                    'This WCS does not have axis of type "{}".'.format(axis_type)
+                )
             if len(axtyp_ind) > 1:
                 result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
@@ -1570,10 +1720,18 @@ class WCS(GWCSAPIMixin):
         new_pipeline.extend(self.pipeline[1:])
         return self.__class__(new_pipeline)
 
-    def to_fits_sip(self, bounding_box=None, max_pix_error=0.25, degree=None,
-                    max_inv_pix_error=0.25, inv_degree=None,
-                    npoints=32, crpix=None, projection='TAN',
-                    verbose=False):
+    def to_fits_sip(
+        self,
+        bounding_box=None,
+        max_pix_error=0.25,
+        degree=None,
+        max_inv_pix_error=0.25,
+        inv_degree=None,
+        npoints=32,
+        crpix=None,
+        projection="TAN",
+        verbose=False,
+    ):
         """
         Construct a SIP-based approximation to the WCS for the axes
         corresponding to the `~gwcs.coordinate_frames.CelestialFrame`
@@ -1685,17 +1843,27 @@ class WCS(GWCSAPIMixin):
             npoints=npoints,
             crpix=crpix,
             projection=projection,
-            matrix_type='CD',
-            verbose=verbose
+            matrix_type="CD",
+            verbose=verbose,
         )
 
         return hdr
 
-    def _to_fits_sip(self, celestial_group, keep_axis_position,
-                     bounding_box, max_pix_error, degree,
-                     max_inv_pix_error, inv_degree,
-                     npoints, crpix, projection, matrix_type,
-                     verbose):
+    def _to_fits_sip(
+        self,
+        celestial_group,
+        keep_axis_position,
+        bounding_box,
+        max_pix_error,
+        degree,
+        max_inv_pix_error,
+        inv_degree,
+        npoints,
+        crpix,
+        projection,
+        matrix_type,
+        verbose,
+    ):
         r"""
         Construct a SIP-based approximation to the WCS for the axes
         corresponding to the `~gwcs.coordinate_frames.CelestialFrame`
@@ -1772,33 +1940,42 @@ class WCS(GWCSAPIMixin):
         if isinstance(matrix_type, str):
             matrix_type = matrix_type.upper()
 
-        if matrix_type not in ['CD', 'PC-CDELT1', 'PC-SUM1', 'PC-DET1', 'PC-SCALE']:
+        if matrix_type not in ["CD", "PC-CDELT1", "PC-SUM1", "PC-DET1", "PC-SCALE"]:
             raise ValueError(f"Unsupported 'matrix_type' value: {repr(matrix_type)}.")
 
         if npoints < 8:
-            raise ValueError("Number of sampling points is too small. 'npoints' must be >= 8.")
+            raise ValueError(
+                "Number of sampling points is too small. 'npoints' must be >= 8."
+            )
 
         if isinstance(projection, str):
             projection = projection.upper()
             try:
-                sky2pix_proj = getattr(projections, f'Sky2Pix_{projection}')(name=projection)
+                sky2pix_proj = getattr(projections, f"Sky2Pix_{projection}")(
+                    name=projection
+                )
             except AttributeError:
                 raise ValueError("Unsupported FITS WCS sky projection: {projection}")
 
         elif isinstance(projection, projections.Sky2PixProjection):
             sky2pix_proj = projection
             projection = projection.name
-            if not projection or not isinstance(projection, str) or len(projection) != 3:
+            if (
+                not projection
+                or not isinstance(projection, str)
+                or len(projection) != 3
+            ):
                 raise ValueError("Unsupported FITS WCS sky projection: {sky2pix_proj}")
             try:
-                getattr(projections, f'Sky2Pix_{projection}')()
+                getattr(projections, f"Sky2Pix_{projection}")()
             except AttributeError:
                 raise ValueError("Unsupported FITS WCS sky projection: {projection}")
 
         else:
             raise TypeError(
                 "'projection' must be either a FITS WCS string projection code "
-                "or an instance of astropy.modeling.projections.Pix2SkyProjection.")
+                "or an instance of astropy.modeling.projections.Pix2SkyProjection."
+            )
 
         frame = celestial_group[0].frame
 
@@ -1812,8 +1989,10 @@ class WCS(GWCSAPIMixin):
         input_axes = sorted(set(input_axes))
 
         if len(input_axes) != 2:
-            raise ValueError("Only CelestialFrame that correspond to two "
-                             "input axes are supported.")
+            raise ValueError(
+                "Only CelestialFrame that correspond to two "
+                "input axes are supported."
+            )
 
         # Axis number for FITS axes.
         # iax? - image axes; nlon, nlat - celestial axes:
@@ -1844,8 +2023,9 @@ class WCS(GWCSAPIMixin):
         # statement commented out immediately above.
         transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
 
-        transform = transform | Mapping((lon_axis, lat_axis),
-                                        n_inputs=self.forward_transform.n_outputs)
+        transform = transform | Mapping(
+            (lon_axis, lat_axis), n_inputs=self.forward_transform.n_outputs
+        )
 
         (xmin, xmax) = bounding_box[input_axes[0]]
         (ymin, ymax) = bounding_box[input_axes[1]]
@@ -1867,15 +2047,16 @@ class WCS(GWCSAPIMixin):
         # Now rotate to native system and deproject. Recall that transform
         # expects pixels in the original coordinate system, but the SIP
         # transform is relative to crpix coordinates, thus the initial shift.
-        ntransform = ((Shift(crpix1) & Shift(crpix2)) | transform
-                      | RotateCelestial2Native(lon, lat, 180)
-                      | sky2pix_proj)
+        ntransform = (
+            (Shift(crpix1) & Shift(crpix2))
+            | transform
+            | RotateCelestial2Native(lon, lat, 180)
+            | sky2pix_proj
+        )
 
         # standard sampling:
         u, v = _make_sampling_grid(
-            npoints,
-            tuple(bounding_box[k] for k in input_axes),
-            crpix=[crpix1, crpix2]
+            npoints, tuple(bounding_box[k] for k in input_axes), crpix=[crpix1, crpix2]
         )
         undist_x, undist_y = ntransform(u, v)
 
@@ -1883,7 +2064,7 @@ class WCS(GWCSAPIMixin):
         ud, vd = _make_sampling_grid(
             2 * npoints,
             tuple(bounding_box[k] for k in input_axes),
-            crpix=[crpix1, crpix2]
+            crpix=[crpix1, crpix2],
         )
         undist_xd, undist_yd = ntransform(ud, vd)
 
@@ -1899,21 +2080,31 @@ class WCS(GWCSAPIMixin):
         if verbose:
             print("\nFitting forward SIP ...")
         fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
-            degree, max_pix_error, plate_scale,
-            u, v, undist_x, undist_y,
-            ud, vd, undist_xd, undist_yd,
-            verbose=verbose
+            degree,
+            max_pix_error,
+            plate_scale,
+            u,
+            v,
+            undist_x,
+            undist_y,
+            ud,
+            vd,
+            undist_xd,
+            undist_yd,
+            verbose=verbose,
         )
 
         # The following is necessary to put the fit into the SIP formalism.
-        cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(fit_poly_x, fit_poly_y)
+        cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(
+            fit_poly_x, fit_poly_y
+        )
         # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
         #                   [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
         det = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
-        U = ( cdmat[1][1] * undist_x - cdmat[0][1] * undist_y) / det
+        U = (cdmat[1][1] * undist_x - cdmat[0][1] * undist_y) / det
         V = (-cdmat[1][0] * undist_x + cdmat[0][0] * undist_y) / det
         detd = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
-        Ud = ( cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
+        Ud = (cdmat[1][1] * undist_xd - cdmat[0][1] * undist_yd) / detd
         Vd = (-cdmat[1][0] * undist_xd + cdmat[0][0] * undist_yd) / detd
 
         if max_inv_pix_error:
@@ -1921,11 +2112,18 @@ class WCS(GWCSAPIMixin):
                 print("\nFitting inverse SIP ...")
             fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
                 inv_degree,
-                max_inv_pix_error, 1,
-                U, V, u-U, v-V,
-                Ud, Vd, ud-Ud, vd-Vd,
-                verbose=verbose
-        )
+                max_inv_pix_error,
+                1,
+                U,
+                V,
+                u - U,
+                v - V,
+                Ud,
+                Vd,
+                ud - Ud,
+                vd - Vd,
+                verbose=verbose,
+            )
 
         # create header with WCS info:
         w = celestial_frame_to_wcs(frame.reference_frame, projection=projection)
@@ -1936,68 +2134,68 @@ class WCS(GWCSAPIMixin):
         hdr = w.to_header(True)
 
         # data array info:
-        hdr.insert(0, ('NAXIS', 2, 'number of array dimensions'))
-        hdr.insert(1, (f'NAXIS{iax1:d}', int(xmax) + 1))
-        hdr.insert(2, (f'NAXIS{iax2:d}', int(ymax) + 1))
-        assert len(hdr['NAXIS*']) == 3
+        hdr.insert(0, ("NAXIS", 2, "number of array dimensions"))
+        hdr.insert(1, (f"NAXIS{iax1:d}", int(xmax) + 1))
+        hdr.insert(2, (f"NAXIS{iax2:d}", int(ymax) + 1))
+        assert len(hdr["NAXIS*"]) == 3
 
         # list of celestial axes related keywords:
-        cel_kwd = ['CRVAL', 'CTYPE', 'CUNIT']
+        cel_kwd = ["CRVAL", "CTYPE", "CUNIT"]
 
         # Add SIP info:
         if fit_poly_x.degree > 1:
-            mat_kind = 'CD'
+            mat_kind = "CD"
             # CDELT is not used with CD matrix (PC->CD later):
-            del hdr['CDELT?']
+            del hdr["CDELT?"]
 
-            hdr['CTYPE1'] = hdr['CTYPE1'].strip() + '-SIP'
-            hdr['CTYPE2'] = hdr['CTYPE2'].strip() + '-SIP'
-            hdr['A_ORDER'] = fit_poly_x.degree
-            hdr['B_ORDER'] = fit_poly_x.degree
-            _store_2D_coefficients(hdr, sip_poly_x, 'A')
-            _store_2D_coefficients(hdr, sip_poly_y, 'B')
-            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
+            hdr["CTYPE1"] = hdr["CTYPE1"].strip() + "-SIP"
+            hdr["CTYPE2"] = hdr["CTYPE2"].strip() + "-SIP"
+            hdr["A_ORDER"] = fit_poly_x.degree
+            hdr["B_ORDER"] = fit_poly_x.degree
+            _store_2D_coefficients(hdr, sip_poly_x, "A")
+            _store_2D_coefficients(hdr, sip_poly_y, "B")
+            hdr["sipmxerr"] = (max_resid, "Max diff from GWCS (equiv pix).")
 
             if max_inv_pix_error:
-                hdr['AP_ORDER'] = fit_inv_poly_u.degree
-                hdr['BP_ORDER'] = fit_inv_poly_u.degree
-                _store_2D_coefficients(hdr, fit_inv_poly_u, 'AP', keeplinear=True)
-                _store_2D_coefficients(hdr, fit_inv_poly_v, 'BP', keeplinear=True)
-                hdr['sipiverr'] = (max_inv_resid, 'Max diff for inverse (pixels)')
+                hdr["AP_ORDER"] = fit_inv_poly_u.degree
+                hdr["BP_ORDER"] = fit_inv_poly_u.degree
+                _store_2D_coefficients(hdr, fit_inv_poly_u, "AP", keeplinear=True)
+                _store_2D_coefficients(hdr, fit_inv_poly_v, "BP", keeplinear=True)
+                hdr["sipiverr"] = (max_inv_resid, "Max diff for inverse (pixels)")
 
         else:
-            if matrix_type.startswith('PC'):
-                mat_kind = 'PC'
-                cel_kwd.append('CDELT')
+            if matrix_type.startswith("PC"):
+                mat_kind = "PC"
+                cel_kwd.append("CDELT")
 
-                if matrix_type == 'PC-CDELT1':
+                if matrix_type == "PC-CDELT1":
                     cdelt = [1.0, 1.0]
 
-                elif matrix_type == 'PC-SUM1':
+                elif matrix_type == "PC-SUM1":
                     norm = np.sqrt(np.sum(w.wcs.pc**2))
                     cdelt = [norm, norm]
 
-                elif matrix_type == 'PC-DET1':
+                elif matrix_type == "PC-DET1":
                     det_pc = np.linalg.det(w.wcs.pc)
                     norm = np.sqrt(np.abs(det_pc))
                     cdelt = [norm, np.sign(det_pc) * norm]
 
-                elif matrix_type == 'PC-SCALE':
+                elif matrix_type == "PC-SCALE":
                     cdelt = proj_plane_pixel_scales(w)
 
                 for i in range(1, 3):
                     s = cdelt[i - 1]
-                    hdr[f'CDELT{i}'] = s
+                    hdr[f"CDELT{i}"] = s
                     for j in range(1, 3):
-                        pc_kwd = f'PC{i}_{j}'
+                        pc_kwd = f"PC{i}_{j}"
                         if pc_kwd in hdr:
                             hdr[pc_kwd] = w.wcs.pc[i - 1, j - 1] / s
 
             else:
-                mat_kind = 'CD'
-                del hdr['CDELT?']
+                mat_kind = "CD"
+                del hdr["CDELT?"]
 
-            hdr['sipmxerr'] = (max_resid, 'Max diff from GWCS (equiv pix).')
+            hdr["sipmxerr"] = (max_resid, "Max diff from GWCS (equiv pix).")
 
         # Construct CD matrix while remapping input axes.
         # We do not update comments to typical comments for CD matrix elements
@@ -2013,48 +2211,56 @@ class WCS(GWCSAPIMixin):
         # remap input axes:
         axis_rename = {}
         if iax1 != 1:
-            axis_rename['CRPIX1'] = f'CRPIX{iax1}'
+            axis_rename["CRPIX1"] = f"CRPIX{iax1}"
         if iax2 != 2:
-            axis_rename['CRPIX2'] = f'CRPIX{iax2}'
+            axis_rename["CRPIX2"] = f"CRPIX{iax2}"
 
         # CP/PC matrix:
-        axis_rename[f'PC{old_nlon}_1'] = f'{mat_kind}{nlon}_{iax1}'
-        axis_rename[f'PC{old_nlon}_2'] = f'{mat_kind}{nlon}_{iax2}'
-        axis_rename[f'PC{old_nlat}_1'] = f'{mat_kind}{nlat}_{iax1}'
-        axis_rename[f'PC{old_nlat}_2'] = f'{mat_kind}{nlat}_{iax2}'
+        axis_rename[f"PC{old_nlon}_1"] = f"{mat_kind}{nlon}_{iax1}"
+        axis_rename[f"PC{old_nlon}_2"] = f"{mat_kind}{nlon}_{iax2}"
+        axis_rename[f"PC{old_nlat}_1"] = f"{mat_kind}{nlat}_{iax1}"
+        axis_rename[f"PC{old_nlat}_2"] = f"{mat_kind}{nlat}_{iax2}"
 
         # remap celestial axes keywords:
         for kwd in cel_kwd:
             for iold, inew in [(1, nlon), (2, nlat)]:
                 if iold != inew:
-                    axis_rename[f'{kwd:s}{iold:d}'] = f'{kwd:s}{inew:d}'
+                    axis_rename[f"{kwd:s}{iold:d}"] = f"{kwd:s}{inew:d}"
 
         # construct new header cards with remapped axes:
         new_cards = []
         for c in hdr.cards:
             if c[0] in axis_rename:
-                c = fits.Card(keyword=axis_rename[c.keyword], value=c.value, comment=c.comment)
+                c = fits.Card(
+                    keyword=axis_rename[c.keyword], value=c.value, comment=c.comment
+                )
             new_cards.append(c)
 
         hdr = fits.Header(new_cards)
-        hdr['WCSAXES'] = 2
-        hdr.insert('WCSAXES', ('WCSNAME', f'{self.output_frame.name}'), after=True)
+        hdr["WCSAXES"] = 2
+        hdr.insert("WCSAXES", ("WCSNAME", f"{self.output_frame.name}"), after=True)
 
         # for PC matrix formalism, set diagonal elements to 0 if necessary
         # (by default, in PC formalism, diagonal matrix elements by default
         # are 0):
-        if mat_kind == 'PC':
+        if mat_kind == "PC":
             if nlon not in [iax1, iax2]:
                 hdr.insert(
-                    f'{mat_kind}{nlon}_{iax2}',
-                    (f'{mat_kind}{nlon}_{nlon}', 0.0,
-                     'Coordinate transformation matrix element')
+                    f"{mat_kind}{nlon}_{iax2}",
+                    (
+                        f"{mat_kind}{nlon}_{nlon}",
+                        0.0,
+                        "Coordinate transformation matrix element",
+                    ),
                 )
             if nlat not in [iax1, iax2]:
                 hdr.insert(
-                    f'{mat_kind}{nlat}_{iax2}',
-                    (f'{mat_kind}{nlat}_{nlat}', 0.0,
-                     'Coordinate transformation matrix element')
+                    f"{mat_kind}{nlat}_{iax2}",
+                    (
+                        f"{mat_kind}{nlat}_{nlat}",
+                        0.0,
+                        "Coordinate transformation matrix element",
+                    ),
                 )
 
         return hdr
@@ -2096,13 +2302,16 @@ class WCS(GWCSAPIMixin):
             ``detect_celestial`` is set to `True`.
 
         """
+
         def find_frame(axis_number):
             for frame in frames:
                 if axis_number in frame.axes_order:
                     return frame
             else:
-                raise RuntimeError("Encountered an output axes that does not "
-                                   "belong to any output coordinate frames.")
+                raise RuntimeError(
+                    "Encountered an output axes that does not "
+                    "belong to any output coordinate frames."
+                )
 
         # use correlation matrix to find separable axes:
         corr_mat = self.axis_correlation_matrix
@@ -2141,9 +2350,12 @@ class WCS(GWCSAPIMixin):
             s = sorted(s)
             frame = find_frame(s[0])
 
-            celestial = (detect_celestial and len(s) == 2 and
-                         len(frame.axes_order) == 2 and
-                         isinstance(frame, cf.CelestialFrame))
+            celestial = (
+                detect_celestial
+                and len(s) == 2
+                and len(frame.axes_order) == 2
+                and isinstance(frame, cf.CelestialFrame)
+            )
 
             for axno in s:
                 if axno not in frame.axes_order:
@@ -2157,9 +2369,9 @@ class WCS(GWCSAPIMixin):
                     axis=axno,
                     frame=frame,
                     world_axis_order=self.output_frame.axes_order.index(axno),
-                    cunit=frame.unit[fidx].to_string('fits', fraction=True).upper(),
+                    cunit=frame.unit[fidx].to_string("fits", fraction=True).upper(),
                     ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
-                    input_axes=mapping[axno]
+                    input_axes=mapping[axno],
                 )
                 axis_info_group.append(axis_info)
                 input_axes.extend(mapping[axno])
@@ -2171,23 +2383,36 @@ class WCS(GWCSAPIMixin):
                 axes_groups.append(axis_info_group)
 
         # sanity check:
-        input_axes = set(sum((ax.input_axes for ax in world_axes),
-                             world_axes[0].input_axes.__class__()))
+        input_axes = set(
+            sum(
+                (ax.input_axes for ax in world_axes),
+                world_axes[0].input_axes.__class__(),
+            )
+        )
         n_inputs = len(input_axes)
 
-        if (n_inputs != self.pixel_n_dim or
-            max(input_axes) + 1 != n_inputs or
-            min(input_axes) < 0):
-            raise ValueError("Input axes indices are inconsistent with the "
-                             "forward transformation.")
+        if (
+            n_inputs != self.pixel_n_dim
+            or max(input_axes) + 1 != n_inputs
+            or min(input_axes) < 0
+        ):
+            raise ValueError(
+                "Input axes indices are inconsistent with the "
+                "forward transformation."
+            )
 
         if detect_celestial:
             return axes_groups, world_axes, celestial_group
         else:
             return axes_groups, world_axes
 
-    def to_fits_tab(self, bounding_box=None, bin_ext_name='WCS-TABLE',
-                    coord_col_name='coordinates', sampling=1):
+    def to_fits_tab(
+        self,
+        bounding_box=None,
+        bin_ext_name="WCS-TABLE",
+        coord_col_name="coordinates",
+        sampling=1,
+    ):
         """
         Construct a FITS WCS ``-TAB``-based approximation to the WCS
         in the form of a FITS header and a binary table extension. For the
@@ -2251,9 +2476,7 @@ class WCS(GWCSAPIMixin):
         """
         if bounding_box is None:
             if self.bounding_box is None:
-                raise ValueError(
-                    "Need a valid bounding_box to compute the footprint."
-                )
+                raise ValueError("Need a valid bounding_box to compute the footprint.")
             bounding_box = self.bounding_box
 
         else:
@@ -2272,10 +2495,12 @@ class WCS(GWCSAPIMixin):
             )
 
         try:
-            sampling = np.broadcast_to(sampling, (self.pixel_n_dim, ))
+            sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
         except ValueError:
-            raise ValueError("Number of sampling values either must be 1 "
-                             "or it must match the number of pixel axes.")
+            raise ValueError(
+                "Number of sampling values either must be 1 "
+                "or it must match the number of pixel axes."
+            )
 
         _, world_axes = self._separable_groups(detect_celestial=False)
 
@@ -2286,15 +2511,26 @@ class WCS(GWCSAPIMixin):
             bounding_box=bounding_box,
             bin_ext=bin_ext_name,
             coord_col_name=coord_col_name,
-            sampling=sampling
+            sampling=sampling,
         )
 
         return hdr, bin_table_hdu
 
-    def to_fits(self, bounding_box=None, max_pix_error=0.25, degree=None,
-                max_inv_pix_error=0.25, inv_degree=None, npoints=32,
-                crpix=None, projection='TAN', bin_ext_name='WCS-TABLE',
-                coord_col_name='coordinates', sampling=1, verbose=False):
+    def to_fits(
+        self,
+        bounding_box=None,
+        max_pix_error=0.25,
+        degree=None,
+        max_inv_pix_error=0.25,
+        inv_degree=None,
+        npoints=32,
+        crpix=None,
+        projection="TAN",
+        bin_ext_name="WCS-TABLE",
+        coord_col_name="coordinates",
+        sampling=1,
+        verbose=False,
+    ):
         """
         Construct a FITS WCS ``-TAB``-based approximation to the WCS
         in the form of a FITS header and a binary table extension. For the
@@ -2432,9 +2668,7 @@ class WCS(GWCSAPIMixin):
         """
         if bounding_box is None:
             if self.bounding_box is None:
-                raise ValueError(
-                    "Need a valid bounding_box to compute the footprint."
-                )
+                raise ValueError("Need a valid bounding_box to compute the footprint.")
             bounding_box = self.bounding_box
 
         else:
@@ -2453,10 +2687,12 @@ class WCS(GWCSAPIMixin):
             )
 
         try:
-            sampling = np.broadcast_to(sampling, (self.pixel_n_dim, ))
+            sampling = np.broadcast_to(sampling, (self.pixel_n_dim,))
         except ValueError:
-            raise ValueError("Number of sampling values either must be 1 "
-                             "or it must match the number of pixel axes.")
+            raise ValueError(
+                "Number of sampling values either must be 1 "
+                "or it must match the number of pixel axes."
+            )
 
         world_axes_groups, _, celestial_group = self._separable_groups(
             detect_celestial=True
@@ -2490,16 +2726,16 @@ class WCS(GWCSAPIMixin):
                 npoints=npoints,
                 crpix=crpix,
                 projection=projection,
-                matrix_type='PC-CDELT1',
-                verbose=verbose
+                matrix_type="PC-CDELT1",
+                verbose=verbose,
             )
-            use_cd = 'A_ORDER' in hdr
+            use_cd = "A_ORDER" in hdr
 
         else:
             use_cd = False
             hdr = fits.Header()
-            hdr['NAXIS'] = 0
-            hdr['WCSAXES'] = 0
+            hdr["NAXIS"] = 0
+            hdr["WCSAXES"] = 0
 
         # now handle non-celestial axes using -TAB convention for each
         # separable axes group:
@@ -2515,17 +2751,24 @@ class WCS(GWCSAPIMixin):
                 bounding_box=bounding_box,
                 bin_ext=(bin_ext_name, extver0 + 1),
                 coord_col_name=coord_col_name,
-                sampling=sampling
+                sampling=sampling,
             )
             hdulist.append(bin_table_hdu)
 
-        hdr.add_comment('FITS WCS created by approximating a gWCS')
+        hdr.add_comment("FITS WCS created by approximating a gWCS")
 
         return hdr, hdulist
 
-
-    def _to_fits_tab(self, hdr, world_axes_group, use_cd, bounding_box,
-                     bin_ext, coord_col_name, sampling):
+    def _to_fits_tab(
+        self,
+        hdr,
+        world_axes_group,
+        use_cd,
+        bounding_box,
+        bin_ext,
+        coord_col_name,
+        sampling,
+    ):
         """
         Construct a FITS WCS ``-TAB``-based approximation to the WCS
         in the form of a FITS header and a binary table extension. For the
@@ -2616,11 +2859,11 @@ class WCS(GWCSAPIMixin):
             bin_ext = (bin_ext, 1)
 
         if isinstance(bounding_box, Bbox):
-            bounding_box = bounding_box.bounding_box(order='F')
+            bounding_box = bounding_box.bounding_box(order="F")
         if isinstance(bounding_box, list):
             for index, bbox in enumerate(bounding_box):
                 if isinstance(bbox, Bbox):
-                    bounding_box[index] = bbox.bounding_box(order='F')
+                    bounding_box[index] = bbox.bounding_box(order="F")
 
         # identify input axes:
         input_axes = []
@@ -2636,33 +2879,35 @@ class WCS(GWCSAPIMixin):
         # Create initial header and deal with non-degenerate axes
         if hdr is None:
             hdr = fits.Header()
-            hdr['NAXIS'] = n_inputs, 'number of array dimensions'
-            hdr['WCSAXES'] = n_outputs
-            hdr.insert('WCSAXES', ('WCSNAME', f'{self.output_frame.name}'), after=True)
+            hdr["NAXIS"] = n_inputs, "number of array dimensions"
+            hdr["WCSAXES"] = n_outputs
+            hdr.insert("WCSAXES", ("WCSNAME", f"{self.output_frame.name}"), after=True)
 
         else:
-            hdr['NAXIS'] += n_inputs
-            hdr['WCSAXES'] += n_outputs
+            hdr["NAXIS"] += n_inputs
+            hdr["WCSAXES"] += n_outputs
 
         # see what axes have been already populated in the header:
         used_hdr_axes = []
-        for v in hdr['naxis*'].keys():
+        for v in hdr["naxis*"].keys():
             try:
-                used_hdr_axes.append(int(v.split('NAXIS')[1]) - 1)
+                used_hdr_axes.append(int(v.split("NAXIS")[1]) - 1)
             except ValueError:
                 continue
 
         degenerate_axis_start = max(
-            self.pixel_n_dim + 1,
-            max(used_hdr_axes) + 1 if used_hdr_axes else 1
+            self.pixel_n_dim + 1, max(used_hdr_axes) + 1 if used_hdr_axes else 1
         )
 
         # Deal with non-degenerate axes and add NAXISi to the header:
-        offset = hdr.index('NAXIS')
+        offset = hdr.index("NAXIS")
 
         for iax in input_axes:
             iiax = int(np.searchsorted(used_hdr_axes, iax))
-            hdr.insert(iiax + offset + 1, (f'NAXIS{iax + 1:d}', int(max(bounding_box[iiax])) + 1))
+            hdr.insert(
+                iiax + offset + 1,
+                (f"NAXIS{iax + 1:d}", int(max(bounding_box[iiax])) + 1),
+            )
 
         # 1D grid coordinates:
         gcrds = []
@@ -2682,20 +2927,18 @@ class WCS(GWCSAPIMixin):
         }
 
         transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
-        transform = transform | Mapping(world_axes_idx,
-                                        n_inputs=self.forward_transform.n_outputs)
+        transform = transform | Mapping(
+            world_axes_idx, n_inputs=self.forward_transform.n_outputs
+        )
 
-        xyz = np.meshgrid(*gcrds[::-1], indexing='ij')[::-1]
+        xyz = np.meshgrid(*gcrds[::-1], indexing="ij")[::-1]
 
         shape = xyz[0].shape
         xyz = [v.ravel() for v in xyz]
 
-        coord = np.stack(
-            transform(*xyz),
-            axis=-1
-        )
+        coord = np.stack(transform(*xyz), axis=-1)
 
-        coord = coord.reshape(shape + (len(world_axes_group), ))
+        coord = coord.reshape(shape + (len(world_axes_group),))
 
         # create header with WCS info:
         if hdr is None:
@@ -2709,36 +2952,36 @@ class WCS(GWCSAPIMixin):
             if len(ct) > 4:
                 raise ValueError("Axis type name too long.")
 
-            hdr[f'CTYPE{k1:d}'] = ct + (4 - len(ct)) * '-' + '-TAB'
-            hdr[f'CUNIT{k1:d}'] = self.world_axis_units[k]
-            hdr[f'PS{k1:d}_0'] = bin_ext[0]
-            hdr[f'PV{k1:d}_1'] = bin_ext[1]
-            hdr[f'PS{k1:d}_1'] = coord_col_name
-            hdr[f'PV{k1:d}_3'] = widx + 1
-            hdr[f'CRVAL{k1:d}'] = 1
+            hdr[f"CTYPE{k1:d}"] = ct + (4 - len(ct)) * "-" + "-TAB"
+            hdr[f"CUNIT{k1:d}"] = self.world_axis_units[k]
+            hdr[f"PS{k1:d}_0"] = bin_ext[0]
+            hdr[f"PV{k1:d}_1"] = bin_ext[1]
+            hdr[f"PS{k1:d}_1"] = coord_col_name
+            hdr[f"PV{k1:d}_3"] = widx + 1
+            hdr[f"CRVAL{k1:d}"] = 1
 
             if widx < n_inputs:
                 m1 = input_axes[widx] + 1
-                hdr[f'CRPIX{m1:d}'] = gcrds[widx][0] + 1
+                hdr[f"CRPIX{m1:d}"] = gcrds[widx][0] + 1
                 if use_cd:
-                    hdr[f'CD{k1:d}_{m1:d}'] = cdelt[widx]
+                    hdr[f"CD{k1:d}_{m1:d}"] = cdelt[widx]
                 else:
                     if k1 != m1:
-                        hdr[f'PC{k1:d}_{k1:d}'] = 0.0
-                    hdr[f'PC{k1:d}_{m1:d}'] = 1.0
-                    hdr[f'CDELT{k1:d}'] = cdelt[widx]
+                        hdr[f"PC{k1:d}_{k1:d}"] = 0.0
+                    hdr[f"PC{k1:d}_{m1:d}"] = 1.0
+                    hdr[f"CDELT{k1:d}"] = cdelt[widx]
             else:
                 m1 = degenerate_axis_start
                 degenerate_axis_start += 1
 
-                hdr[f'CRPIX{m1:d}'] = 1
+                hdr[f"CRPIX{m1:d}"] = 1
                 if use_cd:
-                    hdr[f'CD{k1:d}_{m1:d}'] = 1.0
+                    hdr[f"CD{k1:d}_{m1:d}"] = 1.0
                 else:
                     if k1 != m1:
-                        hdr[f'PC{k1:d}_{k1:d}'] = 0.0
-                    hdr[f'PC{k1:d}_{m1:d}'] = 1.0
-                    hdr[f'CDELT{k1:d}'] = 1
+                        hdr[f"PC{k1:d}_{k1:d}"] = 0.0
+                    hdr[f"PC{k1:d}_{m1:d}"] = 1.0
+                    hdr[f"CDELT{k1:d}"] = 1
 
                 # Uncomment 3 lines below to enable use of degenerate axes:
                 # hdr['NAXIS'] = hdr['NAXIS'] + 1
@@ -2750,10 +2993,10 @@ class WCS(GWCSAPIMixin):
 
         # structured array (data) for binary table HDU:
         arr = np.array(
-            [(coord, )],
+            [(coord,)],
             dtype=[
                 (coord_col_name, np.float64, coord.shape),
-            ]
+            ],
         )
 
         # create binary table HDU:
@@ -2770,8 +3013,9 @@ class WCS(GWCSAPIMixin):
 
         try:
             # try to use analytic inverse if available:
-            self._approx_inverse = functools.partial(self.backward_transform,
-                                                     with_bounding_box=False)
+            self._approx_inverse = functools.partial(
+                self.backward_transform, with_bounding_box=False
+            )
             return
         except (NotImplementedError, KeyError):
             pass
@@ -2793,9 +3037,12 @@ class WCS(GWCSAPIMixin):
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
-        ntransform = ((Shift(crpix[0]) & Shift(crpix[1])) | self.forward_transform
-                      | RotateCelestial2Native(crval1, crval2, 180)
-                      | Sky2Pix_TAN())
+        ntransform = (
+            (Shift(crpix[0]) & Shift(crpix[1]))
+            | self.forward_transform
+            | RotateCelestial2Native(crval1, crval2, 180)
+            | Sky2Pix_TAN()
+        )
 
         # standard sampling:
         u, v = _make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
@@ -2807,16 +3054,26 @@ class WCS(GWCSAPIMixin):
 
         fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
             None,
-            max_inv_pix_error, 1,
-            undist_x, undist_y, u, v,
-            undist_xd, undist_yd, ud, vd,
-            verbose=True
+            max_inv_pix_error,
+            1,
+            undist_x,
+            undist_y,
+            u,
+            v,
+            undist_xd,
+            undist_yd,
+            ud,
+            vd,
+            verbose=True,
         )
 
-        self._approx_inverse = (RotateCelestial2Native(crval1, crval2, 180) |
-                                Sky2Pix_TAN() | Mapping((0, 1, 0, 1)) |
-                                (fit_inv_poly_u & fit_inv_poly_v) |
-                                (Shift(crpix[0]) & Shift(crpix[1])))
+        self._approx_inverse = (
+            RotateCelestial2Native(crval1, crval2, 180)
+            | Sky2Pix_TAN()
+            | Mapping((0, 1, 0, 1))
+            | (fit_inv_poly_u & fit_inv_poly_v)
+            | (Shift(crpix[0]) & Shift(crpix[1]))
+        )
 
 
 def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
@@ -2835,8 +3092,7 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
     #    on the same coordinate grid in _fit_2D_poly by reusing computed
     #    powers.
     powers = [
-        (i, j)
-        for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
+        (i, j) for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
     ]
     if coord_pow is None:
         coord_pow = {}
@@ -2892,7 +3148,7 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
             a[j, i] = a[i, j]
 
     with warnings.catch_warnings(record=True):
-        warnings.simplefilter('error', category=linalg.LinAlgWarning)
+        warnings.simplefilter("error", category=linalg.LinAlgWarning)
         try:
             lu_piv = linalg.lu_factor(a)
             poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
@@ -2912,16 +3168,26 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
     fitx = np.dot(pseudo_vander, poly_coeff_x)
     fity = np.dot(pseudo_vander, poly_coeff_y)
 
-    dist = np.sqrt((xout - fitx)**2 + (yout - fity)**2)
+    dist = np.sqrt((xout - fitx) ** 2 + (yout - fity) ** 2)
     max_resid = dist.max()
 
     return poly_coeff_x, poly_coeff_y, max_resid, powers, cond
 
 
-def _fit_2D_poly(degree, max_error, plate_scale,
-                 xin, yin, xout, yout,
-                 xind, yind, xoutd, youtd,
-                 verbose=False):
+def _fit_2D_poly(
+    degree,
+    max_error,
+    plate_scale,
+    xin,
+    yin,
+    xout,
+    yout,
+    xind,
+    yind,
+    xoutd,
+    youtd,
+    verbose=False,
+):
     """
     Fit a pair of ordinary 2D polynomials to the supplied transform.
 
@@ -2929,7 +3195,7 @@ def _fit_2D_poly(degree, max_error, plate_scale,
     # The case of one pass with the specified polynomial degree
     if degree is None:
         deglist = list(range(1, 10))
-    elif hasattr(degree, '__iter__'):
+    elif hasattr(degree, "__iter__"):
         deglist = sorted(map(int, degree))
         if deglist[0] < 1 or deglist[-1] > 9:
             raise ValueError("Allowed values for SIP degree are [1...9]")
@@ -2943,7 +3209,7 @@ def _fit_2D_poly(degree, max_error, plate_scale,
 
     fit_error = np.inf
     if verbose and not single_degree:
-        print(f'Maximum specified SIP approximation error: {max_error}')
+        print(f"Maximum specified SIP approximation error: {max_error}")
     max_error *= plate_scale
 
     fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
@@ -2999,8 +3265,8 @@ def _fit_2D_poly(degree, max_error, plate_scale,
     fit_poly_x = Polynomial2D(degree=deg, c0_0=0.0)
     fit_poly_y = Polynomial2D(degree=deg, c0_0=0.0)
     for cx, cy, (p, q) in zip(cfx, cfy, powers):
-        setattr(fit_poly_x, f'c{p:1d}_{q:1d}', cx)
-        setattr(fit_poly_y, f'c{p:1d}_{q:1d}', cy)
+        setattr(fit_poly_x, f"c{p:1d}_{q:1d}", cx)
+        setattr(fit_poly_y, f"c{p:1d}_{q:1d}", cy)
 
     if fit_warning_msg:
         warnings.warn(fit_warning_msg, linalg.LinAlgWarning)
@@ -3008,10 +3274,7 @@ def _fit_2D_poly(degree, max_error, plate_scale,
     if fit_error <= max_error or single_degree:
         # Check to see if double sampling meets error requirement.
         max_resid = _compute_distance_residual(
-            xoutd,
-            youtd,
-            fit_poly_x(xind, yind),
-            fit_poly_y(xind, yind)
+            xoutd, youtd, fit_poly_x(xind, yind), fit_poly_y(xind, yind)
         )
         if verbose:
             print(
@@ -3032,9 +3295,7 @@ def _fit_2D_poly(degree, max_error, plate_scale,
 
     if verbose:
         if single_degree:
-            print(
-                f"Maximum residual: {fit_error / plate_scale:.5g}"
-            )
+            print(f"Maximum residual: {fit_error / plate_scale:.5g}")
         else:
             print(
                 f"* Final SIP degree: {deg}. "
@@ -3055,7 +3316,7 @@ def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
     """
     Compute the distance residuals and return the rms and maximum values.
     """
-    dist = np.sqrt((undist_x - fit_poly_x)**2 + (undist_y - fit_poly_y)**2)
+    dist = np.sqrt((undist_x - fit_poly_x) ** 2 + (undist_y - fit_poly_y) ** 2)
     max_resid = dist.max()
     return max_resid
 
@@ -3088,11 +3349,11 @@ def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
     for i in range(0, degree + 1):
         for j in range(0, degree + 1):
             if (i + j > 1) and (i + j < degree + 1):
-                old_x = getattr(fit_poly_x, f'c{i}_{j}').value
-                old_y = getattr(fit_poly_y, f'c{i}_{j}').value
+                old_x = getattr(fit_poly_x, f"c{i}_{j}").value
+                old_y = getattr(fit_poly_y, f"c{i}_{j}").value
                 newcoeff = np.dot(invcdmat, np.array([[old_x], [old_y]]))
-                setattr(sip_poly_x, f'c{i}_{j}', newcoeff[0, 0])
-                setattr(sip_poly_y, f'c{i}_{j}', newcoeff[1, 0])
+                setattr(sip_poly_x, f"c{i}_{j}", newcoeff[0, 0])
+                setattr(sip_poly_y, f"c{i}_{j}", newcoeff[1, 0])
 
     return cdmat, sip_poly_x, sip_poly_y
 
@@ -3106,7 +3367,7 @@ def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
     for i in range(0, degree + 1):
         for j in range(0, degree + 1):
             if (i + j) > mindeg and (i + j < degree + 1):
-                hdr[f'{coeff_prefix}_{i}_{j}'] = getattr(poly_model, f'c{i}_{j}').value
+                hdr[f"{coeff_prefix}_{i}_{j}"] = getattr(poly_model, f"c{i}_{j}").value
 
 
 def _fix_transform_inputs(transform, inputs):
@@ -3125,10 +3386,7 @@ def _fix_transform_inputs(transform, inputs):
             c = 0 if c is None else (c + 1)
             mapping.append(c)
 
-    in_selector = Mapping(
-        mapping,
-        n_inputs = transform.n_inputs - len(inputs)
-    )
+    in_selector = Mapping(mapping, n_inputs=transform.n_inputs - len(inputs))
 
     input_fixer = Const1D(inputs[0]) if 0 in inputs else Identity(1)
     for k in range(1, transform.n_inputs):
@@ -3151,6 +3409,7 @@ class Step:
         A transform from this step's frame to next step's frame.
         The transform of the last step should be `None`.
     """
+
     def __init__(self, frame, transform=None):
         self.frame = frame
         self.transform = transform
@@ -3162,7 +3421,9 @@ class Step:
     @frame.setter
     def frame(self, val):
         if not isinstance(val, (cf.CoordinateFrame, str)):
-            raise TypeError('"frame" should be an instance of CoordinateFrame or a string.')
+            raise TypeError(
+                '"frame" should be an instance of CoordinateFrame or a string.'
+            )
 
         self._frame = val
 
@@ -3173,7 +3434,9 @@ class Step:
     @transform.setter
     def transform(self, val):
         if val is not None and not isinstance(val, (Model)):
-            raise TypeError('"transform" should be an instance of astropy.modeling.Model.')
+            raise TypeError(
+                '"transform" should be an instance of astropy.modeling.Model.'
+            )
         self._transform = val
 
     @property
@@ -3183,8 +3446,11 @@ class Step:
         return self.frame.name
 
     def __getitem__(self, ind):
-        warnings.warn("Indexing a WCS.pipeline step is deprecated. "
-                      "Use the `frame` and `transform` attributes instead.", DeprecationWarning)
+        warnings.warn(
+            "Indexing a WCS.pipeline step is deprecated. "
+            "Use the `frame` and `transform` attributes instead.",
+            DeprecationWarning,
+        )
         if ind not in (0, 1):
             raise IndexError("Allowed inices are 0 (frame) and 1 (transform).")
         if ind == 0:

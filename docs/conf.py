@@ -39,7 +39,9 @@ import importlib.metadata
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
-    print('ERROR: the documentation requires the sphinx-astropy package to be installed')
+    print(
+        "ERROR: the documentation requires the sphinx-astropy package to be installed"
+    )
     sys.exit(1)
 
 # -- General configuration ----------------------------------------------------
@@ -53,7 +55,7 @@ except ImportError:
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns.append('_templates')  # noqa: F405
+exclude_patterns.append("_templates")  # noqa: F405
 
 # This is added to the end of RST files - a good place to put substitutions to
 # be used globally.
@@ -61,12 +63,14 @@ rst_epilog += """
 """  # noqa: F405
 
 # Top-level directory containing ASDF schemas (relative to current directory)
-asdf_schema_path = '../gwcs/schemas'
+asdf_schema_path = "../gwcs/schemas"
 # This is the prefix common to all schema IDs in this repository
-asdf_schema_standard_prefix = 'stsci.edu/gwcs'
+asdf_schema_standard_prefix = "stsci.edu/gwcs"
 asdf_schema_reference_mappings = [
-    ('tag:stsci.edu:asdf',
-     'http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/'),
+    (
+        "tag:stsci.edu:asdf",
+        "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
+    ),
 ]
 
 # -- Project information ------------------------------------------------------
@@ -74,10 +78,10 @@ asdf_schema_reference_mappings = [
 # This does not *have* to match the package name, but typically does
 with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as metadata_file:
     configuration = tomllib.load(metadata_file)
-    metadata = configuration['project']
-project = metadata['name']
+    metadata = configuration["project"]
+project = metadata["name"]
 author = metadata["authors"][0]["name"]
-copyright = f'{datetime.now().year}, {author}'
+copyright = f"{datetime.now().year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -85,7 +89,7 @@ copyright = f'{datetime.now().year}, {author}'
 
 release = importlib.metadata.version(project)
 # for example take major/minor
-version = '.'.join(release.split('.')[:2])
+version = ".".join(release.split(".")[:2])
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -108,9 +112,9 @@ version = '.'.join(release.split('.')[:2])
 # See sphinx-bootstrap-theme for documentation of these options
 # https://github.com/ryan-roemer/sphinx-bootstrap-theme
 html_theme_options = {
-    'logotext1': 'g',  # white,  semi-bold
-    'logotext2': 'wcs',  # orange, light
-    'logotext3': ':docs'  # white,  light
+    "logotext1": "g",  # white,  semi-bold
+    "logotext2": "wcs",  # orange, light
+    "logotext3": ":docs",  # white,  light
 }
 
 # Custom sidebar templates, maps document names to template names.
@@ -127,10 +131,10 @@ html_theme_options = {
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = '{0} v{1}'.format(project, release)
+html_title = "{0} v{1}".format(project, release)
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = project + 'doc'
+htmlhelp_basename = project + "doc"
 
 # -- Options for LaTeX output --------------------------------------------------
 
@@ -144,17 +148,16 @@ htmlhelp_basename = project + 'doc'
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [('index', project.lower(), project + u' Documentation',
-              [author], 1)]
+man_pages = [("index", project.lower(), project + " Documentation", [author], 1)]
 
-sys.path.insert(0, str(Path(__file__).parent / 'sphinxext'))
-extensions += ['sphinx_asdf']  # noqa: F405
+sys.path.insert(0, str(Path(__file__).parent / "sphinxext"))
+extensions += ["sphinx_asdf"]  # noqa: F405
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True
 nitpick_ignore = [
-    ('py:class', 'gwcs.api.GWCSAPIMixin'),
-    ('py:obj', 'astropy.modeling.projections.projcodes'),
-    ('py:attr', 'gwcs.WCS.bounding_box'),
-    ('py:meth', 'gwcs.WCS.footprint')
+    ("py:class", "gwcs.api.GWCSAPIMixin"),
+    ("py:obj", "astropy.modeling.projections.projcodes"),
+    ("py:attr", "gwcs.WCS.bounding_box"),
+    ("py:meth", "gwcs.WCS.footprint"),
 ]

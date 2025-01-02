@@ -1,6 +1,7 @@
 """
 This file contains a set of pytest fixtures which are different gwcses for testing.
 """
+
 import pytest
 
 from .. import examples
@@ -30,6 +31,7 @@ def gwcs_1d_freq():
 @pytest.fixture
 def gwcs_3d_spatial_wave():
     return examples.gwcs_3d_spatial_wave()
+
 
 @pytest.fixture
 def gwcs_2d_shift_scale():
@@ -93,8 +95,8 @@ def sellmeier_zemax():
 
 @pytest.fixture(scope="function")
 def gwcs_3d_galactic_spectral():
-
     return examples.gwcs_3d_galactic_spectral()
+
 
 @pytest.fixture(scope="function")
 def gwcs_1d_spectral():
@@ -111,8 +113,10 @@ def gwcs_spec_cel_time_4d():
     params=[
         (2, 1, 0),
         (2, 0, 1),
-        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
-    ]
+        pytest.param(
+            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
+        ),
+    ],
 )
 def gwcs_cube_with_separable_spectral(request):
     axes_order = request.param
@@ -124,9 +128,13 @@ def gwcs_cube_with_separable_spectral(request):
     params=[
         (2, 0, 1),
         (2, 1, 0),
-        pytest.param((0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")),
-        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
-    ]
+        pytest.param(
+            (0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")
+        ),
+        pytest.param(
+            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
+        ),
+    ],
 )
 def gwcs_cube_with_separable_time(request):
     axes_order = request.param

@@ -8,7 +8,10 @@ import gwcs.extension
 import pytest
 
 
-@pytest.mark.skipif(asdf_wcs_schemas.__version__ < "0.2.0", reason="version 0.2 provides the new manifests")
+@pytest.mark.skipif(
+    asdf_wcs_schemas.__version__ < "0.2.0",
+    reason="version 0.2 provides the new manifests",
+)
 def test_empty_extension():
     """
     Test that an empty extension was installed for gwcs 1.0.0
@@ -23,11 +26,16 @@ def test_empty_extension():
     assert len(extensions_by_uri) == len(extensions)
 
     # check that all 3 versions are installed
-    for version in ('1.0.0', '1.0.1', '1.1.0'):
-        assert f"asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-{version}" in extensions_by_uri
+    for version in ("1.0.0", "1.0.1", "1.1.0"):
+        assert (
+            f"asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-{version}"
+            in extensions_by_uri
+        )
 
     # the 1.0.0 extension should support no tags or types
-    legacy = extensions_by_uri["asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0"]
+    legacy = extensions_by_uri[
+        "asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0"
+    ]
     assert len(legacy.tags) == 0
     assert len(legacy.converters) == 0
 
@@ -55,4 +63,4 @@ foo: 1
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         with asdf.open(io.BytesIO(asdf_bytes)) as af:
-            assert af['foo'] == 1
+            assert af["foo"] == 1

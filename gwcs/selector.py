@@ -65,6 +65,7 @@ label mappers.
 
 
 """
+
 import warnings
 import numpy as np
 from astropy.modeling.core import Model
@@ -74,8 +75,13 @@ from . import region
 from .utils import RegionError, _toindex
 
 
-__all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSelector',
-           'LabelMapper']
+__all__ = [
+    "LabelMapperArray",
+    "LabelMapperDict",
+    "LabelMapperRange",
+    "RegionsSelector",
+    "LabelMapper",
+]
 
 
 def get_unique_regions(regions):
@@ -85,7 +91,7 @@ def get_unique_regions(regions):
 
         try:
             unique_regions.remove(0)
-            unique_regions.remove('')
+            unique_regions.remove("")
         except ValueError:
             pass
         try:
@@ -127,6 +133,7 @@ class _LabelMapper(Model):
     name : str
         The name of this transform.
     """
+
     def __init__(self, mapper, no_label, inputs_mapping=None, name=None, **kwargs):
         self._no_label = no_label
         self._inputs_mapping = inputs_mapping
@@ -150,7 +157,6 @@ class _LabelMapper(Model):
 
 
 class LabelMapperArray(_LabelMapper):
-
     """
     Maps array locations to labels.
 
@@ -187,8 +193,8 @@ class LabelMapperArray(_LabelMapper):
         else:
             _no_label = ""
         super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
-        self.inputs = ('x', 'y')
-        self.outputs = ('label',)
+        self.inputs = ("x", "y")
+        self.outputs = ("label",)
 
     def evaluate(self, *args):
         args = tuple([_toindex(a) for a in args])
@@ -245,7 +251,6 @@ class LabelMapperArray(_LabelMapper):
 
 
 class LabelMapperDict(_LabelMapper):
-
     """
     Maps a number to a transform, which when evaluated returns a label.
 
@@ -269,6 +274,7 @@ class LabelMapperDict(_LabelMapper):
     name : str
         The name of this transform.
     """
+
     standard_broadcasting = False
 
     linear = False
@@ -276,7 +282,9 @@ class LabelMapperDict(_LabelMapper):
 
     n_outputs = 1
 
-    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
+    def __init__(
+        self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs
+    ):
         self._atol = atol
         _no_label = 0
         self._inputs = inputs
@@ -285,9 +293,10 @@ class LabelMapperDict(_LabelMapper):
             raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping,
-                                              name=name, **kwargs)
-        self.outputs = ('labels',)
+        super(LabelMapperDict, self).__init__(
+            mapper, _no_label, inputs_mapping, name=name, **kwargs
+        )
+        self.outputs = ("labels",)
 
     @property
     def n_inputs(self):
@@ -342,7 +351,6 @@ class LabelMapperDict(_LabelMapper):
 
 
 class LabelMapperRange(_LabelMapper):
-
     """
     The structure this class uses maps a range of values to a transform.
     Given an input value it finds the range the value falls in and returns
@@ -367,6 +375,7 @@ class LabelMapperRange(_LabelMapper):
     name : str
         The name of this transform.
     """
+
     standard_broadcasting = False
 
     n_outputs = 1
@@ -384,9 +393,10 @@ class LabelMapperRange(_LabelMapper):
             raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping,
-                                               name=name, **kwargs)
-        self.outputs = ('labels',)
+        super(LabelMapperRange, self).__init__(
+            mapper, _no_label, inputs_mapping, name=name, **kwargs
+        )
+        self.outputs = ("labels",)
 
     @property
     def n_inputs(self):
@@ -471,9 +481,9 @@ class LabelMapperRange(_LabelMapper):
         for val_range in value_ranges:
             temp = keys.copy()
             temp[nan_ind] = np.nan
-            temp = np.where(np.logical_or(temp <= val_range[0],
-                                          temp >= val_range[1]),
-                            np.nan, temp)
+            temp = np.where(
+                np.logical_or(temp <= val_range[0], temp >= val_range[1]), np.nan, temp
+            )
             ind = ~np.isnan(temp)
 
             if ind.any():
@@ -483,12 +493,13 @@ class LabelMapperRange(_LabelMapper):
                 continue
         res.shape = shape
         if len(np.nonzero(res)[0]) == 0:
-            warnings.warn("All data is outside the valid range - {0}.".format(self.name))
+            warnings.warn(
+                "All data is outside the valid range - {0}.".format(self.name)
+            )
         return res
 
 
 class RegionsSelector(Model):
-
     """
     This model defines discontinuous transforms.
     It maps inputs to their corresponding transforms.
@@ -512,13 +523,22 @@ class RegionsSelector(Model):
     name : str
         The name of this transform.
     """
+
     standard_broadcasting = False
 
     linear = False
     fittable = False
 
-    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan,
-                 name=None, **kwargs):
+    def __init__(
+        self,
+        inputs,
+        outputs,
+        selector,
+        label_mapper,
+        undefined_transform_value=np.nan,
+        name=None,
+        **kwargs,
+    ):
         self._inputs = inputs
         self._outputs = outputs
         self._n_inputs = len(inputs)
@@ -544,7 +564,9 @@ class RegionsSelector(Model):
         elif not_all_uses_quantity:
             return False
         else:
-            raise ValueError("You can not mix models which use quantity and do not use quantity inside a RegionSelector")
+            raise ValueError(
+                "You can not mix models which use quantity and do not use quantity inside a RegionSelector"
+            )
 
     def set_input(self, rid):
         """
@@ -562,13 +584,18 @@ class RegionsSelector(Model):
                 for rid in self._selector:
                     transforms_inv[rid] = self._selector[rid].inverse
             except AttributeError:
-                raise NotImplementedError("The inverse of all regions must be defined"
-                                          "for RegionsSelector to have an inverse.")
-            return self.__class__(self.outputs, self.inputs, transforms_inv,
-                                  self.label_mapper.inverse)
+                raise NotImplementedError(
+                    "The inverse of all regions must be defined"
+                    "for RegionsSelector to have an inverse."
+                )
+            return self.__class__(
+                self.outputs, self.inputs, transforms_inv, self.label_mapper.inverse
+            )
         else:
-            raise NotImplementedError("The label mapper must have an inverse "
-                                      "for RegionsSelector to have an inverse.")
+            raise NotImplementedError(
+                "The label mapper must have an inverse "
+                "for RegionsSelector to have an inverse."
+            )
 
     def evaluate(self, *args):
         """
@@ -596,14 +623,16 @@ class RegionsSelector(Model):
         uniq = get_unique_regions(rids)
 
         for rid in uniq:
-            ind = (rids == rid)
+            ind = rids == rid
             inputs = [a[ind] for a in args]
             if rid in self._selector:
                 result = self._selector[rid](*inputs)
             else:
                 # If there's no transform for a label, return np.nan
-                result = [np.empty(inputs[0].shape) +
-                          self._undefined_transform_value for i in range(self.n_outputs)]
+                result = [
+                    np.empty(inputs[0].shape) + self._undefined_transform_value
+                    for i in range(self.n_outputs)
+                ]
             for j in range(self.n_outputs):
                 outputs[j][ind] = result[j]
         return outputs
@@ -679,22 +708,30 @@ class LabelMapper(_LabelMapper):
 
     n_outputs = 1
 
-    def __init__(self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs):
+    def __init__(
+        self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs
+    ):
         self._no_label = no_label
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        self._outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
+        self._outputs = tuple(
+            ["x{0}".format(ind) for ind in list(range(mapper.n_outputs))]
+        )
         if isinstance(inputs_mapping, tuple):
             inputs_mapping = astmodels.Mapping(inputs_mapping)
-        elif inputs_mapping is not None and not isinstance(inputs_mapping, astmodels.Mapping):
-            raise TypeError("inputs_mapping must be an instance of astropy.modeling.Mapping.")
+        elif inputs_mapping is not None and not isinstance(
+            inputs_mapping, astmodels.Mapping
+        ):
+            raise TypeError(
+                "inputs_mapping must be an instance of astropy.modeling.Mapping."
+            )
 
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(_LabelMapper, self).__init__(name=name, **kwargs)
-        self.outputs = ('label',)
+        self.outputs = ("label",)
 
     @property
     def inputs(self):

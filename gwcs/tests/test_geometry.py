@@ -11,7 +11,9 @@ from astropy import units as u
 try:
     from asdf_astropy.testing.helpers import assert_model_roundtrip
 except ImportError:
-    from asdf_astropy.converters.transform.tests.test_transform import assert_model_roundtrip
+    from asdf_astropy.converters.transform.tests.test_transform import (
+        assert_model_roundtrip,
+    )
 
 from .. import geometry
 
@@ -28,7 +30,7 @@ def test_spherical_cartesian_inverse():
 
 
 @pytest.mark.parametrize(
-    'testval, unit, wrap_at',
+    "testval, unit, wrap_at",
     product(
         [
             (45.0, -90.0, (0.0, 0.0, -1.0)),
@@ -54,7 +56,7 @@ def test_spherical_cartesian_inverse():
         ],
         [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
         [180, 360],
-    )
+    ),
 )
 def test_spherical_to_cartesian(testval, unit, wrap_at):
     s2c = geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
@@ -71,13 +73,15 @@ def test_spherical_to_cartesian(testval, unit, wrap_at):
 
 
 @pytest.mark.parametrize(
-    'lon, lat, unit, wrap_at',
-    list(product(
-        [0, 45, 90, 135, 180, 225, 270, 315, 360],
-        [-90, -89, -55, 0, 25, 89, 90],
-        [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
-        [180, 360],
-    ))
+    "lon, lat, unit, wrap_at",
+    list(
+        product(
+            [0, 45, 90, 135, 180, 225, 270, 315, 360],
+            [-90, -89, -55, 0, 25, 89, 90],
+            [1, 1 * u.deg, 3600.0 * u.arcsec, np.pi / 180.0 * u.rad],
+            [180, 360],
+        )
+    ),
 )
 def test_spher2cart_roundrip(lon, lat, unit, wrap_at):
     s2c = geometry.SphericalToCartesian(wrap_lon_at=wrap_at)
@@ -93,7 +97,7 @@ def test_spher2cart_roundrip(lon, lat, unit, wrap_at):
     assert u.allclose(
         c2s(*s2c(lon * unit, lat * unit)),
         (lon * ounit, lat * ounit),
-        atol=1e-15 * ounit
+        atol=1e-15 * ounit,
     )
 
 
@@ -102,17 +106,22 @@ def test_cart2spher_at_pole(cart_to_spher):
 
 
 @pytest.mark.parametrize(
-    'lonlat, unit, wrap_at',
-    list(product(
-        [
-            [[1], [-80]],
-            [[325], [-89]],
-            [[0, 1, 120, 180, 225, 325, 359], [-89, 0, 89, 10, -15, 45, -30]],
-            [np.array([0.0, 1, 120, 180, 225, 325, 359]), np.array([-89, 0.0, 89, 10, -15, 45, -30])]
-        ],
-        [None, 1 * u.deg],
-        [180, 360],
-    ))
+    "lonlat, unit, wrap_at",
+    list(
+        product(
+            [
+                [[1], [-80]],
+                [[325], [-89]],
+                [[0, 1, 120, 180, 225, 325, 359], [-89, 0, 89, 10, -15, 45, -30]],
+                [
+                    np.array([0.0, 1, 120, 180, 225, 325, 359]),
+                    np.array([-89, 0.0, 89, 10, -15, 45, -30]),
+                ],
+            ],
+            [None, 1 * u.deg],
+            [180, 360],
+        )
+    ),
 )
 def test_spher2cart_roundrip_arr(lonlat, unit, wrap_at):
     lon, lat = lonlat
@@ -136,35 +145,41 @@ def test_spher2cart_roundrip_arr(lonlat, unit, wrap_at):
         lat = lat * unit
         atol = atol * u.deg
 
-    assert u.allclose(
-        c2s(*s2c(lon, lat)),
-        (olon, olat),
-        atol=atol
-    )
+    assert u.allclose(c2s(*s2c(lon, lat)), (olon, olat), atol=atol)
 
 
-@pytest.mark.parametrize('unit1, unit2', [(u.deg, 1), (1, u.deg)])
+@pytest.mark.parametrize("unit1, unit2", [(u.deg, 1), (1, u.deg)])
 def test_spherical_to_cartesian_mixed_Q(spher_to_cart, unit1, unit2):
     with pytest.raises(TypeError) as arg_err:
         spher_to_cart(135.0 * unit1, 45.0 * unit2)
-    assert (arg_err.value.args[0] == "All arguments must be of the same type "
-            "(i.e., quantity or not).")
+    assert (
+        arg_err.value.args[0] == "All arguments must be of the same type "
+        "(i.e., quantity or not)."
+    )
 
 
 @pytest.mark.parametrize(
-    'x, y, z',
-    sorted(list(set(
-        tuple(permutations([1 * u.m, 1, 1])) + tuple(permutations([1 * u.m, 1 * u.m, 1]))
-    )), key=str)
+    "x, y, z",
+    sorted(
+        list(
+            set(
+                tuple(permutations([1 * u.m, 1, 1]))
+                + tuple(permutations([1 * u.m, 1 * u.m, 1]))
+            )
+        ),
+        key=str,
+    ),
 )
 def test_cartesian_to_spherical_mixed_Q(cart_to_spher, x, y, z):
     with pytest.raises(TypeError) as arg_err:
         cart_to_spher(x, y, z)
-    assert (arg_err.value.args[0] == "All arguments must be of the same type "
-            "(i.e., quantity or not).")
+    assert (
+        arg_err.value.args[0] == "All arguments must be of the same type "
+        "(i.e., quantity or not)."
+    )
 
 
-@pytest.mark.parametrize('wrap_at', ['1', 180., True, 180j, [180], -180, 0])
+@pytest.mark.parametrize("wrap_at", ["1", 180.0, True, 180j, [180], -180, 0])
 def test_c2s2c_wrong_wrap_type(spher_to_cart, cart_to_spher, wrap_at):
     err_msg = "'wrap_lon_at' must be an integer number: 180 or 360"
     with pytest.raises(ValueError) as arg_err:
@@ -193,7 +208,7 @@ def test_cartesian_spherical_asdf(tmpdir):
     assert_model_roundtrip(s2c0, tmpdir)
 
     # create file object
-    f = asdf.AsdfFile({'c2s': c2s0, 's2c': s2c0})
+    f = asdf.AsdfFile({"c2s": c2s0, "s2c": s2c0})
 
     # write to...
     buf = io.BytesIO()
@@ -204,21 +219,33 @@ def test_cartesian_spherical_asdf(tmpdir):
     f = asdf.open(buf)
 
     # retrieve transformations:
-    c2s = f['c2s']
-    s2c = f['s2c']
+    c2s = f["c2s"]
+    s2c = f["s2c"]
 
     pcoords = [
-        (45.0, -90.0), (45.0, -45.0), (45, 0.0),
-        (45.0, 45), (45.0, 90.0), (135.0, -90.0),
-        (135.0, -45.0), (135.0, 0.0), (135.0, 45.0),
-        (135.0, 90.0)
+        (45.0, -90.0),
+        (45.0, -45.0),
+        (45, 0.0),
+        (45.0, 45),
+        (45.0, 90.0),
+        (135.0, -90.0),
+        (135.0, -45.0),
+        (135.0, 0.0),
+        (135.0, 45.0),
+        (135.0, 90.0),
     ]
 
     ncoords = [
-        (225.0, -90.0), (225.0, -45.0),
-        (225.0, 0.0), (225.0, 45.0), (225.0, 90.0),
-        (315.0, -90.0), (315.0, -45.0), (315.0, 0.0),
-        (315.0, 45.0), (315.0, 90.0)
+        (225.0, -90.0),
+        (225.0, -45.0),
+        (225.0, 0.0),
+        (225.0, 45.0),
+        (225.0, 90.0),
+        (315.0, -90.0),
+        (315.0, -45.0),
+        (315.0, 0.0),
+        (315.0, 45.0),
+        (315.0, 90.0),
     ]
 
     for lon, lat in pcoords:
