@@ -1247,10 +1247,7 @@ class WCS(GWCSAPIMixin):
                 else:
                     bad.append(idx)
 
-            if bad:
-                inddiv = np.array(bad, dtype=int)
-            else:
-                inddiv = None
+            inddiv = np.array(bad, dtype=int) if bad else None
 
         # Identify points that did not converge within 'maxiter'
         # iterations:
@@ -2918,7 +2915,7 @@ class WCS(GWCSAPIMixin):
 
         # see what axes have been already populated in the header:
         used_hdr_axes = []
-        for v in hdr["naxis*"].keys():
+        for v in hdr["naxis*"]:
             try:
                 used_hdr_axes.append(int(v.split("NAXIS")[1]) - 1)
             except ValueError:

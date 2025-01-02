@@ -67,6 +67,7 @@ label mappers.
 
 """
 
+import contextlib
 import warnings
 
 import numpy as np
@@ -95,13 +96,11 @@ def get_unique_regions(regions):
             unique_regions.remove("")
         except ValueError:
             pass
-        try:
+        with contextlib.suppress(ValueError):
             unique_regions.remove("")
-        except ValueError:
-            pass
     elif isinstance(regions, dict):
         unique_regions = []
-        for key in regions.keys():
+        for key in regions:
             unique_regions.append(regions[key](key))
     else:
         msg = "Unable to get unique regions."
@@ -433,9 +432,7 @@ class LabelMapperRange(_LabelMapper):
         values = np.array(values)
         start = np.roll(values[:, 0], -1)
         end = values[:, 1]
-        if any((end - start)[:-1] > 0) or any(start[-1] > end):
-            return True
-        return False
+        return bool(any((end - start)[:-1] > 0) or any(start[-1] > end))
 
     # move this to utils?
     def _find_range(self, value_range, value):
@@ -548,7 +545,7 @@ class RegionsSelector(Model):
         self._undefined_transform_value = undefined_transform_value
         self._selector = selector  # copy.deepcopy(selector)
 
-        if " " in selector.keys() or 0 in selector.keys():
+        if " " in selector or 0 in selector:
             msg = '"0" and " " are not allowed as keys.'
             raise ValueError(msg)
         self._input_units_strict = {key: False for key in self._inputs}

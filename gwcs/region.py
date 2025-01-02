@@ -262,9 +262,8 @@ class Polygon(Region):
                 if edge._start[1] != edge._stop[1] and edge._ymin == y:
                     AET.append(edge)
         for edge in AET[::-1]:
-            if edge is not None:
-                if edge._ymax == y:
-                    AET.remove(edge)
+            if edge is not None and edge._ymax == y:
+                AET.remove(edge)
         return AET
 
     def __contains__(self, px):

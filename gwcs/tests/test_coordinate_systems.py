@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import contextlib
 import logging
 
 import astropy
@@ -22,10 +23,8 @@ coord_frames = coord.builtin_frames.__all__[:]
 
 # Need to write a better test, using a dict {coord_frame: input_parameters}
 # For now remove OffsetFrame, issue #55
-try:
+with contextlib.suppress(ValueError):
     coord_frames.remove("SkyOffsetFrame")
-except ValueError:
-    pass
 
 
 icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))

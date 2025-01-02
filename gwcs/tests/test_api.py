@@ -285,10 +285,7 @@ def _compare_frame_output(wc1, wc2):
     elif isinstance(wc1, time.Time):
         assert u.allclose((wc1 - wc2).to(u.s), 0 * u.s)
 
-    elif isinstance(wc1, str):
-        assert wc1 == wc2
-
-    elif isinstance(wc1, coord.StokesCoord):
+    elif isinstance(wc1, str | coord.StokesCoord):
         assert wc1 == wc2
 
     else:

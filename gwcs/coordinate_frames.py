@@ -118,6 +118,7 @@ in the coordinate frames before the transform is called:
 """
 
 import abc
+import contextlib
 import logging
 import numbers
 from collections import defaultdict
@@ -158,10 +159,7 @@ def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
             if ucd not in allowed_ucd_duplicates:
                 new_ucd.add(ucd)
             continue
-        if ucd in allowed_ucd_duplicates:
-            inv_map[ucd] = allowed_ucd_duplicates[ucd]
-        else:
-            inv_map[ucd] = kwd
+        inv_map[ucd] = allowed_ucd_duplicates.get(ucd, kwd)
 
     if new_ucd:
         logging.warning(
@@ -224,10 +222,7 @@ class FrameProperties:
             raise ValueError(msg)
 
         if self.unit is not None:
-            if astutil.isiterable(self.unit):
-                unit = tuple(self.unit)
-            else:
-                unit = (self.unit,)
+            unit = tuple(self.unit) if astutil.isiterable(self.unit) else (self.unit,)
             if len(unit) != naxes:
                 msg = "Number of units does not match number of axes."
                 raise ValueError(msg)
@@ -648,17 +643,17 @@ class CelestialFrame(CoordinateFrame):
         axis_physical_types=None,
     ):
         naxes = 2
-        if reference_frame is not None:
-            if not isinstance(reference_frame, str):
-                if reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES:
-                    _axes_names = list(
-                        reference_frame.representation_component_names.values()
-                    )
-                    if "distance" in _axes_names:
-                        _axes_names.remove("distance")
-                    if axes_names is None:
-                        axes_names = _axes_names
-                    naxes = len(_axes_names)
+        if (
+            reference_frame is not None
+            and not isinstance(reference_frame, str)
+            and reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES
+        ):
+            _axes_names = list(reference_frame.representation_component_names.values())
+            if "distance" in _axes_names:
+                _axes_names.remove("distance")
+            if axes_names is None:
+                axes_names = _axes_names
+            naxes = len(_axes_names)
 
         self.native_axes_order = tuple(range(naxes))
         if axes_order is None:
@@ -834,10 +829,8 @@ class TemporalFrame(CoordinateFrame):
         )
         self._attrs = {}
         for a in self.reference_frame.info._represent_as_dict_extra_attrs:
-            try:
+            with contextlib.suppress(AttributeError):
                 self._attrs[a] = getattr(self.reference_frame, a)
-            except AttributeError:
-                pass
 
     def _default_axis_physical_types(self):
         return ("time",)
@@ -943,7 +936,7 @@ class CompositeFrame(CoordinateFrame):
         for frame in self.frames:
             # ensure the frame is in the mapper
             mapper[frame]
-            for key in frame.world_axis_object_classes.keys():
+            for key in frame.world_axis_object_classes:
                 if key in seen_names:
                     new_key = f"{key}{seen_names.count(key)}"
                     mapper[frame][key] = new_key

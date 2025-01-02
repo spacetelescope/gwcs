@@ -134,10 +134,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         returned as rounded integers.
         """
         results = self.world_to_pixel_values(*world_arrays)
-        if self.pixel_n_dim == 1:
-            results = (results,)
-        else:
-            results = results[::-1]
+        results = (results,) if self.pixel_n_dim == 1 else results[::-1]
 
         results = tuple(utils._toindex(result) for result in results)
         return results[0] if self.pixel_n_dim == 1 else results

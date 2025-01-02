@@ -65,10 +65,9 @@ def wcs_from_fiducial(
     """
     from .wcs import WCS
 
-    if transform is not None:
-        if not isinstance(transform, Model):
-            msg = "Expected transform to be an instance" "of astropy.modeling.Model"
-            raise UnsupportedTransformError(msg)
+    if transform is not None and not isinstance(transform, Model):
+        msg = "Expected transform to be an instance" "of astropy.modeling.Model"
+        raise UnsupportedTransformError(msg)
 
     # transform_outputs = transform.n_outputs
     if isinstance(fiducial, coord.SkyCoord):
@@ -245,10 +244,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
         bounding_box = (bounding_box,)
     else:
         ndim = len(bounding_box)
-    if center:
-        bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box])
-    else:
-        bb = bounding_box
+    bb = tuple([_bbox_to_pixel(bb) for bb in bounding_box]) if center else bounding_box
 
     step = np.atleast_1d(step)
     if ndim > 1 and len(step) == 1:
@@ -362,7 +358,7 @@ def wcs_from_points(
         msg = f"Unsupported projection code {projection}"
         raise UnsupportedProjectionError(msg)
 
-    if polynomial_type not in supported_poly_types.keys():
+    if polynomial_type not in supported_poly_types:
         msg = (
             f"Unsupported polynomial_type: {polynomial_type}. "
             f"Only one of {supported_poly_types.keys()} is supported."

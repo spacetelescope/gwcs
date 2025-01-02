@@ -106,19 +106,13 @@ def format_range(
             part += "≤"
         part += f" {maximum}"
     elif minimum is not None:
-        if var_end is not None:
-            part = f"{var_end} "
-        else:
-            part = ""
+        part = f"{var_end} " if var_end is not None else ""
         if exclusiveMinimum:
             part += f"> {minimum}"
         else:
             part += f"≥ {minimum}"
     elif maximum is not None:
-        if var_end is not None:
-            part = f"{var_end} "
-        else:
-            part = ""
+        part = f"{var_end} " if var_end is not None else ""
         if exclusiveMaximum:
             part += f"< {maximum}"
         else:
