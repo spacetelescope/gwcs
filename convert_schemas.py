@@ -239,9 +239,7 @@ def reindent(content, indent):
     Reindent a string to the given number of spaces.
     """
     content = textwrap.dedent(content)
-    lines = []
-    for line in content.split("\n"):
-        lines.append(indent + line)
+    lines = [indent + line for line in content.split("\n")]
     return "\n".join(lines)
 
 

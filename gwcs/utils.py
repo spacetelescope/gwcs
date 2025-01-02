@@ -217,12 +217,10 @@ def read_wcs_from_header(header):
     pc = np.zeros((wcsaxes, wcsaxes))
     for i in range(1, wcsaxes + 1):
         for j in range(1, wcsaxes + 1):
-            try:
-                if wcs_info["has_cd"]:
-                    pc[i - 1, j - 1] = header[f"CD{i}_{j}"]
-                else:
-                    pc[i - 1, j - 1] = header[f"PC{i}_{j}"]
-            except KeyError:
+            key = f"CD{i}_{j}" if wcs_info["has_cd"] else f"PC{i}_{j}"
+            if key in header:
+                pc[i - 1, j - 1] = header[key]
+            else:
                 if i == j:
                     pc[i - 1, j - 1] = 1.0
                 else:

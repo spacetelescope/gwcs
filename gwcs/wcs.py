@@ -2913,10 +2913,11 @@ class WCS(GWCSAPIMixin):
         # see what axes have been already populated in the header:
         used_hdr_axes = []
         for v in hdr["naxis*"]:
-            try:
-                used_hdr_axes.append(int(v.split("NAXIS")[1]) - 1)
-            except ValueError:
+            value = v.split("NAXIS")[1]
+            if not value:
                 continue
+
+            used_hdr_axes.append(int(value) - 1)
 
         degenerate_axis_start = max(
             self.pixel_n_dim + 1, max(used_hdr_axes) + 1 if used_hdr_axes else 1

@@ -88,9 +88,7 @@ class LabelMapperConverter(TransformConverterBase):
             mapper = OrderedDict()
             labels = list(model.mapper)
 
-            transforms = []
-            for k in labels:
-                transforms.append(model.mapper[k])
+            transforms = [model.mapper[k] for k in labels]
             if isiterable(labels[0]):
                 labels = [list(label) for label in labels]
             mapper["labels"] = labels
@@ -125,9 +123,7 @@ class RegionsSelectorConverter(TransformConverterBase):
         selector = OrderedDict()
         node = OrderedDict()
         labels = list(model.selector)
-        values = []
-        for label in labels:
-            values.append(model.selector[label])
+        values = [model.selector[label] for label in labels]
         selector["labels"] = labels
         selector["transforms"] = values
         node["inputs"] = list(model.inputs)

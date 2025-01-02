@@ -426,9 +426,7 @@ class LabelMapperRange(_LabelMapper):
         start = ranges[:, 0]
         end = ranges[:, 1]
         start.sort()
-        values = []
-        for v in start:
-            values.append([v, d[v]])
+        values = [[v, d[v]] for v in start]
         values = np.array(values)
         start = np.roll(values[:, 0], -1)
         end = values[:, 1]
