@@ -1,5 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import os.path
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +16,7 @@ from gwcs.utils import UnsupportedProjectionError
 
 from . import data
 
-data_path = os.path.split(os.path.abspath(data.__file__))[0]
+data_path = Path(data.__file__).parent.absolute()
 
 
 def test_wrong_projcode():
@@ -31,7 +31,7 @@ def test_wrong_projcode2():
 
 
 def test_fits_transform():
-    hdr = fits.Header.fromfile(os.path.join(data_path, "simple_wcs2.hdr"))
+    hdr = fits.Header.fromfile(data_path / "simple_wcs2.hdr")
     gw1 = gwutils.make_fitswcs_transform(hdr)
     w1 = fitswcs.WCS(hdr)
     assert_allclose(gw1(1, 2), w1.wcs_pix2world(1, 2, 0), atol=10**-8)

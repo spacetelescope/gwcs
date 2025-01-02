@@ -49,5 +49,5 @@ transforms = [
 
 
 @pytest.mark.parametrize(("model"), transforms)
-def test_transforms(tmpdir, model):
-    assert_model_roundtrip(model, tmpdir)
+def test_transforms(tmp_path, model):
+    assert_model_roundtrip(model, tmp_path)

@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import os.path
 
 import asdf
 from asdf_astropy.testing.helpers import (
@@ -33,12 +32,12 @@ def _assert_frame_equal(a, b):
     return None
 
 
-def assert_frame_roundtrip(frame, tmpdir, version=None):
+def assert_frame_roundtrip(frame, tmp_path, version=None):
     """
     Assert that a frame can be written to an ASDF file and read back
     in without losing any of its essential properties.
     """
-    path = str(tmpdir / "test.asdf")
+    path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile({"frame": frame}, version=version) as af:
         af.write_to(path)
@@ -56,8 +55,8 @@ def _assert_wcs_equal(a, b):
         assert_model_equal(a_step.transform, b_step.transform)
 
 
-def assert_wcs_roundtrip(wcs, tmpdir, version=None):
-    path = str(tmpdir / "test.asdf")
+def assert_wcs_roundtrip(wcs, tmp_path, version=None):
+    path = tmp_path / "test.asdf"
 
     with asdf.AsdfFile({"wcs": wcs}, version=version) as af:
         af.write_to(path)
@@ -66,7 +65,7 @@ def assert_wcs_roundtrip(wcs, tmpdir, version=None):
         _assert_wcs_equal(wcs, af["wcs"])
 
 
-def test_create_wcs(tmpdir):
+def test_create_wcs(tmp_path):
     m1 = models.Shift(12.4) & models.Shift(-2)
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
@@ -76,13 +75,13 @@ def test_create_wcs(tmpdir):
     gw4 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
     gw4.pixel_shape = (100, 200)
 
-    assert_wcs_roundtrip(gw1, tmpdir)
-    assert_wcs_roundtrip(gw2, tmpdir)
-    assert_wcs_roundtrip(gw3, tmpdir)
-    assert_wcs_roundtrip(gw4, tmpdir)
+    assert_wcs_roundtrip(gw1, tmp_path)
+    assert_wcs_roundtrip(gw2, tmp_path)
+    assert_wcs_roundtrip(gw3, tmp_path)
+    assert_wcs_roundtrip(gw4, tmp_path)
 
 
-def test_composite_frame(tmpdir):
+def test_composite_frame(tmp_path):
     icrs = coord.ICRS()
     fk5 = coord.FK5()
     cel1 = cf.CelestialFrame(reference_frame=icrs)
@@ -95,9 +94,9 @@ def test_composite_frame(tmpdir):
     comp2 = cf.CompositeFrame([cel2, spec2])
     comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
-    assert_frame_roundtrip(comp, tmpdir)
-    assert_frame_roundtrip(comp1, tmpdir)
-    assert_frame_roundtrip(comp2, tmpdir)
+    assert_frame_roundtrip(comp, tmp_path)
+    assert_frame_roundtrip(comp1, tmp_path)
+    assert_frame_roundtrip(comp2, tmp_path)
 
 
 def create_test_frames():
@@ -146,13 +145,13 @@ def create_test_frames():
     ]
 
 
-def test_frames(tmpdir):
+def test_frames(tmp_path):
     frames = create_test_frames()
     for f in frames:
-        assert_frame_roundtrip(f, tmpdir)
+        assert_frame_roundtrip(f, tmp_path)
 
 
-def test_references(tmpdir):
+def test_references(tmp_path):
     m1 = models.Shift(12.4) & models.Shift(-2)
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
@@ -166,7 +165,7 @@ def test_references(tmpdir):
 
     tree = {"wcs1": gw1, "wcs2": gw2}
     af = asdf.AsdfFile(tree)
-    output_path = os.path.join(str(tmpdir), "test.asdf")
+    output_path = tmp_path / "test.asdf"
     af.write_to(output_path)
 
     with asdf.open(output_path) as af:

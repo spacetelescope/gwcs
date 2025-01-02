@@ -191,13 +191,13 @@ def test_c2s2c_wrong_wrap_type(spher_to_cart, cart_to_spher, wrap_at):
         cart_to_spher.wrap_lon_at = wrap_at
 
 
-def test_cartesian_spherical_asdf(tmpdir):
+def test_cartesian_spherical_asdf(tmp_path):
     s2c0 = geometry.SphericalToCartesian(wrap_lon_at=360)
     c2s0 = geometry.CartesianToSpherical(wrap_lon_at=180)
 
     # asdf round-trip test:
-    assert_model_roundtrip(c2s0, tmpdir)
-    assert_model_roundtrip(s2c0, tmpdir)
+    assert_model_roundtrip(c2s0, tmp_path)
+    assert_model_roundtrip(s2c0, tmp_path)
 
     # create file object
     f = asdf.AsdfFile({"c2s": c2s0, "s2c": s2c0})

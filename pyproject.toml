@@ -82,6 +82,7 @@ text_file_format = "rst"
 addopts = [
     "--color=yes",
     "--doctest-rst",
+    "-p no:legacypath",
 ]
 norecursedirs = [
     "build",
@@ -140,7 +141,7 @@ select = [
     "SIM",    # flake8-simplify (suggest simplifications to code where possible)
     "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
     "INT",    # flake8-gettext (when to use printf style strings)
-    #"PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
+    "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
     "ERA",    # eradicate (remove commented out code)
     "PGH",    # pygrep (simple grep checks)
     "PL",     # pylint (general linting, flake8 alternative)
@@ -148,7 +149,6 @@ select = [
     "FLY",    # flynt (f-string conversion where possible)
     "NPY",    # NumPy-specific checks (recommendations from NumPy)
     "PERF",   # Perflint (performance linting)
-    # "LOG",
     "RUF",    # ruff specific checks
 ]
 ignore = [
@@ -163,3 +163,4 @@ ignore = [
 "gwcs/tests/*" = ["S101"]
 "gwcs/converters/tests/*" = ["S101"]
 "docs/conf.py" = ["INP001", "ERA001"]
+"convert_schemas.py" = ["PTH"]

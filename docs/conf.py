@@ -75,7 +75,7 @@ asdf_schema_reference_mappings = [
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-with open(Path(__file__).parent.parent / "pyproject.toml", "rb") as metadata_file:
+with (Path(__file__).parent.parent / "pyproject.toml").open("rb") as metadata_file:
     configuration = tomllib.load(metadata_file)
     metadata = configuration["project"]
 project = metadata["name"]
