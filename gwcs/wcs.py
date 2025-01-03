@@ -30,13 +30,22 @@ from astropy.wcs.wcsapi.high_level_api import (
 )
 from scipy import linalg, optimize
 
-from . import coordinate_frames as cf
-from . import utils
-from .api import GWCSAPIMixin
-from .utils import CoordinateFrameError
-from .wcstools import grid_from_bounding_box
+from gwcs.api import GWCSAPIMixin
+from gwcs.coordinate_frames import (
+    CelestialFrame,
+    CompositeFrame,
+    CoordinateFrame,
+    get_ctype_from_ucd,
+)
+from gwcs.utils import CoordinateFrameError, _toindex, is_high_level
+from gwcs.wcstools import grid_from_bounding_box
 
-__all__ = ["WCS", "NoConvergence", "Step"]
+__all__ = [
+    "WCS",
+    "GwcsBoundingBoxWarning",
+    "NoConvergence",
+    "Step",
+]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
 
@@ -350,7 +359,7 @@ class WCS(GWCSAPIMixin):
         """
         Return the index in the pipeline where this frame is locate.
         """
-        if isinstance(frame, cf.CoordinateFrame):
+        if isinstance(frame, CoordinateFrame):
             frame = frame.name
         frame_names = [
             step.frame if isinstance(step.frame, str) else step.frame.name
@@ -554,7 +563,7 @@ class WCS(GWCSAPIMixin):
         # must pop before calling the model
         with_units = kwargs.pop("with_units", False)
 
-        if utils.is_high_level(*args, low_level_wcs=self):
+        if is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
         results = self._call_backward(*args, **kwargs)
@@ -621,7 +630,7 @@ class WCS(GWCSAPIMixin):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if utils.is_high_level(world_arrays[0], low_level_wcs=self):
+        if is_high_level(world_arrays[0], low_level_wcs=self):
             not_numerical = True
             world_arrays = high_level_objects_to_values(
                 *world_arrays, low_level_wcs=self
@@ -1335,7 +1344,7 @@ class WCS(GWCSAPIMixin):
         to_frame = self._get_frame_by_name(to_frame)
 
         with_units = kwargs.pop("with_units", False)
-        if backward and utils.is_high_level(*args, low_level_wcs=from_frame):
+        if backward and is_high_level(*args, low_level_wcs=from_frame):
             args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
 
         results = self._call_forward(
@@ -1670,7 +1679,7 @@ class WCS(GWCSAPIMixin):
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
         if center:
-            vertices = utils._toindex(vertices)
+            vertices = _toindex(vertices)
 
         result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
 
@@ -2341,7 +2350,7 @@ class WCS(GWCSAPIMixin):
         world_axes = []  # flattened version of axes_groups
         input_axes = []  # all input axes
 
-        if isinstance(self.output_frame, cf.CompositeFrame):
+        if isinstance(self.output_frame, CompositeFrame):
             frames = self.output_frame.frames
         else:
             frames = [self.output_frame]
@@ -2362,7 +2371,7 @@ class WCS(GWCSAPIMixin):
                 detect_celestial
                 and len(axis) == 2
                 and len(frame.axes_order) == 2
-                and isinstance(frame, cf.CelestialFrame)
+                and isinstance(frame, CelestialFrame)
             )
 
             for axno in axis:
@@ -2378,7 +2387,7 @@ class WCS(GWCSAPIMixin):
                     frame=frame,
                     world_axis_order=self.output_frame.axes_order.index(axno),
                     cunit=frame.unit[fidx].to_string("fits", fraction=True).upper(),
-                    ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
+                    ctype=get_ctype_from_ucd(self.world_axis_physical_types[axno]),
                     input_axes=mapping[axno],
                 )
                 axis_info_group.append(axis_info)
@@ -2966,7 +2975,7 @@ class WCS(GWCSAPIMixin):
             k = axis_info.axis
             widx = world_axes_idx.index(k)
             k1 = k + 1
-            ct = cf.get_ctype_from_ucd(self.world_axis_physical_types[k])
+            ct = get_ctype_from_ucd(self.world_axis_physical_types[k])
             if len(ct) > 4:
                 msg = "Axis type name too long."
                 raise ValueError(msg)
@@ -3034,7 +3043,7 @@ class WCS(GWCSAPIMixin):
         else:
             return
 
-        if not isinstance(self.output_frame, cf.CelestialFrame):
+        if not isinstance(self.output_frame, CelestialFrame):
             # The _calc_approx_inv method only works with celestial frame transforms
             return
 
@@ -3431,7 +3440,7 @@ class Step:
 
     @frame.setter
     def frame(self, val):
-        if not isinstance(val, cf.CoordinateFrame | str):
+        if not isinstance(val, CoordinateFrame | str):
             msg = '"frame" should be an instance of CoordinateFrame or a string.'
             raise TypeError(msg)
 
