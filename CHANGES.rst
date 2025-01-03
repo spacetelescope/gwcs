@@ -1,4 +1,4 @@
-0.22.0 (2024-12-19)
+0.23.0 (unreleased)
 -------------------
 
 - Coordinate frames now have a "native" order and then are sorted based on ``axes_order``. [#457]
@@ -11,6 +11,12 @@
 
 - Inputs to ``CelestialFrame``, such as ``axes_names`` are now explicitly in lon, lat order and will re sorted based on ``axes_order=``. [#457]
 
+- Implement code linting and automatic formatting. [#544]
+
+
+0.22.0 (2024-12-19)
+-------------------
+
 - Replace usages of ``copy_arrays`` with ``memmap`` [#503]
 
 - Fix an issue with units in ``wcs_from_points``. [#507]
@@ -20,7 +26,6 @@
 - Synchronize ``region.py`` with the copies of it in JWST and Romancal. [#517]
 
 - Add support for compound bounding boxes and ignored bounding box entries. [#519]
-
 
 - Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
 
