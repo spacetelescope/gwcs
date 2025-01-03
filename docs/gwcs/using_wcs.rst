@@ -77,14 +77,14 @@ Calling the :meth:`~gwcs.WCS.footprint` returns the footprint on the sky.
 .. warning::
 
   GWCS and astropy default to different tuple ordering conventions for representing
-  multi-dimensional bounding boxes. 
-  
+  multi-dimensional bounding boxes.
+
   * GWCS uses the ``"F"`` ordering convention, where the tuples are ordered
     ``((x0min, x0max), (x1min, x1max), ..., (xnmin, xnmax))`` (x,y,z ordering).
   * While astropy uses the ``"C"`` ordering convention, where tuples are ordered
     ``((xnmin, xnmax), ..., (x1min, x1max), (x0min, x0max))`` (z, y, x ordering).
 
-  This means that given the same tuple of tuples, say ``((a, b), (c, d))``, setting 
+  This means that given the same tuple of tuples, say ``((a, b), (c, d))``, setting
   the bounding box on the transform prior to creating the GWCS will result in a
   different bounding box than if one sets the same tuple of tuples on the GWCS object
   itself. Indeed, in this case the former will assume ``(c, d)`` is the bounding box
@@ -99,7 +99,7 @@ Calling the :meth:`~gwcs.WCS.footprint` returns the footprint on the sky.
   `~astropy.modeling.bind_bounding_box` with the ``order`` argument properly set.
 
 
-.. note ::
+.. note::
 
   The GWCS will always convert or assume the bounding box to the ``"F"`` ordering
   convention when setting the bounding box on the GWCS object itself and will

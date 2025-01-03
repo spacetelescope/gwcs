@@ -1,15 +1,17 @@
 import numpy as np
-
-from astropy.modeling.models import (
-    Shift, Polynomial2D, Pix2Sky_TAN, RotateNative2Celestial, Mapping
-)
-
 from astropy import coordinates as coord
 from astropy import units
 from astropy import wcs as fits_wcs
+from astropy.modeling.models import (
+    Mapping,
+    Pix2Sky_TAN,
+    Polynomial2D,
+    RotateNative2Celestial,
+    Shift,
+)
 
-from .. wcs import WCS
-from .. import coordinate_frames as cf
+from gwcs import coordinate_frames as cf
+from gwcs.wcs import WCS
 
 
 def _gwcs_from_hst_fits_wcs(header, hdu=None):
@@ -19,7 +21,7 @@ def _gwcs_from_hst_fits_wcs(header, hdu=None):
         for i in range(mat.shape[0]):
             for j in range(mat.shape[1]):
                 if 0 < i + j <= degree:
-                    setattr(pol, f'c{i}_{j}', mat[i, j])
+                    setattr(pol, f"c{i}_{j}", mat[i, j])
         return pol
 
     w = fits_wcs.WCS(header, hdu)
@@ -41,16 +43,20 @@ def _gwcs_from_hst_fits_wcs(header, hdu=None):
 
     # construct GWCS:
     det2sky = (
-        (Shift(-x0) & Shift(-y0)) | Mapping((0, 1, 0, 1)) | (polx & poly) |
-        Pix2Sky_TAN() | RotateNative2Celestial(*w.wcs.crval, 180)
+        (Shift(-x0) & Shift(-y0))
+        | Mapping((0, 1, 0, 1))
+        | (polx & poly)
+        | Pix2Sky_TAN()
+        | RotateNative2Celestial(*w.wcs.crval, 180)
     )
 
-    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
-                                unit=(units.pix, units.pix))
+    detector_frame = cf.Frame2D(
+        name="detector", axes_names=("x", "y"), unit=(units.pix, units.pix)
+    )
     sky_frame = cf.CelestialFrame(
         reference_frame=getattr(coord, w.wcs.radesys).__call__(),
         name=w.wcs.radesys,
-        unit=(units.deg, units.deg)
+        unit=(units.deg, units.deg),
     )
     pipeline = [(detector_frame, det2sky), (sky_frame, None)]
     gw = WCS(pipeline)

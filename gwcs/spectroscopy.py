@@ -3,18 +3,22 @@
 Spectroscopy related models.
 """
 
+import astropy.units as u
 import numpy as np
 from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
-import astropy.units as u
 
-
-__all__ = ['WavelengthFromGratingEquation', 'AnglesFromGratingEquation3D',
-           'Snell3D', 'SellmeierGlass', 'SellmeierZemax']
+__all__ = [
+    "AnglesFromGratingEquation3D",
+    "SellmeierGlass",
+    "SellmeierZemax",
+    "Snell3D",
+    "WavelengthFromGratingEquation",
+]
 
 
 class WavelengthFromGratingEquation(Model):
-    r""" Solve the Grating Dispersion Law for the wavelength.
+    r"""Solve the Grating Dispersion Law for the wavelength.
 
     .. Note:: This form of the equation can be used for paraxial
       (small angle approximation) as well as oblique incident angles.
@@ -44,7 +48,7 @@ class WavelengthFromGratingEquation(Model):
     >>> print(lam)
     -1.7453292519934437e-10 m
 
-    """
+    """  # noqa: E501
 
     _separable = False
 
@@ -59,8 +63,9 @@ class WavelengthFromGratingEquation(Model):
     """ Spectral order."""
 
     def __init__(self, groove_density, spectral_order, **kwargs):
-        super().__init__(groove_density=groove_density,
-                         spectral_order=spectral_order, **kwargs)
+        super().__init__(
+            groove_density=groove_density, spectral_order=spectral_order, **kwargs
+        )
         self.inputs = ("alpha_in", "alpha_out")
         """ Sine function of the angles or the direction cosines."""
         self.outputs = ("wavelength",)
@@ -73,7 +78,7 @@ class WavelengthFromGratingEquation(Model):
     def return_units(self):
         if self.groove_density.unit is None:
             return None
-        return {'wavelength': u.Unit(1 / self.groove_density.unit)}
+        return {"wavelength": u.Unit(1 / self.groove_density.unit)}
 
 
 class AnglesFromGratingEquation3D(Model):
@@ -99,7 +104,7 @@ class AnglesFromGratingEquation3D(Model):
     >>> print(alpha_out, beta_out, gamma_out)
     0.04000174532925199 -1.7453292519934436e-06 0.9991996098716049
 
-    """
+    """  # noqa: E501
 
     _separable = False
     linear = False
@@ -114,26 +119,27 @@ class AnglesFromGratingEquation3D(Model):
     """ Spectral order."""
 
     def __init__(self, groove_density, spectral_order, **kwargs):
-        super().__init__(groove_density=groove_density,
-                         spectral_order=spectral_order, **kwargs)
+        super().__init__(
+            groove_density=groove_density, spectral_order=spectral_order, **kwargs
+        )
         self.inputs = ("wavelength", "alpha_in", "beta_in")
         """ Wavelength and 2 angle coordinates going into the grating."""
 
         self.outputs = ("alpha_out", "beta_out", "gamma_out")
         """ Two angles coming out of the grating. """
 
-    def evaluate(self, wavelength, alpha_in, beta_in,
-                 groove_density, spectral_order):
+    def evaluate(self, wavelength, alpha_in, beta_in, groove_density, spectral_order):
         if alpha_in.shape != beta_in.shape:
-            raise ValueError("Expected input arrays to have the same shape.")
+            msg = "Expected input arrays to have the same shape."
+            raise ValueError(msg)
 
         if isinstance(groove_density, u.Quantity):
             alpha_in = u.Quantity(alpha_in)
             beta_in = u.Quantity(beta_in)
 
         alpha_out = -groove_density * spectral_order * wavelength + alpha_in
-        beta_out = - beta_in
-        gamma_out = np.sqrt(1 - alpha_out ** 2 - beta_out ** 2)
+        beta_out = -beta_in
+        gamma_out = np.sqrt(1 - alpha_out**2 - beta_out**2)
         return alpha_out, beta_out, gamma_out
 
     @property
@@ -141,9 +147,9 @@ class AnglesFromGratingEquation3D(Model):
         if self.groove_density.unit is None:
             return None
         return {
-            'wavelength': 1 / self.groove_density.unit,
-            'alpha_in': u.Unit(1),
-            'beta_in': u.Unit(1)
+            "wavelength": 1 / self.groove_density.unit,
+            "alpha_in": u.Unit(1),
+            "beta_in": u.Unit(1),
         }
 
 
@@ -158,6 +164,7 @@ class Snell3D(Model):
     alpha_out, beta_out, gamma_out : float
         Direction cosines.
     """
+
     _separable = False
     linear = False
 
@@ -166,8 +173,8 @@ class Snell3D(Model):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.inputs = ('n', 'alpha_in', 'beta_in', 'gamma_in')
-        self.outputs = ('alpha_out', 'beta_out', 'gamma_out')
+        self.inputs = ("n", "alpha_in", "beta_in", "gamma_in")
+        self.outputs = ("alpha_out", "beta_out", "gamma_out")
 
     @staticmethod
     def evaluate(n, alpha_in, beta_in, gamma_in):
@@ -221,6 +228,7 @@ class SellmeierGlass(Model):
             \\frac{(B3 * \\lambda^2 )}{(\\lambda^2 - C3)}
 
     """
+
     _separable = False
     standard_broadcasting = False
     linear = False
@@ -235,26 +243,26 @@ class SellmeierGlass(Model):
 
     def __init__(self, B_coef, C_coef, **kwargs):
         super().__init__(B_coef, C_coef)
-        self.inputs = ('wavelength',)
-        self.outputs = ('n',)
+        self.inputs = ("wavelength",)
+        self.outputs = ("n",)
 
     @staticmethod
     def evaluate(wavelength, B_coef, C_coef):
         B1, B2, B3 = B_coef[0]
         C1, C2, C3 = C_coef[0]
 
-        n = np.sqrt(1. +
-                    B1 * wavelength ** 2 / (wavelength ** 2 - C1) +
-                    B2 * wavelength ** 2 / (wavelength ** 2 - C2) +
-                    B3 * wavelength ** 2 / (wavelength ** 2 - C3)
-                   )
-        return n
+        return np.sqrt(
+            1.0
+            + B1 * wavelength**2 / (wavelength**2 - C1)
+            + B2 * wavelength**2 / (wavelength**2 - C2)
+            + B3 * wavelength**2 / (wavelength**2 - C3)
+        )
 
     @property
     def input_units(self):
         if self.C_coef.unit is None:
             return None
-        return {'wavelength': u.um}
+        return {"wavelength": u.um}
 
 
 class SellmeierZemax(Model):
@@ -289,6 +297,7 @@ class SellmeierZemax(Model):
         Refractive index.
 
     """
+
     _separable = False
     standard_broadcasting = False
     linear = False
@@ -305,18 +314,44 @@ class SellmeierZemax(Model):
     D_coef = Parameter(default=[0, 0, 0])
     E_coef = Parameter(default=[1, 1, 1])
 
-    def __init__(self, temperature=temperature, ref_temperature=ref_temperature,
-                 ref_pressure=ref_pressure, pressure=pressure, B_coef=B_coef,
-                 C_coef=C_coef, D_coef=D_coef, E_coef=E_coef, **kwargs):
+    def __init__(
+        self,
+        temperature=temperature,
+        ref_temperature=ref_temperature,
+        ref_pressure=ref_pressure,
+        pressure=pressure,
+        B_coef=B_coef,
+        C_coef=C_coef,
+        D_coef=D_coef,
+        E_coef=E_coef,
+        **kwargs,
+    ):
+        super().__init__(
+            temperature=temperature,
+            ref_temperature=ref_temperature,
+            ref_pressure=ref_pressure,
+            pressure=pressure,
+            B_coef=B_coef,
+            C_coef=C_coef,
+            D_coef=D_coef,
+            E_coef=E_coef,
+            **kwargs,
+        )
+        self.inputs = ("wavelength",)
+        self.outputs = ("n",)
 
-        super().__init__(temperature=temperature, ref_temperature=ref_temperature,
-                         ref_pressure=ref_pressure, pressure=pressure, B_coef=B_coef,
-                         C_coef=C_coef, D_coef=D_coef, E_coef=E_coef, **kwargs)
-        self.inputs = ('wavelength',)
-        self.outputs = ('n',)
-
-    def evaluate(self, wavelength, temp, ref_temp, ref_pressure,
-                 pressure, B_coef, C_coef, D_coef, E_coef):
+    def evaluate(
+        self,
+        wavelength,
+        temp,
+        ref_temp,
+        ref_pressure,
+        pressure,
+        B_coef,
+        C_coef,
+        D_coef,
+        E_coef,
+    ):
         """
         Input ``wavelength`` is in units of microns.
         """
@@ -324,33 +359,44 @@ class SellmeierZemax(Model):
             temp = temp.to(u.Celsius)
             ref_temp = ref_temp.to(u.Celsius)
         else:
-            KtoC = 273.15  # kelvin to celcius conversion
+            KtoC = 273.15  # kelvin to celsius conversion
             temp -= KtoC
             ref_temp -= KtoC
-        delt = temp - ref_temp
+        delta = temp - ref_temp
         D0, D1, D2 = D_coef[0]
         E0, E1, lam_tk = E_coef[0]
 
-        nref = 1. + (6432.8 + 2949810. * wavelength ** 2 /
-                     (146.0 * wavelength ** 2 - 1.) + (5540.0 * wavelength ** 2) /
-                     (41.0 * wavelength ** 2 - 1.)) * 1e-8
+        nref = (
+            1.0
+            + (
+                6432.8
+                + 2949810.0 * wavelength**2 / (146.0 * wavelength**2 - 1.0)
+                + (5540.0 * wavelength**2) / (41.0 * wavelength**2 - 1.0)
+            )
+            * 1e-8
+        )
         # T should be in C, P should be in ATM
-        nair_obs = 1.0 + ((nref - 1.0) * pressure) / (1.0 + (temp - 15.) * 3.4785e-3)
-        nair_ref = 1.0 + ((nref - 1.0) * ref_pressure) / (1.0 + (ref_temp - 15) * 3.4785e-3)
+        nair_obs = 1.0 + ((nref - 1.0) * pressure) / (1.0 + (temp - 15.0) * 3.4785e-3)
+        nair_ref = 1.0 + ((nref - 1.0) * ref_pressure) / (
+            1.0 + (ref_temp - 15) * 3.4785e-3
+        )
 
-        # Compute the relative index of the glass at Tref and Pref using Sellmeier equation I.
+        # Compute the relative index of the glass at Tref and Pref using
+        # Sellmeier equation I.
         lamrel = wavelength * nair_obs / nair_ref
         nrel = SellmeierGlass.evaluate(lamrel[0], B_coef, C_coef)
-        # Convert the relative index of refraction at the reference temperature and pressure
-        # to absolute.
+        # Convert the relative index of refraction at the reference temperature
+        # and pressure to absolute.
         nabs_ref = nrel * nair_ref
 
         # Compute the absolute index of the glass
-        delnabs = (0.5 * (nrel ** 2 - 1.) / nrel) * \
-                    (D0 * delt + D1 * delt ** 2 + D2 * delt ** 3 + \
-                    (E0 * delt + E1 * delt ** 2) / (lamrel ** 2  - lam_tk ** 2))
+        delnabs = (0.5 * (nrel**2 - 1.0) / nrel) * (
+            D0 * delta
+            + D1 * delta**2
+            + D2 * delta**3
+            + (E0 * delta + E1 * delta**2) / (lamrel**2 - lam_tk**2)
+        )
         nabs_obs = nabs_ref + delnabs
 
         # Define the relative index at the system's operating T and P.
-        n = nabs_obs / nair_obs
-        return n
+        return nabs_obs / nair_obs

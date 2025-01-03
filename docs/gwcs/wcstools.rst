@@ -7,7 +7,7 @@ WCS User Tools
   >>> bounding_box = ((0, 4096), (0, 2048))
   >>> x, y = grid_from_bounding_box(bounding_box)
   >>> ra, dec = w(x, y)   # doctest: +SKIP
-  
+
 The `~gwcs.wcstools` module contains functions of general usability.
 
 `~gwcs.wcstools.wcs_from_fiducial` is a function which given a fiducial in some coordinate system,
@@ -28,4 +28,3 @@ Any additional transforms are prepended to the projection and sky rotation.
   >>> w = wcs_from_fiducial(fiducial, projection=tan, transform=trans)
   >>> w(2048, 1024)  # doctest: +FLOAT_CMP
       (5.46, -72.2)
-
