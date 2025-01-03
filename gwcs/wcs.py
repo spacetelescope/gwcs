@@ -3478,13 +3478,11 @@ class Step:
     def __str__(self):
         return (
             f"{self.frame_name}\t "
-            f"{getattr(self.transform, 'name', 'None') or
-               type(self.transform).__name__}"
+            f"{getattr(self.transform, 'name', 'None') or type(self.transform).__name__}"  # noqa: E501
         )
 
     def __repr__(self):
         return (
             f"Step(frame={self.frame_name}, "
-            f"transform={getattr(self.transform, 'name', 'None') or
-                         type(self.transform).__name__})"
+            f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
         )
