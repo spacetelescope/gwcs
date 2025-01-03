@@ -174,8 +174,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
 
     Parameters
     ----------
-    bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox |
-                   ~astropy.modeling.bounding_box.CompoundBoundingBox
+    bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox | ~astropy.modeling.bounding_box.CompoundBoundingBox
         The bounding_box of a WCS object, `~gwcs.wcs.WCS.bounding_box`.
     step : scalar or tuple
         Step size for grid in each dimension.  Scalar applies to all dimensions.
@@ -211,7 +210,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     -------
     x, y [, z]: ndarray
         Grid of points.
-    """
+    """  # noqa: E501
 
     def _bbox_to_pixel(bbox):
         return (np.floor(bbox[0] + 0.5), np.ceil(bbox[1] - 0.5))

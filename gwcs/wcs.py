@@ -520,8 +520,7 @@ class WCS(GWCSAPIMixin):
 
         Parameters
         ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or
-               `~astropy.units.Unit`
+        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
             Coordinates to be inverted. The number of arguments must be equal
             to the number of world coordinates given by ``world_n_dim``.
 
@@ -551,7 +550,7 @@ class WCS(GWCSAPIMixin):
             The return type will be `~astropy.units.Quantity` objects if the
             transform returns ``Quantity`` objects, else values.
 
-        """
+        """  # noqa: E501
         # must pop before calling the model
         with_units = kwargs.pop("with_units", False)
 
