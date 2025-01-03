@@ -732,7 +732,7 @@ class TestImaging:
         assert self.wcs.unit == (u.degree, u.degree)
 
     def test_get_transform(self):
-        with pytest.raises(wcs.CoordinateFrameError):
+        with pytest.raises(CoordinateFrameError):
             assert (
                 self.wcs.get_transform("x_translation", "sky_rotation").submodel_names
                 == self.wcs.forward_transform[1:].submodel_names

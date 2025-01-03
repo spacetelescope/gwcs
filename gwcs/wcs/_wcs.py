@@ -893,7 +893,7 @@ class WCS(GWCSAPIMixin):
         >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
         Traceback (most recent call last):
         ...
-        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        gwcs.wcs._wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
         requested accuracy after 3 iterations.
 
         >>> w.numerical_inverse(
@@ -905,7 +905,7 @@ class WCS(GWCSAPIMixin):
         ... )
         Traceback (most recent call last):
         ...
-        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        gwcs.wcs._wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
         requested accuracy. After 4 iterations, the solution is diverging at
         least for one input point.
 
