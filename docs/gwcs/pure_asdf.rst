@@ -4,7 +4,7 @@ Listing of ``imaging_wcs.asdf``
 ===============================
 
 Listing of ``imaging_wcs.asdf``::
-  
+
 
   #ASDF 1.0.0
   #ASDF_STANDARD 1.2.0
@@ -133,5 +133,3 @@ Listing of ``imaging_wcs.asdf``::
           frame_attributes: {}
         unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
   ...
-
-  

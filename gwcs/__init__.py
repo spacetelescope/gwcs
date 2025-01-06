@@ -57,16 +57,13 @@ information about contributing is in the github repository.
 
 """
 
+import contextlib
 import importlib.metadata
 
-try:
+with contextlib.suppress(importlib.metadata.PackageNotFoundError):
     __version__ = importlib.metadata.version(__name__)
-except importlib.metadata.PackageNotFoundError:  # pragma: no cover
-    # package is not installed
-    pass  # pragma: no cover
 
-
-from .wcs import *   # noqa
-from .wcstools import *   # noqa
-from .coordinate_frames import *  # noqa
-from .selector import *   # noqa
+from .coordinate_frames import *  # noqa: F403
+from .selector import *  # noqa: F403
+from .wcs import *  # noqa: F403
+from .wcstools import *  # noqa: F403

@@ -10,11 +10,13 @@ Polygon filling algorithm.
 
 import abc
 from collections import OrderedDict
+
 import numpy as np
 
-__all__ = ['Region', 'Edge', 'Polygon']
+__all__ = ["Edge", "Polygon", "Region"]
 
 _INTERSECT_ATOL = 1e2 * np.finfo(float).eps
+
 
 class Region:
     """
@@ -58,7 +60,8 @@ class Region:
         Parameters
         ----------
         mask : ndarray
-            An array with the shape of the mask to be uised in `~gwcs.selector.RegionsSelector`.
+            An array with the shape of the mask to be uised in
+            `~gwcs.selector.RegionsSelector`.
 
         Returns
         -------
@@ -88,7 +91,8 @@ class Polygon(Region):
 
     def __init__(self, rid, vertices, coord_system="Cartesian"):
         if len(vertices) < 4:
-            raise ValueError("Expected vertices to be a list of minimum 4 tuples (x,y)")
+            msg = "Expected vertices to be a list of minimum 4 tuples (x,y)"
+            raise ValueError(msg)
 
         super().__init__(rid, coord_system)
 
@@ -102,10 +106,8 @@ class Polygon(Region):
         self._shifty = 0
         for vertex in vertices:
             x, y = vertex
-            if x < self._shiftx:
-                self._shiftx = x
-            if y < self._shifty:
-                self._shifty = y
+            self._shiftx = min(x, self._shiftx)
+            self._shifty = min(y, self._shifty)
         v = [(i - self._shiftx, j - self._shifty) for i, j in vertices]
 
         # convert to integer coordinates:
@@ -183,7 +185,7 @@ class Polygon(Region):
         - Initialize the Active Edge Table (AET) to be empty
         - For each scan line:
           1. Add edges from GET to AET for which ymin==y
-          2. Remove edges from AET fro which ymax==y
+          2. Remove edges from AET for which ymax==y
           3. Compute the intersection of the current scan line with all edges in the AET
           4. Sort on X of intersection point
           5. Set elements between pairs of X in the AET to the Edge's ID
@@ -233,7 +235,7 @@ class Polygon(Region):
                 y += 1
                 continue
 
-            for i, j in zip(xnew[::2], xnew[1::2]):
+            for i, j in zip(xnew[::2], xnew[1::2], strict=False):
                 xstart = max(0, i + self._shiftx)
                 xend = min(j + self._shiftx, nx - 1)
                 data[ysh][xstart : xend + 1] = self._rid
@@ -258,9 +260,8 @@ class Polygon(Region):
                 if edge._start[1] != edge._stop[1] and edge._ymin == y:
                     AET.append(edge)
         for edge in AET[::-1]:
-            if edge is not None:
-                if edge._ymax == y:
-                    AET.remove(edge)
+            if edge is not None and edge._ymax == y:
+                AET.remove(edge)
         return AET
 
     def __contains__(self, px):
@@ -341,13 +342,12 @@ class Edge:
             earr = np.asarray([self._start, self._stop])
             if np.diff(earr[:, 1]).item() == 0:
                 return None
-            else:
-                entry = [
-                    self._ymax,
-                    self._yminx,
-                    (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(),
-                    None,
-                ]
+            entry = [
+                self._ymax,
+                self._yminx,
+                (np.diff(earr[:, 0]) / np.diff(earr[:, 1])).item(),
+                None,
+            ]
         return entry
 
     def compute_AET_entry(self, edge):
@@ -373,11 +373,11 @@ class Edge:
         return fmt
 
     @property
-    def next(self):  # noqa: A003
+    def next(self):
         return self._next
 
     @next.setter
-    def next(self, edge):  # noqa: A003
+    def next(self, edge):
         if self._name is None:
             self._name = edge._name
             self._stop = edge._stop
