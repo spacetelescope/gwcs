@@ -9,9 +9,7 @@ import numpy as np
 from astropy import utils as astutil
 from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
-from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
-from astropy.modeling.core import Model
 from astropy.modeling.models import (
     Mapping,
     RotateCelestial2Native,
@@ -35,8 +33,8 @@ from gwcs.coordinate_frames import (
 )
 from gwcs.utils import CoordinateFrameError, _toindex, is_high_level
 
-from ._exception import GwcsBoundingBoxWarning, NoConvergence
-from ._step import Step
+from ._exception import NoConvergence
+from ._pipeline import ForwardTransform, Pipeline
 from ._utils import (
     fit_2D_poly,
     fix_transform_inputs,
@@ -84,7 +82,7 @@ class _WorldAxisInfo:
         self.input_axes = input_axes
 
 
-class WCS(GWCSAPIMixin):
+class WCS(GWCSAPIMixin, Pipeline):
     """
     Basic WCS class.
 
@@ -106,178 +104,17 @@ class WCS(GWCSAPIMixin):
     """
 
     def __init__(
-        self, forward_transform=None, input_frame="detector", output_frame=None, name=""
-    ):
+        self,
+        forward_transform: ForwardTransform = None,
+        input_frame: CoordinateFrame | None = None,
+        output_frame: CoordinateFrame | None = None,
+        name: str | None = None,
+    ) -> None:
+        super(GWCSAPIMixin, self).__init__(forward_transform, input_frame, output_frame)
+
         self._approx_inverse = None
-        self._available_frames = []
-        self._pipeline = []
-        self._name = name
-        self._initialize_wcs(forward_transform, input_frame, output_frame)
+        self._name = "" if name is None else name
         self._pixel_shape = None
-
-        pipe = []
-        for step in self._pipeline:
-            if isinstance(step, Step):
-                pipe.append(Step(step.frame, step.transform))
-            else:
-                pipe.append(Step(*step))
-        self._pipeline = pipe
-
-    def _initialize_wcs(self, forward_transform, input_frame, output_frame):
-        if forward_transform is not None:
-            if isinstance(forward_transform, Model):
-                if output_frame is None:
-                    msg = (
-                        "An output_frame must be specified "
-                        "if forward_transform is a model."
-                    )
-                    raise CoordinateFrameError(msg)
-
-                _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
-                _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-                super().__setattr__(_input_frame, inp_frame_obj)
-                super().__setattr__(_output_frame, outp_frame_obj)
-
-                self._pipeline = [
-                    (input_frame, forward_transform.copy()),
-                    (output_frame, None),
-                ]
-            elif isinstance(forward_transform, list):
-                for item in forward_transform:
-                    if isinstance(item, Step):
-                        name, frame_obj = self._get_frame_name(item.frame)
-                    else:
-                        name, frame_obj = self._get_frame_name(item[0])
-                    super().__setattr__(name, frame_obj)
-                    self._pipeline = forward_transform
-            else:
-                msg = (
-                    "Expected forward_transform to be a model or a "
-                    f"(frame, transform) list, got {type(forward_transform)}"
-                )
-                raise TypeError(msg)
-        else:
-            # Initialize a WCS without a forward_transform - allows building a
-            # WCS programmatically.
-            if output_frame is None:
-                msg = "An output_frame must be specified if forward_transform is None."
-                raise CoordinateFrameError(msg)
-            _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
-            _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-            super().__setattr__(_input_frame, inp_frame_obj)
-            super().__setattr__(_output_frame, outp_frame_obj)
-            self._pipeline = [(_input_frame, None), (_output_frame, None)]
-
-    def get_transform(self, from_frame, to_frame):
-        """
-        Return a transform between two coordinate frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Initial coordinate frame name of object.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
-            End coordinate frame name or object.
-
-        Returns
-        -------
-        transform : `~astropy.modeling.Model`
-            Transform between two frames.
-        """
-        if not self._pipeline:
-            return None
-
-        from_ind = self._get_frame_index(from_frame)
-        to_ind = self._get_frame_index(to_frame)
-        if to_ind < from_ind:
-            transforms = [step.transform for step in self._pipeline[to_ind:from_ind]]
-            transforms = [tr.inverse for tr in transforms[::-1]]
-        elif to_ind == from_ind:
-            return None
-        else:
-            transforms = [step.transform for step in self._pipeline[from_ind:to_ind]]
-        return functools.reduce(lambda x, y: x | y, transforms)
-
-    def set_transform(self, from_frame, to_frame, transform):
-        """
-        Set/replace the transform between two coordinate frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
-            End coordinate frame.
-        transform : `~astropy.modeling.Model`
-            Transform between ``from_frame`` and ``to_frame``.
-        """
-        from_name, from_obj = self._get_frame_name(from_frame)
-        to_name, to_obj = self._get_frame_name(to_frame)
-        if not self._pipeline:
-            if from_name != self._input_frame:
-                msg = f"Expected 'from_frame' to be {self._input_frame}"
-                raise CoordinateFrameError(msg)
-            if to_frame != self._output_frame:
-                msg = f"Expected 'to_frame' to be {self._output_frame}"
-                raise CoordinateFrameError(msg)
-        try:
-            from_ind = self._get_frame_index(from_name)
-        except ValueError as err:
-            msg = f"Frame {from_name} is not in the available frames"
-            raise CoordinateFrameError(msg) from err
-        try:
-            to_ind = self._get_frame_index(to_name)
-        except ValueError as err:
-            msg = f"Frame {to_name} is not in the available frames"
-            raise CoordinateFrameError(msg) from err
-
-        if from_ind + 1 != to_ind:
-            msg = f"Frames {from_name} and {to_name} are not  in sequence"
-            raise ValueError(msg)
-        self._pipeline[from_ind].transform = transform
-
-    @property
-    def forward_transform(self):
-        """
-        Return the total forward transform - from input to output coordinate frame.
-        """
-        if not self._pipeline:
-            return None
-
-        transform = functools.reduce(
-            lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]]
-        )
-
-        if self.bounding_box is not None:
-            # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box
-            # to it before evaluating it. The order Model.bounding_box is reversed.
-            transform.bounding_box = self.bounding_box
-
-        return transform
-
-    @property
-    def backward_transform(self):
-        """
-        Return the total backward transform if available - from output to input
-        coordinate system.
-
-        Raises
-        ------
-        NotImplementedError :
-            An analytical inverse does not exist.
-
-        """
-        try:
-            backward = self.forward_transform.inverse
-        except NotImplementedError as err:
-            msg = f"Could not construct backward transform. \n{err}"
-            raise NotImplementedError(msg) from err
-        try:
-            _ = backward.inverse
-        except NotImplementedError:  # means "hasattr" won't work
-            backward.inverse = self.forward_transform
-        return backward
 
     def _get_frame_by_name(self, frame_name):
         """
@@ -1302,147 +1139,6 @@ class WCS(GWCSAPIMixin):
         return results
 
     @property
-    def available_frames(self):
-        """
-        List all frames in this WCS object.
-
-        Returns
-        -------
-        available_frames : dict
-            {frame_name: frame_object or None}
-        """
-        if self._pipeline:
-            return [
-                step.frame if isinstance(step.frame, str) else step.frame.name
-                for step in self._pipeline
-            ]
-        return None
-
-    def insert_transform(self, frame, transform, after=False):
-        """
-        Insert a transform before (default) or after a coordinate frame.
-
-        Append (or prepend) a transform to the transform connected to frame.
-
-        Parameters
-        ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame which sets the point of insertion.
-        transform : `~astropy.modeling.Model`
-            New transform to be inserted in the pipeline
-        after : bool
-            If True, the new transform is inserted in the pipeline
-            immediately after ``frame``.
-        """
-        name, _ = self._get_frame_name(frame)
-        frame_ind = self._get_frame_index(name)
-        if not after:
-            current_transform = self._pipeline[frame_ind - 1].transform
-            self._pipeline[frame_ind - 1].transform = current_transform | transform
-        else:
-            current_transform = self._pipeline[frame_ind].transform
-            self._pipeline[frame_ind].transform = transform | current_transform
-
-    def insert_frame(self, input_frame, transform, output_frame):
-        """
-        Insert a new frame into an existing pipeline. This frame must be
-        anchored to a frame already in the pipeline by a transform. This
-        existing frame is identified solely by its name, although an entire
-        `~gwcs.coordinate_frames.CoordinateFrame` can be passed (e.g., the
-        `input_frame` or `output_frame` attribute). This frame is never
-        modified.
-
-        Parameters
-        ----------
-        input_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame at start of new transform
-        transform : `~astropy.modeling.Model`
-            New transform to be inserted in the pipeline
-        output_frame: str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame at end of new transform
-        """
-        input_name, input_frame_obj = self._get_frame_name(input_frame)
-        output_name, output_frame_obj = self._get_frame_name(output_frame)
-        try:
-            input_index = self._get_frame_index(input_frame)
-        except CoordinateFrameError as err:
-            input_index = None
-            if input_frame_obj is None:
-                msg = f"New coordinate frame {input_name} must be defined"
-                raise ValueError(msg) from err
-        try:
-            output_index = self._get_frame_index(output_frame)
-        except CoordinateFrameError as err:
-            output_index = None
-            if output_frame_obj is None:
-                msg = f"New coordinate frame {output_name} must be defined"
-                raise ValueError(msg) from err
-
-        new_frames = [input_index, output_index].count(None)
-        if new_frames == 0:
-            msg = (
-                "Could not insert frame as both frames "
-                f"{input_name} and {output_name} already exist"
-            )
-            raise ValueError(msg)
-        if new_frames == 2:
-            msg = (
-                "Could not insert frame as neither frame "
-                f"{input_name} nor {output_name} exists"
-            )
-            raise ValueError(msg)
-
-        if input_index is None:
-            self._pipeline = (
-                self._pipeline[:output_index]
-                + [Step(input_frame_obj, transform)]
-                + self._pipeline[output_index:]
-            )
-            super().__setattr__(input_name, input_frame_obj)
-        else:
-            split_step = self._pipeline[input_index]
-            self._pipeline = (
-                self._pipeline[:input_index]
-                + [
-                    Step(split_step.frame, transform),
-                    Step(output_frame_obj, split_step.transform),
-                ]
-                + self._pipeline[input_index + 1 :]
-            )
-            super().__setattr__(output_name, output_frame_obj)
-
-    @property
-    def unit(self):
-        """The unit of the coordinates in the output coordinate system."""
-        if self._pipeline:
-            try:
-                return self._pipeline[-1].frame.unit
-            except AttributeError:
-                return None
-        else:
-            return None
-
-    @property
-    def output_frame(self):
-        """Return the output coordinate frame."""
-        if self._pipeline:
-            frame = self._pipeline[-1].frame
-            if not isinstance(frame, str):
-                frame = frame.name
-            return getattr(self, frame)
-        return None
-
-    @property
-    def input_frame(self):
-        """Return the input coordinate frame."""
-        if self._pipeline:
-            frame = self._pipeline[0].frame
-            if not isinstance(frame, str):
-                frame = frame.name
-            return getattr(self, frame)
-        return None
-
-    @property
     def name(self):
         """Return the name for this WCS."""
         return self._name
@@ -1451,89 +1147,6 @@ class WCS(GWCSAPIMixin):
     def name(self, value):
         """Set the name for the WCS."""
         self._name = value
-
-    @property
-    def pipeline(self):
-        """Return the pipeline structure."""
-        return self._pipeline
-
-    @property
-    def bounding_box(self):
-        """
-        Return the range of acceptable values for each input axis.
-        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        """
-
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-
-        if transform_0 is None:
-            return None
-
-        try:
-            bb = transform_0.bounding_box
-        except NotImplementedError:
-            return None
-
-        if (
-            # Check that the bounding_box was set on the instance (not a default)
-            transform_0._user_bounding_box is not None
-            # Check the order of that bounding_box is C
-            and bb.order == "C"
-            # Check that the bounding_box is not a single value
-            and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
-        ):
-            warnings.warn(
-                "The bounding_box was set in C order on the transform prior to "
-                "being used in the gwcs!\n"
-                "Check that you intended that ordering for the bounding_box, "
-                "and consider setting it in F order.\n"
-                "The bounding_box will remain meaning the same but will be "
-                "converted to F order for consistency in the GWCS.",
-                GwcsBoundingBoxWarning,
-                stacklevel=2,
-            )
-            self.bounding_box = bb.bounding_box(order="F")
-            bb = self.bounding_box
-
-        return bb
-
-    @bounding_box.setter
-    def bounding_box(self, value):
-        """
-        Set the range of acceptable values for each input axis.
-
-        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        For two inputs and axes_order(0, 1) the bounding box is
-        ((xlow, xhigh), (ylow, yhigh)).
-
-        Parameters
-        ----------
-        value : tuple or None
-            Tuple of tuples with ("low", high") values for the range.
-        """
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-        if value is None:
-            transform_0.bounding_box = value
-        else:
-            # Make sure the dimensions of the new bbox are correct.
-            if isinstance(value, CompoundBoundingBox):
-                bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
-            else:
-                bbox = Bbox.validate(transform_0, value, order="F")
-
-            transform_0.bounding_box = bbox
-
-        self.set_transform(frames[0], frames[1], transform_0)
-
-    def attach_compound_bounding_box(self, cbbox, selector_args):
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-
-        self.bounding_box = CompoundBoundingBox.validate(
-            transform_0, cbbox, selector_args=selector_args, order="F"
-        )
 
     def _get_axes_indices(self):
         try:

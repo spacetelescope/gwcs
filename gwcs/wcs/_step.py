@@ -1,15 +1,14 @@
 import warnings
+from typing import TypeAlias, Union
 
 from astropy.modeling.core import Model
 
-from gwcs.coordinate_frames import (
-    CoordinateFrame,
-)
+from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
 
 __all__ = ["Step", "StepTuple"]
 
 
-StepTuple = tuple[CoordinateFrame, Model | None]
+StepTuple: TypeAlias = tuple[CoordinateFrame, Union[Model, None]]  # noqa: UP007
 
 
 class Step:
@@ -25,8 +24,12 @@ class Step:
         The transform of the last step should be `None`.
     """
 
-    def __init__(self, frame, transform=None):
-        self.frame = frame
+    def __init__(self, frame: str | CoordinateFrame | None, transform=None):
+        # Allow for a string to be passed in for the frame but be turned into a
+        # frame object
+        self.frame = (
+            frame if isinstance(frame, CoordinateFrame) else EmptyFrame(name=frame)
+        )
         self.transform = transform
 
     @property
@@ -83,3 +86,6 @@ class Step:
             f"Step(frame={self.frame_name}, "
             f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
         )
+
+    def copy(self):
+        return Step(self.frame, self.transform)

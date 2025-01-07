@@ -6,7 +6,7 @@ from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.units import Unit
 
-from gwcs.coordinate_frames import CoordinateFrame
+from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
@@ -31,21 +31,17 @@ class Pipeline:
     def __init__(
         self,
         forward_transform: ForwardTransform = None,
-        input_frame: CoordinateFrame | None = None,
-        output_frame: CoordinateFrame | None = None,
+        input_frame: str | CoordinateFrame | None = None,
+        output_frame: str | CoordinateFrame | None = None,
     ) -> None:
         self._pipeline: list[Step] = []
-        self._initialize_pipeline(
-            forward_transform,
-            "detector" if input_frame is None else input_frame,
-            output_frame,
-        )
+        self._initialize_pipeline(forward_transform, input_frame, output_frame)
 
     def _initialize_pipeline(
         self,
         forward_transform: ForwardTransform,
-        input_frame: CoordinateFrame | None,
-        output_frame: CoordinateFrame | None,
+        input_frame: str | CoordinateFrame | None,
+        output_frame: str | CoordinateFrame | None,
     ) -> None:
         """
         Initialize a pipeline from a forward transform specification.
@@ -122,9 +118,10 @@ class Pipeline:
         """
 
         if name in self.available_frames:
-            return self._pipeline[self._frame_index(name)]
+            return self._pipeline[self._frame_index(name)].frame
 
-        return super().__getattr__(name)
+        msg = f"Pipeline has no attribute {name}"
+        raise AttributeError(msg)
 
     @property
     def available_frames(self) -> list[str]:
@@ -150,7 +147,9 @@ class Pipeline:
             replaced. This frame will be removed from the frames to check against
             If None (default), do not remove any frames for checking.
         """
-        value = step if isinstance(step, Step) else Step(*step)
+        # Copy externally created steps to ensure they are not modified outside
+        # the control of the pipeline
+        value = step.copy() if isinstance(step, Step) else Step(*step)
 
         frames = self.available_frames
 
@@ -170,7 +169,7 @@ class Pipeline:
         Check the last frame in the pipeline has a None transform
         -> The last frame in the pipeline must have a None transform.
         """
-        if self.output_frame.transform is not None:
+        if self._pipeline[-1].transform is not None:
             msg = "The last frame in the pipeline must have a None transform."
             raise ValueError(msg)
 
@@ -190,19 +189,30 @@ class Pipeline:
 
         self._check_last_step()
 
+    @staticmethod
+    def _handle_empty_frame(frame: CoordinateFrame) -> CoordinateFrame | None:
+        """
+        Handle the case where the frame is an EmptyFrame.
+        """
+        return None if isinstance(frame, EmptyFrame) else frame
+
     @property
     def input_frame(self) -> CoordinateFrame | None:
         """
         Return the input frame name of the pipeline.
         """
-        return self._pipeline[0].frame if self._pipeline else None
+        return self._handle_empty_frame(
+            self._pipeline[0].frame if self._pipeline else None
+        )
 
     @property
     def output_frame(self) -> CoordinateFrame | None:
         """
         Return the output frame name of the pipeline.
         """
-        return self._pipeline[-1].frame if self._pipeline else None
+        return self._handle_empty_frame(
+            self._pipeline[-1].frame if self._pipeline else None
+        )
 
     @property
     def unit(self) -> Unit | None:
@@ -252,16 +262,16 @@ class Pipeline:
             raise CoordinateFrameError(msg) from err
 
     def get_transform(
-        self, from_frame: CoordinateFrame, to_frame: CoordinateFrame
+        self, from_frame: str | CoordinateFrame, to_frame: str | CoordinateFrame
     ) -> Mdl:
         """
         Return a transform between two coordinate frames.
 
         Parameters
         ----------
-        from_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             Initial coordinate frame name of object.
-        to_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
             End coordinate frame name or object.
 
         Returns
@@ -346,7 +356,11 @@ class Pipeline:
             index -= 1
 
         current_transform = self._pipeline[index].transform
-        self._pipeline[index].transform = transform | current_transform
+        transform = (
+            transform | current_transform if after else current_transform | transform
+        )
+
+        self._pipeline[index].transform = transform
 
         self._check_last_step()
 
@@ -379,7 +393,7 @@ class Pipeline:
                 index = self._frame_index(frame)
             except CoordinateFrameError as err:
                 index = None
-                if not isinstance(input_frame, CoordinateFrame):
+                if not isinstance(frame, CoordinateFrame):
                     msg = (
                         f"New coordinate frame {self._frame_name(frame)} "
                         "must be defined"
@@ -390,6 +404,7 @@ class Pipeline:
 
         input_index = get_index(input_frame)
         output_index = get_index(output_frame)
+
         new_frames = [input_index, output_index].count(None)
 
         match new_frames:

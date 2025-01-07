@@ -25,10 +25,11 @@ def _assert_frame_equal(a, b):
         return a == b
 
     assert a.name == b.name  # nosec
-    assert a.axes_order == b.axes_order  # nosec
-    assert a.axes_names == b.axes_names  # nosec
-    assert a.unit == b.unit  # nosec
-    assert a.reference_frame == b.reference_frame  # nosec
+    if not isinstance(a, cf.EmptyFrame):
+        assert a.axes_order == b.axes_order  # nosec
+        assert a.axes_names == b.axes_names  # nosec
+        assert a.unit == b.unit  # nosec
+        assert a.reference_frame == b.reference_frame  # nosec
     return None
 
 
@@ -155,12 +156,13 @@ def test_references(tmp_path):
     m1 = models.Shift(12.4) & models.Shift(-2)
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    det2 = cf.Frame2D(name="detector2", axes_order=(0, 1))
     focal = cf.Frame2D(name="focal", axes_order=(0, 1))
 
     pipe1 = [(det, m1), (focal, m1), (icrs, None)]
     gw1 = wcs.WCS(pipe1)
 
-    pipe2 = [(det, m1), (det, m1), (icrs, None)]
+    pipe2 = [(det, m1), (det2, m1), (icrs, None)]
     gw2 = wcs.WCS(pipe2)
 
     tree = {"wcs1": gw1, "wcs2": gw2}
@@ -173,4 +175,4 @@ def test_references(tmp_path):
         gw2 = af.tree["wcs2"]
         assert gw1.pipeline[0].transform is gw1.pipeline[1].transform
         assert gw2.pipeline[0].transform is gw2.pipeline[1].transform
-        assert gw2.pipeline[0].frame is gw2.pipeline[1].frame
+        assert gw2.pipeline[0].frame is gw1.pipeline[0].frame
