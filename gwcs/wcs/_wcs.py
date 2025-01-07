@@ -31,7 +31,7 @@ from gwcs.coordinate_frames import (
     CoordinateFrame,
     get_ctype_from_ucd,
 )
-from gwcs.utils import CoordinateFrameError, _toindex, is_high_level
+from gwcs.utils import _toindex, is_high_level
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -116,64 +116,9 @@ class WCS(GWCSAPIMixin, Pipeline):
         self._name = "" if name is None else name
         self._pixel_shape = None
 
-    def _get_frame_by_name(self, frame_name):
-        """
-        Return the frame object by name.
-        """
-        if not isinstance(frame_name, str):
-            return frame_name
-
-        frames = [
-            step.frame for step in self._pipeline if step.frame.name == frame_name
-        ]
-        if len(frames) > 1:
-            msg = f"There is more than one frame named {frame_name}"
-            raise ValueError(msg)
-        if len(frames) == 0:
-            return ValueError(f"No frame found matching {frame_name}")
-        return frames[0]
-
-    def _get_frame_index(self, frame):
-        """
-        Return the index in the pipeline where this frame is locate.
-        """
-        if isinstance(frame, CoordinateFrame):
-            frame = frame.name
-        frame_names = [
-            step.frame if isinstance(step.frame, str) else step.frame.name
-            for step in self._pipeline
-        ]
-        try:
-            return frame_names.index(frame)
-        except ValueError as e:
-            msg = f"Frame {frame} is not in the available frames"
-            raise CoordinateFrameError(msg) from e
-
-    def _get_frame_name(self, frame):
-        """
-        Return the name of the frame and a ``CoordinateFrame`` object.
-
-        Parameters
-        ----------
-        frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame.
-
-        Returns
-        -------
-        name : str
-            The name of the frame
-        frame_obj : `~gwcs.coordinate_frames.CoordinateFrame`
-            Frame instance or None (if `frame` is str)
-        """
-        if isinstance(frame, str):
-            name = frame
-            frame_obj = None
-        else:
-            name = frame.name
-            frame_obj = frame
-        return name, frame_obj
-
-    def _add_units_input(self, arrays, frame):
+    def _add_units_input(
+        self, arrays: list[np.ndarray], frame: CoordinateFrame | None
+    ) -> tuple[u.Quantity, ...]:
         if frame is not None:
             return tuple(
                 u.Quantity(array, unit)
@@ -182,7 +127,9 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return arrays
 
-    def _remove_units_input(self, arrays, frame):
+    def _remove_units_input(
+        self, arrays: list[u.Quantity], frame: CoordinateFrame | None
+    ) -> tuple[np.ndarray, ...]:
         if frame is not None:
             return tuple(
                 array.to_value(unit) if isinstance(array, u.Quantity) else array
@@ -191,7 +138,14 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return arrays
 
-    def __call__(self, *args, **kwargs):
+    def __call__(
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Executes the forward transform.
 
@@ -209,9 +163,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             If ``True`` then high level Astropy objects will be returned.
             Optional, default=False.
         """
-        with_units = kwargs.pop("with_units", False)
-
-        results = self._call_forward(*args, **kwargs)
+        results = self._call_forward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
         if with_units:
             if not astutil.isiterable(results):
@@ -227,10 +181,10 @@ class WCS(GWCSAPIMixin, Pipeline):
     def _call_forward(
         self,
         *args,
-        from_frame=None,
-        to_frame=None,
-        with_bounding_box=True,
-        fill_value=np.nan,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
         **kwargs,
     ):
         """
@@ -295,7 +249,14 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return result
 
-    def invert(self, *args, **kwargs):
+    def invert(
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Invert coordinates from output frame to input frame using analytical or
         user-supplied inverse. When neither analytical nor user-supplied
@@ -338,13 +299,12 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform returns ``Quantity`` objects, else values.
 
         """  # noqa: E501
-        # must pop before calling the model
-        with_units = kwargs.pop("with_units", False)
-
         if is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
-        results = self._call_backward(*args, **kwargs)
+        results = self._call_backward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
@@ -359,7 +319,11 @@ class WCS(GWCSAPIMixin, Pipeline):
         return results
 
     def _call_backward(
-        self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
     ):
         try:
             transform = self.backward_transform
@@ -1092,7 +1056,14 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return pix
 
-    def transform(self, from_frame, to_frame, *args, **kwargs):
+    def transform(
+        self,
+        from_frame: str | CoordinateFrame,
+        to_frame: str | CoordinateFrame,
+        *args,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Transform positions between two frames.
 
@@ -1104,42 +1075,45 @@ class WCS(GWCSAPIMixin, Pipeline):
             Coordinate frame into which to transform.
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
-        output_with_units : bool
-            If ``True`` - returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.coordinates.SpectralCoord` object.
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to any of
              the inputs being outside the bounding_box are set to ``fill_value``.
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box (default is np.nan).
         """
-        # Determine if the transform is actually an inverse
-        from_ind = self._get_frame_index(from_frame)
-        to_ind = self._get_frame_index(to_frame)
-        backward = to_ind < from_ind
-        # Convert from strings to frame objects
-        from_frame = self._get_frame_by_name(from_frame)
-        to_frame = self._get_frame_by_name(to_frame)
+        # Pull the steps and their indices from the pipeline
+        # -> this also turns the frame name strings into frame objects
+        from_step = self._get_step(from_frame)
+        to_step = self._get_step(to_frame)
 
-        with_units = kwargs.pop("with_units", False)
-        if backward and is_high_level(*args, low_level_wcs=from_frame):
-            args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
+        # Determine if the transform is actually an inverse
+        backward = to_step.index < from_step.index
+
+        if backward and is_high_level(*args, low_level_wcs=from_step.step.frame):
+            args = high_level_objects_to_values(
+                *args, low_level_wcs=from_step.step.frame
+            )
 
         results = self._call_forward(
-            *args, from_frame=from_frame, to_frame=to_frame, **kwargs
+            *args,
+            from_frame=from_step.step.frame,
+            to_frame=to_step.step.frame,
+            **kwargs,
         )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, to_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=to_frame)
+            results = self._remove_units_input(results, to_step.step.frame)
+
+            high_level = values_to_high_level_objects(
+                *results, low_level_wcs=to_step.step.frame
+            )
             if len(high_level) == 1:
                 high_level = high_level[0]
             return high_level
+
         return results
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name for this WCS."""
         return self._name
 
