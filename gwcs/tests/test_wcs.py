@@ -54,6 +54,7 @@ time = cf.TemporalFrame(
 stokes = cf.StokesFrame(axes_order=(2,))
 
 pipe = [wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)]
+pipe_copy = pipe.copy()
 
 # Create some data.
 nx, ny = (5, 2)
@@ -104,28 +105,28 @@ def test_init_no_transform():
     """
     gw = wcs.WCS(output_frame="icrs")
     assert len(gw._pipeline) == 2
-    assert gw.pipeline[0].frame == "detector"
+    assert gw.pipeline[0].frame.name == "detector"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw.pipeline[0][0] == "detector"
-    assert gw.pipeline[1].frame == "icrs"
+        assert gw.pipeline[0][0].name == "detector"
+    assert gw.pipeline[1].frame.name == "icrs"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw.pipeline[1][0] == "icrs"
+        assert gw.pipeline[1][0].name == "icrs"
     assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
     gw = wcs.WCS(output_frame=icrs, input_frame=detector)
-    assert gw._pipeline[0].frame == "detector"
+    assert gw._pipeline[0].frame.name == "detector"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw._pipeline[0][0] == "detector"
-    assert gw._pipeline[1].frame == "icrs"
+        assert gw._pipeline[0][0].name == "detector"
+    assert gw._pipeline[1].frame.name == "icrs"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw._pipeline[1][0] == "icrs"
+        assert gw._pipeline[1][0].name == "icrs"
     assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
     with pytest.raises(NotImplementedError):
         gw(1, 2)
@@ -1385,8 +1386,8 @@ def test_initialize_wcs_with_list():
     shift2 = models.Shift(3 * u.pix)
     pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
 
-    extra_step = ("extra_step", None)
-    pipeline.append(extra_step)
+    end_step = ("end_step", None)
+    pipeline.append(end_step)
 
     # make sure no warnings occur when creating wcs with this pipeline
     with warnings.catch_warnings():
