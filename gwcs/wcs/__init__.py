@@ -1,4 +1,5 @@
-from ._wcs import WCS, GwcsBoundingBoxWarning, NoConvergence, Step
+from ._exception import GwcsBoundingBoxWarning, NoConvergence
+from ._wcs import WCS, Step
 
 __all__ = [
     "WCS",
