@@ -6,7 +6,10 @@ from gwcs.coordinate_frames import (
     CoordinateFrame,
 )
 
-__all__ = ["Step"]
+__all__ = ["Step", "StepTuple"]
+
+
+StepTuple = tuple[CoordinateFrame, Model | None]
 
 
 class Step:
