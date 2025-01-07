@@ -1,6 +1,6 @@
 import warnings
 from functools import reduce
-from typing import Any, TypeAlias, Union
+from typing import TypeAlias, Union
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -110,19 +110,6 @@ class Pipeline:
         #       -> Maybe we should return a copy?
         return self._pipeline
 
-    def __getattr__(self, name: str) -> Any:
-        """
-        Modify the behavior of the getattr method to allow accessing frames
-        via their name.
-        -> Enable dot access to frames in the pipeline based on their name
-        """
-
-        if name in self.available_frames:
-            return self._pipeline[self._frame_index(name)].frame
-
-        msg = f"Pipeline has no attribute {name}"
-        raise AttributeError(msg)
-
     @property
     def available_frames(self) -> list[str]:
         """
@@ -161,6 +148,9 @@ class Pipeline:
         if value.frame.name in frames:
             msg = f"Frame {value.frame.name} is already in the pipeline."
             raise GwcsFrameExistsError(msg)
+
+        # Add the frame as an attribute of the pipeline
+        super().__setattr__(value.frame.name, value.frame)
 
         return value
 
