@@ -608,6 +608,35 @@ class CoordinateFrame(BaseCoordinateFrame):
         return values
 
 
+class PixelFrame(CoordinateFrame):
+    """
+    A coordinate frame describing pixels.
+
+    Parameters
+    ----------
+    naxes : int
+        The number of pixel dimensions described by the frame.
+    axes_order : list of int, optional
+        The axes order, if not specified defaults to `range(naxes)` (i.e. all
+        axes are in this frame).
+    name : str, optional
+        The name of this frame.
+    axes_names : list of str, optional
+        The names of the pixel axes.
+    """
+
+    def __init__(self, naxes, axes_order=None, axes_names=None, name=None):
+        axes_order = axes_order if axes_order is not None else list(range(naxes))
+        super().__init__(
+            naxes,
+            ["PIXEL"] * naxes,
+            axes_order=axes_order,
+            unit=[u.pix] * naxes,
+            axes_names=axes_names,
+            name=name,
+        )
+
+
 class CelestialFrame(CoordinateFrame):
     """
     Representation of a Celesital coordinate system.
