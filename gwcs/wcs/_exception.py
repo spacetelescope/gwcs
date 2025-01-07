@@ -1,6 +1,7 @@
 __all__ = [
-    "NoConvergence",
     "GwcsBoundingBoxWarning",
+    "GwcsFrameExistsError",
+    "NoConvergence",
 ]
 
 
@@ -55,6 +56,12 @@ class NoConvergence(Exception):
         self.niter = niter
         self.divergent = divergent
         self.slow_conv = slow_conv
+
+
+class GwcsFrameExistsError(ValueError):
+    """
+    An error used to report when a frame already exists in a pipeline.
+    """
 
 
 class GwcsBoundingBoxWarning(UserWarning):
