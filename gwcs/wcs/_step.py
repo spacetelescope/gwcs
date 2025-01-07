@@ -1,11 +1,15 @@
 import warnings
-from typing import TypeAlias, Union
+from typing import NamedTuple, TypeAlias, Union
 
 from astropy.modeling.core import Model
 
 from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
 
-__all__ = ["Step", "StepTuple"]
+__all__ = [
+    "IndexedStep",
+    "Step",
+    "StepTuple",
+]
 
 
 StepTuple: TypeAlias = tuple[CoordinateFrame, Union[Model, None]]  # noqa: UP007
@@ -89,3 +93,12 @@ class Step:
 
     def copy(self):
         return Step(self.frame, self.transform)
+
+
+class IndexedStep(NamedTuple):
+    """
+    Class to handle a step and its index in the pipeline.
+    """
+
+    index: int
+    step: Step

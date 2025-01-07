@@ -10,7 +10,7 @@ from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
-from ._step import Step, StepTuple
+from ._step import IndexedStep, Step, StepTuple
 
 __all__ = ["ForwardTransform", "Pipeline"]
 
@@ -260,6 +260,14 @@ class Pipeline:
         except ValueError as err:
             msg = f"Frame {self._frame_name(frame)} is not in the available frames"
             raise CoordinateFrameError(msg) from err
+
+    def _get_step(self, frame: str | CoordinateFrame) -> IndexedStep:
+        """
+        Get the index and step corresponding to the given frame.
+        """
+        index = self._frame_index(frame)
+
+        return IndexedStep(index, self._pipeline[index])
 
     def get_transform(
         self, from_frame: str | CoordinateFrame, to_frame: str | CoordinateFrame
