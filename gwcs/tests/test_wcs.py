@@ -1736,3 +1736,26 @@ def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
         with_units=True,
     )
     assert isinstance(intermediate_world, coord.SkyCoord)
+
+
+def test_error_with_duplicate_frames():
+    """
+    Test that an error is raised if a frame is used more than once in the pipeline.
+    """
+    pipeline = [(detector, m1), (detector, m2), (focal, None)]
+
+    with pytest.raises(ValueError, match="Frame detector is already in the pipeline."):
+        wcs.WCS(pipeline)
+
+
+def test_error_with_not_none_last():
+    """
+    Test that an error is raised if the last transform is not None
+    """
+
+    pipeline = [(detector, m1), (focal, m2)]
+
+    with pytest.raises(
+        ValueError, match="The last step in the pipeline must have a None transform."
+    ):
+        wcs.WCS(pipeline)

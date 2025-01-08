@@ -160,7 +160,7 @@ class Pipeline:
         -> The last frame in the pipeline must have a None transform.
         """
         if self._pipeline[-1].transform is not None:
-            msg = "The last frame in the pipeline must have a None transform."
+            msg = "The last step in the pipeline must have a None transform."
             raise ValueError(msg)
 
     def _insert(self, index: int, value: Step | StepTuple) -> None:
