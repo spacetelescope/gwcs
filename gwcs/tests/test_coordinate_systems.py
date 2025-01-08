@@ -16,6 +16,10 @@ from numpy.testing import assert_allclose
 
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
+from gwcs.coordinate_frames._coordinate_frames import (
+    _ALLOWED_UCD_DUPLICATES,
+    _ucd1_to_ctype_name_mapping,
+)
 
 astropy_version = astropy.__version__
 
@@ -520,8 +524,8 @@ def test_ucd1_to_ctype_not_out_of_sync(caplog):
     dictionary with new types defined in ``astropy``'s ``CTYPE_TO_UCD1``.
 
     """
-    cf._ucd1_to_ctype_name_mapping(
-        ctype_to_ucd=CTYPE_TO_UCD1, allowed_ucd_duplicates=cf._ALLOWED_UCD_DUPLICATES
+    _ucd1_to_ctype_name_mapping(
+        ctype_to_ucd=CTYPE_TO_UCD1, allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
     )
 
     assert len(caplog.record_tuples) == 0
@@ -536,8 +540,8 @@ def test_ucd1_to_ctype(caplog):
 
     ctype_to_ucd = dict(**CTYPE_TO_UCD1, **new_ctype_to_ucd)
 
-    inv_map = cf._ucd1_to_ctype_name_mapping(
-        ctype_to_ucd=ctype_to_ucd, allowed_ucd_duplicates=cf._ALLOWED_UCD_DUPLICATES
+    inv_map = _ucd1_to_ctype_name_mapping(
+        ctype_to_ucd=ctype_to_ucd, allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
     )
 
     assert caplog.record_tuples[-1][1] == logging.WARNING
@@ -545,7 +549,7 @@ def test_ucd1_to_ctype(caplog):
         "Found unsupported duplicate physical type"
     )
 
-    for k, v in cf._ALLOWED_UCD_DUPLICATES.items():
+    for k, v in _ALLOWED_UCD_DUPLICATES.items():
         assert inv_map.get(k, "") == v
 
     for k, v in inv_map.items():

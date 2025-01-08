@@ -148,6 +148,7 @@ __all__ = [
     "SpectralFrame",
     "StokesFrame",
     "TemporalFrame",
+    "get_ctype_from_ucd",
 ]
 
 
