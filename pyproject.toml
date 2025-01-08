@@ -44,7 +44,6 @@ docs = [
     "sphinx-copybutton",
     "pydata-sphinx-theme",
     "sphinx-asdf",
-    "tomli; python_version <'3.11'",
 ]
 test = [
     "ci-watson>=0.3.0",
@@ -175,3 +174,60 @@ ignore = [
 "gwcs/converters/tests/*" = ["S101"]
 "docs/conf.py" = ["INP001", "ERA001"]
 "convert_schemas.py" = ["PTH"]
+
+
+[tool.mypy]
+files = "gwcs"
+python_version = "3.11"
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+exclude = [
+    'gwcs/tests/$',
+    'gwcs/converters/tests/$',
+    'gwcs/wcs/$',
+    'gwcs/api.py',
+    'gwcs/coordinate_frames.py',
+    'gwcs/examples.py',
+    'gwcs/extension.py',
+    'gwcs/geometry.py',
+    'gwcs/region.py',
+    'gwcs/selector.py',
+    'gwcs/spectroscopy.py',
+    'gwcs/utils.py',
+    'gwcs/wcstools.py',
+]
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = [
+    "astropy.coordinates.*",
+    "astropy.modeling.*",
+    # "astropy.table.*",
+    "astropy.time.*",
+    "astropy.units.*",
+    # "astropy.utils.*",
+]
+follow_untyped_imports = true
+
+# For gradual adoption
+[[tool.mypy.overrides]]
+module = [
+    "gwcs.tests.*",
+    "gwcs.converters.*",
+    "gwcs.wcs.*",
+    "gwcs.api.*",
+    "gwcs.coordinate_frames.*",
+    "gwcs.examples.*",
+    "gwcs.extension.*",
+    "gwcs.geometry.*",
+    "gwcs.region.*",
+    "gwcs.selector.*",
+    "gwcs.spectroscopy.*",
+    "gwcs.utils.*",
+    "gwcs.wcstools.*",
+]
+ignore_errors = true
