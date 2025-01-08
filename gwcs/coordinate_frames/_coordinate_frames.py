@@ -1,134 +1,15 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-"""
-This module defines coordinate frames for describing the inputs and/or outputs
-of a transform.
-
-In the block diagram, the WCS pipeline has a two stage transformation (two
-astropy Model instances), with an input frame, an output frame and an
-intermediate frame.
-
-.. code-block::
-
-    ┌───────────────┐
-    │               │
-    │     Input     │
-    │     Frame     │
-    │               │
-    └───────┬───────┘
-            │
-      ┌─────▼─────┐
-      │ Transform │
-      └─────┬─────┘
-            │
-    ┌───────▼───────┐
-    │               │
-    │  Intermediate │
-    │     Frame     │
-    │               │
-    └───────┬───────┘
-            │
-      ┌─────▼─────┐
-      │ Transform │
-      └─────┬─────┘
-            │
-    ┌───────▼───────┐
-    │               │
-    │    Output     │
-    │     Frame     │
-    │               │
-    └───────────────┘
-
-
-Each frame instance is both metadata for the inputs/outputs of a transform and
-also a converter between those inputs/outputs and richer coordinate
-representations of those inputs/outputs.
-
-For example, an output frame of type `~gwcs.coordinate_frames.SpectralFrame`
-provides metadata to the `.WCS` object such as the ``axes_type`` being
-``"SPECTRAL"`` and the unit of the output etc.  The output frame also provides a
-converter of the numeric output of the transform to a
-`~astropy.coordinates.SpectralCoord` object, by combining this metadata with the
-numerical values.
-
-``axes_order`` and conversion between objects and arguments
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-One of the key concepts regarding coordinate frames is the ``axes_order`` argument.
-This argument is used to map from the components of the frame to the inputs/outputs
-of the transform.  To illustrate this consider this situation where you have a
-forward transform which outputs three coordinates ``[lat, lambda, lon]``. These
-would be represented as a `.SpectralFrame` and a `.CelestialFrame`, however, the
-axes of a `.CelestialFrame` are always ``[lon, lat]``, so by specifying two
-frames as
-
-.. code-block:: python
-
-  [SpectralFrame(axes_order=(1,)), CelestialFrame(axes_order=(2, 0))]
-
-we would map the outputs of this transform into the correct positions in the frames.
- As shown below, this is also used when constructing the inputs to the inverse
- transform.
-
-
-When taking the output from the forward transform the following transformation
-is performed by the coordinate frames:
-
-.. code-block::
-
-                   lat, lambda, lon
-                   │      │     │
-                   └──────┼─────┼────────┐
-              ┌───────────┘     └──┐     │
-              │                    │     │
-    ┌─────────▼────────┐    ┌──────▼─────▼─────┐
-    │                  │    │                  │
-    │  SpectralFrame   │    │  CelestialFrame  │
-    │                  │    │                  │
-    │       (1,)       │    │      (2, 0)      │
-    │                  │    │                  │
-    └─────────┬────────┘    └──────────┬────┬──┘
-              │                        │    │
-              │                        │    │
-              ▼                        ▼    ▼
-   SpectralCoord(lambda)    SkyCoord((lon, lat))
-
-
-When considering the backward transform the following transformations take place
-in the coordinate frames before the transform is called:
-
-.. code-block::
-
-   SpectralCoord(lambda)    SkyCoord((lon, lat))
-              │                        │    │
-              └─────┐     ┌────────────┘    │
-                    │     │    ┌────────────┘
-                    ▼     ▼    ▼
-                [lambda, lon, lat]
-                    │     │    │
-                    │     │    │
-             ┌──────▼─────▼────▼────┐
-             │                      │
-             │  Sort by axes_order  │
-             │                      │
-             └────┬──────┬─────┬────┘
-                  │      │     │
-                  ▼      ▼     ▼
-                 lat, lambda, lon
-
-"""
 
 import abc
 import contextlib
 import logging
 import numbers
 from collections import defaultdict
-from dataclasses import InitVar, dataclass
 
 import numpy as np
 from astropy import coordinates as coord
 from astropy import time
 from astropy import units as u
-from astropy import utils as astutil
 from astropy.coordinates import StokesCoord
 from astropy.utils.misc import isiterable
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
@@ -136,7 +17,8 @@ from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
 )
-from astropy.wcs.wcsapi.low_level_api import VALID_UCDS, validate_physical_types
+
+from ._properties import FrameProperties
 
 __all__ = [
     "BaseCoordinateFrame",
@@ -203,74 +85,6 @@ def get_ctype_from_ucd(ucd):
         The corresponding FITS ``CTYPE`` value or an empty string.
     """
     return UCD1_TO_CTYPE.get(ucd, "")
-
-
-@dataclass
-class FrameProperties:
-    naxes: InitVar[int]
-    axes_type: tuple[str]
-    unit: tuple[u.Unit] = None
-    axes_names: tuple[str] = None
-    axis_physical_types: list[str] = None
-
-    def __post_init__(self, naxes):
-        if isinstance(self.axes_type, str):
-            self.axes_type = (self.axes_type,)
-        else:
-            self.axes_type = tuple(self.axes_type)
-
-        if len(self.axes_type) != naxes:
-            msg = "Length of axes_type does not match number of axes."
-            raise ValueError(msg)
-
-        if self.unit is not None:
-            unit = tuple(self.unit) if astutil.isiterable(self.unit) else (self.unit,)
-            if len(unit) != naxes:
-                msg = "Number of units does not match number of axes."
-                raise ValueError(msg)
-            self.unit = tuple(u.Unit(au) for au in unit)
-        else:
-            self.unit = tuple(u.dimensionless_unscaled for na in range(naxes))
-
-        if self.axes_names is not None:
-            if isinstance(self.axes_names, str):
-                self.axes_names = (self.axes_names,)
-            else:
-                self.axes_names = tuple(self.axes_names)
-            if len(self.axes_names) != naxes:
-                msg = "Number of axes names does not match number of axes."
-                raise ValueError(msg)
-        else:
-            self.axes_names = tuple([""] * naxes)
-
-        if self.axis_physical_types is not None:
-            if isinstance(self.axis_physical_types, str):
-                self.axis_physical_types = (self.axis_physical_types,)
-            elif not isiterable(self.axis_physical_types):
-                msg = (
-                    "axis_physical_types must be of type string or iterable of strings"
-                )
-                raise TypeError(msg)
-            if len(self.axis_physical_types) != naxes:
-                msg = f'"axis_physical_types" must be of length {naxes}'
-                raise ValueError(msg)
-            ph_type = []
-            for axt in self.axis_physical_types:
-                if axt not in VALID_UCDS and not axt.startswith("custom:"):
-                    ph_type.append(f"custom:{axt}")
-                else:
-                    ph_type.append(axt)
-
-            validate_physical_types(ph_type)
-            self.axis_physical_types = tuple(ph_type)
-
-    @property
-    def _default_axis_physical_types(self):
-        """
-        The default physical types to use for this frame if none are specified
-        by the user.
-        """
-        return tuple(f"custom:{t}" for t in self.axes_type)
 
 
 class BaseCoordinateFrame(abc.ABC):
