@@ -41,6 +41,8 @@ docs = [
     "sphinx-rtd-theme",
     "stsci-rtd-theme",
     "sphinx-astropy",
+    "sphinx-copybutton",
+    "pydata-sphinx-theme",
     "sphinx-asdf",
     "tomli; python_version <'3.11'",
 ]
