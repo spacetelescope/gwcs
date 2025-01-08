@@ -100,10 +100,10 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     def array_index_to_world_values(self, *index_arrays):
         """
         Convert array indices to world coordinates.
-        This is the same as `~BaseLowLevelWCS.pixel_to_world_values` except that
-        the indices should be given in ``(i, j)`` order, where for an image
+        This is the same as `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_to_world_values`
+        except that the indices should be given in ``(i, j)`` order, where for an image
         ``i`` is the row and ``j`` is the column (i.e. the opposite order to
-        `~BaseLowLevelWCS.pixel_to_world_values`).
+        `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_to_world_values`).
         """
         pixel_arrays = index_arrays[::-1]
         return self.pixel_to_world_values(*pixel_arrays)
@@ -127,11 +127,11 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     def world_to_array_index_values(self, *world_arrays):
         """
         Convert world coordinates to array indices.
-        This is the same as `~BaseLowLevelWCS.world_to_pixel_values` except that
-        the indices should be returned in ``(i, j)`` order, where for an image
-        ``i`` is the row and ``j`` is the column (i.e. the opposite order to
-        `~BaseLowLevelWCS.pixel_to_world_values`). The indices should be
-        returned as rounded integers.
+        This is the same as `~astropy.wcs.wcsapi.BaseLowLevelWCS.world_to_pixel_values`
+        except that the indices should be returned in ``(i, j)`` order, where for an
+        image ``i`` is the row and ``j`` is the column (i.e. the opposite order to
+        `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_to_world_values`). The indices should
+        be returned as rounded integers.
         """
         results = self.world_to_pixel_values(*world_arrays)
         results = (results,) if self.pixel_n_dim == 1 else results[::-1]
@@ -143,7 +143,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     def array_shape(self):
         """
         The shape of the data that the WCS applies to as a tuple of
-        length `~BaseLowLevelWCS.pixel_n_dim`.
+        length `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_n_dim`.
         If the WCS is valid in the context of a dataset with a particular
         shape, then this property can be used to store the shape of the
         data. This can be used for example if implementing slicing of WCS
@@ -167,12 +167,13 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     def pixel_bounds(self):
         """
         The bounds (in pixel coordinates) inside which the WCS is defined,
-        as a list with `~BaseLowLevelWCS.pixel_n_dim` ``(min, max)`` tuples.
-        The bounds should be given in ``[(xmin, xmax), (ymin, ymax)]``
-        order. WCS solutions are sometimes only guaranteed to be accurate
-        within a certain range of pixel values, for example when defining a
-        WCS that includes fitted distortions. This is an optional property,
-        and it should return `None` if a shape is not known or relevant.
+        as a list with `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_n_dim`
+        ``(min, max)`` tuples.  The bounds should be given in
+        ``[(xmin, xmax), (ymin, ymax)]`` order. WCS solutions are sometimes
+        only guaranteed to be accurate within a certain range of pixel values,
+        for example when defining a WCS that includes fitted distortions. This
+        is an optional property, and it should return `None` if a shape is not
+        known or relevant.
         """
         bounding_box = self.bounding_box
         if bounding_box is None:
@@ -225,12 +226,12 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     @property
     def axis_correlation_matrix(self):
         """
-        Returns an (`~BaseLowLevelWCS.world_n_dim`,
-        `~BaseLowLevelWCS.pixel_n_dim`) matrix that indicates using booleans
-        whether a given world coordinate depends on a given pixel coordinate.
-        This defaults to a matrix where all elements are `True` in the absence of
-        any further information. For completely independent axes, the diagonal
-        would be `True` and all other entries `False`.
+        Returns an (`~astropy.wcs.wcsapi.BaseLowLevelWCS.world_n_dim`,
+        `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_n_dim`) matrix that indicates
+        using booleans whether a given world coordinate depends on a given pixel
+        coordinate.  This defaults to a matrix where all elements are `True` in
+        the absence of any further information. For completely independent axes,
+        the diagonal would be `True` and all other entries `False`.
         """
         return separable.separability_matrix(self.forward_transform)
 
