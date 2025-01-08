@@ -13,6 +13,9 @@
 
 - Implement code linting and automatic formatting. [#544]
 
+- Refactor ``WCS`` to use a ``Pipeline`` base class which adds basic checks to ensure that the pipeline is valid. These
+  include checking for duplicate frame names and that the last transform is ``None``. [#545]
+
 
 0.22.0 (2024-12-19)
 -------------------
