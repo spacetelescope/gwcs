@@ -3,11 +3,9 @@ import functools
 import itertools
 import warnings
 
-import astropy.units as u
 import astropy.io.fits as fits
 import numpy as np
 import numpy.linalg as npla
-from astropy import utils as astutil
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -19,6 +17,7 @@ from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
 from astropy.wcs.wcsapi.high_level_api import high_level_objects_to_values, values_to_high_level_objects
 
+from astropy import units as u
 from scipy import linalg, optimize
 
 from . import coordinate_frames as cf
@@ -139,6 +138,7 @@ class WCS(GWCSAPIMixin):
 
     def __init__(self, forward_transform=None, input_frame='detector', output_frame=None,
                  name=""):
+        #self.low_level_wcs = self
         self._approx_inverse = None
         self._available_frames = []
         self._pipeline = []
@@ -175,6 +175,7 @@ class WCS(GWCSAPIMixin):
                     else:
                         name, frame_obj = self._get_frame_name(item[0])
                     super(WCS, self).__setattr__(name, frame_obj)
+                    #self._pipeline.append((name, item[1]))
                     self._pipeline = forward_transform
             else:
                 raise TypeError("Expected forward_transform to be a model or a "
@@ -296,20 +297,6 @@ class WCS(GWCSAPIMixin):
             backward.inverse = self.forward_transform
         return backward
 
-    def _get_frame_by_name(self, frame_name):
-        """
-        Return the frame object by name.
-        """
-        if not isinstance(frame_name, str):
-            return frame_name
-
-        frames = [step.frame for step in self._pipeline if step.frame.name == frame_name]
-        if len(frames) > 1:
-            raise ValueError(f"There is more than one frame named {frame_name}")
-        if len(frames) == 0:
-            return ValueError(f"No frame found matching {frame_name}")
-        return frames[0]
-
     def _get_frame_index(self, frame):
         """
         Return the index in the pipeline where this frame is locate.
@@ -346,19 +333,6 @@ class WCS(GWCSAPIMixin):
             frame_obj = frame
         return name, frame_obj
 
-    def _add_units_input(self, arrays, frame):
-        if frame is not None:
-            return tuple(u.Quantity(array, unit) for array, unit in zip(arrays, frame.unit))
-
-        return arrays
-
-    def _remove_units_input(self, arrays, frame):
-        if frame is not None:
-            return tuple(array.to_value(unit) if isinstance(array, u.Quantity) else array
-                         for array, unit in zip(arrays, frame.unit))
-
-        return arrays
-
     def __call__(self, *args, **kwargs):
         """
         Executes the forward transform.
@@ -366,6 +340,11 @@ class WCS(GWCSAPIMixin):
         args : float or array-like
             Inputs in the input coordinate system, separate inputs
             for each dimension.
+        with_units : bool
+            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
+            the output cooridnate frame.
+            Optional, default=False.
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to
              any of the inputs being outside the bounding_box are set
@@ -373,53 +352,26 @@ class WCS(GWCSAPIMixin):
         fill_value : float, optional
             Output value for inputs outside the bounding_box
             (default is np.nan).
-        with_units : bool, optional
-            If ``True`` then high level Astropy objects will be returned.
-            Optional, default=False.
         """
-        with_units = kwargs.pop("with_units", False)
-
-        results = self._call_forward(*args, **kwargs)
-
-        if with_units:
-            if not astutil.isiterable(results):
-                results = (results,)
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, self.output_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self)
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
-        return results
-
-    def _call_forward(self, *args, from_frame=None, to_frame=None,
-                      with_bounding_box=True, fill_value=np.nan, **kwargs):
-        """
-        Executes the forward transform, but values only.
-        """
-        if from_frame is None and to_frame is None:
-            transform = self.forward_transform
-        else:
-            transform = self.get_transform(from_frame, to_frame)
-        if from_frame is None:
-            from_frame = self.input_frame
-        if to_frame is None:
-            to_frame = self.output_frame
-
+        transform = self.forward_transform
         if transform is None:
             raise NotImplementedError("WCS.forward_transform is not implemented.")
 
-        # Validate that the input type matches what the transform expects
-        input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
-        if not input_is_quantity and transform.uses_quantity:
-            args = self._add_units_input(args, from_frame)
-        if not transform.uses_quantity and input_is_quantity:
-            args = self._remove_units_input(args, from_frame)
+        with_units = kwargs.pop("with_units", False)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
 
-        return transform(*args,
-                         with_bounding_box=with_bounding_box,
-                         fill_value=fill_value,
-                         **kwargs)
+        result = transform(*args, **kwargs)
+
+        if with_units:
+            if self.output_frame.naxes == 1:
+                result = self.output_frame.coordinates(result)
+            else:
+                result = self.output_frame.coordinates(*result)
+
+        return result
 
     def in_image(self, *args, **kwargs):
         """
@@ -481,8 +433,9 @@ class WCS(GWCSAPIMixin):
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
         with_units : bool, optional
-            If ``True`` then high level astropy object (i.e. ``Quantity``) will be returned.
-            Optional, default=False.
+            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
+            the output cooridnate frame. Default is `False`.
 
         Other Parameters
         ----------------
@@ -495,58 +448,46 @@ class WCS(GWCSAPIMixin):
         result : tuple or value
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
-            The return type will be `~astropy.units.Quantity` objects if the
-            transform returns ``Quantity`` objects, else values.
 
         """
-        # must pop before calling the model
         with_units = kwargs.pop('with_units', False)
 
-        if utils.is_high_level(*args, low_level_wcs=self):
-            args = high_level_objects_to_values(*args, low_level_wcs=self)
-
-        results = self._call_backward(*args, **kwargs)
-
-        if with_units:
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, self.input_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self.input_frame)
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
-
-        return results
-
-    def _call_backward(self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs):
         try:
-            transform = self.backward_transform
+            btrans = self.backward_transform
         except NotImplementedError:
-            transform = None
+            btrans = None
+        if not utils.isnumerical(args[0]):
+            # convert astropy objects to numbers and arrays
+            args = self.output_frame.coordinate_to_quantity(*args)
+            if self.output_frame.naxes == 1:
+                args = [args]
 
+            # if the transform does not use units, getthe numerical values
+            if btrans is not None and not btrans.uses_quantity:
+                args = utils.get_values(self.output_frame.unit, *args)
+
+        with_bounding_box = kwargs.pop('with_bounding_box', True)
+        fill_value = kwargs.pop('fill_value', np.nan)
+        akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
 
-        if transform is not None:
-            # Validate that the input type matches what the transform expects
-            input_is_quantity = any((isinstance(a, u.Quantity) for a in args))
-            if not input_is_quantity and transform.uses_quantity:
-                args = self._add_units_input(args, self.output_frame)
-            if not transform.uses_quantity and input_is_quantity:
-                args = self._remove_units_input(args, self.output_frame)
-
-            # remove iterative inverse-specific keyword arguments:
-            akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **akwargs)
+        if btrans is not None:
+            result = btrans(*args, **akwargs)
         else:
-            # Always strip units for numerical inverse
-            args = self._remove_units_input(args, self.output_frame)
-            result = self.numerical_inverse(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs)
+            result = self.numerical_inverse(*args, **kwargs, with_units=with_units)
 
         # deal with values outside the bounding box
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
-        return result
+        if with_units and self.input_frame:
+            if self.input_frame.naxes == 1:
+                return self.input_frame.coordinates(result)
+            else:
+                return self.input_frame.coordinates(*result)
+        else:
+            return result
 
     def outside_footprint(self, world_arrays):
         world_arrays = list(world_arrays)
@@ -555,7 +496,7 @@ class WCS(GWCSAPIMixin):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if utils.is_high_level(world_arrays[0], low_level_wcs=self):
+        if not utils.isnumerical(world_arrays[0]):
             not_numerical = True
             world_arrays = high_level_objects_to_values(*world_arrays, low_level_wcs=self)
         for axtyp in axes_types:
@@ -612,7 +553,7 @@ class WCS(GWCSAPIMixin):
 
     def numerical_inverse(self, *args, tolerance=1e-5, maxiter=30, adaptive=True,
                           detect_divergence=True, quiet=True, with_bounding_box=True,
-                          fill_value=np.nan, **kwargs):
+                          fill_value=np.nan, with_units=False, **kwargs):
         """
         Invert coordinates from output frame to input frame using numerical
         inverse.
@@ -638,6 +579,11 @@ class WCS(GWCSAPIMixin):
 
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
+
+        with_units : bool, optional
+            If ``True`` returns a `~astropy.coordinates.SkyCoord` or
+            `~astropy.coordinates.SpectralCoord` object, by using the units of
+            the output cooridnate frame. Default is `False`.
 
         tolerance : float, optional
             *Absolute tolerance* of solution. Iteration terminates when the
@@ -843,8 +789,11 @@ class WCS(GWCSAPIMixin):
          [2.76552923e-05 1.14789013e-05]]
 
         """
-        if kwargs.pop("with_units", False):
-            raise ValueError("Support for with_units in numerical_inverse has been removed, use inverse")
+        if not utils.isnumerical(args[0]):
+            args = self.output_frame.coordinate_to_quantity(*args)
+            if self.output_frame.naxes == 1:
+                args = [args]
+            args = utils.get_values(self.output_frame.unit, *args)
 
         args_shape = np.shape(args)
         nargs = args_shape[0]
@@ -914,7 +863,13 @@ class WCS(GWCSAPIMixin):
 
             result = tuple(np.reshape(result, args_shape))
 
-        return result
+        if with_units and self.input_frame:
+            if self.input_frame.naxes == 1:
+                return self.input_frame.coordinates(result)
+            else:
+                return self.input_frame.coordinates(*result)
+        else:
+            return result
 
     def _vectorized_fixed_point(self, pix0, world, tolerance, maxiter,
                                 adaptive, detect_divergence, quiet,
@@ -1198,28 +1153,33 @@ class WCS(GWCSAPIMixin):
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is np.nan).
         """
-        # Determine if the transform is actually an inverse
-        from_ind = self._get_frame_index(from_frame)
-        to_ind = self._get_frame_index(to_frame)
-        backward = to_ind < from_ind
-        # Convert from strings to frame objects
-        from_frame = self._get_frame_by_name(from_frame)
-        to_frame = self._get_frame_by_name(to_frame)
+        transform = self.get_transform(from_frame, to_frame)
+        if not utils.isnumerical(args[0]):
+            inp_frame = getattr(self, from_frame)
+            args = inp_frame.coordinate_to_quantity(*args)
+            if not transform.uses_quantity:
+                args = utils.get_values(inp_frame.unit, *args)
 
         with_units = kwargs.pop("with_units", False)
-        if backward and utils.is_high_level(*args, low_level_wcs=from_frame):
-            args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
+        if 'with_bounding_box' not in kwargs:
+            kwargs['with_bounding_box'] = True
+        if 'fill_value' not in kwargs:
+            kwargs['fill_value'] = np.nan
 
-        results = self._call_forward(*args, from_frame=from_frame, to_frame=to_frame, **kwargs)
+        result = transform(*args, **kwargs)
 
         if with_units:
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, to_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=to_frame)
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
-        return results
+            to_frame_name, to_frame_obj = self._get_frame_name(to_frame)
+            if to_frame_obj is not None:
+                if to_frame_obj.naxes == 1:
+                    result = to_frame_obj.coordinates(result)
+                else:
+                    result = to_frame_obj.coordinates(*result)
+            else:
+                raise TypeError("Coordinate objects could not be created because"
+                                "frame {0} is not defined.".format(to_frame_name))
+
+        return result
 
     @property
     def available_frames(self):
@@ -1232,6 +1192,7 @@ class WCS(GWCSAPIMixin):
             {frame_name: frame_object or None}
         """
         if self._pipeline:
+            #return [getattr(frame[0], "name", frame[0]) for frame in self._pipeline]
             return [step.frame if isinstance(step.frame, str) else step.frame.name for step in self._pipeline ]
         else:
             return None

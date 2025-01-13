@@ -10,7 +10,9 @@ from astropy.modeling import models as astmodels
 from astropy.modeling import core, projections
 from astropy.io import fits
 from astropy import coordinates as coords
-import astropy.units as u
+from astropy import units as u
+from astropy.time import Time, TimeDelta
+from astropy import table
 from astropy.wcs import Celprm
 
 
@@ -464,26 +466,17 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-def is_high_level(*args, low_level_wcs):
+def isnumerical(val):
     """
-    Determine if args matches the high level classes as defined by
-    ``low_level_wcs``.
+    Determine if a value is numerical (number or np.array of numbers).
     """
-    if len(args) != len(low_level_wcs.world_axis_object_classes):
-        return False
-
-    type_match = [(type(arg), waoc[0])
-                  for arg, waoc in zip(args, low_level_wcs.world_axis_object_classes.values())]
-
-    types_are_high_level = [argt is t for argt, t in type_match]
-
-    if all(types_are_high_level):
-        return True
-
-    if any(types_are_high_level):
-        raise TypeError(
-            "Invalid types were passed, got "
-            f"({', '.join(tm[0].__name__ for tm in type_match)}) expected "
-            f"({', '.join(tm[1].__name__ for tm in type_match)}).")
-
-    return False
+    isnum = True
+    astropy_types=(coords.SkyCoord, u.Quantity, Time, TimeDelta, table.Column, table.Row)
+    if isinstance(val, astropy_types):
+        isnum = False
+    elif (isinstance(val, np.ndarray)
+          and not np.issubdtype(val.dtype, np.floating)
+          and not np.issubdtype(val.dtype, np.integer)
+          ):
+        isnum = False
+    return isnum

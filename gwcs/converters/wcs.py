@@ -147,7 +147,18 @@ class SpectralFrameConverter(FrameConverter):
         from ..coordinate_frames import SpectralFrame
         node = self._from_yaml_tree(node, tag, ctx)
 
+        if 'reference_position' in node:
+            node['reference_position'] = node['reference_position'].upper()
+
         return SpectralFrame(**node)
+
+    def to_yaml_tree(self, frame, tag, ctx):
+        node = self._to_yaml_tree(frame, tag, ctx)
+
+        if frame.reference_position is not None:
+            node['reference_position'] = frame.reference_position.lower()
+
+        return node
 
 
 class CompositeFrameConverter(FrameConverter):

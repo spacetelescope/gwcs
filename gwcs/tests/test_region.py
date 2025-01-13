@@ -8,9 +8,8 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from astropy.modeling import models
 import pytest
-from gwcs import region, selector, WCS
-from gwcs import utils as gwutils
-from gwcs import coordinate_frames as cf
+from .. import region, selector
+from .. import utils as gwutils
 
 
 def test_LabelMapperArray_from_vertices_int():
@@ -237,10 +236,6 @@ def test_RegionsSelector():
     # Test setting ``undefined_transform_value`` to a non-default value.
     reg_selector.undefined_transform_value = -100
     assert_equal(reg_selector(0, 0), [-100, -100])
-
-    wcs = WCS(forward_transform=reg_selector, output_frame=cf.Frame2D())
-    out = wcs(1, 1)
-    assert out == (-100, -100)
 
 
 def test_overalpping_ranges():

@@ -1,16 +1,6 @@
 0.22.0 (2024-12-19)
 -------------------
 
-- Coordinate frames now have a "native" order and then are sorted based on ``axes_order``. [#457]
-
-- ``WCS.numerical_inverse`` no longer accepts high level objects (``with_units=`` is not supported) use ``WCS.inverse``. [#457]
-
-- ``CoordinateFrame.coordinates`` has been replaced by ``CoordinateFrame.to_high_level_coordinates`` [#457]
-
-- ``CoordinateFrame.to_quantity`` has been replaced by ``CoordinateFrame.from_high_level_coordinates``. [#457]
-
-- Inputs to ``CelestialFrame``, such as ``axes_names`` are now explicitly in lon, lat order and will re sorted based on ``axes_order=``. [#457]
-
 - Replace usages of ``copy_arrays`` with ``memmap`` [#503]
 
 - Fix an issue with units in ``wcs_from_points``. [#507]

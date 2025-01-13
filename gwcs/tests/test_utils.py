@@ -6,6 +6,7 @@ from astropy import wcs as fitswcs
 from astropy import units as u
 from astropy import coordinates as coord
 from astropy.modeling import models
+from astropy import table
 
 from astropy.tests.helper import assert_quantity_allclose
 import pytest
@@ -89,6 +90,25 @@ def test_get_axes():
     assert cel == [0, 2]
     assert spec == [1]
     assert not other
+
+
+def test_isnumerical():
+    sky = coord.SkyCoord(1 * u.deg, 2 * u.deg)
+    assert not gwutils.isnumerical(sky)
+
+    assert not gwutils.isnumerical(2 * u.m)
+
+    assert gwutils.isnumerical(float(0))
+    assert gwutils.isnumerical(np.array(0))
+
+    assert not gwutils.isnumerical(np.array(['s200', '234']))
+
+    assert gwutils.isnumerical(np.array(0, dtype='>f8'))
+    assert gwutils.isnumerical(np.array(0, dtype='>i4'))
+
+    # check a table column
+    t = table.Table(data=[[1,2,3], [4,5,6]], names=['x', 'y'])
+    assert not gwutils.isnumerical(t['x'])
 
 
 def test_get_values():
