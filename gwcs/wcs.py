@@ -1998,10 +1998,7 @@ class WCS(GWCSAPIMixin):
         input_axes = sorted(set(input_axes))
 
         if len(input_axes) != 2:
-            msg = (
-                "Only CelestialFrame that correspond to two "
-                "input axes are supported."
-            )
+            msg = "Only CelestialFrame that correspond to two input axes are supported."
             raise ValueError(msg)
 
         # Axis number for FITS axes.
@@ -2407,10 +2404,7 @@ class WCS(GWCSAPIMixin):
             or max(input_axes) + 1 != n_inputs
             or min(input_axes) < 0
         ):
-            msg = (
-                "Input axes indices are inconsistent with the "
-                "forward transformation."
-            )
+            msg = "Input axes indices are inconsistent with the forward transformation."
             raise ValueError(msg)
 
         if detect_celestial:
