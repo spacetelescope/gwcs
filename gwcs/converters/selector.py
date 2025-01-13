@@ -34,8 +34,7 @@ class LabelMapperConverter(TransformConverterBase):
             inputs_mapping, models.Mapping
         ):
             msg = (
-                "inputs_mapping must be an instance"
-                "of astropy.modeling.models.Mapping."
+                "inputs_mapping must be an instanceof astropy.modeling.models.Mapping."
             )
             raise TypeError(msg)
         mapper = node["mapper"]

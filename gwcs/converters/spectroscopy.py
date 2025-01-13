@@ -102,7 +102,7 @@ class GratingEquationConverter(TransformConverterBase):
                 groove_density=groove_density, spectral_order=order
             )
         else:
-            msg = "Can't create a GratingEquation model with " f"output {output}"
+            msg = f"Can't create a GratingEquation model with output {output}"
             raise ValueError(msg)
         return model
 
