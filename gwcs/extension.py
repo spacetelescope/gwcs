@@ -2,26 +2,22 @@
 import importlib.resources
 
 from asdf.extension import Extension, ManifestExtension
-
-from .converters.geometry import DirectionCosinesConverter, SphericalCartesianConverter
-from .converters.selector import LabelMapperConverter, RegionsSelectorConverter
-from .converters.spectroscopy import (
-    GratingEquationConverter,
-    SellmeierGlassConverter,
-    SellmeierZemaxConverter,
-    Snell3DConverter,
-)
 from .converters.wcs import (
-    CelestialFrameConverter,
-    CompositeFrameConverter,
-    Frame2DConverter,
-    FrameConverter,
-    SpectralFrameConverter,
-    StepConverter,
-    StokesFrameConverter,
-    TemporalFrameConverter,
-    WCSConverter,
+    CelestialFrameConverter, CompositeFrameConverter, FrameConverter,
+    Frame2DConverter, SpectralFrameConverter, StepConverter,
+    StokesFrameConverter, TemporalFrameConverter, WCSConverter,
 )
+from .converters.selector import (
+    LabelMapperConverter, RegionsSelectorConverter
+)
+from .converters.spectroscopy import (
+    GratingEquationConverter, SellmeierGlassConverter, SellmeierZemaxConverter,
+    Snell3DConverter
+)
+from .converters.geometry import (
+    DirectionCosinesConverter, SphericalCartesianConverter
+)
+
 
 WCS_MODEL_CONVERTERS = [
     CelestialFrameConverter(),
@@ -47,12 +43,7 @@ WCS_MODEL_CONVERTERS = [
 # that occur earlier in the list.
 WCS_MANIFEST_URIS = [
     f"asdf://asdf-format.org/astronomy/gwcs/manifests/{path.stem}"
-    for path in sorted(
-        (
-            importlib.resources.files("asdf_wcs_schemas.resources") / "manifests"
-        ).iterdir(),
-        reverse=True,
-    )
+    for path in sorted((importlib.resources.files("asdf_wcs_schemas.resources") / "manifests").iterdir(), reverse=True)
 ]
 
 # 1.0.0 contains multiple versions of the same tag, a bug fixed in
@@ -64,7 +55,7 @@ TRANSFORM_EXTENSIONS = [
         converters=WCS_MODEL_CONVERTERS,
     )
     for uri in WCS_MANIFEST_URIS
-    if len(WCS_MANIFEST_URIS) == 1 or "1.0.0" not in uri
+    if len(WCS_MANIFEST_URIS) == 1 or '1.0.0' not in uri
 ]
 
 # if we don't register something for the 1.0.0 extension/manifest
@@ -75,10 +66,9 @@ TRANSFORM_EXTENSIONS = [
 # extension for 1.0.0 which doesn't support any tags or types
 # but will be installed into asdf preventing the warning
 if len(TRANSFORM_EXTENSIONS) > 1:
-
     class _EmptyExtension(Extension):
-        extension_uri = "asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0"
-        legacy_class_names = ("gwcs.extension.GWCSExtension",)
+        extension_uri = 'asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.0.0'
+        legacy_class_names=["gwcs.extension.GWCSExtension"]
 
     TRANSFORM_EXTENSIONS.append(_EmptyExtension())
 

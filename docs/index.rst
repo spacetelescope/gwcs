@@ -100,7 +100,7 @@ To install the latest release::
 
     pip install gwcs
 
-The latest release of GWCS is also available as a conda package via `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__.
+The latest release of GWCS is also available as part of `astroconda <https://github.com/astroconda/astroconda>`__.
 
 
 .. _getting-started:
@@ -159,7 +159,7 @@ involves 4 sequential transformations:
   projection. If the field of view is small, the inaccuracies resulting
   leaving this out will be small; however, this is generally applied.
 - Transforming the center pixel to the appropriate celestial coordinate
-  with the appropriate orientation on the sky. For simplicity's sake,
+  with the approprate orientation on the sky. For simplicity's sake,
   we assume the detector array is already oriented with north up, and
   that the array has the appropriate parity as the sky coordinates.
 
@@ -240,7 +240,13 @@ To convert a pixel (x, y) = (1, 2) to sky coordinates, call the WCS object as a 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform`
 if available, otherwise applies an iterative method to calculate the reverse coordinates.
 
-GWCS supports the :ref:`wcsapi` which defines several methods to work with high level Astropy objects:
+.. doctest-skip::
+
+  >>> wcsobj.invert(*sky)
+  (0.9999999996185807, 1.999999999186798)
+
+GWCS supports the common WCS interface which defines several methods
+to work with high level Astropy objects:
 
 .. doctest-skip::
 

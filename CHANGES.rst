@@ -1,19 +1,3 @@
-0.23.0 (unreleased)
--------------------
-
-- Coordinate frames now have a "native" order and then are sorted based on ``axes_order``. [#457]
-
-- ``WCS.numerical_inverse`` no longer accepts high level objects (``with_units=`` is not supported) use ``WCS.inverse``. [#457]
-
-- ``CoordinateFrame.coordinates`` has been replaced by ``CoordinateFrame.to_high_level_coordinates`` [#457]
-
-- ``CoordinateFrame.to_quantity`` has been replaced by ``CoordinateFrame.from_high_level_coordinates``. [#457]
-
-- Inputs to ``CelestialFrame``, such as ``axes_names`` are now explicitly in lon, lat order and will re sorted based on ``axes_order=``. [#457]
-
-- Implement code linting and automatic formatting. [#544]
-
-
 0.22.0 (2024-12-19)
 -------------------
 
@@ -26,6 +10,7 @@
 - Synchronize ``region.py`` with the copies of it in JWST and Romancal. [#517]
 
 - Add support for compound bounding boxes and ignored bounding box entries. [#519]
+
 
 - Add ``gwcs.examples`` module, based on the examples located in the testing ``conftest.py``. [#521]
 
@@ -226,7 +211,7 @@ New Features
 - Added ``insert_frame`` method to modify the pipeline of a ``WCS`` object. [#299]
 
 - Added ``to_fits_tab`` method to generate FITS header and binary table
-  extension following FITS WCS ``-TAB`` convention. [#295]
+  extension following FITS WCS ``-TAB`` convension. [#295]
 
 - Added ``in_image`` function for testing whether a point in world coordinates
   maps back to the domain of definition of the forward transformation. [#322]
@@ -282,7 +267,7 @@ New Features
 
 - Removed astropy-helpers from package. [#249]
 
-- Added a method ``fix_inputs`` which returns an unique WCS from a compound
+- Added a method ``fix_inputs`` which rturns an unique WCS from a compound
   WCS by fixing inputs. [#254]
 
 - Added two new transforms - ``ToDirectionCosines`` and ``FromDirectionCosines``. [#256]
