@@ -20,10 +20,9 @@ An instance of a ``LabelMapper`` class is passed to `RegionsSelector`.
 The labels are used by `RegionsSelector` to match inputs to transforms.
 Finally, `RegionsSelector` evaluates the transforms on the corresponding inputs.
 Label mappers and transforms take the same inputs as
-`RegionsSelector`. The inputs should be filtered appropriately using the
-``inputs_mapping`` argument which is ian instance of
-`~astropy.modeling.mappings.Mapping`.  The transforms in "transform_selector"
-should have the same number of inputs and outputs.
+`RegionsSelector`. The inputs should be filtered appropriately using the ``inputs_mapping``
+argument which is ian instance of `~astropy.modeling.mappings.Mapping`.
+The transforms in "transform_selector" should have the same number of inputs and outputs.
 
 This is illustrated below using two regions, labeled 1 and 2 ::
 
@@ -66,24 +65,17 @@ label mappers.
 
 
 """
-
-import contextlib
 import warnings
-
 import numpy as np
-from astropy.modeling import models as astmodels
 from astropy.modeling.core import Model
+from astropy.modeling import models as astmodels
 
 from . import region
 from .utils import RegionError, _toindex
 
-__all__ = [
-    "LabelMapper",
-    "LabelMapperArray",
-    "LabelMapperDict",
-    "LabelMapperRange",
-    "RegionsSelector",
-]
+
+__all__ = ['LabelMapperArray', 'LabelMapperDict', 'LabelMapperRange', 'RegionsSelector',
+           'LabelMapper']
 
 
 def get_unique_regions(regions):
@@ -93,24 +85,25 @@ def get_unique_regions(regions):
 
         try:
             unique_regions.remove(0)
+            unique_regions.remove('')
+        except ValueError:
+            pass
+        try:
             unique_regions.remove("")
         except ValueError:
             pass
-        with contextlib.suppress(ValueError):
-            unique_regions.remove("")
     elif isinstance(regions, dict):
         unique_regions = []
-        for key in regions:
+        for key in regions.keys():
             unique_regions.append(regions[key](key))
     else:
-        msg = "Unable to get unique regions."
-        raise TypeError(msg)
+        raise TypeError("Unable to get unique regions.")
     return unique_regions
 
 
 class LabelMapperArrayIndexingError(Exception):
     def __init__(self, message):
-        super().__init__(message)
+        super(LabelMapperArrayIndexingError, self).__init__(message)
 
 
 class _LabelMapper(Model):
@@ -134,12 +127,11 @@ class _LabelMapper(Model):
     name : str
         The name of this transform.
     """
-
     def __init__(self, mapper, no_label, inputs_mapping=None, name=None, **kwargs):
         self._no_label = no_label
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
-        super().__init__(name=name, **kwargs)
+        super(_LabelMapper, self).__init__(name=name, **kwargs)
 
     @property
     def mapper(self):
@@ -154,11 +146,11 @@ class _LabelMapper(Model):
         return self._no_label
 
     def evaluate(self, *args):
-        msg = "Subclasses should implement this method."
-        raise NotImplementedError(msg)
+        raise NotImplementedError("Subclasses should implement this method.")
 
 
 class LabelMapperArray(_LabelMapper):
+
     """
     Maps array locations to labels.
 
@@ -194,16 +186,16 @@ class LabelMapperArray(_LabelMapper):
             _no_label = 0
         else:
             _no_label = ""
-        super().__init__(mapper, _no_label, name=name, **kwargs)
-        self.inputs = ("x", "y")
-        self.outputs = ("label",)
+        super(LabelMapperArray, self).__init__(mapper, _no_label, name=name, **kwargs)
+        self.inputs = ('x', 'y')
+        self.outputs = ('label',)
 
     def evaluate(self, *args):
         args = tuple([_toindex(a) for a in args])
         try:
             result = self._mapper[args[::-1]]
         except IndexError as e:
-            raise LabelMapperArrayIndexingError(e) from e
+            raise LabelMapperArrayIndexingError(e)
         return result
 
     @classmethod
@@ -241,7 +233,7 @@ class LabelMapperArray(_LabelMapper):
         ...           }
         >>> mapper = LabelMapperArray.from_vertices((2400, 2400), regions)
 
-        """  # noqa: E501
+        """
         labels = np.array(list(regions.keys()))
         mask = np.zeros(shape, dtype=labels.dtype)
 
@@ -253,6 +245,7 @@ class LabelMapperArray(_LabelMapper):
 
 
 class LabelMapperDict(_LabelMapper):
+
     """
     Maps a number to a transform, which when evaluated returns a label.
 
@@ -276,7 +269,6 @@ class LabelMapperDict(_LabelMapper):
     name : str
         The name of this transform.
     """
-
     standard_broadcasting = False
 
     linear = False
@@ -284,20 +276,18 @@ class LabelMapperDict(_LabelMapper):
 
     n_outputs = 1
 
-    def __init__(
-        self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs
-    ):
+    def __init__(self, inputs, mapper, inputs_mapping=None, atol=10**-8, name=None, **kwargs):
         self._atol = atol
         _no_label = 0
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        if not all(m.n_outputs == 1 for m in mapper.values()):
-            msg = "All transforms in mapper must have one output."
-            raise TypeError(msg)
+        if not all([m.n_outputs == 1 for m in mapper.values()]):
+            raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
-        self.outputs = ("labels",)
+        super(LabelMapperDict, self).__init__(mapper, _no_label, inputs_mapping,
+                                              name=name, **kwargs)
+        self.outputs = ('labels',)
 
     @property
     def n_inputs(self):
@@ -352,6 +342,7 @@ class LabelMapperDict(_LabelMapper):
 
 
 class LabelMapperRange(_LabelMapper):
+
     """
     The structure this class uses maps a range of values to a transform.
     Given an input value it finds the range the value falls in and returns
@@ -376,7 +367,6 @@ class LabelMapperRange(_LabelMapper):
     name : str
         The name of this transform.
     """
-
     standard_broadcasting = False
 
     n_outputs = 1
@@ -386,18 +376,17 @@ class LabelMapperRange(_LabelMapper):
 
     def __init__(self, inputs, mapper, inputs_mapping=None, name=None, **kwargs):
         if self._has_overlapping(np.array(list(mapper.keys()))):
-            msg = "Overlapping ranges of values are not supported."
-            raise ValueError(msg)
+            raise ValueError("Overlapping ranges of values are not supported.")
         self._inputs = inputs
         self._n_inputs = len(inputs)
         _no_label = 0
-        if not all(m.n_outputs == 1 for m in mapper.values()):
-            msg = "All transforms in mapper must have one output."
-            raise TypeError(msg)
+        if not all([m.n_outputs == 1 for m in mapper.values()]):
+            raise TypeError("All transforms in mapper must have one output.")
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
-        super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
-        self.outputs = ("labels",)
+        super(LabelMapperRange, self).__init__(mapper, _no_label, inputs_mapping,
+                                               name=name, **kwargs)
+        self.outputs = ('labels',)
 
     @property
     def n_inputs(self):
@@ -426,11 +415,16 @@ class LabelMapperRange(_LabelMapper):
         start = ranges[:, 0]
         end = ranges[:, 1]
         start.sort()
-        values = [[v, d[v]] for v in start]
-        values = np.array(values)
-        start = np.roll(values[:, 0], -1)
-        end = values[:, 1]
-        return bool(any((end - start)[:-1] > 0) or any(start[-1] > end))
+        l = []
+        for v in start:
+            l.append([v, d[v]])
+        l = np.array(l)
+        start = np.roll(l[:, 0], -1)
+        end = l[:, 1]
+        if any((end - start)[:-1] > 0) or any(start[-1] > end):
+            return True
+        else:
+            return False
 
     # move this to utils?
     def _find_range(self, value_range, value):
@@ -453,11 +447,11 @@ class LabelMapperRange(_LabelMapper):
         a, b = value_range[:, 0], value_range[:, 1]
         ind = np.logical_and(value >= a, value <= b).nonzero()[0]
         if ind.size > 1:
-            msg = "There are overlapping ranges."
-            raise ValueError(msg)
-        if ind.size == 0:
+            raise ValueError("There are overlapping ranges.")
+        elif ind.size == 0:
             return None
-        return ind.item()
+        else:
+            return ind.item()
 
     def evaluate(self, *args):
         shape = args[0].shape
@@ -477,9 +471,9 @@ class LabelMapperRange(_LabelMapper):
         for val_range in value_ranges:
             temp = keys.copy()
             temp[nan_ind] = np.nan
-            temp = np.where(
-                np.logical_or(temp <= val_range[0], temp >= val_range[1]), np.nan, temp
-            )
+            temp = np.where(np.logical_or(temp <= val_range[0],
+                                          temp >= val_range[1]),
+                            np.nan, temp)
             ind = ~np.isnan(temp)
 
             if ind.any():
@@ -489,13 +483,12 @@ class LabelMapperRange(_LabelMapper):
                 continue
         res.shape = shape
         if len(np.nonzero(res)[0]) == 0:
-            warnings.warn(
-                f"All data is outside the valid range - {self.name}.", stacklevel=2
-            )
+            warnings.warn("All data is outside the valid range - {0}.".format(self.name))
         return res
 
 
 class RegionsSelector(Model):
+
     """
     This model defines discontinuous transforms.
     It maps inputs to their corresponding transforms.
@@ -519,22 +512,13 @@ class RegionsSelector(Model):
     name : str
         The name of this transform.
     """
-
     standard_broadcasting = False
 
     linear = False
     fittable = False
 
-    def __init__(
-        self,
-        inputs,
-        outputs,
-        selector,
-        label_mapper,
-        undefined_transform_value=np.nan,
-        name=None,
-        **kwargs,
-    ):
+    def __init__(self, inputs, outputs, selector, label_mapper, undefined_transform_value=np.nan,
+                 name=None, **kwargs):
         self._inputs = inputs
         self._outputs = outputs
         self._n_inputs = len(inputs)
@@ -543,14 +527,13 @@ class RegionsSelector(Model):
         self._undefined_transform_value = undefined_transform_value
         self._selector = selector  # copy.deepcopy(selector)
 
-        if " " in selector or 0 in selector:
-            msg = '"0" and " " are not allowed as keys.'
-            raise ValueError(msg)
+        if " " in selector.keys() or 0 in selector.keys():
+            raise ValueError('"0" and " " are not allowed as keys.')
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super().__init__(n_models=1, name=name, **kwargs)
         # Validate uses_quantity at init time for nicer error message
-        _ = self.uses_quantity
+        self.uses_quantity  # noqa
 
     @property
     def uses_quantity(self):
@@ -558,13 +541,10 @@ class RegionsSelector(Model):
         not_all_uses_quantity = [not uq for uq in all_uses_quantity]
         if all(all_uses_quantity):
             return True
-        if not_all_uses_quantity:
+        elif not_all_uses_quantity:
             return False
-        msg = (
-            "You can not mix models which use quantity and do not use "
-            "quantity inside a RegionSelector"
-        )
-        raise ValueError(msg)
+        else:
+            raise ValueError("You can not mix models which use quantity and do not use quantity inside a RegionSelector")
 
     def set_input(self, rid):
         """
@@ -572,8 +552,8 @@ class RegionsSelector(Model):
         """
         if rid in self._selector:
             return self._selector[rid]
-        msg = f"Region {rid} not found"
-        raise RegionError(msg)
+        else:
+            raise RegionError("Region {0} not found".format(rid))
 
     def inverse(self):
         if self.label_mapper.inverse is not None:
@@ -581,20 +561,14 @@ class RegionsSelector(Model):
                 transforms_inv = {}
                 for rid in self._selector:
                     transforms_inv[rid] = self._selector[rid].inverse
-            except AttributeError as err:
-                msg = (
-                    "The inverse of all regions must be defined"
-                    "for RegionsSelector to have an inverse."
-                )
-                raise NotImplementedError(msg) from err
-            return self.__class__(
-                self.outputs, self.inputs, transforms_inv, self.label_mapper.inverse
-            )
-        msg = (
-            "The label mapper must have an inverse "
-            "for RegionsSelector to have an inverse."
-        )
-        raise NotImplementedError(msg)
+            except AttributeError:
+                raise NotImplementedError("The inverse of all regions must be defined"
+                                          "for RegionsSelector to have an inverse.")
+            return self.__class__(self.outputs, self.inputs, transforms_inv,
+                                  self.label_mapper.inverse)
+        else:
+            raise NotImplementedError("The label mapper must have an inverse "
+                                      "for RegionsSelector to have an inverse.")
 
     def evaluate(self, *args):
         """
@@ -608,9 +582,7 @@ class RegionsSelector(Model):
         rids = self.label_mapper(*args).flatten()
         # Raise an error if all pixels are outside regions
         if (rids == self.label_mapper.no_label).all():
-            warnings.warn(
-                "The input positions are not inside any region.", stacklevel=2
-            )
+            warnings.warn("The input positions are not inside any region.")
 
         # Create output arrays and set any pixels not within regions to
         # "undefined_transform_value"
@@ -624,16 +596,14 @@ class RegionsSelector(Model):
         uniq = get_unique_regions(rids)
 
         for rid in uniq:
-            ind = rids == rid
+            ind = (rids == rid)
             inputs = [a[ind] for a in args]
             if rid in self._selector:
                 result = self._selector[rid](*inputs)
             else:
                 # If there's no transform for a label, return np.nan
-                result = [
-                    np.empty(inputs[0].shape) + self._undefined_transform_value
-                    for i in range(self.n_outputs)
-                ]
+                result = [np.empty(inputs[0].shape) +
+                          self._undefined_transform_value for i in range(self.n_outputs)]
             for j in range(self.n_outputs):
                 outputs[j][ind] = result[j]
         return outputs
@@ -709,27 +679,22 @@ class LabelMapper(_LabelMapper):
 
     n_outputs = 1
 
-    def __init__(
-        self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs
-    ):
+    def __init__(self, inputs, mapper, no_label=np.nan, inputs_mapping=None, name=None, **kwargs):
         self._no_label = no_label
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        self._outputs = tuple([f"x{ind}" for ind in list(range(mapper.n_outputs))])
+        self._outputs = tuple(['x{0}'.format(ind) for ind in list(range(mapper.n_outputs))])
         if isinstance(inputs_mapping, tuple):
             inputs_mapping = astmodels.Mapping(inputs_mapping)
-        elif inputs_mapping is not None and not isinstance(
-            inputs_mapping, astmodels.Mapping
-        ):
-            msg = "inputs_mapping must be an instance of astropy.modeling.Mapping."
-            raise TypeError(msg)
+        elif inputs_mapping is not None and not isinstance(inputs_mapping, astmodels.Mapping):
+            raise TypeError("inputs_mapping must be an instance of astropy.modeling.Mapping.")
 
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
         self._input_units_strict = {key: False for key in self._inputs}
         self._input_units_allow_dimensionless = {key: False for key in self._inputs}
         super(_LabelMapper, self).__init__(name=name, **kwargs)
-        self.outputs = ("label",)
+        self.outputs = ('label',)
 
     @property
     def inputs(self):

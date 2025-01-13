@@ -1,10 +1,10 @@
 """
 This file contains a set of pytest fixtures which are different gwcses for testing.
 """
-
 import pytest
 
-from gwcs import examples, geometry
+from .. import examples
+from .. import geometry
 
 
 @pytest.fixture
@@ -30,7 +30,6 @@ def gwcs_1d_freq():
 @pytest.fixture
 def gwcs_3d_spatial_wave():
     return examples.gwcs_3d_spatial_wave()
-
 
 @pytest.fixture
 def gwcs_2d_shift_scale():
@@ -92,29 +91,28 @@ def sellmeier_zemax():
     return examples.sellmeier_zemax()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def gwcs_3d_galactic_spectral():
+
     return examples.gwcs_3d_galactic_spectral()
 
-
-@pytest.fixture
+@pytest.fixture(scope="function")
 def gwcs_1d_spectral():
     return examples.gwcs_1d_spectral()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def gwcs_spec_cel_time_4d():
     return examples.gwcs_spec_cel_time_4d()
 
 
 @pytest.fixture(
+    scope="function",
     params=[
         (2, 1, 0),
         (2, 0, 1),
-        pytest.param(
-            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
-        ),
-    ],
+        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
+    ]
 )
 def gwcs_cube_with_separable_spectral(request):
     axes_order = request.param
@@ -122,23 +120,20 @@ def gwcs_cube_with_separable_spectral(request):
 
 
 @pytest.fixture(
+    scope="function",
     params=[
         (2, 0, 1),
         (2, 1, 0),
-        pytest.param(
-            (0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")
-        ),
-        pytest.param(
-            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
-        ),
-    ],
+        pytest.param((0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")),
+        pytest.param((1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")),
+    ]
 )
 def gwcs_cube_with_separable_time(request):
     axes_order = request.param
     return examples.gwcs_cube_with_separable_time(axes_order)
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def gwcs_7d_complex_mapping():
     return examples.gwcs_7d_complex_mapping()
 

@@ -95,7 +95,7 @@ coordinates(1, 2) to sky coordinates:
   <SkyCoord (ICRS): (ra, dec) in deg
     (5.52515954, -72.05190935)>
 
-The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform` to provide a mapping from sky coordinates to pixel coordinates
+The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform` to provide a mapping from sky coordinates to pixel coordinates 
 if available, otherwise it applies an iterative method to calculate the pixel coordinates.
 
   >>> wcsobj.invert(sky)

@@ -159,7 +159,7 @@ involves 4 sequential transformations:
   projection. If the field of view is small, the inaccuracies resulting
   leaving this out will be small; however, this is generally applied.
 - Transforming the center pixel to the appropriate celestial coordinate
-  with the appropriate orientation on the sky. For simplicity's sake,
+  with the approprate orientation on the sky. For simplicity's sake,
   we assume the detector array is already oriented with north up, and
   that the array has the appropriate parity as the sky coordinates.
 

@@ -46,7 +46,7 @@ docs = [
 ]
 test = [
     "ci-watson>=0.3.0",
-    "pytest>=8.0.0",
+    "pytest>=7.0.0",
     "pytest-astropy>=0.11.0",
 ]
 
@@ -75,23 +75,13 @@ upload-dir = "docs/_build/html"
 show-response = 1
 
 [tool.pytest.ini_options]
-minversion = 8
+minversion = 4.6
 doctest_plus = true
 doctest_rst = true
 text_file_format = "rst"
-log_cli_level = "INFO"
-xfail_strict = true
-testpaths = [
-    "gwcs",
-    "docs",
-]
 addopts = [
-    "-ra",
     "--color=yes",
     "--doctest-rst",
-    "--strict-config",
-    "--strict-markers",
-    "-p no:legacypath",
 ]
 norecursedirs = [
     "build",
@@ -122,54 +112,3 @@ exclude_lines = [
 ]
 
 [tool.setuptools_scm]
-
-[tool.ruff.lint]
-select = [
-    "F",      # Pyflakes (part of default flake8)
-    "W", "E", # pycodestyle (part of default flake8)
-    "I",      # isort (import sorting)
-    "UP",     # pyupgrade (upgrade code to modern python)
-    "YTT",    # flake8-2020 (system version info)
-    #"ANN",    # flake8-annotations (best practices for type annotations)
-    "S",      # flake8-bandit (security checks)
-    "BLE",    # flake8-blind-except (prevent blind except statements)
-    "B",      # flake8-bugbear (prevent common gotcha bugs)
-    "A",      # flake8-builtins (prevent shadowing of builtins)
-    "C4",     # flake8-comprehensions (best practices for comprehensions)
-    "T10",    # flake8-debugger (prevent debugger statements in code)
-    "EM",     # flake8-errormessages (best practices for error messages)
-    "ISC",    # flake8-implicit-str-concat (prevent implicit string concat)
-    "ICN",    # flake8-import-conventions (enforce import conventions)
-    "INP",    # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
-    "PIE",    # flake8-pie (misc suggested improvement linting)
-    "T20",    # flake8-print (prevent print statements in code)
-    "PT",     # flake8-pytest-style (best practices for pytest)
-    "Q",      # flake8-quotes (best practices for quotes)
-    "RSE",    # flake8-raise (best practices for raising exceptions)
-    "RET",    # flake8-return (best practices for return statements)
-    "SIM",    # flake8-simplify (suggest simplifications to code where possible)
-    "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
-    "INT",    # flake8-gettext (when to use printf style strings)
-    "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
-    "ERA",    # eradicate (remove commented out code)
-    "PGH",    # pygrep (simple grep checks)
-    "PL",     # pylint (general linting, flake8 alternative)
-    "TRY",    # tryceratops (linting for try/except blocks)
-    "FLY",    # flynt (f-string conversion where possible)
-    "NPY",    # NumPy-specific checks (recommendations from NumPy)
-    "PERF",   # Perflint (performance linting)
-    "RUF",    # ruff specific checks
-]
-ignore = [
-    "ISC001",  # conflicts with formatter at times
-    "PLR2004", # magic values (this should be dealt with at some point)
-    "PLR0912", # Too many branches in function
-    "PLR0913", # Too many arguments in function
-    "PLR0915", # Too many statements in function
-]
-
-[tool.ruff.lint.extend-per-file-ignores]
-"gwcs/tests/*" = ["S101"]
-"gwcs/converters/tests/*" = ["S101"]
-"docs/conf.py" = ["INP001", "ERA001"]
-"convert_schemas.py" = ["PTH"]

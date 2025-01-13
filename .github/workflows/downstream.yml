@@ -83,7 +83,7 @@ jobs:
         GALSIM_CAT_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/galsim_data/real_galaxy_catalog_23.5_example.fits
         FFTW_DIR: /opt/homebrew/opt/fftw/lib/
       cache-path: ${{ needs.romanisim_data.outputs.cache_path }}
-      cache-key: ${{ needs.romanisim_data.outputs.cache_key }}
+      cache-key: ${{ needs.romanisim_data.outputs.cache_key }} 
       envs: |
         - linux: py311-test-romanisim-cov-xdist
 

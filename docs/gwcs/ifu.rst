@@ -3,7 +3,7 @@ An IFU Example - managing a discontiguous WCS
 
 An IFU image represents the projection of several slices on a detector.
 Between the slices there are pixels which don't belong to any slice.
-In general each slice has a unique WCS transform.
+In general each slice has a unique WCS transform. 
 There are two ways to represent this kind of transforms in GWCS depending on
 the way the instrument is calibrated and the available information.
 
@@ -98,7 +98,7 @@ a specific label.
 Custom model storing transforms in a dictionary
 -----------------------------------------------
 
-In case a pixel to slice mapping is not available, one can write a custom model
+In case a pixel to slice mapping is not available, one can write a custom mdoel
 storing transforms in a dictionary. The model would look like this:
 
 .. code::
@@ -106,9 +106,9 @@ storing transforms in a dictionary. The model would look like this:
     from astropy.modeling.core import Model
     from astropy.modeling.parameters import Parameter
 
-
+    
     class CustomModel(Model):
-
+    
         inputs = ('label', 'x', 'y')
         outputs = ('xout', 'yout')
 
@@ -117,7 +117,8 @@ storing transforms in a dictionary. The model would look like this:
             super().__init__()
 	    self.labels = labels
 	    self.models = models
-
+	    
 	def evaluate(self, label, x, y):
 	    index = self.labels.index(label)
             return self.models[index](x, y)
+        

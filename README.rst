@@ -16,7 +16,7 @@ GWCS - Generalized World Coordinate System
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
-
+    
 .. image:: https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat
     :target: http://www.stsci.edu
     :alt: Powered by STScI Badge
@@ -37,7 +37,7 @@ Installation
 
 To install::
 
-    pip install gwcs
+    pip install gwcs 
 
 To clone from github and install the master branch::
 
@@ -45,7 +45,7 @@ To clone from github and install the master branch::
     cd gwcs
     pip install --editable .
 
-
+    
 Contributing Code, Documentation, or Feedback
 ---------------------------------------------
 
