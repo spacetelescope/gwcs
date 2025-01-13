@@ -1149,7 +1149,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
     def __repr__(self):
         return (
-            f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame},"
+            f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame}, "
             f"forward_transform={self.forward_transform})>"
         )
 

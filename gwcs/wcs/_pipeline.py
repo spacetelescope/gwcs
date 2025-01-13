@@ -79,8 +79,7 @@ class Pipeline:
         if isinstance(forward_transform, Model):
             if output_frame is None:
                 msg = (
-                    "An output_frame must be specified "
-                    "if forward_transform is a model."
+                    "An output_frame must be specified if forward_transform is a model."
                 )
                 raise CoordinateFrameError(msg)
 
