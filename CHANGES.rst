@@ -16,6 +16,9 @@
 - Refactor ``WCS`` to use a ``Pipeline`` base class which adds basic checks to ensure that the pipeline is valid. These
   include checking for duplicate frame names and that the last transform is ``None``. [#545]
 
+- Bugfix for ``WCS.invert`` and ``WCS.to_fits`` that prevented evaluation when the attached bounding box happened to have
+  units on its values. [#554]
+
 
 0.22.0 (2024-12-19)
 -------------------
