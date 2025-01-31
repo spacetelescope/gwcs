@@ -6,18 +6,12 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-import numpy.linalg as npla
 from astropy import utils as astutil
 from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
-from astropy.modeling.bounding_box import CompoundBoundingBox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
-from astropy.modeling.core import Model
 from astropy.modeling.models import (
-    Const1D,
-    Identity,
     Mapping,
-    Polynomial2D,
     RotateCelestial2Native,
     Shift,
     Sky2Pix_TAN,
@@ -28,76 +22,30 @@ from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
 )
-from scipy import linalg, optimize
+from scipy import optimize
 
-from . import coordinate_frames as cf
-from . import utils
-from .api import GWCSAPIMixin
-from .utils import CoordinateFrameError
-from .wcstools import grid_from_bounding_box
+from gwcs.api import GWCSAPIMixin
+from gwcs.coordinate_frames import (
+    CelestialFrame,
+    CompositeFrame,
+    CoordinateFrame,
+    get_ctype_from_ucd,
+)
+from gwcs.utils import _toindex, is_high_level
 
-__all__ = ["WCS", "NoConvergence", "Step"]
+from ._exception import NoConvergence
+from ._pipeline import ForwardTransform, Pipeline
+from ._utils import (
+    fit_2D_poly,
+    fix_transform_inputs,
+    make_sampling_grid,
+    reform_poly_coefficients,
+    store_2D_coefficients,
+)
+
+__all__ = ["WCS"]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
-
-
-class NoConvergence(Exception):
-    """
-    An error class used to report non-convergence and/or divergence
-    of numerical methods. It is used to report errors in the
-    iterative solution used by
-    the :py:meth:`~astropy.wcs.WCS.all_world2pix`.
-
-    Attributes
-    ----------
-
-    best_solution : `numpy.ndarray`
-        Best solution achieved by the numerical method.
-
-    accuracy : `numpy.ndarray`
-        Estimate of the accuracy of the ``best_solution``.
-
-    niter : `int`
-        Number of iterations performed by the numerical method
-        to compute ``best_solution``.
-
-    divergent : None, `numpy.ndarray`
-        Indices of the points in ``best_solution`` array
-        for which the solution appears to be divergent. If the
-        solution does not diverge, ``divergent`` will be set to `None`.
-
-    slow_conv : None, `numpy.ndarray`
-        Indices of the solutions in ``best_solution`` array
-        for which the solution failed to converge within the
-        specified maximum number of iterations. If there are no
-        non-converging solutions (i.e., if the required accuracy
-        has been achieved for all input data points)
-        then ``slow_conv`` will be set to `None`.
-
-    """
-
-    def __init__(
-        self,
-        *args,
-        best_solution=None,
-        accuracy=None,
-        niter=None,
-        divergent=None,
-        slow_conv=None,
-    ):
-        super().__init__(*args)
-
-        self.best_solution = best_solution
-        self.accuracy = accuracy
-        self.niter = niter
-        self.divergent = divergent
-        self.slow_conv = slow_conv
-
-
-class GwcsBoundingBoxWarning(UserWarning):
-    """
-    A warning class to report issues with bounding boxes in GWCS.
-    """
 
 
 class _WorldAxisInfo:
@@ -134,7 +82,7 @@ class _WorldAxisInfo:
         self.input_axes = input_axes
 
 
-class WCS(GWCSAPIMixin):
+class WCS(GWCSAPIMixin, Pipeline):
     """
     Basic WCS class.
 
@@ -156,237 +104,21 @@ class WCS(GWCSAPIMixin):
     """
 
     def __init__(
-        self, forward_transform=None, input_frame="detector", output_frame=None, name=""
-    ):
+        self,
+        forward_transform: ForwardTransform = None,
+        input_frame: CoordinateFrame | None = None,
+        output_frame: CoordinateFrame | None = None,
+        name: str | None = None,
+    ) -> None:
+        super(GWCSAPIMixin, self).__init__(forward_transform, input_frame, output_frame)
+
         self._approx_inverse = None
-        self._available_frames = []
-        self._pipeline = []
-        self._name = name
-        self._initialize_wcs(forward_transform, input_frame, output_frame)
+        self._name = "" if name is None else name
         self._pixel_shape = None
 
-        pipe = []
-        for step in self._pipeline:
-            if isinstance(step, Step):
-                pipe.append(Step(step.frame, step.transform))
-            else:
-                pipe.append(Step(*step))
-        self._pipeline = pipe
-
-    def _initialize_wcs(self, forward_transform, input_frame, output_frame):
-        if forward_transform is not None:
-            if isinstance(forward_transform, Model):
-                if output_frame is None:
-                    msg = (
-                        "An output_frame must be specified "
-                        "if forward_transform is a model."
-                    )
-                    raise CoordinateFrameError(msg)
-
-                _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
-                _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-                super().__setattr__(_input_frame, inp_frame_obj)
-                super().__setattr__(_output_frame, outp_frame_obj)
-
-                self._pipeline = [
-                    (input_frame, forward_transform.copy()),
-                    (output_frame, None),
-                ]
-            elif isinstance(forward_transform, list):
-                for item in forward_transform:
-                    if isinstance(item, Step):
-                        name, frame_obj = self._get_frame_name(item.frame)
-                    else:
-                        name, frame_obj = self._get_frame_name(item[0])
-                    super().__setattr__(name, frame_obj)
-                    self._pipeline = forward_transform
-            else:
-                msg = (
-                    "Expected forward_transform to be a model or a "
-                    f"(frame, transform) list, got {type(forward_transform)}"
-                )
-                raise TypeError(msg)
-        else:
-            # Initialize a WCS without a forward_transform - allows building a
-            # WCS programmatically.
-            if output_frame is None:
-                msg = "An output_frame must be specified if forward_transform is None."
-                raise CoordinateFrameError(msg)
-            _input_frame, inp_frame_obj = self._get_frame_name(input_frame)
-            _output_frame, outp_frame_obj = self._get_frame_name(output_frame)
-            super().__setattr__(_input_frame, inp_frame_obj)
-            super().__setattr__(_output_frame, outp_frame_obj)
-            self._pipeline = [(_input_frame, None), (_output_frame, None)]
-
-    def get_transform(self, from_frame, to_frame):
-        """
-        Return a transform between two coordinate frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Initial coordinate frame name of object.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
-            End coordinate frame name or object.
-
-        Returns
-        -------
-        transform : `~astropy.modeling.Model`
-            Transform between two frames.
-        """
-        if not self._pipeline:
-            return None
-
-        from_ind = self._get_frame_index(from_frame)
-        to_ind = self._get_frame_index(to_frame)
-        if to_ind < from_ind:
-            transforms = [step.transform for step in self._pipeline[to_ind:from_ind]]
-            transforms = [tr.inverse for tr in transforms[::-1]]
-        elif to_ind == from_ind:
-            return None
-        else:
-            transforms = [step.transform for step in self._pipeline[from_ind:to_ind]]
-        return functools.reduce(lambda x, y: x | y, transforms)
-
-    def set_transform(self, from_frame, to_frame, transform):
-        """
-        Set/replace the transform between two coordinate frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
-            End coordinate frame.
-        transform : `~astropy.modeling.Model`
-            Transform between ``from_frame`` and ``to_frame``.
-        """
-        from_name, from_obj = self._get_frame_name(from_frame)
-        to_name, to_obj = self._get_frame_name(to_frame)
-        if not self._pipeline:
-            if from_name != self._input_frame:
-                msg = f"Expected 'from_frame' to be {self._input_frame}"
-                raise CoordinateFrameError(msg)
-            if to_frame != self._output_frame:
-                msg = f"Expected 'to_frame' to be {self._output_frame}"
-                raise CoordinateFrameError(msg)
-        try:
-            from_ind = self._get_frame_index(from_name)
-        except ValueError as err:
-            msg = f"Frame {from_name} is not in the available frames"
-            raise CoordinateFrameError(msg) from err
-        try:
-            to_ind = self._get_frame_index(to_name)
-        except ValueError as err:
-            msg = f"Frame {to_name} is not in the available frames"
-            raise CoordinateFrameError(msg) from err
-
-        if from_ind + 1 != to_ind:
-            msg = f"Frames {from_name} and {to_name} are not  in sequence"
-            raise ValueError(msg)
-        self._pipeline[from_ind].transform = transform
-
-    @property
-    def forward_transform(self):
-        """
-        Return the total forward transform - from input to output coordinate frame.
-        """
-        if not self._pipeline:
-            return None
-
-        transform = functools.reduce(
-            lambda x, y: x | y, [step.transform for step in self._pipeline[:-1]]
-        )
-
-        if self.bounding_box is not None:
-            # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box
-            # to it before evaluating it. The order Model.bounding_box is reversed.
-            transform.bounding_box = self.bounding_box
-
-        return transform
-
-    @property
-    def backward_transform(self):
-        """
-        Return the total backward transform if available - from output to input
-        coordinate system.
-
-        Raises
-        ------
-        NotImplementedError :
-            An analytical inverse does not exist.
-
-        """
-        try:
-            backward = self.forward_transform.inverse
-        except NotImplementedError as err:
-            msg = f"Could not construct backward transform. \n{err}"
-            raise NotImplementedError(msg) from err
-        try:
-            _ = backward.inverse
-        except NotImplementedError:  # means "hasattr" won't work
-            backward.inverse = self.forward_transform
-        return backward
-
-    def _get_frame_by_name(self, frame_name):
-        """
-        Return the frame object by name.
-        """
-        if not isinstance(frame_name, str):
-            return frame_name
-
-        frames = [
-            step.frame for step in self._pipeline if step.frame.name == frame_name
-        ]
-        if len(frames) > 1:
-            msg = f"There is more than one frame named {frame_name}"
-            raise ValueError(msg)
-        if len(frames) == 0:
-            return ValueError(f"No frame found matching {frame_name}")
-        return frames[0]
-
-    def _get_frame_index(self, frame):
-        """
-        Return the index in the pipeline where this frame is locate.
-        """
-        if isinstance(frame, cf.CoordinateFrame):
-            frame = frame.name
-        frame_names = [
-            step.frame if isinstance(step.frame, str) else step.frame.name
-            for step in self._pipeline
-        ]
-        try:
-            return frame_names.index(frame)
-        except ValueError as e:
-            msg = f"Frame {frame} is not in the available frames"
-            raise CoordinateFrameError(msg) from e
-
-    def _get_frame_name(self, frame):
-        """
-        Return the name of the frame and a ``CoordinateFrame`` object.
-
-        Parameters
-        ----------
-        frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame.
-
-        Returns
-        -------
-        name : str
-            The name of the frame
-        frame_obj : `~gwcs.coordinate_frames.CoordinateFrame`
-            Frame instance or None (if `frame` is str)
-        """
-        if isinstance(frame, str):
-            name = frame
-            frame_obj = None
-        else:
-            name = frame.name
-            frame_obj = frame
-        return name, frame_obj
-
-    def _add_units_input(self, arrays, frame):
+    def _add_units_input(
+        self, arrays: list[np.ndarray], frame: CoordinateFrame | None
+    ) -> tuple[u.Quantity, ...]:
         if frame is not None:
             return tuple(
                 u.Quantity(array, unit)
@@ -395,7 +127,9 @@ class WCS(GWCSAPIMixin):
 
         return arrays
 
-    def _remove_units_input(self, arrays, frame):
+    def _remove_units_input(
+        self, arrays: list[u.Quantity], frame: CoordinateFrame | None
+    ) -> tuple[np.ndarray, ...]:
         if frame is not None:
             return tuple(
                 array.to_value(unit) if isinstance(array, u.Quantity) else array
@@ -404,7 +138,14 @@ class WCS(GWCSAPIMixin):
 
         return arrays
 
-    def __call__(self, *args, **kwargs):
+    def __call__(
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Executes the forward transform.
 
@@ -422,9 +163,9 @@ class WCS(GWCSAPIMixin):
             If ``True`` then high level Astropy objects will be returned.
             Optional, default=False.
         """
-        with_units = kwargs.pop("with_units", False)
-
-        results = self._call_forward(*args, **kwargs)
+        results = self._call_forward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
         if with_units:
             if not astutil.isiterable(results):
@@ -440,10 +181,10 @@ class WCS(GWCSAPIMixin):
     def _call_forward(
         self,
         *args,
-        from_frame=None,
-        to_frame=None,
-        with_bounding_box=True,
-        fill_value=np.nan,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
         **kwargs,
     ):
         """
@@ -508,7 +249,14 @@ class WCS(GWCSAPIMixin):
 
         return result
 
-    def invert(self, *args, **kwargs):
+    def invert(
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Invert coordinates from output frame to input frame using analytical or
         user-supplied inverse. When neither analytical nor user-supplied
@@ -551,13 +299,12 @@ class WCS(GWCSAPIMixin):
             transform returns ``Quantity`` objects, else values.
 
         """  # noqa: E501
-        # must pop before calling the model
-        with_units = kwargs.pop("with_units", False)
-
-        if utils.is_high_level(*args, low_level_wcs=self):
+        if is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
 
-        results = self._call_backward(*args, **kwargs)
+        results = self._call_backward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
@@ -572,7 +319,11 @@ class WCS(GWCSAPIMixin):
         return results
 
     def _call_backward(
-        self, *args, with_bounding_box=True, fill_value=np.nan, **kwargs
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
     ):
         try:
             transform = self.backward_transform
@@ -621,7 +372,7 @@ class WCS(GWCSAPIMixin):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if utils.is_high_level(world_arrays[0], low_level_wcs=self):
+        if is_high_level(world_arrays[0], low_level_wcs=self):
             not_numerical = True
             world_arrays = high_level_objects_to_values(
                 *world_arrays, low_level_wcs=self
@@ -884,7 +635,7 @@ class WCS(GWCSAPIMixin):
         >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
         Traceback (most recent call last):
         ...
-        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        gwcs.wcs._exception.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
         requested accuracy after 3 iterations.
 
         >>> w.numerical_inverse(
@@ -896,7 +647,7 @@ class WCS(GWCSAPIMixin):
         ... )
         Traceback (most recent call last):
         ...
-        gwcs.wcs.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        gwcs.wcs._exception.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
         requested accuracy. After 4 iterations, the solution is diverging at
         least for one input point.
 
@@ -1305,7 +1056,14 @@ class WCS(GWCSAPIMixin):
 
         return pix
 
-    def transform(self, from_frame, to_frame, *args, **kwargs):
+    def transform(
+        self,
+        from_frame: str | CoordinateFrame,
+        to_frame: str | CoordinateFrame,
+        *args,
+        with_units: bool = False,
+        **kwargs,
+    ):
         """
         Transform positions between two frames.
 
@@ -1317,183 +1075,45 @@ class WCS(GWCSAPIMixin):
             Coordinate frame into which to transform.
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
-        output_with_units : bool
-            If ``True`` - returns a `~astropy.coordinates.SkyCoord` or
-            `~astropy.coordinates.SpectralCoord` object.
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to any of
              the inputs being outside the bounding_box are set to ``fill_value``.
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box (default is np.nan).
         """
-        # Determine if the transform is actually an inverse
-        from_ind = self._get_frame_index(from_frame)
-        to_ind = self._get_frame_index(to_frame)
-        backward = to_ind < from_ind
-        # Convert from strings to frame objects
-        from_frame = self._get_frame_by_name(from_frame)
-        to_frame = self._get_frame_by_name(to_frame)
+        # Pull the steps and their indices from the pipeline
+        # -> this also turns the frame name strings into frame objects
+        from_step = self._get_step(from_frame)
+        to_step = self._get_step(to_frame)
 
-        with_units = kwargs.pop("with_units", False)
-        if backward and utils.is_high_level(*args, low_level_wcs=from_frame):
-            args = high_level_objects_to_values(*args, low_level_wcs=from_frame)
+        # Determine if the transform is actually an inverse
+        backward = to_step.index < from_step.index
+
+        if backward and is_high_level(*args, low_level_wcs=from_step.step.frame):
+            args = high_level_objects_to_values(
+                *args, low_level_wcs=from_step.step.frame
+            )
 
         results = self._call_forward(
-            *args, from_frame=from_frame, to_frame=to_frame, **kwargs
+            *args,
+            from_frame=from_step.step.frame,
+            to_frame=to_step.step.frame,
+            **kwargs,
         )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, to_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=to_frame)
+            results = self._remove_units_input(results, to_step.step.frame)
+
+            high_level = values_to_high_level_objects(
+                *results, low_level_wcs=to_step.step.frame
+            )
             if len(high_level) == 1:
                 high_level = high_level[0]
             return high_level
+
         return results
 
     @property
-    def available_frames(self):
-        """
-        List all frames in this WCS object.
-
-        Returns
-        -------
-        available_frames : dict
-            {frame_name: frame_object or None}
-        """
-        if self._pipeline:
-            return [
-                step.frame if isinstance(step.frame, str) else step.frame.name
-                for step in self._pipeline
-            ]
-        return None
-
-    def insert_transform(self, frame, transform, after=False):
-        """
-        Insert a transform before (default) or after a coordinate frame.
-
-        Append (or prepend) a transform to the transform connected to frame.
-
-        Parameters
-        ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame which sets the point of insertion.
-        transform : `~astropy.modeling.Model`
-            New transform to be inserted in the pipeline
-        after : bool
-            If True, the new transform is inserted in the pipeline
-            immediately after ``frame``.
-        """
-        name, _ = self._get_frame_name(frame)
-        frame_ind = self._get_frame_index(name)
-        if not after:
-            current_transform = self._pipeline[frame_ind - 1].transform
-            self._pipeline[frame_ind - 1].transform = current_transform | transform
-        else:
-            current_transform = self._pipeline[frame_ind].transform
-            self._pipeline[frame_ind].transform = transform | current_transform
-
-    def insert_frame(self, input_frame, transform, output_frame):
-        """
-        Insert a new frame into an existing pipeline. This frame must be
-        anchored to a frame already in the pipeline by a transform. This
-        existing frame is identified solely by its name, although an entire
-        `~gwcs.coordinate_frames.CoordinateFrame` can be passed (e.g., the
-        `input_frame` or `output_frame` attribute). This frame is never
-        modified.
-
-        Parameters
-        ----------
-        input_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame at start of new transform
-        transform : `~astropy.modeling.Model`
-            New transform to be inserted in the pipeline
-        output_frame: str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Coordinate frame at end of new transform
-        """
-        input_name, input_frame_obj = self._get_frame_name(input_frame)
-        output_name, output_frame_obj = self._get_frame_name(output_frame)
-        try:
-            input_index = self._get_frame_index(input_frame)
-        except CoordinateFrameError as err:
-            input_index = None
-            if input_frame_obj is None:
-                msg = f"New coordinate frame {input_name} must be defined"
-                raise ValueError(msg) from err
-        try:
-            output_index = self._get_frame_index(output_frame)
-        except CoordinateFrameError as err:
-            output_index = None
-            if output_frame_obj is None:
-                msg = f"New coordinate frame {output_name} must be defined"
-                raise ValueError(msg) from err
-
-        new_frames = [input_index, output_index].count(None)
-        if new_frames == 0:
-            msg = (
-                "Could not insert frame as both frames "
-                f"{input_name} and {output_name} already exist"
-            )
-            raise ValueError(msg)
-        if new_frames == 2:
-            msg = (
-                "Could not insert frame as neither frame "
-                f"{input_name} nor {output_name} exists"
-            )
-            raise ValueError(msg)
-
-        if input_index is None:
-            self._pipeline = (
-                self._pipeline[:output_index]
-                + [Step(input_frame_obj, transform)]
-                + self._pipeline[output_index:]
-            )
-            super().__setattr__(input_name, input_frame_obj)
-        else:
-            split_step = self._pipeline[input_index]
-            self._pipeline = (
-                self._pipeline[:input_index]
-                + [
-                    Step(split_step.frame, transform),
-                    Step(output_frame_obj, split_step.transform),
-                ]
-                + self._pipeline[input_index + 1 :]
-            )
-            super().__setattr__(output_name, output_frame_obj)
-
-    @property
-    def unit(self):
-        """The unit of the coordinates in the output coordinate system."""
-        if self._pipeline:
-            try:
-                return self._pipeline[-1].frame.unit
-            except AttributeError:
-                return None
-        else:
-            return None
-
-    @property
-    def output_frame(self):
-        """Return the output coordinate frame."""
-        if self._pipeline:
-            frame = self._pipeline[-1].frame
-            if not isinstance(frame, str):
-                frame = frame.name
-            return getattr(self, frame)
-        return None
-
-    @property
-    def input_frame(self):
-        """Return the input coordinate frame."""
-        if self._pipeline:
-            frame = self._pipeline[0].frame
-            if not isinstance(frame, str):
-                frame = frame.name
-            return getattr(self, frame)
-        return None
-
-    @property
-    def name(self):
+    def name(self) -> str:
         """Return the name for this WCS."""
         return self._name
 
@@ -1501,89 +1121,6 @@ class WCS(GWCSAPIMixin):
     def name(self, value):
         """Set the name for the WCS."""
         self._name = value
-
-    @property
-    def pipeline(self):
-        """Return the pipeline structure."""
-        return self._pipeline
-
-    @property
-    def bounding_box(self):
-        """
-        Return the range of acceptable values for each input axis.
-        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        """
-
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-
-        if transform_0 is None:
-            return None
-
-        try:
-            bb = transform_0.bounding_box
-        except NotImplementedError:
-            return None
-
-        if (
-            # Check that the bounding_box was set on the instance (not a default)
-            transform_0._user_bounding_box is not None
-            # Check the order of that bounding_box is C
-            and bb.order == "C"
-            # Check that the bounding_box is not a single value
-            and (isinstance(bb, CompoundBoundingBox) or len(bb) > 1)
-        ):
-            warnings.warn(
-                "The bounding_box was set in C order on the transform prior to "
-                "being used in the gwcs!\n"
-                "Check that you intended that ordering for the bounding_box, "
-                "and consider setting it in F order.\n"
-                "The bounding_box will remain meaning the same but will be "
-                "converted to F order for consistency in the GWCS.",
-                GwcsBoundingBoxWarning,
-                stacklevel=2,
-            )
-            self.bounding_box = bb.bounding_box(order="F")
-            bb = self.bounding_box
-
-        return bb
-
-    @bounding_box.setter
-    def bounding_box(self, value):
-        """
-        Set the range of acceptable values for each input axis.
-
-        The order of the axes is `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
-        For two inputs and axes_order(0, 1) the bounding box is
-        ((xlow, xhigh), (ylow, yhigh)).
-
-        Parameters
-        ----------
-        value : tuple or None
-            Tuple of tuples with ("low", high") values for the range.
-        """
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-        if value is None:
-            transform_0.bounding_box = value
-        else:
-            # Make sure the dimensions of the new bbox are correct.
-            if isinstance(value, CompoundBoundingBox):
-                bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
-            else:
-                bbox = Bbox.validate(transform_0, value, order="F")
-
-            transform_0.bounding_box = bbox
-
-        self.set_transform(frames[0], frames[1], transform_0)
-
-    def attach_compound_bounding_box(self, cbbox, selector_args):
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-
-        self.bounding_box = CompoundBoundingBox.validate(
-            transform_0, cbbox, selector_args=selector_args, order="F"
-        )
 
     def _get_axes_indices(self):
         try:
@@ -1612,7 +1149,7 @@ class WCS(GWCSAPIMixin):
 
     def __repr__(self):
         return (
-            f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame},"
+            f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame}, "
             f"forward_transform={self.forward_transform})>"
         )
 
@@ -1670,7 +1207,7 @@ class WCS(GWCSAPIMixin):
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
         if center:
-            vertices = utils._toindex(vertices)
+            vertices = _toindex(vertices)
 
         result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
 
@@ -2027,7 +1564,7 @@ class WCS(GWCSAPIMixin):
 
         # Once that bug is fixed, the code below can be replaced with fix_inputs
         # statement commented out immediately above.
-        transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
+        transform = fix_transform_inputs(self.forward_transform, fixi_dict)
 
         transform = transform | Mapping(
             (lon_axis, lat_axis), n_inputs=self.forward_transform.n_outputs
@@ -2062,13 +1599,13 @@ class WCS(GWCSAPIMixin):
         )
 
         # standard sampling:
-        u, v = _make_sampling_grid(
+        u, v = make_sampling_grid(
             npoints, tuple(bounding_box[k] for k in input_axes), crpix=[crpix1, crpix2]
         )
         undist_x, undist_y = ntransform(u, v)
 
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(
+        ud, vd = make_sampling_grid(
             2 * npoints,
             tuple(bounding_box[k] for k in input_axes),
             crpix=[crpix1, crpix2],
@@ -2086,7 +1623,7 @@ class WCS(GWCSAPIMixin):
         # The fitting section.
         if verbose:
             sys.stdout.write("\nFitting forward SIP ...")
-        fit_poly_x, fit_poly_y, max_resid = _fit_2D_poly(
+        fit_poly_x, fit_poly_y, max_resid = fit_2D_poly(
             degree,
             max_pix_error,
             plate_scale,
@@ -2102,9 +1639,7 @@ class WCS(GWCSAPIMixin):
         )
 
         # The following is necessary to put the fit into the SIP formalism.
-        cdmat, sip_poly_x, sip_poly_y = _reform_poly_coefficients(
-            fit_poly_x, fit_poly_y
-        )
+        cdmat, sip_poly_x, sip_poly_y = reform_poly_coefficients(fit_poly_x, fit_poly_y)
         # cdmat = np.array([[fit_poly_x.c1_0.value, fit_poly_x.c0_1.value],
         #                   [fit_poly_y.c1_0.value, fit_poly_y.c0_1.value]])
         det = cdmat[0][0] * cdmat[1][1] - cdmat[0][1] * cdmat[1][0]
@@ -2117,7 +1652,7 @@ class WCS(GWCSAPIMixin):
         if max_inv_pix_error:
             if verbose:
                 sys.stdout.write("\nFitting inverse SIP ...")
-            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
+            fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = fit_2D_poly(
                 inv_degree,
                 max_inv_pix_error,
                 1,
@@ -2161,15 +1696,15 @@ class WCS(GWCSAPIMixin):
             hdr["CTYPE2"] = hdr["CTYPE2"].strip() + "-SIP"
             hdr["A_ORDER"] = fit_poly_x.degree
             hdr["B_ORDER"] = fit_poly_x.degree
-            _store_2D_coefficients(hdr, sip_poly_x, "A")
-            _store_2D_coefficients(hdr, sip_poly_y, "B")
+            store_2D_coefficients(hdr, sip_poly_x, "A")
+            store_2D_coefficients(hdr, sip_poly_y, "B")
             hdr["sipmxerr"] = (max_resid, "Max diff from GWCS (equiv pix).")
 
             if max_inv_pix_error:
                 hdr["AP_ORDER"] = fit_inv_poly_u.degree
                 hdr["BP_ORDER"] = fit_inv_poly_u.degree
-                _store_2D_coefficients(hdr, fit_inv_poly_u, "AP", keeplinear=True)
-                _store_2D_coefficients(hdr, fit_inv_poly_v, "BP", keeplinear=True)
+                store_2D_coefficients(hdr, fit_inv_poly_u, "AP", keeplinear=True)
+                store_2D_coefficients(hdr, fit_inv_poly_v, "BP", keeplinear=True)
                 hdr["sipiverr"] = (max_inv_resid, "Max diff for inverse (pixels)")
 
         else:
@@ -2341,7 +1876,7 @@ class WCS(GWCSAPIMixin):
         world_axes = []  # flattened version of axes_groups
         input_axes = []  # all input axes
 
-        if isinstance(self.output_frame, cf.CompositeFrame):
+        if isinstance(self.output_frame, CompositeFrame):
             frames = self.output_frame.frames
         else:
             frames = [self.output_frame]
@@ -2362,7 +1897,7 @@ class WCS(GWCSAPIMixin):
                 detect_celestial
                 and len(axis) == 2
                 and len(frame.axes_order) == 2
-                and isinstance(frame, cf.CelestialFrame)
+                and isinstance(frame, CelestialFrame)
             )
 
             for axno in axis:
@@ -2378,7 +1913,7 @@ class WCS(GWCSAPIMixin):
                     frame=frame,
                     world_axis_order=self.output_frame.axes_order.index(axno),
                     cunit=frame.unit[fidx].to_string("fits", fraction=True).upper(),
-                    ctype=cf.get_ctype_from_ucd(self.world_axis_physical_types[axno]),
+                    ctype=get_ctype_from_ucd(self.world_axis_physical_types[axno]),
                     input_axes=mapping[axno],
                 )
                 axis_info_group.append(axis_info)
@@ -2939,7 +2474,7 @@ class WCS(GWCSAPIMixin):
             k: bb_center[k] for k in set(range(self.pixel_n_dim)).difference(input_axes)
         }
 
-        transform = _fix_transform_inputs(self.forward_transform, fixi_dict)
+        transform = fix_transform_inputs(self.forward_transform, fixi_dict)
         transform = transform | Mapping(
             world_axes_idx, n_inputs=self.forward_transform.n_outputs
         )
@@ -2966,7 +2501,7 @@ class WCS(GWCSAPIMixin):
             k = axis_info.axis
             widx = world_axes_idx.index(k)
             k1 = k + 1
-            ct = cf.get_ctype_from_ucd(self.world_axis_physical_types[k])
+            ct = get_ctype_from_ucd(self.world_axis_physical_types[k])
             if len(ct) > 4:
                 msg = "Axis type name too long."
                 raise ValueError(msg)
@@ -3034,7 +2569,7 @@ class WCS(GWCSAPIMixin):
         else:
             return
 
-        if not isinstance(self.output_frame, cf.CelestialFrame):
+        if not isinstance(self.output_frame, CelestialFrame):
             # The _calc_approx_inv method only works with celestial frame transforms
             return
 
@@ -3059,14 +2594,14 @@ class WCS(GWCSAPIMixin):
         )
 
         # standard sampling:
-        u, v = _make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
+        u, v = make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
         undist_x, undist_y = ntransform(u, v)
 
         # Double sampling to check if sampling is sufficient.
-        ud, vd = _make_sampling_grid(2 * npoints, self.bounding_box, crpix=crpix)
+        ud, vd = make_sampling_grid(2 * npoints, self.bounding_box, crpix=crpix)
         undist_xd, undist_yd = ntransform(ud, vd)
 
-        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = _fit_2D_poly(
+        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = fit_2D_poly(
             None,
             max_inv_pix_error,
             1,
@@ -3087,395 +2622,4 @@ class WCS(GWCSAPIMixin):
             | Mapping((0, 1, 0, 1))
             | (fit_inv_poly_u & fit_inv_poly_v)
             | (Shift(crpix[0]) & Shift(crpix[1]))
-        )
-
-
-def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
-    # This function fits 2D polynomials to data by writing the normal system
-    # of equations and solving it using LU-decomposition. In theory this
-    # should be less stable than the SVD method used by numpy's lstsq or
-    # astropy's LinearLSQFitter because the condition of the normal matrix
-    # is squared compared to the direct matrix. However, in practice,
-    # in our (Mihai Cara) tests of fitting WCS distortions, solving the
-    # normal system proved to be significantly more accurate, efficient,
-    # and stable than SVD.
-    #
-    # coord_pow - a dictionary used to store powers of coordinate arrays
-    #    of the form x**p * y**q used to build the pseudo-Vandermonde matrix.
-    #    This improves efficiency especially when fitting multiple degrees
-    #    on the same coordinate grid in _fit_2D_poly by reusing computed
-    #    powers.
-    powers = [
-        (i, j) for i in range(degree + 1) for j in range(degree + 1 - i) if i + j > 0
-    ]
-    if coord_pow is None:
-        coord_pow = {}
-
-    nterms = len(powers)
-
-    flt_type = np.longdouble
-
-    # allocate array for the coefficients of the system of equations (a*x=b):
-    a = np.empty((nterms, nterms), dtype=flt_type)
-    bx = np.empty(nterms, dtype=flt_type)
-    by = np.empty(nterms, dtype=flt_type)
-
-    xout = xout.ravel()
-    yout = yout.ravel()
-
-    x = np.asarray(xin.ravel(), dtype=flt_type)
-    y = np.asarray(yin.ravel(), dtype=flt_type)
-
-    # pseudo_vander - a reduced Vandermonde matrix for 2D polynomials
-    # that has only terms x^i * y^j with powers i, j that satisfy:
-    # 0 < i + j <= degree.
-    pseudo_vander = np.empty((x.size, nterms), dtype=float)
-
-    def pow2(p, q):
-        # computes product of powers of coordinate arrays (x**p) * (y**q)
-        # in an efficient way avoiding unnecessary array copying
-        # and/or raising to power
-        if (p, q) in coord_pow:
-            return coord_pow[(p, q)]
-        if p == 0:
-            arr = y**q if q > 1 else y
-        elif q == 0:
-            arr = x**p if p > 1 else x
-        else:
-            xp = x if p == 1 else x**p
-            yq = y if q == 1 else y**q
-            arr = xp * yq
-        coord_pow[(p, q)] = arr
-        return arr
-
-    for i in range(nterms):
-        pi, qi = powers[i]
-        coord_pq = pow2(pi, qi)
-        pseudo_vander[:, i] = coord_pq
-        bx[i] = np.sum(xout * coord_pq, dtype=flt_type)
-        by[i] = np.sum(yout * coord_pq, dtype=flt_type)
-
-        for j in range(i, nterms):
-            pj, qj = powers[j]
-            coord_pq = pow2(pi + pj, qi + qj)
-            a[i, j] = np.sum(coord_pq, dtype=flt_type)
-            a[j, i] = a[i, j]
-
-    with warnings.catch_warnings(record=True):
-        warnings.simplefilter("error", category=linalg.LinAlgWarning)
-        try:
-            lu_piv = linalg.lu_factor(a)
-            poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
-            poly_coeff_y = linalg.lu_solve(lu_piv, by).astype(float)
-        except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
-            msg = f"Failed to fit SIP. Reported error:\n{e.args[0]}"
-            raise np.linalg.LinAlgError(msg) from e
-
-    if not np.all(np.isfinite([poly_coeff_x, poly_coeff_y])):
-        msg = "Failed to fit SIP. Computed coefficients are not finite."
-        raise np.linalg.LinAlgError(msg)
-
-    cond = np.linalg.cond(a.astype(float))
-
-    fitx = np.dot(pseudo_vander, poly_coeff_x)
-    fity = np.dot(pseudo_vander, poly_coeff_y)
-
-    dist = np.sqrt((xout - fitx) ** 2 + (yout - fity) ** 2)
-    max_resid = dist.max()
-
-    return poly_coeff_x, poly_coeff_y, max_resid, powers, cond
-
-
-def _fit_2D_poly(
-    degree,
-    max_error,
-    plate_scale,
-    xin,
-    yin,
-    xout,
-    yout,
-    xind,
-    yind,
-    xoutd,
-    youtd,
-    verbose=False,
-):
-    """
-    Fit a pair of ordinary 2D polynomials to the supplied transform.
-
-    """
-    # The case of one pass with the specified polynomial degree
-    if degree is None:
-        deglist = list(range(1, 10))
-    elif hasattr(degree, "__iter__"):
-        deglist = sorted(map(int, degree))
-        if deglist[0] < 1 or deglist[-1] > 9:
-            msg = "Allowed values for SIP degree are [1...9]"
-            raise ValueError(msg)
-    else:
-        degree = int(degree)
-        if degree < 1 or degree > 9:
-            msg = "Allowed values for SIP degree are [1...9]"
-            raise ValueError(msg)
-        deglist = [degree]
-
-    single_degree = len(deglist) == 1
-
-    fit_error = np.inf
-    if verbose and not single_degree:
-        sys.stdout.write(f"Maximum specified SIP approximation error: {max_error}")
-    max_error *= plate_scale
-
-    fit_warning_msg = "Failed to achieve requested SIP approximation accuracy."
-
-    # Fit lowest degree SIP first.
-    coord_pow = {}  # hold coordinate arrays powers for optimization purpose
-    for deg in deglist:
-        try:
-            cfx_i, cfy_i, fit_error_i, powers_i, cond = _poly_fit_lu(
-                xin, yin, xout, yout, degree=deg, coord_pow=coord_pow
-            )
-            if verbose and not single_degree:
-                sys.stdout.write(
-                    f"   - SIP degree: {deg}. "
-                    f"Maximum residual: {fit_error_i / plate_scale:.5g}"
-                )
-
-        except np.linalg.LinAlgError:
-            if single_degree:
-                # Nothing to do if failure is for the lowest degree
-                raise
-            # Keep results from the previous iteration. Discard current fit
-            break
-
-        if not np.isfinite(cond):
-            # Ill-conditioned system
-            if single_degree:
-                warnings.warn("The fit may be poorly conditioned.", stacklevel=2)
-                cfx = cfx_i
-                cfy = cfy_i
-                fit_error = fit_error_i
-                powers = powers_i
-            break
-
-        if fit_error_i >= fit_error:
-            # Accuracy does not improve. Likely ill-conditioned system
-            break
-
-        cfx = cfx_i
-        cfy = cfy_i
-        powers = powers_i
-
-        fit_error = fit_error_i
-
-        if fit_error <= max_error:
-            # Requested accuracy has been achieved
-            fit_warning_msg = None
-            break
-
-        # Continue to the next degree
-
-    fit_poly_x = Polynomial2D(degree=deg, c0_0=0.0)
-    fit_poly_y = Polynomial2D(degree=deg, c0_0=0.0)
-    for cx, cy, (p, q) in zip(cfx, cfy, powers, strict=False):
-        setattr(fit_poly_x, f"c{p:1d}_{q:1d}", cx)
-        setattr(fit_poly_y, f"c{p:1d}_{q:1d}", cy)
-
-    if fit_warning_msg:
-        warnings.warn(fit_warning_msg, linalg.LinAlgWarning, stacklevel=2)
-
-    if fit_error <= max_error or single_degree:
-        # Check to see if double sampling meets error requirement.
-        max_resid = _compute_distance_residual(
-            xoutd, youtd, fit_poly_x(xind, yind), fit_poly_y(xind, yind)
-        )
-        if verbose:
-            sys.stdout.write(
-                "* Maximum residual, double sampled grid: "
-                f"{max_resid / plate_scale:.5g}"
-            )
-
-        if max_resid > min(5.0 * fit_error, max_error):
-            warnings.warn(
-                "Double sampling check FAILED: Sampling may be too coarse for "
-                "the distortion model being fitted.",
-                stacklevel=2,
-            )
-
-        # Residuals on the double-dense grid may be better estimates
-        # of the accuracy of the fit. So we report the largest of
-        # the residuals (on single- and double-sampled grid) as the fit error:
-        fit_error = max(max_resid, fit_error)
-
-    if verbose:
-        if single_degree:
-            sys.stdout.write(f"Maximum residual: {fit_error / plate_scale:.5g}")
-        else:
-            sys.stdout.write(
-                f"* Final SIP degree: {deg}. "
-                f"Maximum residual: {fit_error / plate_scale:.5g}"
-            )
-
-    return fit_poly_x, fit_poly_y, fit_error / plate_scale
-
-
-def _make_sampling_grid(npoints, bounding_box, crpix):
-    step = np.subtract.reduce(bounding_box, axis=1) / (1.0 - npoints)
-    crpix = np.asanyarray(crpix)[:, None, None]
-    x, y = grid_from_bounding_box(bounding_box, step=step, center=False) - crpix
-    return x.flatten(), y.flatten()
-
-
-def _compute_distance_residual(undist_x, undist_y, fit_poly_x, fit_poly_y):
-    """
-    Compute the distance residuals and return the rms and maximum values.
-    """
-    dist = np.sqrt((undist_x - fit_poly_x) ** 2 + (undist_y - fit_poly_y) ** 2)
-    return dist.max()
-
-
-def _reform_poly_coefficients(fit_poly_x, fit_poly_y):
-    """
-    The fit polynomials must be recombined to align with the SIP decomposition
-
-    The result is the f(u,v) and g(u,v) polynomials, and the CD matrix.
-    """
-    # Extract values for CD matrix and recombining
-    c11 = fit_poly_x.c1_0.value
-    c12 = fit_poly_x.c0_1.value
-    c21 = fit_poly_y.c1_0.value
-    c22 = fit_poly_y.c0_1.value
-    sip_poly_x = fit_poly_x.copy()
-    sip_poly_y = fit_poly_y.copy()
-    # Force low order coefficients to be 0 as defined in SIP
-    sip_poly_x.c0_0 = 0
-    sip_poly_y.c0_0 = 0
-    sip_poly_x.c1_0 = 0
-    sip_poly_x.c0_1 = 0
-    sip_poly_y.c1_0 = 0
-    sip_poly_y.c0_1 = 0
-
-    cdmat = ((c11, c12), (c21, c22))
-    invcdmat = npla.inv(np.array(cdmat))
-    degree = fit_poly_x.degree
-    # Now loop through all remaining coefficients
-    for i in range(degree + 1):
-        for j in range(degree + 1):
-            if (i + j > 1) and (i + j < degree + 1):
-                old_x = getattr(fit_poly_x, f"c{i}_{j}").value
-                old_y = getattr(fit_poly_y, f"c{i}_{j}").value
-                newcoeff = np.dot(invcdmat, np.array([[old_x], [old_y]]))
-                setattr(sip_poly_x, f"c{i}_{j}", newcoeff[0, 0])
-                setattr(sip_poly_y, f"c{i}_{j}", newcoeff[1, 0])
-
-    return cdmat, sip_poly_x, sip_poly_y
-
-
-def _store_2D_coefficients(hdr, poly_model, coeff_prefix, keeplinear=False):
-    """
-    Write the polynomial model coefficients to the header.
-    """
-    mindeg = int(not keeplinear)
-    degree = poly_model.degree
-    for i in range(degree + 1):
-        for j in range(degree + 1):
-            if (i + j) > mindeg and (i + j < degree + 1):
-                hdr[f"{coeff_prefix}_{i}_{j}"] = getattr(poly_model, f"c{i}_{j}").value
-
-
-def _fix_transform_inputs(transform, inputs):
-    # This is a workaround to the bug in https://github.com/astropy/astropy/issues/11360
-    # Once that bug is fixed, the code below can be replaced with fix_inputs
-    if not inputs:
-        return transform
-
-    c = None
-    mapping = []
-    for k in range(transform.n_inputs):
-        if k in inputs:
-            mapping.append(0)
-        else:
-            # this assumes that n_inputs > 0 and that axis 0 always exist
-            c = 0 if c is None else (c + 1)
-            mapping.append(c)
-
-    in_selector = Mapping(mapping, n_inputs=transform.n_inputs - len(inputs))
-
-    input_fixer = Const1D(inputs[0]) if 0 in inputs else Identity(1)
-    for k in range(1, transform.n_inputs):
-        input_fixer &= Const1D(inputs[k]) if k in inputs else Identity(1)
-
-    return in_selector | input_fixer | transform
-
-
-class Step:
-    """
-    Represents a ``step`` in the WCS pipeline.
-
-    Parameters
-    ----------
-    frame : `~gwcs.coordinate_frames.CoordinateFrame`
-        A gwcs coordinate frame object.
-    transform : `~astropy.modeling.Model` or None
-        A transform from this step's frame to next step's frame.
-        The transform of the last step should be `None`.
-    """
-
-    def __init__(self, frame, transform=None):
-        self.frame = frame
-        self.transform = transform
-
-    @property
-    def frame(self):
-        return self._frame
-
-    @frame.setter
-    def frame(self, val):
-        if not isinstance(val, cf.CoordinateFrame | str):
-            msg = '"frame" should be an instance of CoordinateFrame or a string.'
-            raise TypeError(msg)
-
-        self._frame = val
-
-    @property
-    def transform(self):
-        return self._transform
-
-    @transform.setter
-    def transform(self, val):
-        if val is not None and not isinstance(val, (Model)):
-            msg = '"transform" should be an instance of astropy.modeling.Model.'
-            raise TypeError(msg)
-        self._transform = val
-
-    @property
-    def frame_name(self):
-        if isinstance(self.frame, str):
-            return self.frame
-        return self.frame.name
-
-    def __getitem__(self, ind):
-        warnings.warn(
-            "Indexing a WCS.pipeline step is deprecated. "
-            "Use the `frame` and `transform` attributes instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if ind not in (0, 1):
-            msg = "Allowed inices are 0 (frame) and 1 (transform)."
-            raise IndexError(msg)
-        if ind == 0:
-            return self.frame
-        return self.transform
-
-    def __str__(self):
-        return (
-            f"{self.frame_name}\t "
-            f"{getattr(self.transform, 'name', 'None') or type(self.transform).__name__}"  # noqa: E501
-        )
-
-    def __repr__(self):
-        return (
-            f"Step(frame={self.frame_name}, "
-            f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
         )

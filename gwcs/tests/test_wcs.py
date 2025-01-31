@@ -54,6 +54,7 @@ time = cf.TemporalFrame(
 stokes = cf.StokesFrame(axes_order=(2,))
 
 pipe = [wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)]
+pipe_copy = pipe.copy()
 
 # Create some data.
 nx, ny = (5, 2)
@@ -104,28 +105,28 @@ def test_init_no_transform():
     """
     gw = wcs.WCS(output_frame="icrs")
     assert len(gw._pipeline) == 2
-    assert gw.pipeline[0].frame == "detector"
+    assert gw.pipeline[0].frame.name == "detector"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw.pipeline[0][0] == "detector"
-    assert gw.pipeline[1].frame == "icrs"
+        assert gw.pipeline[0][0].name == "detector"
+    assert gw.pipeline[1].frame.name == "icrs"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw.pipeline[1][0] == "icrs"
+        assert gw.pipeline[1][0].name == "icrs"
     assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
     gw = wcs.WCS(output_frame=icrs, input_frame=detector)
-    assert gw._pipeline[0].frame == "detector"
+    assert gw._pipeline[0].frame.name == "detector"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw._pipeline[0][0] == "detector"
-    assert gw._pipeline[1].frame == "icrs"
+        assert gw._pipeline[0][0].name == "detector"
+    assert gw._pipeline[1].frame.name == "icrs"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
     ):
-        assert gw._pipeline[1][0] == "icrs"
+        assert gw._pipeline[1][0].name == "icrs"
     assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
     with pytest.raises(NotImplementedError):
         gw(1, 2)
@@ -732,7 +733,7 @@ class TestImaging:
         assert self.wcs.unit == (u.degree, u.degree)
 
     def test_get_transform(self):
-        with pytest.raises(wcs.CoordinateFrameError):
+        with pytest.raises(CoordinateFrameError):
             assert (
                 self.wcs.get_transform("x_translation", "sky_rotation").submodel_names
                 == self.wcs.forward_transform[1:].submodel_names
@@ -1385,8 +1386,8 @@ def test_initialize_wcs_with_list():
     shift2 = models.Shift(3 * u.pix)
     pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
 
-    extra_step = ("extra_step", None)
-    pipeline.append(extra_step)
+    end_step = ("end_step", None)
+    pipeline.append(end_step)
 
     # make sure no warnings occur when creating wcs with this pipeline
     with warnings.catch_warnings():
@@ -1735,3 +1736,26 @@ def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
         with_units=True,
     )
     assert isinstance(intermediate_world, coord.SkyCoord)
+
+
+def test_error_with_duplicate_frames():
+    """
+    Test that an error is raised if a frame is used more than once in the pipeline.
+    """
+    pipeline = [(detector, m1), (detector, m2), (focal, None)]
+
+    with pytest.raises(ValueError, match="Frame detector is already in the pipeline."):
+        wcs.WCS(pipeline)
+
+
+def test_error_with_not_none_last():
+    """
+    Test that an error is raised if the last transform is not None
+    """
+
+    pipeline = [(detector, m1), (focal, m2)]
+
+    with pytest.raises(
+        ValueError, match="The last step in the pipeline must have a None transform."
+    ):
+        wcs.WCS(pipeline)

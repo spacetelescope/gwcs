@@ -36,7 +36,7 @@ except ImportError:
 import importlib.metadata
 
 try:
-    from sphinx_astropy.conf.v1 import *  # noqa: F403
+    from sphinx_astropy.conf.v2 import *  # noqa: F403
 except ImportError:
     print(  # noqa: T201
         "ERROR: the documentation requires the sphinx-astropy package to be installed"
@@ -108,13 +108,6 @@ version = ".".join(release.split(".")[:2])
 # name of a builtin theme or the name of a custom theme in html_theme_path.
 # html_theme = None
 
-# See sphinx-bootstrap-theme for documentation of these options
-# https://github.com/ryan-roemer/sphinx-bootstrap-theme
-html_theme_options = {
-    "logotext1": "g",  # white,  semi-bold
-    "logotext2": "wcs",  # orange, light
-    "logotext3": ":docs",  # white,  light
-}
 
 # Custom sidebar templates, maps document names to template names.
 # html_sidebars = {}
@@ -156,6 +149,7 @@ extensions += ["sphinx_asdf"]  # noqa: F405
 nitpicky = True
 nitpick_ignore = [
     ("py:class", "gwcs.api.GWCSAPIMixin"),
+    ("py:class", "gwcs.wcs._pipeline.Pipeline"),
     ("py:obj", "astropy.modeling.projections.projcodes"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),
