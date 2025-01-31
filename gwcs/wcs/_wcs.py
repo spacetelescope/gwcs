@@ -403,7 +403,8 @@ class WCS(GWCSAPIMixin, Pipeline):
                     max_ax = axis_range[~m].min()
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
-                    outside = (coord < min_ax) | (coord > max_ax)
+                    coord_ = self._remove_units_input([coord], self.output_frame)[0]
+                    outside = (coord_ < min_ax) | (coord_ > max_ax)
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
@@ -1177,6 +1178,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         """
 
         def _order_clockwise(v):
+            v = [self._remove_units_input(vv, self.input_frame) for vv in v]
             return np.asarray(
                 [
                     [v[0][0], v[1][0]],
@@ -1556,6 +1558,11 @@ class WCS(GWCSAPIMixin, Pipeline):
         if bounding_box is None:
             bounding_box = self.bounding_box
 
+        first_bound = bounding_box[0][0]
+        if isinstance(first_bound, u.Quantity):
+            bounding_box = [
+                self._remove_units_input(bb, self.input_frame) for bb in bounding_box
+            ]
         bb_center = np.mean(bounding_box, axis=1)
 
         fixi_dict = {
@@ -1581,12 +1588,19 @@ class WCS(GWCSAPIMixin, Pipeline):
             crpix1 = crpix[0] - 1
             crpix2 = crpix[1] - 1
 
+        if isinstance(first_bound, u.Quantity):
+            crpix1 = u.Quantity(crpix1, first_bound.unit)
+            crpix2 = u.Quantity(crpix2, first_bound.unit)
+
         # check that the bounding box has some reasonable size:
         if (xmax - xmin) < 1 or (ymax - ymin) < 1:
             msg = "Bounding box is too small for fitting a SIP polynomial"
             raise ValueError(msg)
 
         lon, lat = transform(crpix1, crpix2)
+        pole = 180
+        if isinstance(lon, u.Quantity):
+            pole = u.Quantity(pole, lon.unit)
 
         # Now rotate to native system and deproject. Recall that transform
         # expects pixels in the original coordinate system, but the SIP
@@ -1594,31 +1608,60 @@ class WCS(GWCSAPIMixin, Pipeline):
         ntransform = (
             (Shift(crpix1) & Shift(crpix2))
             | transform
-            | RotateCelestial2Native(lon, lat, 180)
+            | RotateCelestial2Native(lon, lat, pole)
             | sky2pix_proj
         )
 
         # standard sampling:
-        u, v = make_sampling_grid(
-            npoints, tuple(bounding_box[k] for k in input_axes), crpix=[crpix1, crpix2]
+        crpix_ = [crpix1, crpix2]
+        if isinstance(crpix1, u.Quantity):
+            crpix_ = self._remove_units_input(crpix_, self.input_frame)
+        u_grid, v_grid = make_sampling_grid(
+            npoints, tuple(bounding_box[k] for k in input_axes), crpix=crpix_
         )
-        undist_x, undist_y = ntransform(u, v)
+        if isinstance(crpix1, u.Quantity):
+            u_grid = u.Quantity(u_grid, crpix1.unit)
+            v_grid = u.Quantity(v_grid, crpix2.unit)
+
+        undist_x, undist_y = ntransform(u_grid, v_grid)
 
         # Double sampling to check if sampling is sufficient.
         ud, vd = make_sampling_grid(
             2 * npoints,
             tuple(bounding_box[k] for k in input_axes),
-            crpix=[crpix1, crpix2],
+            crpix=crpix_,
         )
+        if isinstance(crpix1, u.Quantity):
+            ud = u.Quantity(ud, crpix1.unit)
+            vd = u.Quantity(vd, crpix2.unit)
+
         undist_xd, undist_yd = ntransform(ud, vd)
+
+        input_0 = 0
+        input_1 = 1
+        if isinstance(crpix1, u.Quantity):
+            input_0 = u.Quantity(0, crpix1.unit)
+            input_1 = u.Quantity(1, crpix1.unit)
 
         # Determine approximate pixel scale in order to compute error threshold
         # from the specified pixel error. Computed at the center of the array.
-        x0, y0 = ntransform(0, 0)
-        xx, xy = ntransform(1, 0)
-        yx, yy = ntransform(0, 1)
+        x0, y0 = ntransform(input_0, input_0)
+        xx, xy = ntransform(input_1, input_0)
+        yx, yy = ntransform(input_0, input_1)
         pixarea = np.abs((xx - x0) * (yy - y0) - (xy - y0) * (yx - x0))
         plate_scale = np.sqrt(pixarea)
+
+        plate_scale = (
+            plate_scale.value if isinstance(plate_scale, u.Quantity) else plate_scale
+        )
+        u_grid = u_grid.value if isinstance(u_grid, u.Quantity) else u_grid
+        v_grid = v_grid.value if isinstance(v_grid, u.Quantity) else v_grid
+        undist_x = undist_x.value if isinstance(undist_x, u.Quantity) else undist_x
+        undist_y = undist_y.value if isinstance(undist_y, u.Quantity) else undist_y
+        ud = ud.value if isinstance(ud, u.Quantity) else ud
+        vd = vd.value if isinstance(vd, u.Quantity) else vd
+        undist_xd = undist_xd.value if isinstance(undist_xd, u.Quantity) else undist_xd
+        undist_yd = undist_yd.value if isinstance(undist_yd, u.Quantity) else undist_yd
 
         # The fitting section.
         if verbose:
@@ -1627,8 +1670,8 @@ class WCS(GWCSAPIMixin, Pipeline):
             degree,
             max_pix_error,
             plate_scale,
-            u,
-            v,
+            u_grid,
+            v_grid,
             undist_x,
             undist_y,
             ud,
@@ -1658,8 +1701,8 @@ class WCS(GWCSAPIMixin, Pipeline):
                 1,
                 U,
                 V,
-                u - U,
-                v - V,
+                u_grid - U,
+                v_grid - V,
                 Ud,
                 Vd,
                 ud - Ud,
@@ -1669,8 +1712,14 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         # create header with WCS info:
         w = celestial_frame_to_wcs(frame.reference_frame, projection=projection)
-        w.wcs.crval = [lon, lat]
-        w.wcs.crpix = [crpix1 + 1, crpix2 + 1]
+        w.wcs.crval = [
+            lon.value if isinstance(lon, u.Quantity) else lon,
+            lat.value if isinstance(lat, u.Quantity) else lat,
+        ]
+        w.wcs.crpix = [
+            crpix1.value if isinstance(crpix1, u.Quantity) else crpix1 + 1,
+            crpix2.value if isinstance(crpix2, u.Quantity) else crpix2 + 1,
+        ]
         w.wcs.pc = cdmat if nlon < nlat else cdmat[::-1]
         w.wcs.set()
         hdr = w.to_header(True)

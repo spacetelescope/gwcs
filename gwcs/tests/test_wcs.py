@@ -1759,3 +1759,48 @@ def test_error_with_not_none_last():
         ValueError, match="The last step in the pipeline must have a None transform."
     ):
         wcs.WCS(pipeline)
+
+
+def test_bounding_box_with_units():
+    """
+    Test that the invert method works when a bounding box has units.
+    """
+
+    # GWCS that is adapted from its Getting Started.
+    shift_by_crpix = models.Shift(-(5 - 1) * u.pix) & models.Shift(-(5 - 1) * u.pix)
+    matrix = np.array(
+        [
+            [1.290551569736e-05, 5.9525007864732e-06],
+            [5.0226382102765e-06, -1.2644844123757e-05],
+        ]
+    )
+    rotation = models.AffineTransformation2D(matrix * u.deg, translation=[0, 0] * u.deg)
+    rotation.input_units_equivalencies = {
+        "x": u.pixel_scale(1 * (u.deg / u.pix)),
+        "y": u.pixel_scale(1 * (u.deg / u.pix)),
+    }
+    rotation.inverse = models.AffineTransformation2D(
+        np.linalg.inv(matrix) * u.pix, translation=[0, 0] * u.pix
+    )
+    rotation.inverse.input_units_equivalencies = {
+        "x": u.pixel_scale(1 * (u.pix / u.deg)),
+        "y": u.pixel_scale(1 * (u.pix / u.deg)),
+    }
+    tan = models.Pix2Sky_TAN()
+    celestial_rotation = models.RotateNative2Celestial(
+        3.581704851882 * u.deg, -30.39197867265 * u.deg, 180 * u.deg
+    )
+    det2sky = shift_by_crpix | rotation | tan | celestial_rotation
+    det2sky.name = "linear_transform"
+    detector_frame = cf.Frame2D(
+        name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
+    )
+    sky_frame = cf.CelestialFrame(
+        reference_frame=coord.ICRS(), name="icrs", unit=(u.deg, u.deg)
+    )
+    pipeline = [(detector_frame, det2sky), (sky_frame, None)]
+    w_gwcs = wcs.WCS(pipeline)
+    w_gwcs.bounding_box = ((0, 8), (0, 10)) * u.pix  # x, y
+
+    w_gwcs.invert(4 * u.deg, 5 * u.deg)
+    w_gwcs.to_fits(bounding_box=([0, 100] * u.pix, [0, 100] * u.pix))
