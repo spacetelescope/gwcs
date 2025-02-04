@@ -1,4 +1,4 @@
-0.23.0 (unreleased)
+0.24.0 (2025-02-04)
 -------------------
 
 - Coordinate frames now have a "native" order and then are sorted based on ``axes_order``. [#457]
@@ -18,6 +18,12 @@
 
 - Bugfix for ``WCS.invert`` and ``WCS.to_fits`` that prevented evaluation when the attached bounding box happened to have
   units on its values. [#554]
+
+
+0.23.0 (skipped)
+----------------
+
+This was skipped to avoid issues with an ongoing JWST release.
 
 
 0.22.0 (2024-12-19)
