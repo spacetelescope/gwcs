@@ -6,7 +6,6 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-from astropy import utils as astutil
 from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
@@ -117,13 +116,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         self._pixel_shape = None
 
     def _add_units_input(
-        self, arrays: list[np.ndarray], frame: CoordinateFrame | None
+        self, arrays: np.ndarray | float, frame: CoordinateFrame | None
     ) -> tuple[u.Quantity, ...]:
         if frame is not None:
-            return tuple(
-                u.Quantity(array, unit)
-                for array, unit in zip(arrays, frame.unit, strict=False)
-            )
+            return frame.add_units(arrays)
 
         return arrays
 
@@ -131,10 +127,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         self, arrays: list[u.Quantity], frame: CoordinateFrame | None
     ) -> tuple[np.ndarray, ...]:
         if frame is not None:
-            return tuple(
-                array.to_value(unit) if isinstance(array, u.Quantity) else array
-                for array, unit in zip(arrays, frame.unit, strict=False)
-            )
+            return frame.remove_units(arrays)
 
         return arrays
 
@@ -166,10 +159,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         results = self._call_forward(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-
         if with_units:
-            if not astutil.isiterable(results):
-                results = (results,)
             # values are always expected to be arrays or scalars not quantities
             results = self._remove_units_input(results, self.output_frame)
             high_level = values_to_high_level_objects(*results, low_level_wcs=self)
@@ -403,7 +393,9 @@ class WCS(GWCSAPIMixin, Pipeline):
                     max_ax = axis_range[~m].min()
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
-                    coord_ = self._remove_units_input([coord], self.output_frame)[0]
+                    coord_ = self._remove_quantity_output(
+                        world_arrays, self.output_frame
+                    )[idim]
                     outside = (coord_ < min_ax) | (coord_ > max_ax)
                 if np.any(outside):
                     if np.isscalar(coord):
