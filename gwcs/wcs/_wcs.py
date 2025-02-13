@@ -352,7 +352,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         else:
             # Always strip units for numerical inverse
             args = self._remove_units_input(args, self.output_frame)
-            result = self.numerical_inverse(
+            result = self._numerical_inverse(
                 *args,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
@@ -678,6 +678,30 @@ class WCS(GWCSAPIMixin, Pipeline):
          [2.76552923e-05 1.14789013e-05]]
 
         """  # noqa: E501
+        return self._numerical_inverse(
+            *args,
+            tolerance=tolerance,
+            maxiter=maxiter,
+            adaptive=adaptive,
+            detect_divergence=detect_divergence,
+            quiet=quiet,
+            with_bounding_box=with_bounding_box,
+            fill_value=fill_value,
+            **kwargs,
+        )
+
+    def _numerical_inverse(
+        self,
+        *args,
+        tolerance=1e-5,
+        maxiter=30,
+        adaptive=True,
+        detect_divergence=True,
+        quiet=True,
+        with_bounding_box=True,
+        fill_value=np.nan,
+        **kwargs,
+    ):
         if kwargs.pop("with_units", False):
             msg = (
                 "Support for with_units in numerical_inverse has been removed, "
