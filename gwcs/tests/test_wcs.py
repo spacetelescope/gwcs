@@ -1804,3 +1804,12 @@ def test_bounding_box_with_units():
 
     w_gwcs.invert(4 * u.deg, 5 * u.deg)
     w_gwcs.to_fits(bounding_box=([0, 100] * u.pix, [0, 100] * u.pix))
+
+
+def test_direct_numerical_inverse(gwcs_romanisim):
+    xy = (128, 256)
+    coord = gwcs_romanisim(*xy)
+    ra_dec = (np.radians(c) * u.rad for c in coord)
+    out = gwcs_romanisim.numerical_inverse(*ra_dec)
+
+    assert_allclose(xy, out)
