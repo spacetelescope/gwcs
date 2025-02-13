@@ -10,6 +10,9 @@
 - Fix bug where "vector" (shape (n,) not shape (1, n)) arrays would loose all their entries except the
   first if ``with_units=True`` was used. [#563]
 
+- Bugfix for ``__call__`` and ``invert`` incorrectly handling units when involving
+  "parameterless" transforms. [#562]
+
 0.24.0 (2025-02-04)
 -------------------
 
