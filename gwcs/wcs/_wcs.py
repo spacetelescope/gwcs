@@ -679,7 +679,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         """  # noqa: E501
         return self._numerical_inverse(
-            *args,
+            *self._remove_units_input(args, self.output_frame),
             tolerance=tolerance,
             maxiter=maxiter,
             adaptive=adaptive,
