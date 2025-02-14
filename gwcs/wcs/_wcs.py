@@ -1194,7 +1194,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         """
 
         def _order_clockwise(v):
-            v = [self._remove_units_input(vv, self.input_frame) for vv in v]
             return np.asarray(
                 [
                     [v[0][0], v[1][0]],
@@ -1218,7 +1217,9 @@ class WCS(GWCSAPIMixin, Pipeline):
                 bb = np.asarray([b.value for b in bb]) * bb[0].unit
             vertices = (bb,)
         elif all_spatial:
-            vertices = _order_clockwise(bb)
+            vertices = _order_clockwise(
+                [self._remove_units_input(b, self.input_frame) for b in bb]
+            )
         else:
             vertices = np.array(list(itertools.product(*bb))).T
 
