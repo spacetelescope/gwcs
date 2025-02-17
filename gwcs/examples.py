@@ -5,8 +5,8 @@ from astropy.modeling import models
 from astropy.time import Time
 
 from . import coordinate_frames as cf
+from . import geometry, wcs
 from . import spectroscopy as sp
-from . import wcs
 
 # frames
 DETECTOR_1D_FRAME = cf.CoordinateFrame(
@@ -648,6 +648,59 @@ def gwcs_with_pipeline_celestial():
         (input_frame, spatial),
         (celestial_frame, custom),
         (output_frame, None),
+    ]
+
+    return wcs.WCS(pipeline)
+
+
+def gwcs_romanisim():
+    targ_pos = coord.SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+
+    ra_ref = targ_pos.ra.to(u.deg).value
+    dec_ref = targ_pos.dec.to(u.deg).value
+
+    # v2_ref, v3_ref are in arcsec, but RotationSequence3D wants degrees,
+    # so start by scaling by 3600.
+    rot = models.RotationSequence3D([0, 0, 0, dec_ref, -ra_ref], "zyxyz")
+
+    # V2V3 are in arcseconds, while SphericalToCartesian expects degrees,
+    # so again start by scaling by 3600
+    tel2sky = (
+        (models.Scale(1 / 3600) & models.Scale(1 / 3600))
+        | geometry.SphericalToCartesian(wrap_lon_at=180)
+        | rot
+        | geometry.CartesianToSpherical(wrap_lon_at=360)
+    )
+    tel2sky.name = "v23tosky"
+
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    v2v3 = cf.Frame2D(
+        name="v2v3",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
+    )
+    v2v3vacorr = cf.Frame2D(
+        name="v2v3vacorr",
+        axes_order=(0, 1),
+        axes_names=("v2", "v3"),
+        unit=(u.arcsec, u.arcsec),
+    )
+    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
+
+    va_corr = models.Identity(2)
+    zen2v2v3 = models.EulerAngleRotation(0, -90, 0, "xyz") | (
+        models.Scale(3600) & models.Scale(3600)
+    )
+    tanproj = models.Pix2Sky_Gnomonic()
+    pix2tan = models.Scale(0.11 / 3600) & models.Scale(0.11 / 3600)
+    distortion = pix2tan | tanproj | zen2v2v3
+
+    pipeline = [
+        wcs.Step(detector, distortion),
+        wcs.Step(v2v3, va_corr),
+        wcs.Step(v2v3vacorr, tel2sky),
+        wcs.Step(world, None),
     ]
 
     return wcs.WCS(pipeline)
