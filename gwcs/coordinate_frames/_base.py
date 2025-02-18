@@ -1,5 +1,6 @@
 import abc
-from typing import cast
+from collections.abc import Sequence
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -9,9 +10,8 @@ from astropy.coordinates import BaseCoordinateFrame as _BaseCoordinateFrame
 from gwcs._typing import (
     AxisPhysicalTypes,
     LowLevelUnitValue,
-    WorldAxisClasses,
-    WorldAxisComponents,
 )
+from gwcs.api import WorldAxisClasses, WorldAxisComponent, WorldAxisComponents
 
 from ._axis import AxesType
 from ._properties import FrameProperties
@@ -66,7 +66,7 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def reference_frame(self) -> _BaseCoordinateFrame:
+    def reference_frame(self) -> _BaseCoordinateFrame | None:
         """
         The reference frame of the coordinates described by this frame.
 
@@ -116,8 +116,13 @@ class BaseCoordinateFrame(abc.ABC):
         # components by the axes_order.
         ordered = np.array(self._native_world_axis_object_components, dtype=object)[
             np.argsort(self.axes_order)
-        ]
-        return list(map(tuple, ordered))
+        ].tolist()
+
+        # Makes MyPy happy
+        def _func(arg: Sequence[Any]) -> WorldAxisComponent:
+            return WorldAxisComponent(*arg)
+
+        return list(map(_func, ordered))
 
     @property
     @abc.abstractmethod

@@ -21,6 +21,7 @@ __all__ = [
     "BoundingBox",
     "Bounds",
     "HighLevelObject",
+    "HighLevelObjects",
     "Interval",
     "LowLevelArrays",
     "LowLevelUnitArrays",
@@ -28,9 +29,6 @@ __all__ = [
     "LowLevelValue",
     "OutputLowLevelArray",
     "Real",
-    "WorldAxisClass",
-    "WorldAxisComponent",
-    "WorldAxisComponents",
 ]
 
 Real: TypeAlias = int | float | Fraction | np.integer | np.floating
@@ -46,7 +44,7 @@ LowLevelValue: TypeAlias = Real | npt.NDArray[np.number]
 LowLevelUnitValue: TypeAlias = LowLevelValue | Quantity
 
 # This is to represent all the values together for a single low-level function.
-LowLevelArrays: TypeAlias = tuple[LowLevelValue, ...]
+LowLevelArrays: TypeAlias = tuple[LowLevelValue, ...] | LowLevelValue
 LowLevelUnitArrays: TypeAlias = tuple[LowLevelUnitValue, ...]
 
 # This is to represent a general array output from a low-level function.
@@ -54,14 +52,7 @@ LowLevelUnitArrays: TypeAlias = tuple[LowLevelUnitValue, ...]
 OutputLowLevelArray: TypeAlias = LowLevelValue | LowLevelArrays
 
 HighLevelObject: TypeAlias = Time | SkyCoord | SpectralCoord | StokesCoord | Quantity
-
-WorldAxisComponent: TypeAlias = tuple[str, str | int, str]
-WorldAxisClass: TypeAlias = tuple[
-    type | str, tuple[int | None, ...], dict[str, HighLevelObject]
-]
-
-WorldAxisComponents: TypeAlias = list[WorldAxisComponent]
-WorldAxisClasses: TypeAlias = dict[str, WorldAxisClass]
+HighLevelObjects: TypeAlias = tuple[HighLevelObject, ...] | HighLevelObject
 
 AxisPhysicalType: TypeAlias = str | BaseCoordinateFrame
 AxisPhysicalTypes: TypeAlias = tuple[str | BaseCoordinateFrame, ...]

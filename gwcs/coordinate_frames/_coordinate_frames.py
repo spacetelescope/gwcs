@@ -2,7 +2,6 @@
 
 import contextlib
 import logging
-import numbers
 from collections import defaultdict
 
 import numpy as np
@@ -10,20 +9,13 @@ from astropy import coordinates as coord
 from astropy import time
 from astropy import units as u
 from astropy.coordinates import StokesCoord
-from astropy.utils.misc import isiterable
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
-from astropy.wcs.wcsapi.high_level_api import (
-    high_level_objects_to_values,
-    values_to_high_level_objects,
-)
 
-from ._base import BaseCoordinateFrame
-from ._properties import FrameProperties
+from ._core import CoordinateFrame
 
 __all__ = [
     "CelestialFrame",
     "CompositeFrame",
-    "CoordinateFrame",
     "EmptyFrame",
     "Frame2D",
     "SpectralFrame",
@@ -84,226 +76,6 @@ def get_ctype_from_ucd(ucd):
         The corresponding FITS ``CTYPE`` value or an empty string.
     """
     return UCD1_TO_CTYPE.get(ucd, "")
-
-
-class CoordinateFrame(BaseCoordinateFrame):
-    """
-    Base class for Coordinate Frames.
-
-    Parameters
-    ----------
-    naxes : int
-        Number of axes.
-    axes_type : str
-        One of ["SPATIAL", "SPECTRAL", "TIME"]
-    axes_order : tuple of int
-        A dimension in the input data that corresponds to this axis.
-    reference_frame : astropy.coordinates.builtin_frames
-        Reference frame (usually used with output_frame to convert to world
-        coordinate objects).
-    unit : list of astropy.units.Unit
-        Unit for each axis.
-    axes_names : list
-        Names of the axes in this frame.
-    name : str
-        Name of this frame.
-    """
-
-    def __init__(
-        self,
-        naxes,
-        axes_type,
-        axes_order,
-        reference_frame=None,
-        unit=None,
-        axes_names=None,
-        name=None,
-        axis_physical_types=None,
-    ):
-        self._naxes = naxes
-        self._axes_order = tuple(axes_order)
-        self._reference_frame = reference_frame
-
-        if name is None:
-            self._name = self.__class__.__name__
-        else:
-            self._name = name
-
-        if len(self._axes_order) != naxes:
-            msg = "Length of axes_order does not match number of axes."
-            raise ValueError(msg)
-
-        if isinstance(axes_type, str):
-            axes_type = (axes_type,)
-
-        self._prop = FrameProperties(
-            naxes,
-            axes_type,
-            unit,
-            axes_names,
-            axis_physical_types or self._default_axis_physical_types(axes_type),
-        )
-
-        super().__init__()
-
-    def _default_axis_physical_types(self, axes_type):
-        """
-        The default physical types to use for this frame if none are specified
-        by the user.
-        """
-        return tuple(f"custom:{t}" for t in axes_type)
-
-    def __repr__(self):
-        fmt = (
-            f'<{self.__class__.__name__}(name="{self.name}", unit={self.unit}, '
-            f"axes_names={self.axes_names}, axes_order={self.axes_order}"
-        )
-        if self.reference_frame is not None:
-            fmt += f", reference_frame={self.reference_frame}"
-        fmt += ")>"
-        return fmt
-
-    def __str__(self):
-        if self._name is not None:
-            return self._name
-        return self.__class__.__name__
-
-    def _sort_property(self, prop):
-        sorted_prop = sorted(
-            zip(prop, self.axes_order, strict=False), key=lambda x: x[1]
-        )
-        return tuple([t[0] for t in sorted_prop])
-
-    @property
-    def name(self):
-        """A custom name of this frame."""
-        return self._name
-
-    @name.setter
-    def name(self, val):
-        """A custom name of this frame."""
-        self._name = val
-
-    @property
-    def naxes(self):
-        """The number of axes in this frame."""
-        return self._naxes
-
-    @property
-    def unit(self):
-        """The unit of this frame."""
-        return self._sort_property(self._prop.unit)
-
-    @property
-    def axes_names(self):
-        """Names of axes in the frame."""
-        return self._sort_property(self._prop.axes_names)
-
-    @property
-    def axes_order(self):
-        """A tuple of indices which map inputs to axes."""
-        return self._axes_order
-
-    @property
-    def reference_frame(self):
-        """Reference frame, used to convert to world coordinate objects."""
-        return self._reference_frame
-
-    @property
-    def axes_type(self):
-        """Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'."""
-        return self._sort_property(self._prop.axes_type)
-
-    @property
-    def axis_physical_types(self):
-        """
-        The axis physical types for this frame.
-
-        These physical types are the types in frame order, not transform order.
-        """
-        return self._sort_property(self._prop.axis_physical_types)
-
-    @property
-    def world_axis_object_classes(self):
-        return {
-            f"{at}{i}" if i != 0 else at: (u.Quantity, (), {"unit": unit})
-            for i, (at, unit) in enumerate(zip(self.axes_type, self.unit, strict=False))
-        }
-
-    @property
-    def _native_world_axis_object_components(self):
-        return [
-            (f"{at}{i}" if i != 0 else at, 0, "value")
-            for i, at in enumerate(self._prop.axes_type)
-        ]
-
-    @property
-    def serialized_classes(self):
-        """
-        This property is used by the low level WCS API in Astropy.
-
-        By providing it we can duck type as a low level WCS object.
-        """
-        return False
-
-    def to_high_level_coordinates(self, *values):
-        """
-        Convert "values" to high level coordinate objects described by this frame.
-
-        "values" are the coordinates in array or scalar form, and high level
-        objects are things such as ``SkyCoord`` or ``Quantity``. See
-        :ref:`wcsapi` for details.
-
-        Parameters
-        ----------
-        values : `numbers.Number`, `numpy.ndarray`, or `~astropy.units.Quantity`
-           ``naxis`` number of coordinates as scalars or arrays.
-
-        Returns
-        -------
-        high_level_coordinates
-            One (or more) high level object describing the coordinate.
-        """
-        # We allow Quantity-like objects here which values_to_high_level_objects
-        # does not.
-        values = [
-            v.to_value(unit) if hasattr(v, "to_value") else v
-            for v, unit in zip(values, self.unit, strict=False)
-        ]
-
-        if not all(
-            isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values
-        ):
-            msg = "All values should be a scalar number or a numpy array."
-            raise TypeError(msg)
-
-        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
-        if len(high_level) == 1:
-            high_level = high_level[0]
-        return high_level
-
-    def from_high_level_coordinates(self, *high_level_coords):
-        """
-        Convert high level coordinate objects to "values" as described by this frame.
-
-        "values" are the coordinates in array or scalar form, and high level
-        objects are things such as ``SkyCoord`` or ``Quantity``. See
-        :ref:`wcsapi` for details.
-
-        Parameters
-        ----------
-        high_level_coordinates
-            One (or more) high level object describing the coordinate.
-
-        Returns
-        -------
-        values : `numbers.Number` or `numpy.ndarray`
-           ``naxis`` number of coordinates as scalars or arrays.
-        """
-        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
-        if len(values) == 1:
-            values = values[0]
-        return values
 
 
 class EmptyFrame(CoordinateFrame):
@@ -420,11 +192,15 @@ class CelestialFrame(CoordinateFrame):
             and not isinstance(reference_frame, str)
             and reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES
         ):
-            _axes_names = list(reference_frame.representation_component_names.values())
-            if "distance" in _axes_names:
-                _axes_names.remove("distance")
-            if axes_names is None:
-                axes_names = _axes_names
+            _axes_names = (
+                tuple(
+                    n
+                    for n in reference_frame.representation_component_names.values()
+                    if n != "distance"
+                )
+                if axes_names is None
+                else axes_names
+            )
             naxes = len(_axes_names)
 
         self.native_axes_order = tuple(range(naxes))
@@ -434,33 +210,30 @@ class CelestialFrame(CoordinateFrame):
             unit = tuple([u.degree] * naxes)
         axes_type = ["SPATIAL"] * naxes
 
-        pht = axis_physical_types or self._default_axis_physical_types(
-            reference_frame, axes_names
-        )
         super().__init__(
             naxes=naxes,
             axes_type=axes_type,
             axes_order=axes_order,
             reference_frame=reference_frame,
             unit=unit,
-            axes_names=axes_names,
+            axes_names=_axes_names,
             name=name,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
 
-    def _default_axis_physical_types(self, reference_frame, axes_names):
-        if isinstance(reference_frame, coord.Galactic):
+    def _default_axis_physical_types(self, properties):
+        if isinstance(self.reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
         if isinstance(
-            reference_frame,
+            self.reference_frame,
             coord.GeocentricTrueEcliptic | coord.GCRS | coord.PrecessedGeocentric,
         ):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
-        if isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
+        if isinstance(self.reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
-        if isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
+        if isinstance(self.reference_frame, coord.builtin_frames.BaseEclipticFrame):
             return "pos.ecliptic.lon", "pos.ecliptic.lat"
-        return tuple(f"custom:{t}" for t in axes_names)
+        return tuple(f"custom:{t}" for t in properties.axes_names)
 
     @property
     def world_axis_object_classes(self):
@@ -509,11 +282,6 @@ class SpectralFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        if not isiterable(unit):
-            unit = (unit,)
-        unit = [u.Unit(un) for un in unit]
-        pht = axis_physical_types or self._default_axis_physical_types(unit)
-
         super().__init__(
             naxes=1,
             axes_type="SPECTRAL",
@@ -522,17 +290,17 @@ class SpectralFrame(CoordinateFrame):
             reference_frame=reference_frame,
             unit=unit,
             name=name,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
 
-    def _default_axis_physical_types(self, unit):
-        if unit[0].physical_type == "frequency":
+    def _default_axis_physical_types(self, properties):
+        if properties.unit[0].physical_type == "frequency":
             return ("em.freq",)
-        if unit[0].physical_type == "length":
+        if properties.unit[0].physical_type == "length":
             return ("em.wl",)
-        if unit[0].physical_type == "energy":
+        if properties.unit[0].physical_type == "energy":
             return ("em.energy",)
-        if unit[0].physical_type == "speed":
+        if properties.unit[0].physical_type == "speed":
             return ("spect.dopplerVeloc",)
             logging.warning(
                 "Physical type may be ambiguous. Consider "
@@ -540,7 +308,7 @@ class SpectralFrame(CoordinateFrame):
                 "either 'spect.dopplerVeloc.optical' or "
                 "'spect.dopplerVeloc.radio'."
             )
-        return (f"custom:{unit[0].physical_type}",)
+        return (f"custom:{properties.unit[0].physical_type}",)
 
     @property
     def world_axis_object_classes(self):
@@ -581,30 +349,31 @@ class TemporalFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        axes_names = (
-            axes_names
-            or f"{reference_frame.format}({reference_frame.scale}; "
-            f"{reference_frame.location}"
+        _axes_names = (
+            (
+                f"{reference_frame.format}({reference_frame.scale}; "
+                f"{reference_frame.location}",
+            )
+            if axes_names is None
+            else axes_names
         )
-
-        pht = axis_physical_types or self._default_axis_physical_types()
 
         super().__init__(
             naxes=1,
             axes_type="TIME",
             axes_order=axes_order,
-            axes_names=axes_names,
+            axes_names=_axes_names,
             reference_frame=reference_frame,
             unit=unit,
             name=name,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
         self._attrs = {}
         for a in self.reference_frame.info._represent_as_dict_extra_attrs:
             with contextlib.suppress(AttributeError):
                 self._attrs[a] = getattr(self.reference_frame, a)
 
-    def _default_axis_physical_types(self):
+    def _default_axis_physical_types(self, properties):
         return ("time",)
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
@@ -682,10 +451,10 @@ class CompositeFrame(CoordinateFrame):
 
         super().__init__(
             naxes,
-            axes_type=axes_type,
-            axes_order=axes_order,
-            unit=unit,
-            axes_names=axes_names,
+            axes_type=tuple(axes_type),
+            axes_order=tuple(axes_order),
+            unit=tuple(unit),
+            axes_names=tuple(axes_names),
             axis_physical_types=tuple(ph_type),
             name=name,
         )
@@ -774,8 +543,6 @@ class StokesFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        pht = axis_physical_types or self._default_axis_physical_types()
-
         super().__init__(
             1,
             ["STOKES"],
@@ -783,10 +550,10 @@ class StokesFrame(CoordinateFrame):
             name=name,
             axes_names=axes_names,
             unit=u.one,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
 
-    def _default_axis_physical_types(self):
+    def _default_axis_physical_types(self, properties):
         return ("phys.polarization.stokes",)
 
     @property
@@ -831,9 +598,6 @@ class Frame2D(CoordinateFrame):
     ):
         if axes_type is None:
             axes_type = ["SPATIAL", "SPATIAL"]
-        pht = axis_physical_types or self._default_axis_physical_types(
-            axes_names, axes_type
-        )
 
         super().__init__(
             naxes=2,
@@ -842,13 +606,13 @@ class Frame2D(CoordinateFrame):
             name=name,
             axes_names=axes_names,
             unit=unit,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
 
-    def _default_axis_physical_types(self, axes_names, axes_type):
-        if axes_names is not None and all(axes_names):
-            ph_type = axes_names
+    def _default_axis_physical_types(self, properties):
+        if properties.axes_names is not None and all(properties.axes_names):
+            ph_type = properties.axes_names
         else:
-            ph_type = axes_type
+            ph_type = properties.axes_type
 
         return tuple(f"custom:{t}" for t in ph_type)
