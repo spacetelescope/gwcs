@@ -116,8 +116,8 @@ in the coordinate frames before the transform is called:
 
 """
 
+from ._base import BaseCoordinateFrame
 from ._coordinate_frames import (
-    BaseCoordinateFrame,
     CelestialFrame,
     CompositeFrame,
     CoordinateFrame,
