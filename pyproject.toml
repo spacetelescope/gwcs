@@ -209,7 +209,8 @@ module = [
     # "astropy.table.*",
     "astropy.time.*",
     "astropy.units.*",
-    # "astropy.utils.*",
+    "astropy.utils.*",
+    "astropy.wcs.*",
 ]
 follow_untyped_imports = true
 
@@ -220,7 +221,7 @@ module = [
     "gwcs.converters.*",
     "gwcs.wcs.*",
     "gwcs.api.*",
-    "gwcs.coordinate_frames.*",
+    "gwcs.coordinate_frames._coordinate_frames.*",
     "gwcs.examples.*",
     "gwcs.extension.*",
     "gwcs.geometry.*",

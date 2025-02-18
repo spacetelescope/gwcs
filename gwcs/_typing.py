@@ -5,12 +5,19 @@ from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
-from astropy.coordinates import SkyCoord, SpectralCoord, StokesCoord
+from astropy.coordinates import (
+    BaseCoordinateFrame,
+    SkyCoord,
+    SpectralCoord,
+    StokesCoord,
+)
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.time import Time
 from astropy.units import Quantity
 
 __all__ = [
+    "AxisPhysicalType",
+    "AxisPhysicalTypes",
     "BoundingBox",
     "Bounds",
     "HighLevelObject",
@@ -55,3 +62,6 @@ WorldAxisClass: TypeAlias = tuple[
 
 WorldAxisComponents: TypeAlias = list[WorldAxisComponent]
 WorldAxisClasses: TypeAlias = dict[str, WorldAxisClass]
+
+AxisPhysicalType: TypeAlias = str | BaseCoordinateFrame
+AxisPhysicalTypes: TypeAlias = tuple[str | BaseCoordinateFrame, ...]
