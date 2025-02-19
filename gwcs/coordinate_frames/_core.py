@@ -4,6 +4,7 @@ from typing import TypeVar
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import BaseCoordinateFrame as _BaseCoordinateFrame
+from astropy.time import Time
 from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
@@ -60,7 +61,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         naxes: int,
         axes_type: AxesType,
         axes_order: tuple[int, ...],
-        reference_frame: _BaseCoordinateFrame | None = None,
+        reference_frame: _BaseCoordinateFrame | Time | None = None,
         unit: tuple[u.Unit, ...] | None = None,
         axes_names: tuple[str, ...] | None = None,
         name: str | None = None,
@@ -152,7 +153,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         return self._axes_order
 
     @property
-    def reference_frame(self) -> _BaseCoordinateFrame | None:
+    def reference_frame(self) -> _BaseCoordinateFrame | Time | None:
         """Reference frame, used to convert to world coordinate objects."""
         return self._reference_frame
 

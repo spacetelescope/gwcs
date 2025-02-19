@@ -6,11 +6,9 @@ import numpy as np
 import numpy.typing as npt
 from astropy import units as u
 from astropy.coordinates import BaseCoordinateFrame as _BaseCoordinateFrame
+from astropy.time import Time
 
-from gwcs._typing import (
-    AxisPhysicalTypes,
-    LowLevelUnitValue,
-)
+from gwcs._typing import AxisPhysicalTypes, LowLevelUnitValue
 from gwcs.api import WorldAxisClasses, WorldAxisComponent, WorldAxisComponents
 
 from ._axis import AxesType
@@ -66,7 +64,7 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def reference_frame(self) -> _BaseCoordinateFrame | None:
+    def reference_frame(self) -> _BaseCoordinateFrame | Time | None:
         """
         The reference frame of the coordinates described by this frame.
 
@@ -118,7 +116,9 @@ class BaseCoordinateFrame(abc.ABC):
             np.argsort(self.axes_order)
         ].tolist()
 
-        # Makes MyPy happy
+        # Unpack the arguments passed by the map into the WorldAxisComponent NamedTuple
+        # NamedTuple apparently does not automatically unpack the arguments like a tuple
+        # will
         def _func(arg: Sequence[Any]) -> WorldAxisComponent:
             return WorldAxisComponent(*arg)
 

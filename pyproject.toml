@@ -221,7 +221,6 @@ module = [
     "gwcs.converters.*",
     "gwcs.wcs.*",
     "gwcs.api.*",
-    "gwcs.coordinate_frames._coordinate_frames.*",
     "gwcs.examples.*",
     "gwcs.extension.*",
     "gwcs.geometry.*",

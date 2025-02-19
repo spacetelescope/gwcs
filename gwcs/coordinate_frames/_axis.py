@@ -21,4 +21,4 @@ class AxisType(StrEnum):
         return self.value
 
 
-AxesType: TypeAlias = tuple[AxisType, ...] | AxisType
+AxesType: TypeAlias = tuple[AxisType | str, ...] | AxisType | str

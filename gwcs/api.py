@@ -5,6 +5,7 @@ in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
 """
 
+from collections.abc import Callable
 from typing import Any, NamedTuple, TypeAlias
 
 import astropy.units as u
@@ -19,6 +20,7 @@ __all__ = [
     "WorldAxisClasses",
     "WorldAxisComponent",
     "WorldAxisComponents",
+    "WorldAxisConverterClass",
 ]
 
 
@@ -32,7 +34,18 @@ class WorldAxisClass(NamedTuple):
     kwargs: dict[str, Any]
 
 
-WorldAxisClasses: TypeAlias = dict[str | int, WorldAxisClass]
+class WorldAxisConverterClass(NamedTuple):
+    """
+    Named tuple for the world_axis_object_classes WCS property, which have a converter
+    """
+
+    object_type: type | str
+    args: tuple[int | None, ...]
+    kwargs: dict[str, Any]
+    converter: Callable[..., Any] | None = None
+
+
+WorldAxisClasses: TypeAlias = dict[str | int, WorldAxisClass | WorldAxisConverterClass]
 
 
 class WorldAxisComponent(NamedTuple):
@@ -42,7 +55,7 @@ class WorldAxisComponent(NamedTuple):
 
     name: str
     key: str | int
-    property_name: str
+    property_name: str | Callable[[Any], Any]
 
 
 WorldAxisComponents: TypeAlias = list[WorldAxisComponent]
