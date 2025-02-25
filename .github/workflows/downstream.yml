@@ -48,7 +48,7 @@ jobs:
       cache-path: ${{ needs.environment.outputs.data_path }}/crds
       cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
-        - linux: py311-test-jwst-cov-xdist
+        - linux: py312-test-jwst-cov-xdist
 
   romancal:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8c0fde6f7e926df6ed7057255d29afa9c1ad5320  # v1.16.0
@@ -62,7 +62,7 @@ jobs:
       cache-path: ${{ needs.environment.outputs.data_path }}/crds
       cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
-        - linux: py311-test-romancal-cov-xdist
+        - linux: py312-test-romancal-cov-xdist
 
   romanisim_data:
     needs: [ environment ]
@@ -85,7 +85,7 @@ jobs:
       cache-path: ${{ needs.romanisim_data.outputs.cache_path }}
       cache-key: ${{ needs.romanisim_data.outputs.cache_key }}
       envs: |
-        - linux: py311-test-romanisim-cov-xdist
+        - linux: py312-test-romanisim-cov-xdist
 
   astropy:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8c0fde6f7e926df6ed7057255d29afa9c1ad5320  # v1.16.0
@@ -93,7 +93,7 @@ jobs:
     with:
       submodules: false
       # Any env name which does not start with `pyXY` will use this Python version.
-      default_python: '3.11'
+      default_python: '3.12'
       envs: |
         - linux: specutils
 
@@ -103,7 +103,7 @@ jobs:
     with:
       submodules: false
       # Any env name which does not start with `pyXY` will use this Python version.
-      default_python: '3.11'
+      default_python: '3.12'
       envs: |
         - linux: ndcube
         - linux: dkist
