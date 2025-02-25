@@ -3,6 +3,8 @@
 
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
 
+- Drop support for Python 3.10. [#570]
+
 0.24.0 (2025-02-04)
 -------------------
 
