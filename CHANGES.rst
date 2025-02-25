@@ -1,6 +1,8 @@
 0.25.0 (unreleased)
 -------------------
 
+- Test with latest version of Python and drop Python 3.10 [#569]
+
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
 
 0.24.0 (2025-02-04)
