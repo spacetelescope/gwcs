@@ -759,7 +759,6 @@ class WCS(GWCSAPIMixin, Pipeline):
     def _numerical_inverse(
         self,
         *args,
-        transform=None,
         tolerance=1e-5,
         maxiter=30,
         adaptive=True,
@@ -769,9 +768,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value=np.nan,
         **kwargs,
     ):
-        if transform is None:
-            transform = self.forward_transform
-
         if kwargs.pop("with_units", False):
             msg = (
                 "Support for with_units in numerical_inverse has been removed, "
@@ -818,7 +814,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
             result = tuple(
                 self._vectorized_fixed_point(
-                    transform,
+                    self.forward_transform,
                     x0,
                     argsi,
                     tolerance=tolerance,
@@ -845,7 +841,7 @@ class WCS(GWCSAPIMixin, Pipeline):
                 x0 = np.array(self._approx_inverse(*args)).T
 
             result = self._vectorized_fixed_point(
-                transform,
+                self.forward_transform,
                 x0,
                 args.T,
                 tolerance=tolerance,
@@ -861,8 +857,8 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return result
 
+    @staticmethod
     def _vectorized_fixed_point(
-        self,
         transform,
         pix0,
         world,
@@ -887,10 +883,17 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         # estimate pixel scale using approximate algorithm
         # from https://trs.jpl.nasa.gov/handle/2014/40409
-        if self.bounding_box is None:
-            crpix = np.ones(self.pixel_n_dim)
+        try:
+            bounding_box = transform.bounding_box
+        except NotImplementedError:
+            bounding_box = None
         else:
-            crpix = np.mean(self.bounding_box, axis=-1)
+            bounding_box = bounding_box.bounding_box(order="F")
+
+        if bounding_box is None:
+            crpix = np.ones(transform.n_inputs)
+        else:
+            crpix = np.mean(bounding_box, axis=-1)
 
         l1, phi1 = np.deg2rad(transform(*(crpix - 0.5)))
         l2, phi2 = np.deg2rad(transform(*(crpix + [-0.5, 0.5])))  # noqa: RUF005
@@ -1141,13 +1144,13 @@ class WCS(GWCSAPIMixin, Pipeline):
                 divergent=inddiv,
             )
 
-        if with_bounding_box and self.bounding_box is not None:
+        if with_bounding_box and bounding_box is not None:
             # find points outside the bounding box and replace their values
             # with fill_value
             valid = np.logical_not(invalid)
             in_bb = np.ones_like(invalid, dtype=np.bool_)
 
-            for c, (x1, x2) in zip(pix[valid].T, self.bounding_box, strict=False):
+            for c, (x1, x2) in zip(pix[valid].T, bounding_box, strict=False):
                 in_bb[valid] &= (c >= x1) & (c <= x2)
             pix[np.logical_not(in_bb)] = fill_value
 
