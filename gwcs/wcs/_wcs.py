@@ -1,4 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import annotations
+
 import itertools
 import sys
 import warnings
@@ -381,7 +383,53 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         return results
 
+    def _wcs_segment(
+        self,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+    ) -> WCS:
+        """
+        Return a pipeline with two steps between the two frames only
+        """
+        from_frame = from_frame or self.input_frame
+        to_frame = to_frame or self.output_frame
+
+        # Don't reform GWCS is the segment is the whole wcs
+        if from_frame is self.input_frame and to_frame is self.output_frame:
+            return self
+
+        transform = self.get_transform(from_frame, to_frame)
+        steps = [
+            (from_frame, transform),
+            (to_frame, None),
+        ]
+
+        return WCS(steps)
+
     def _call_backward(
+        self,
+        *args,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ):
+        """
+        Notes
+        -----
+        from_frame and to_frame are with respect to the pipeline in the forward
+        direction!
+        """
+
+        return self._wcs_segment(from_frame, to_frame)._call_full_backward(
+            *args,
+            with_bounding_box=with_bounding_box,
+            fill_value=fill_value,
+            **kwargs,
+        )
+
+    def _call_full_backward(
         self,
         *args,
         with_bounding_box: bool = True,
