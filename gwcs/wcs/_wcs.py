@@ -693,6 +693,7 @@ class WCS(GWCSAPIMixin, Pipeline):
     def _numerical_inverse(
         self,
         *args,
+        transform=None,
         tolerance=1e-5,
         maxiter=30,
         adaptive=True,
@@ -702,6 +703,9 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value=np.nan,
         **kwargs,
     ):
+        if transform is None:
+            transform = self.forward_transform
+
         if kwargs.pop("with_units", False):
             msg = (
                 "Support for with_units in numerical_inverse has been removed, "
@@ -748,6 +752,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
             result = tuple(
                 self._vectorized_fixed_point(
+                    transform,
                     x0,
                     argsi,
                     tolerance=tolerance,
@@ -774,6 +779,7 @@ class WCS(GWCSAPIMixin, Pipeline):
                 x0 = np.array(self._approx_inverse(*args)).T
 
             result = self._vectorized_fixed_point(
+                transform,
                 x0,
                 args.T,
                 tolerance=tolerance,
@@ -791,6 +797,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
     def _vectorized_fixed_point(
         self,
+        transform,
         pix0,
         world,
         tolerance,
@@ -819,10 +826,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         else:
             crpix = np.mean(self.bounding_box, axis=-1)
 
-        l1, phi1 = np.deg2rad(self.__call__(*(crpix - 0.5)))
-        l2, phi2 = np.deg2rad(self.__call__(*(crpix + [-0.5, 0.5])))  # noqa: RUF005
-        l3, phi3 = np.deg2rad(self.__call__(*(crpix + 0.5)))
-        l4, phi4 = np.deg2rad(self.__call__(*(crpix + [0.5, -0.5])))  # noqa: RUF005
+        l1, phi1 = np.deg2rad(transform(*(crpix - 0.5)))
+        l2, phi2 = np.deg2rad(transform(*(crpix + [-0.5, 0.5])))  # noqa: RUF005
+        l3, phi3 = np.deg2rad(transform(*(crpix + 0.5)))
+        l4, phi4 = np.deg2rad(transform(*(crpix + [0.5, -0.5])))  # noqa: RUF005
         area = np.abs(
             0.5
             * (
@@ -834,15 +841,14 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         # form equation:
         def f(x):
-            w = np.array(self.__call__(*(x.T), with_bounding_box=False)).T
+            w = np.array(transform(*(x.T), with_bounding_box=False)).T
             dw = np.mod(np.subtract(w, world) - 180.0, 360.0) - 180.0
             return np.add(inv_pscale * dw, x)
 
         def froot(x):
             return (
                 np.mod(
-                    np.subtract(self.__call__(*x, with_bounding_box=False), worldi)
-                    - 180.0,
+                    np.subtract(transform(*x, with_bounding_box=False), worldi) - 180.0,
                     360.0,
                 )
                 - 180.0
