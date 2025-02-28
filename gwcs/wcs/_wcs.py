@@ -605,12 +605,24 @@ class WCS(GWCSAPIMixin, Pipeline):
                 *args, low_level_wcs=from_step.step.frame
             )
 
-        results = self._call_forward(
-            *args,
-            from_frame=from_step.step.frame,
-            to_frame=to_step.step.frame,
-            **kwargs,
-        )
+        if backward:
+            results = self._call_backward(
+                *args,
+                # Note that the from/to frames are swapped here
+                # the from_frame and to_frame are with respect to the
+                # frame order in the pipeline, _call_backward reverses
+                # so that its really to_frame -> from_frame
+                from_frame=to_step.step.frame,
+                to_frame=from_step.step.frame,
+                **kwargs,
+            )
+        else:
+            results = self._call_forward(
+                *args,
+                from_frame=from_step.step.frame,
+                to_frame=to_step.step.frame,
+                **kwargs,
+            )
 
         if with_units:
             # values are always expected to be arrays or scalars not quantities
