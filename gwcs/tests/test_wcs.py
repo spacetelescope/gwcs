@@ -1813,3 +1813,58 @@ def test_direct_numerical_inverse(gwcs_romanisim):
     out = gwcs_romanisim.numerical_inverse(*ra_dec)
 
     assert_allclose(xy, out)
+
+
+def test_array_high_level_output():
+    """
+    Test that we don't loose array values when requesting a high-level output
+    from a WCS object.
+    """
+    input_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type=("SPATIAL",),
+        axes_order=(0,),
+        name="pixels",
+        unit=(u.pix,),
+        axes_names=("x",),
+    )
+    output_frame = cf.SpectralFrame(unit=(u.nm,), axes_names=("lambda",))
+    wave_model = models.Scale(0.1) | models.Shift(500)
+    gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
+    assert (
+        gwcs(np.array([0, 1, 2]), with_units=True)
+        == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
+    ).all()
+
+
+def test_parameterless_transform():
+    """
+    Test that a transform with no parameters correctly handles units.
+    -> The wcs does not introduce units when evaluating the forward or backward
+      transform for models with no parameters
+    Regression test for #558
+    """
+
+    in_frame = cf.Frame2D(name="in_frame")
+    out_frame = cf.Frame2D(name="out_frame")
+
+    gwcs = wcs.WCS(
+        [
+            (in_frame, models.Identity(2)),
+            (out_frame, None),
+        ]
+    )
+
+    # The expectation for this wcs is that:
+    # - gwcs(1, 1) has no units
+    # (__call__ apparently is supposed to pass units through?)
+    # - gwcs(1*u.pix, 1*u.pix) has units
+    # - gwcs.invert(1, 1) has no units
+    # - gwcs.invert(1*u.pix, 1*u.pix) has no units
+
+    # No units introduced by the forward transform
+    assert gwcs(1, 1) == (1, 1)
+    assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
+
+    assert gwcs.invert(1, 1) == (1, 1)
+    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
