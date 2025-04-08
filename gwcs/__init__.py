@@ -57,12 +57,7 @@ information about contributing is in the github repository.
 
 """
 
-import contextlib
-import importlib.metadata
-
-with contextlib.suppress(importlib.metadata.PackageNotFoundError):
-    __version__ = importlib.metadata.version(__name__)
-
+from ._version import version as __version__  # noqa: F401
 from .coordinate_frames import *  # noqa: F403
 from .selector import *  # noqa: F403
 from .wcs import *  # noqa: F403
