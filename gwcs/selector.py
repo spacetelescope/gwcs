@@ -294,8 +294,8 @@ class LabelMapperDict(_LabelMapper):
         if not all(m.n_outputs == 1 for m in mapper.values()):
             msg = "All transforms in mapper must have one output."
             raise TypeError(msg)
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
+        self._input_units_strict = dict.fromkeys(self._inputs, False)
+        self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
         self.outputs = ("labels",)
 
@@ -394,8 +394,8 @@ class LabelMapperRange(_LabelMapper):
         if not all(m.n_outputs == 1 for m in mapper.values()):
             msg = "All transforms in mapper must have one output."
             raise TypeError(msg)
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
+        self._input_units_strict = dict.fromkeys(self._inputs, False)
+        self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
         self.outputs = ("labels",)
 
@@ -546,8 +546,8 @@ class RegionsSelector(Model):
         if " " in selector or 0 in selector:
             msg = '"0" and " " are not allowed as keys.'
             raise ValueError(msg)
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
+        self._input_units_strict = dict.fromkeys(self._inputs, False)
+        self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super().__init__(n_models=1, name=name, **kwargs)
         # Validate uses_quantity at init time for nicer error message
         _ = self.uses_quantity
@@ -726,8 +726,8 @@ class LabelMapper(_LabelMapper):
 
         self._inputs_mapping = inputs_mapping
         self._mapper = mapper
-        self._input_units_strict = {key: False for key in self._inputs}
-        self._input_units_allow_dimensionless = {key: False for key in self._inputs}
+        self._input_units_strict = dict.fromkeys(self._inputs, False)
+        self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super(_LabelMapper, self).__init__(name=name, **kwargs)
         self.outputs = ("label",)
 
