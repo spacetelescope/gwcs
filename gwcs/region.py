@@ -112,8 +112,8 @@ class Polygon(Region):
 
         # convert to integer coordinates:
         self._vertices = np.asarray(list(map(_round_vertex, v)))
-        self._shiftx = int(round(self._shiftx))
-        self._shifty = int(round(self._shifty))
+        self._shiftx = round(self._shiftx)
+        self._shifty = round(self._shifty)
 
         self._bbox = self._get_bounding_box()
         self._scan_line_range = list(
@@ -419,4 +419,4 @@ def _det(u, v):
 
 def _round_vertex(v):
     x, y = v
-    return (int(round(x)), int(round(y)))
+    return (round(x), round(y))

@@ -646,7 +646,7 @@ class EmptyFrame(CoordinateFrame):
 
     @property
     def unit(self):
-        self._raise_error()
+        return None
 
     @property
     def axes_names(self):
