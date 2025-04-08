@@ -79,7 +79,7 @@ jobs:
           - eigen
           - fftw
       setenv: |
-        WEBBPSF_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/webbpsf-data/
+        STPSF_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/stpsf-data/
         GALSIM_CAT_PATH: ${{ needs.romanisim_data.outputs.cache_path }}/galsim_data/real_galaxy_catalog_23.5_example.fits
         FFTW_DIR: /opt/homebrew/opt/fftw/lib/
       cache-path: ${{ needs.romanisim_data.outputs.cache_path }}

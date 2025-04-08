@@ -5,8 +5,8 @@ on:
     - cron: "42 4 * * 3"
   workflow_dispatch:
     inputs:
-      webbpsf_minimal:
-        description: minimal WebbPSF dataset
+      stpsf_minimal:
+        description: minimal STPSF dataset
         type: boolean
         required: false
         default: true
@@ -15,4 +15,4 @@ jobs:
   download_romanisim_data:
     uses: spacetelescope/romanisim/.github/workflows/data.yml@main
     with:
-      webbpsf_minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.webbpsf_minimal }}
+      stpsf_minimal: ${{ github.event_name != 'workflow_dispatch' && true || inputs.stpsf_minimal }}
