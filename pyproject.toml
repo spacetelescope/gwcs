@@ -23,7 +23,6 @@ content-type = "text/x-rst"
 
 [project.license]
 file = "licenses/LICENSE.rst"
-content-type = "text/x-rst"
 
 [project.urls]
 Homepage = "https://github.com/spacetelescope/gwcs"
@@ -77,7 +76,7 @@ upload-dir = "docs/_build/html"
 show-response = 1
 
 [tool.pytest.ini_options]
-minversion = 8
+minversion = "8"
 doctest_plus = true
 doctest_rst = true
 text_file_format = "rst"
