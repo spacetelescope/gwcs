@@ -116,8 +116,8 @@ GWCS supports the :ref:`wcsapi` which defines several methods to work with high 
 
 .. _save_as_asdf:
 
-Save a WCS object as a pure ASDF file
-+++++++++++++++++++++++++++++++++++++
+Saving a WCS object to ASDF file
+++++++++++++++++++++++++++++++++
 
 .. doctest-skip::
 

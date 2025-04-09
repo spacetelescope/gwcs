@@ -104,10 +104,6 @@ reference.
 
 The GWCS object can be saved to the ASDF format using the
 `asdf <https://asdf.readthedocs.io/en/latest/>`__ package and validated
-using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
-
-There are two ways to save the GWCS object to a files:
-
-- `Save a WCS object as a pure ASDF file`_
-
-- `Save a WCS object as a pure ASDF file`_
+using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__.
+See: :ref:`save_as_asdf`, for more information on saving a WCS object as an ASDF
+file.
