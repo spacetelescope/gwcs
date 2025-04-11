@@ -25,15 +25,14 @@
 # be accessible, and the documentation will not build correctly.
 
 import sys
+import tomllib
 from datetime import datetime
 from pathlib import Path
 
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
-
-import importlib.metadata
+if sys.version_info >= (3, 12):
+    from importlib.metadata import distribution
+else:
+    from importlib_metadata import distribution
 
 try:
     from sphinx_astropy.conf.v2 import *  # noqa: F403
@@ -86,7 +85,7 @@ copyright = f"{datetime.now().year}, {author}"  # noqa: A001
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-release = importlib.metadata.version(project)
+release = distribution(project).version
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 

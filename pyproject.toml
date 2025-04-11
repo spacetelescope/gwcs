@@ -12,6 +12,7 @@ dependencies = [
     "scipy>=1.14.1",
     "asdf_wcs_schemas >= 0.4.0",
     "asdf-astropy >= 0.5.0",
+    "importlib-metadata>=4.11.4 ; python_version<='3.11'",
 ]
 dynamic = [
     "version",
@@ -23,7 +24,6 @@ content-type = "text/x-rst"
 
 [project.license]
 file = "licenses/LICENSE.rst"
-content-type = "text/x-rst"
 
 [project.urls]
 Homepage = "https://github.com/spacetelescope/gwcs"
@@ -77,7 +77,7 @@ upload-dir = "docs/_build/html"
 show-response = 1
 
 [tool.pytest.ini_options]
-minversion = 8
+minversion = "8"
 doctest_plus = true
 doctest_rst = true
 text_file_format = "rst"
@@ -124,6 +124,8 @@ exclude_lines = [
 ]
 
 [tool.setuptools_scm]
+version_file = "gwcs/_version.py"
+local_scheme = "dirty-tag"
 
 [tool.ruff.lint]
 select = [
