@@ -5,6 +5,9 @@
 
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
 
+- Fix bug where "vector" (shape (n,) not shape (1, n)) arrays would loose all their entries except the
+  first if ``with_units=True`` was used. [#563]
+
 0.24.0 (2025-02-04)
 -------------------
 
