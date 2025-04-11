@@ -5,6 +5,8 @@
 
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
 
+- Clean up documentation so that links make more sense. [#578]
+
 0.24.0 (2025-02-04)
 -------------------
 
