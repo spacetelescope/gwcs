@@ -1813,3 +1813,36 @@ def test_direct_numerical_inverse(gwcs_romanisim):
     out = gwcs_romanisim.numerical_inverse(*ra_dec)
 
     assert_allclose(xy, out)
+
+
+def test_parameterless_transform():
+    """
+    Test that a transform with no parameters correctly handles units.
+    -> The wcs does not introduce units when evaluating the forward or backward
+      transform for models with no parameters
+    Regression test for #558
+    """
+
+    in_frame = cf.Frame2D(name="in_frame")
+    out_frame = cf.Frame2D(name="out_frame")
+
+    gwcs = wcs.WCS(
+        [
+            (in_frame, models.Identity(2)),
+            (out_frame, None),
+        ]
+    )
+
+    # The expectation for this wcs is that:
+    # - gwcs(1, 1) has no units
+    # (__call__ apparently is supposed to pass units through?)
+    # - gwcs(1*u.pix, 1*u.pix) has units
+    # - gwcs.invert(1, 1) has no units
+    # - gwcs.invert(1*u.pix, 1*u.pix) has no units
+
+    # No units introduced by the forward transform
+    assert gwcs(1, 1) == (1, 1)
+    assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
+
+    assert gwcs.invert(1, 1) == (1, 1)
+    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
