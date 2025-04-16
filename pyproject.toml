@@ -38,13 +38,10 @@ gwcs = "gwcs.extension:get_extensions"
 docs = [
     "sphinx",
     "sphinx-automodapi",
-    "sphinx-rtd-theme",
-    "stsci-rtd-theme",
     "sphinx-astropy",
     "sphinx-copybutton",
-    "pydata-sphinx-theme",
     "sphinx-asdf",
-    "tomli; python_version <'3.11'",
+    "furo",
 ]
 test = [
     "ci-watson>=0.3.0",
