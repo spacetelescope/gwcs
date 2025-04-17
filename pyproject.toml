@@ -42,6 +42,7 @@ docs = [
     "sphinx-copybutton",
     "sphinx-asdf",
     "furo",
+    "sphinx-tabs",
 ]
 test = [
     "ci-watson>=0.3.0",
