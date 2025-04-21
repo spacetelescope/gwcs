@@ -5,6 +5,8 @@
 
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
 
+- Switch to using a new sphinx theme and clean up the documentation. [#580]
+
 0.24.0 (2025-02-04)
 -------------------
 
