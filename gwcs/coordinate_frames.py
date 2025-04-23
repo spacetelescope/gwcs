@@ -488,6 +488,29 @@ class BaseCoordinateFrame(abc.ABC):
         to be able to get the components in their native order.
         """
 
+    def add_units(self, arrays: u.Quantity | np.ndarray | float) -> tuple[u.Quantity]:
+        """
+        Add units to the arrays
+        """
+        return tuple(
+            u.Quantity(array, unit=unit)
+            for array, unit in zip(arrays, self.unit, strict=True)
+        )
+
+    def remove_units(
+        self, arrays: u.Quantity | np.ndarray | float
+    ) -> tuple[np.ndarray]:
+        """
+        Remove units from the input arrays
+        """
+        if self.naxes == 1:
+            arrays = (arrays,)
+
+        return tuple(
+            array.to_value(unit) if isinstance(array, u.Quantity) else array
+            for array, unit in zip(arrays, self.unit, strict=True)
+        )
+
 
 class CoordinateFrame(BaseCoordinateFrame):
     """
