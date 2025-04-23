@@ -308,6 +308,15 @@ Using ``gwcs``
   gwcs/fits_analog.rst
 
 
+References
+-----------
+
+.. toctree::
+  :maxdepth: 2
+
+  gwcs/api.rst
+
+
 See also
 --------
 
@@ -321,24 +330,3 @@ See also
   <https://asdf-standard.readthedocs.io/>`__
   and its `Python implementation
   <https://asdf.readthedocs.io/>`__
-
-
-Reference/API
--------------
-
-.. automodapi:: gwcs.wcs
-  :inherited-members:
-
-.. automodapi:: gwcs.coordinate_frames
-  :inherited-members:
-
-.. automodapi:: gwcs.wcstools
-
-.. automodapi:: gwcs.selector
-  :inherited-members:
-
-.. automodapi:: gwcs.spectroscopy
-  :inherited-members:
-
-.. automodapi:: gwcs.geometry
-  :inherited-members:
