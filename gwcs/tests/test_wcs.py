@@ -1835,3 +1835,25 @@ def test_array_high_level_output():
         gwcs(np.array([0, 1, 2]), with_units=True)
         == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
     ).all()
+
+
+def test_invert_units():
+    """
+    Test to catch a case where computing inverse of gwcs failed when input is
+    a quantity.
+    """
+
+    shift = (models.Shift((-10 / 2) + 1)
+             & models.Shift((-10 / 2) + 1))
+
+    detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
+                                unit=(u.pix, u.pix))
+    sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name="icrs",
+                                  unit=(u.deg, u.deg))
+    pipeline = [(detector_frame, shift), (sky_frame, None)]
+
+    gwcs = wcs.WCS(pipeline)
+    gwcs.bounding_box = [(0, 10), (0, 10)]
+
+    assert gwcs.invert(*[1., 1.] * u.deg) == [5.0, 5.0]  # with unit
+    assert gwcs.invert(*[1., 1.]) == [5.0, 5.0]  # without unit

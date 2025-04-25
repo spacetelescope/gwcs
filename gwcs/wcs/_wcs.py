@@ -396,7 +396,12 @@ class WCS(GWCSAPIMixin, Pipeline):
                     coord_ = self._remove_quantity_output(
                         world_arrays, self.output_frame
                     )[idim]
-                    outside = (coord_ < min_ax) | (coord_ > max_ax)
+                    # remove unit from quantity for comparison, if necessary
+                    if isinstance(coord_, u.Quantity):
+                        coord_val = coord_.value
+                    else:
+                        coord_val = coord_
+                    outside = (coord_val < min_ax) | (coord_val > max_ax)
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
