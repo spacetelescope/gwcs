@@ -228,9 +228,7 @@ import numpy as np
 from astropy import coordinates as coord
 from astropy import time
 from astropy import units as u
-from astropy import utils as astutil
 from astropy.coordinates import StokesCoord
-from astropy.utils.misc import isiterable
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
@@ -323,7 +321,7 @@ class FrameProperties:
             raise ValueError(msg)
 
         if self.unit is not None:
-            unit = tuple(self.unit) if astutil.isiterable(self.unit) else (self.unit,)
+            unit = tuple(self.unit) if np.iterable(self.unit) else (self.unit,)
             if len(unit) != naxes:
                 msg = "Number of units does not match number of axes."
                 raise ValueError(msg)
@@ -345,7 +343,7 @@ class FrameProperties:
         if self.axis_physical_types is not None:
             if isinstance(self.axis_physical_types, str):
                 self.axis_physical_types = (self.axis_physical_types,)
-            elif not isiterable(self.axis_physical_types):
+            elif not np.iterable(self.axis_physical_types):
                 msg = (
                     "axis_physical_types must be of type string or iterable of strings"
                 )
@@ -935,7 +933,7 @@ class SpectralFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        if not isiterable(unit):
+        if not np.iterable(unit):
             unit = (unit,)
         unit = [u.Unit(un) for un in unit]
         pht = axis_physical_types or self._default_axis_physical_types(unit)
