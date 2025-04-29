@@ -7,7 +7,6 @@ from asdf.tags.core.ndarray import NDArrayType
 from asdf_astropy.converters.transform.core import TransformConverterBase
 from astropy.modeling import models
 from astropy.modeling.core import Model
-from astropy.utils.misc import isiterable
 
 __all__ = ["LabelMapperConverter", "RegionsSelectorConverter"]
 
@@ -56,7 +55,7 @@ class LabelMapperConverter(TransformConverterBase):
             inputs = tuple(inputs)
         labels = mapper.get("labels")
         transforms = mapper.get("models")
-        if isiterable(labels[0]):
+        if np.iterable(labels[0]):
             labels = [tuple(label) for label in labels]
             dict_mapper = dict(zip(labels, transforms, strict=False))
             return LabelMapperRange(inputs, dict_mapper, inputs_mapping)
@@ -88,7 +87,7 @@ class LabelMapperConverter(TransformConverterBase):
             labels = list(model.mapper)
 
             transforms = [model.mapper[k] for k in labels]
-            if isiterable(labels[0]):
+            if np.iterable(labels[0]):
                 labels = [list(label) for label in labels]
             mapper["labels"] = labels
             mapper["models"] = transforms
