@@ -259,7 +259,7 @@ pixel coordinates.
  >>> # Show that the wcs values round trip
  >>> ra1, dec1, lambda1 = wcs(220, 11)
  >>> wcs.invert(ra1, dec1, lambda1)
-[220.26585870644544, 10.995517342079438]
+ [220.26585870644544, 10.995517342079438]
 
 Well, to within 0.005 pixel in y, and 0.27 pixel in x.
 
