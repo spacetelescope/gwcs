@@ -216,6 +216,7 @@ in the coordinate frames before the transform is called:
 
 """  # noqa: E501
 
+from ._axis import AxisType
 from ._base import BaseCoordinateFrame
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
@@ -228,6 +229,7 @@ from ._temporal import TemporalFrame
 from ._utils import get_ctype_from_ucd
 
 __all__ = [
+    "AxisType",
     "BaseCoordinateFrame",
     "CelestialFrame",
     "CompositeFrame",

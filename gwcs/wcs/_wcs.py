@@ -26,6 +26,7 @@ from scipy import optimize
 
 from gwcs.api import GWCSAPIMixin
 from gwcs.coordinate_frames import (
+    AxisType,
     CelestialFrame,
     CompositeFrame,
     CoordinateFrame,
@@ -1245,7 +1246,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             f"forward_transform={self.forward_transform})>"
         )
 
-    def footprint(self, bounding_box=None, center=False, axis_type="all"):
+    def footprint(
+        self, bounding_box=None, center=False, axis_type: AxisType | str | None = None
+    ):
         """
         Return the footprint in world coordinates.
 
@@ -1255,7 +1258,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             ``prop: bounding_box``
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
-        axis_type : str
+        axis_type : AxisType
             A supported ``output_frame.axes_type`` or ``"all"`` (default).
             One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
 
@@ -1267,6 +1270,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             is clockwise, starting from the bottom left corner.
 
         """
+        axis_type = AxisType.from_input("all" if axis_type is None else axis_type)
 
         def _order_clockwise(v):
             return np.asarray(
@@ -1305,13 +1309,13 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
 
-        axis_type = axis_type.lower()
-        if axis_type == "spatial" and all_spatial:
+        if axis_type is AxisType.SPATIAL and all_spatial:
             return result.T
 
         if axis_type != "all":
             axtyp_ind = (
-                np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
+                np.array([AxisType.from_input(t) for t in self.output_frame.axes_type])
+                == axis_type
             )
             if not axtyp_ind.any():
                 msg = f'This WCS does not have axis of type "{axis_type}".'
@@ -1319,13 +1323,15 @@ class WCS(GWCSAPIMixin, Pipeline):
             if len(axtyp_ind) > 1:
                 result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
-            if axis_type == "spatial":
+            if axis_type is AxisType.SPATIAL:
                 result = _order_clockwise(result)
             else:
                 result.sort()
                 result = np.squeeze(result)
+
         if self.output_frame.naxes == 1:
             return np.array([result]).T
+
         return result.T
 
     def fix_inputs(self, fixed):
