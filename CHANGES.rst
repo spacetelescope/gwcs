@@ -13,6 +13,8 @@
 - Bugfix for ``__call__`` and ``invert`` incorrectly handling units when involving
   "parameterless" transforms. [#562]
 
+- Refactor ``wcs.coordinate_frames`` into its own sub-module. [#567]
+
 0.24.0 (2025-02-04)
 -------------------
 
