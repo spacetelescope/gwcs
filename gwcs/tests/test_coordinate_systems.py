@@ -16,7 +16,7 @@ from numpy.testing import assert_allclose
 
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
-from gwcs.coordinate_frames._coordinate_frames import (
+from gwcs.coordinate_frames._utils import (
     _ALLOWED_UCD_DUPLICATES,
     _ucd1_to_ctype_name_mapping,
 )

@@ -217,17 +217,15 @@ in the coordinate frames before the transform is called:
 """  # noqa: E501
 
 from ._base import BaseCoordinateFrame
-from ._coordinate_frames import (
-    CelestialFrame,
-    CompositeFrame,
-    EmptyFrame,
-    Frame2D,
-    SpectralFrame,
-    StokesFrame,
-    TemporalFrame,
-    get_ctype_from_ucd,
-)
+from ._celestial import CelestialFrame
+from ._composite import CompositeFrame
 from ._core import CoordinateFrame
+from ._empty import EmptyFrame
+from ._frame import Frame2D
+from ._spectral import SpectralFrame
+from ._stokes import StokesFrame
+from ._temporal import TemporalFrame
+from ._utils import get_ctype_from_ucd
 
 __all__ = [
     "BaseCoordinateFrame",
