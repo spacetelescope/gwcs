@@ -220,7 +220,6 @@ from ._base import BaseCoordinateFrame
 from ._coordinate_frames import (
     CelestialFrame,
     CompositeFrame,
-    CoordinateFrame,
     EmptyFrame,
     Frame2D,
     SpectralFrame,
@@ -228,6 +227,7 @@ from ._coordinate_frames import (
     TemporalFrame,
     get_ctype_from_ucd,
 )
+from ._core import CoordinateFrame
 
 __all__ = [
     "BaseCoordinateFrame",
