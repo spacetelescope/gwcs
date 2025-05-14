@@ -8,6 +8,7 @@ API
 
 .. automodapi:: gwcs.coordinate_frames
   :inherited-members:
+  :no-inherited-members: AxisType
 
 .. automodapi:: gwcs.wcstools
 

@@ -3,6 +3,7 @@ import abc
 import numpy as np
 from astropy import units as u
 
+from ._axis import AxesType
 from ._properties import FrameProperties
 
 __all__ = ["BaseCoordinateFrame"]
@@ -64,11 +65,12 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def axes_type(self):
+    def axes_type(self) -> AxesType:
         """
-        An upcase string describing the type of the axis.
+        An upcase string (or tuple of strings) describing the type of the axis.
 
-        Known values are ``"SPATIAL", "TEMPORAL", "STOKES", "SPECTRAL", "PIXEL"``.
+        See AxisType for the known values, but you can also use
+        your own custom one.
         """
 
     @property

@@ -1,6 +1,7 @@
 from astropy import coordinates as coord
 from astropy import units as u
 
+from ._axis import AxisType
 from ._core import CoordinateFrame
 
 __all__ = ["CelestialFrame"]
@@ -60,7 +61,7 @@ class CelestialFrame(CoordinateFrame):
             axes_order = self.native_axes_order
         if unit is None:
             unit = tuple([u.degree] * naxes)
-        axes_type = ["SPATIAL"] * naxes
+        axes_type = (AxisType.SPATIAL,) * naxes
 
         pht = axis_physical_types or self._default_axis_physical_types(
             reference_frame, axes_names
