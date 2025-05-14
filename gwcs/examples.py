@@ -31,7 +31,7 @@ def gwcs_2d_quantity_shift():
         name="quantity",
         axes_order=(0, 1),
         naxes=2,
-        axes_type=("SPATIAL", "SPATIAL"),
+        axes_type=(cf.AxisType.SPATIAL,) * 2,
         unit=(u.km, u.km),
     )
     pipe = [(DETECTOR_2D_FRAME, MODEL_2D_SHIFT), (frame, None)]
@@ -71,7 +71,7 @@ def gwcs_3d_spatial_wave():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         axes_names=("x", "y", "z"),
         unit=(u.pix, u.pix, u.pix),
     )
@@ -150,7 +150,7 @@ def gwcs_3d_identity_units():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         axes_names=("x", "y", "z"),
         unit=(u.pix, u.pix, u.pix),
     )
@@ -184,7 +184,7 @@ def gwcs_4d_identity_units():
         name="detector",
         naxes=4,
         axes_order=(0, 1, 2, 3),
-        axes_type=("pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 4,
         axes_names=("x", "y", "z", "s"),
         unit=(u.pix, u.pix, u.pix, u.pix),
     )
@@ -270,7 +270,7 @@ def gwcs_stokes_lookup():
         name="detector",
         naxes=1,
         axes_order=(0,),
-        axes_type=("pixel",),
+        axes_type=(cf.AxisType.PIXEL,),
         axes_names=("x",),
         unit=(u.pix,),
     )
@@ -346,7 +346,7 @@ def gwcs_3d_galactic_spectral():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -425,7 +425,7 @@ def gwcs_spec_cel_time_4d():
         name="detector",
         naxes=4,
         axes_order=(0, 1, 2, 3),
-        axes_type=("pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 4,
         unit=(u.pix, u.pix, u.pix, u.pix),
     )
 
@@ -491,7 +491,7 @@ def gwcs_cube_with_separable_spectral(axes_order):
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -522,7 +522,7 @@ def gwcs_cube_with_separable_time(axes_order):
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -591,7 +591,12 @@ def gwcs_7d_complex_mapping():
         naxes=4,
         axes_order=(3, 5, 0, 6),
         axis_physical_types=(["em.wl", "em.wl", "time", "time"]),
-        axes_type=("SPATIAL", "SPATIAL", "TIME", "TIME"),
+        axes_type=(
+            cf.AxisType.SPATIAL,
+            cf.AxisType.SPATIAL,
+            cf.AxisType.TIME,
+            cf.AxisType.TIME,
+        ),
         axes_names=("x", "y", "t", "tau"),
         unit=(u.m, u.m, u.second, u.second),
     )
@@ -608,7 +613,7 @@ def gwcs_7d_complex_mapping():
         name="detector",
         naxes=6,
         axes_order=(0, 1, 2, 3, 4, 5),
-        axes_type=("pixel", "pixel", "pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 6,
         unit=(u.pix, u.pix, u.pix, u.pix, u.pix, u.pix),
     )
 
