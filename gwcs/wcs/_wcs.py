@@ -444,7 +444,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             )
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
-
             for idim, (coordinate, phys) in enumerate(
                 zip(world_arrays, axes_phys_types, strict=False)
             ):
@@ -467,6 +466,7 @@ class WCS(GWCSAPIMixin, Pipeline):
                     min_ax = axis_range[m].max()
                     max_ax = axis_range[~m].min()
                     outside = (coord > min_ax) & (coord < max_ax)
+                    print('outside', outside)
                 else:
                     coord_ = self._remove_quantity_output(
                         world_arrays, self.output_frame
@@ -495,6 +495,8 @@ class WCS(GWCSAPIMixin, Pipeline):
             if np.any(outside):
                 if np.isscalar(pix):
                     pixel_arrays[idim] = np.nan
+                    # If one is NaN, they all should be NaN
+                    pixel_arrays = [np.nan for pix in pixel_arrays]
                 else:
                     pix_ = pixel_arrays[idim].astype(float, copy=True)
                     pix_[outside] = np.nan
