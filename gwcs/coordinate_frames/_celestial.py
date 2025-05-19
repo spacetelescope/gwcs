@@ -42,7 +42,6 @@ class CelestialFrame(CoordinateFrame):
         name=None,
         axis_physical_types=None,
     ):
-        naxes = 2
         if (
             reference_frame is not None
             and not isinstance(reference_frame, str)
@@ -53,7 +52,8 @@ class CelestialFrame(CoordinateFrame):
                 _axes_names.remove("distance")
             if axes_names is None:
                 axes_names = _axes_names
-            naxes = len(_axes_names)
+
+        naxes = len(axes_names) if axes_names is not None else 2
 
         self.native_axes_order = tuple(range(naxes))
         if axes_order is None:
