@@ -466,7 +466,6 @@ class WCS(GWCSAPIMixin, Pipeline):
                     min_ax = axis_range[m].max()
                     max_ax = axis_range[~m].min()
                     outside = (coord > min_ax) & (coord < max_ax)
-                    print('outside', outside)
                 else:
                     coord_ = self._remove_quantity_output(
                         world_arrays, self.output_frame
