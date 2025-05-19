@@ -17,6 +17,8 @@
 
 - Bugfix for ``outside_footprint`` modifying the input coordinates. [#595]
 
+- Fix an issue with inverse out_of_bounds when inputs is scalar and output_frame.naxes>1. [#593]
+
 0.24.0 (2025-02-04)
 -------------------
 
