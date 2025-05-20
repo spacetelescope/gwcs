@@ -103,6 +103,7 @@ def test_gwcs_spec_cel_time_4d(gwcs_spec_cel_time_4d, input_, output):
 
     assert_allclose(w.invert(*w(*input_, with_bounding_box=False)), output, atol=1e-8)
 
+
 def test_scalar_out_of_bounds(gwcs_2d_spatial_shift):
     # Test for issue #591
     w = gwcs_2d_spatial_shift
