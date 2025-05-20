@@ -492,7 +492,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         for idim, pix in enumerate(pixel_arrays):
             outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
             if np.any(outside):
-                # if np.isscalar(pix) or isinstance(pix, np.ndarray) and pix.shape == (1,):
                 if np.array(pix).shape in [(), (1,)]:
                     pixel_arrays[idim] = np.nan
                     # If one is NaN, they all should be NaN
