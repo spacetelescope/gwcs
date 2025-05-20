@@ -15,6 +15,8 @@
 
 - Refactor ``wcs.coordinate_frames`` into its own sub-module. [#567]
 
+- Bugfix for ``outside_footprint`` modifying the input coordinates. [#595]
+
 0.24.0 (2025-02-04)
 -------------------
 
