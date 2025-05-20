@@ -1,16 +1,25 @@
 import warnings
-from functools import reduce
+from functools import partial, reduce
 from typing import TypeAlias, Union
 
+import numpy as np
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
+from astropy.modeling.models import (
+    Mapping,
+    RotateCelestial2Native,
+    Shift,
+    Sky2Pix_TAN,
+)
 from astropy.units import Unit
 
-from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
+from gwcs.coordinate_frames import CelestialFrame, CoordinateFrame, EmptyFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
+from ._fixed_point import vectorized_fixed_point
 from ._step import IndexedStep, Step, StepTuple
+from ._utils import fit_2D_poly, make_sampling_grid
 
 __all__ = ["ForwardTransform", "Pipeline"]
 
@@ -64,6 +73,8 @@ class Pipeline:
         -------
         An initialized pipeline.
         """
+        self._approx_inverse = None
+
         if forward_transform is None:
             # Initialize a WCS without a forward_transform - allows building a
             # WCS programmatically.
@@ -561,3 +572,418 @@ class Pipeline:
         except NotImplementedError:  # means "hasattr" won't work
             backward.inverse = self.forward_transform
         return backward
+
+    @property
+    def input_n_dim(self) -> int:
+        if self.input_frame is None:
+            return self.forward_transform.n_inputs
+        return self.input_frame.naxes
+
+    @property
+    def output_n_dim(self) -> int:
+        if self.output_frame is None:
+            return self.forward_transform.n_outputs
+        return self.output_frame.naxes
+
+    def numerical_inverse(
+        self,
+        *args,
+        tolerance=1e-5,
+        maxiter=30,
+        adaptive=True,
+        detect_divergence=True,
+        quiet=True,
+        with_bounding_box=True,
+        fill_value=np.nan,
+        **kwargs,
+    ):
+        """
+        Invert coordinates from output frame to input frame using numerical
+        inverse.
+
+        .. note::
+            Currently numerical inverse is implemented only for 2D imaging WCS.
+
+        .. note::
+            This method uses a combination of vectorized fixed-point
+            iterations algorithm and `scipy.optimize.root`. The later is used
+            for input coordinates for which vectorized algorithm diverges.
+
+        Parameters
+        ----------
+        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
+            Coordinates to be inverted. The number of arguments must be equal
+            to the number of world coordinates given by ``world_n_dim``.
+
+        with_bounding_box : bool, optional
+             If `True` (default) values in the result which correspond to any
+             of the inputs being outside the bounding_box are set to
+             ``fill_value``.
+
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is ``np.nan``).
+
+        tolerance : float, optional
+            *Absolute tolerance* of solution. Iteration terminates when the
+            iterative solver estimates that the "true solution" is
+            within this many pixels current estimate, more
+            specifically, when the correction to the solution found
+            during the previous iteration is smaller
+            (in the sense of the L2 norm) than ``tolerance``.
+            Default ``tolerance`` is 1.0e-5.
+
+        maxiter : int, optional
+            Maximum number of iterations allowed to reach a solution.
+            Default is 50.
+
+        quiet : bool, optional
+            Do not throw :py:class:`NoConvergence` exceptions when
+            the method does not converge to a solution with the
+            required accuracy within a specified number of maximum
+            iterations set by ``maxiter`` parameter. Instead,
+            simply return the found solution. Default is `True`.
+
+        adaptive : bool, optional
+            Specifies whether to adaptively select only points that
+            did not converge to a solution within the required
+            accuracy for the next iteration. Default (`True`) is recommended.
+
+            .. note::
+               The :py:meth:`numerical_inverse` uses a vectorized
+               implementation of the method of consecutive
+               approximations (see ``Notes`` section below) in which it
+               iterates over *all* input points *regardless* until
+               the required accuracy has been reached for *all* input
+               points. In some cases it may be possible that
+               *almost all* points have reached the required accuracy
+               but there are only a few of input data points for
+               which additional iterations may be needed (this
+               depends mostly on the characteristics of the geometric
+               distortions for a given instrument). In this situation
+               it may be advantageous to set ``adaptive`` = `True` in
+               which case :py:meth:`numerical_inverse` will continue
+               iterating *only* over the points that have not yet
+               converged to the required accuracy.
+
+            .. note::
+               When ``detect_divergence`` is `True`,
+               :py:meth:`numerical_inverse` will automatically switch
+               to the adaptive algorithm once divergence has been
+               detected.
+
+        detect_divergence : bool, optional
+            Specifies whether to perform a more detailed analysis
+            of the convergence to a solution. Normally
+            :py:meth:`numerical_inverse` may not achieve the required
+            accuracy if either the ``tolerance`` or ``maxiter`` arguments
+            are too low. However, it may happen that for some
+            geometric distortions the conditions of convergence for
+            the the method of consecutive approximations used by
+            :py:meth:`numerical_inverse` may not be satisfied, in which
+            case consecutive approximations to the solution will
+            diverge regardless of the ``tolerance`` or ``maxiter``
+            settings.
+
+            When ``detect_divergence`` is `False`, these divergent
+            points will be detected as not having achieved the
+            required accuracy (without further details). In addition,
+            if ``adaptive`` is `False` then the algorithm will not
+            know that the solution (for specific points) is diverging
+            and will continue iterating and trying to "improve"
+            diverging solutions. This may result in ``NaN`` or
+            ``Inf`` values in the return results (in addition to a
+            performance penalties). Even when ``detect_divergence``
+            is `False`, :py:meth:`numerical_inverse`, at the end of the
+            iterative process, will identify invalid results
+            (``NaN`` or ``Inf``) as "diverging" solutions and will
+            raise :py:class:`NoConvergence` unless the ``quiet``
+            parameter is set to `True`.
+
+            When ``detect_divergence`` is `True` (default),
+            :py:meth:`numerical_inverse` will detect points for which
+            current correction to the coordinates is larger than
+            the correction applied during the previous iteration
+            **if** the requested accuracy **has not yet been
+            achieved**. In this case, if ``adaptive`` is `True`,
+            these points will be excluded from further iterations and
+            if ``adaptive`` is `False`, :py:meth:`numerical_inverse` will
+            automatically switch to the adaptive algorithm. Thus, the
+            reported divergent solution will be the latest converging
+            solution computed immediately *before* divergence
+            has been detected.
+
+            .. note::
+               When accuracy has been achieved, small increases in
+               current corrections may be possible due to rounding
+               errors (when ``adaptive`` is `False`) and such
+               increases will be ignored.
+
+            .. note::
+               Based on our testing using JWST NIRCAM images, setting
+               ``detect_divergence`` to `True` will incur about 5-10%
+               performance penalty with the larger penalty
+               corresponding to ``adaptive`` set to `True`.
+               Because the benefits of enabling this
+               feature outweigh the small performance penalty,
+               especially when ``adaptive`` = `False`, it is
+               recommended to set ``detect_divergence`` to `True`,
+               unless extensive testing of the distortion models for
+               images from specific instruments show a good stability
+               of the numerical method for a wide range of
+               coordinates (even outside the image itself).
+
+            .. note::
+               Indices of the diverging inverse solutions will be
+               reported in the ``divergent`` attribute of the
+               raised :py:class:`NoConvergence` exception object.
+
+        Returns
+        -------
+        result : tuple
+            Returns a tuple of scalar or array values for each axis.
+
+        Raises
+        ------
+        NoConvergence
+            The iterative method did not converge to a
+            solution to the required accuracy within a specified
+            number of maximum iterations set by the ``maxiter``
+            parameter. To turn off this exception, set ``quiet`` to
+            `True`. Indices of the points for which the requested
+            accuracy was not achieved (if any) will be listed in the
+            ``slow_conv`` attribute of the
+            raised :py:class:`NoConvergence` exception object.
+
+            See :py:class:`NoConvergence` documentation for
+            more details.
+
+        NotImplementedError
+            Numerical inverse has not been implemented for this WCS.
+
+        ValueError
+            Invalid argument values.
+
+        Examples
+        --------
+        >>> from astropy.utils.data import get_pkg_data_filename
+        >>> from gwcs import NoConvergence
+        >>> import asdf
+        >>> import numpy as np
+
+        >>> filename = get_pkg_data_filename('data/nircamwcs.asdf', package='gwcs.tests')
+        >>> with asdf.open(filename, lazy_load=False, ignore_missing_extensions=True) as af:
+        ...    w = af.tree['wcs']
+
+        >>> ra, dec = w([1,2,3], [1,1,1])
+        >>> assert np.allclose(ra, [5.927628, 5.92757069, 5.92751337]);
+        >>> assert np.allclose(dec, [-72.01341247, -72.01341273, -72.013413])
+
+        >>> x, y = w.numerical_inverse(ra, dec)
+        >>> assert np.allclose(x, [1.00000005, 2.00000005, 3.00000006]);
+        >>> assert np.allclose(y, [1.00000004, 0.99999979, 1.00000015]);
+
+        >>> x, y = w.numerical_inverse(ra, dec, maxiter=3, tolerance=1.0e-10, quiet=False)
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs._exception.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy after 3 iterations.
+
+        >>> w.numerical_inverse(
+        ...     *w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False),
+        ...     adaptive=False,
+        ...     detect_divergence=True,
+        ...     quiet=False,
+        ...     with_bounding_box=False
+        ... )
+        Traceback (most recent call last):
+        ...
+        gwcs.wcs._exception.NoConvergence: 'WCS.numerical_inverse' failed to converge to the
+        requested accuracy. After 4 iterations, the solution is diverging at
+        least for one input point.
+
+        >>> # Now try to use some diverging data:
+        >>> divra, divdec = w([1, 300000, 3], [2, 1000000, 5], with_bounding_box=False)
+        >>> assert np.allclose(divra, [5.92762673, 148.21600848, 5.92750827])
+        >>> assert np.allclose(divdec, [-72.01339464, -7.80968079, -72.01334172])
+        >>> try:  # doctest: +SKIP
+        ...     x, y = w.numerical_inverse(divra, divdec, maxiter=20,
+        ...                                tolerance=1.0e-4, adaptive=True,
+        ...                                detect_divergence=True,
+        ...                                quiet=False)
+        ... except NoConvergence as e:
+        ...     print(f"Indices of diverging points: {e.divergent}")
+        ...     print(f"Indices of poorly converging points: {e.slow_conv}")
+        ...     print(f"Best solution:\\n{e.best_solution}")
+        ...     print(f"Achieved accuracy:\\n{e.accuracy}")
+        Indices of diverging points: None
+        Indices of poorly converging points: [1]
+        Best solution:
+        [[1.00000040e+00 1.99999841e+00]
+         [6.33507833e+17 3.40118820e+17]
+         [3.00000038e+00 4.99999841e+00]]
+        Achieved accuracy:
+        [[2.75925982e-05 1.18471543e-05]
+         [3.65405005e+04 1.31364188e+04]
+         [2.76552923e-05 1.14789013e-05]]
+
+        """  # noqa: E501
+        if kwargs.pop("with_units", False):
+            msg = (
+                "Support for with_units in numerical_inverse has been removed, "
+                "use inverse"
+            )
+            raise ValueError(msg)
+
+        args_shape = np.shape(args)
+        nargs = args_shape[0]
+        arg_dim = len(args_shape) - 1
+
+        if nargs != self.output_n_dim:
+            msg = (
+                "Number of input coordinates is different from "
+                "the number of defined world coordinates in the "
+                f"WCS ({self.output_n_dim:d})"
+            )
+            raise ValueError(msg)
+
+        if self.output_n_dim != self.input_n_dim:
+            msg = (
+                "Support for iterative inverse for transformations with "
+                "different number of inputs and outputs was not implemented."
+            )
+            raise NotImplementedError(msg)
+
+        # initial guess:
+        if nargs == 2 and self._approx_inverse is None:
+            self._calc_approx_inv(max_inv_pix_error=5, inv_degree=None)
+
+        if self._approx_inverse is None:
+            if self.bounding_box is None:
+                x0 = np.ones(self.input_n_dim)
+            else:
+                x0 = np.mean(self.bounding_box, axis=-1)
+
+        if arg_dim == 0:
+            argsi = args
+
+            if nargs == 2 and self._approx_inverse is not None:
+                x0 = self._approx_inverse(*argsi)
+                if not np.all(np.isfinite(x0)):
+                    return [np.array(np.nan) for _ in range(nargs)]
+
+            result = tuple(
+                vectorized_fixed_point(
+                    self.forward_transform,
+                    x0,
+                    argsi,
+                    tolerance=tolerance,
+                    maxiter=maxiter,
+                    adaptive=adaptive,
+                    detect_divergence=detect_divergence,
+                    quiet=quiet,
+                    with_bounding_box=with_bounding_box,
+                    fill_value=fill_value,
+                )
+                .T.ravel()
+                .tolist()
+            )
+
+        else:
+            arg_shape = args_shape[1:]
+            nelem = np.prod(arg_shape)
+
+            args = np.reshape(args, (nargs, nelem))
+
+            if self._approx_inverse is None:
+                x0 = np.full((nelem, nargs), x0)
+            else:
+                x0 = np.array(self._approx_inverse(*args)).T
+
+            result = vectorized_fixed_point(
+                self.forward_transform,
+                x0,
+                args.T,
+                tolerance=tolerance,
+                maxiter=maxiter,
+                adaptive=adaptive,
+                detect_divergence=detect_divergence,
+                quiet=quiet,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+            ).T
+
+            result = tuple(np.reshape(result, args_shape))
+
+        return result
+
+    def _calc_approx_inv(self, max_inv_pix_error=5, inv_degree=None, npoints=16):
+        """
+        Compute polynomial fit for the inverse transformation to be used as
+        initial approximation/guess for the iterative solution.
+        """
+        self._approx_inverse = None
+
+        try:
+            # try to use analytic inverse if available:
+            self._approx_inverse = partial(
+                self.backward_transform, with_bounding_box=False
+            )
+        except (NotImplementedError, KeyError):
+            pass
+        else:
+            return
+
+        if not isinstance(self.output_frame, CelestialFrame):
+            # The _calc_approx_inv method only works with celestial frame transforms
+            return
+
+        # Determine reference points.
+        if self.bounding_box is None:
+            # A bounding_box is needed to proceed.
+            return
+
+        crpix = np.mean(self.bounding_box, axis=1)
+
+        crval1, crval2 = self.forward_transform(*crpix)
+
+        # Rotate to native system and deproject. Set center of the projection
+        # transformation to the middle of the bounding box ("image") in order
+        # to minimize projection effects across the entire image,
+        # thus the initial shift.
+        ntransform = (
+            (Shift(crpix[0]) & Shift(crpix[1]))
+            | self.forward_transform
+            | RotateCelestial2Native(crval1, crval2, 180)
+            | Sky2Pix_TAN()
+        )
+
+        # standard sampling:
+        u, v = make_sampling_grid(npoints, self.bounding_box, crpix=crpix)
+        undist_x, undist_y = ntransform(u, v)
+
+        # Double sampling to check if sampling is sufficient.
+        ud, vd = make_sampling_grid(2 * npoints, self.bounding_box, crpix=crpix)
+        undist_xd, undist_yd = ntransform(ud, vd)
+
+        fit_inv_poly_u, fit_inv_poly_v, max_inv_resid = fit_2D_poly(
+            None,
+            max_inv_pix_error,
+            1,
+            undist_x,
+            undist_y,
+            u,
+            v,
+            undist_xd,
+            undist_yd,
+            ud,
+            vd,
+            verbose=True,
+        )
+
+        self._approx_inverse = (
+            RotateCelestial2Native(crval1, crval2, 180)
+            | Sky2Pix_TAN()
+            | Mapping((0, 1, 0, 1))
+            | (fit_inv_poly_u & fit_inv_poly_v)
+            | (Shift(crpix[0]) & Shift(crpix[1]))
+        )
