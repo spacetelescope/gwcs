@@ -590,6 +590,21 @@ def test_footprint():
     assert_equal(w.footprint(axis_type="spectral"), np.array([2, 12]))
 
 
+def test_outside_footprint_inputs(gwcs_2d_spatial_shift):
+    """
+    Regression test for #594
+        -> When inverting the WCS, the footprint will modify the input coordinate
+           variables, which is not expected.
+    """
+    x = np.linspace(-20, 20, 100)
+    y = np.linspace(-20, 20, 100)
+    gwcs_2d_spatial_shift.bounding_box = ((0, 10), (0, 10))
+
+    _ = gwcs_2d_spatial_shift.world_to_pixel_values(x, y)
+    assert (x == np.linspace(-20, 20, 100)).all()
+    assert (y == np.linspace(-20, 20, 100)).all()
+
+
 def test_high_level_api():
     """
     Test WCS high level API.

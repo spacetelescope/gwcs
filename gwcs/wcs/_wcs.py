@@ -3,6 +3,7 @@ import functools
 import itertools
 import sys
 import warnings
+from copy import copy
 
 import astropy.units as u
 import numpy as np
@@ -430,7 +431,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         return result
 
     def outside_footprint(self, world_arrays):
-        world_arrays = list(world_arrays)
+        world_arrays = [copy(array) for array in world_arrays]
 
         axes_types = set(self.output_frame.axes_type)
         axes_phys_types = self.world_axis_physical_types
