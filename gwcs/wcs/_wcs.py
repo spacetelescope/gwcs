@@ -444,7 +444,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             )
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
-
             for idim, (coordinate, phys) in enumerate(
                 zip(world_arrays, axes_phys_types, strict=False)
             ):
@@ -493,8 +492,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         for idim, pix in enumerate(pixel_arrays):
             outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
             if np.any(outside):
-                if np.isscalar(pix):
+                if np.array(pix).shape in [(), (1,)]:
                     pixel_arrays[idim] = np.nan
+                    # If one is NaN, they all should be NaN
+                    pixel_arrays = [np.nan for pix in pixel_arrays]
                 else:
                     pix_ = pixel_arrays[idim].astype(float, copy=True)
                     pix_[outside] = np.nan
