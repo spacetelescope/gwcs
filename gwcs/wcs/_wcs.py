@@ -31,7 +31,7 @@ from gwcs.coordinate_frames import (
     CoordinateFrame,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _toindex, is_high_level
+from gwcs.utils import _toindex, is_high_level, _compute_lon_pole
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -1690,7 +1690,8 @@ class WCS(GWCSAPIMixin, Pipeline):
             raise ValueError(msg)
 
         lon, lat = transform(crpix1, crpix2)
-        pole = 180
+        # pole = 180
+        pole = _compute_lon_pole((lon, lat), sky2pix_proj)
         if isinstance(lon, u.Quantity):
             pole = u.Quantity(pole, lon.unit)
 
@@ -2727,11 +2728,13 @@ class WCS(GWCSAPIMixin, Pipeline):
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
+
+        pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         ntransform = (
             (Shift(crpix[0]) & Shift(crpix[1]))
             | self.forward_transform
-            | RotateCelestial2Native(crval1, crval2, 180)
-            | Sky2Pix_TAN()
+            | RotateCelestial2Native(crval1, crval2, pole)
+            | sky2pix_proj() #Sky2Pix_TAN()
         )
 
         # standard sampling:
@@ -2756,10 +2759,18 @@ class WCS(GWCSAPIMixin, Pipeline):
             vd,
             verbose=True,
         )
+        sky2pix_proj = Sky2Pix_TAN()
 
+        for transform in self.forward_transform:
+            if isinstance(transform, Projection):
+                sky2pix_proj = transform
+                break
+        if sky2pix_proj.__name__.startswith('Pix2Sky'):
+            sky2pix_proj = sky2pix_proj.inverse
+        lon_pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         self._approx_inverse = (
-            RotateCelestial2Native(crval1, crval2, 180)
-            | Sky2Pix_TAN()
+            RotateCelestial2Native(crval1, crval2, lon_pole)
+            | sky2pix_proj
             | Mapping((0, 1, 0, 1))
             | (fit_inv_poly_u & fit_inv_poly_v)
             | (Shift(crpix[0]) & Shift(crpix[1]))

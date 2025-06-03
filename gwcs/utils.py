@@ -437,9 +437,7 @@ def fitswcs_nonlinear(header):
     sky_axes, _, _ = get_axes(wcs_info)
     if sky_axes:
         phip, lonp = (wcs_info["CRVAL"][i] for i in sky_axes)
-        # TODO: write "def compute_lonpole(projcode, l)"
-        # Set a default tvalue for now
-        thetap = 180
+        thetap = _compute_lon_pole((phip, lonp), projection)
         n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
         transforms.append(n2c)
     if transforms:
