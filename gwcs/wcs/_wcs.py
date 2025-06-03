@@ -2728,13 +2728,20 @@ class WCS(GWCSAPIMixin, Pipeline):
         # transformation to the middle of the bounding box ("image") in order
         # to minimize projection effects across the entire image,
         # thus the initial shift.
+        sky2pix_proj = Sky2Pix_TAN()
 
-        pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
+        for transform in self.forward_transform:
+            if isinstance(transform, projections.Projection):
+                sky2pix_proj = transform
+                break
+        if sky2pix_proj.__name__.startswith('Pix2Sky'):
+            sky2pix_proj = sky2pix_proj.inverse
+        lon_pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         ntransform = (
             (Shift(crpix[0]) & Shift(crpix[1]))
             | self.forward_transform
-            | RotateCelestial2Native(crval1, crval2, pole)
-            | sky2pix_proj() #Sky2Pix_TAN()
+            | RotateCelestial2Native(crval1, crval2, lon_pole)
+            | sky2pix_proj()
         )
 
         # standard sampling:
@@ -2759,15 +2766,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             vd,
             verbose=True,
         )
-        sky2pix_proj = Sky2Pix_TAN()
 
-        for transform in self.forward_transform:
-            if isinstance(transform, Projection):
-                sky2pix_proj = transform
-                break
-        if sky2pix_proj.__name__.startswith('Pix2Sky'):
-            sky2pix_proj = sky2pix_proj.inverse
-        lon_pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         self._approx_inverse = (
             RotateCelestial2Native(crval1, crval2, lon_pole)
             | sky2pix_proj
