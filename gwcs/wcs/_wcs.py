@@ -1690,7 +1690,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             raise ValueError(msg)
 
         lon, lat = transform(crpix1, crpix2)
-        # pole = 180
         pole = _compute_lon_pole((lon, lat), sky2pix_proj)
         if isinstance(lon, u.Quantity):
             pole = u.Quantity(pole, lon.unit)
