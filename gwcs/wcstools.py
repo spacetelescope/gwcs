@@ -336,7 +336,8 @@ def wcs_from_points(
         if proj_point.size != 1:
             msg = "proj_point must be a SkyCoord object with a single point."
             raise ValueError(msg)
-        proj_point.transform_to(world_coords)
+        # transform to the frame of world_coords
+        proj_point = proj_point.transform_to(world_coords)
         crval = (proj_point.data.lon, proj_point.data.lat)
         frame = proj_point.frame
     elif proj_point == "center":  # use center of input points
@@ -366,8 +367,9 @@ def wcs_from_points(
         )
         raise ValueError(msg)
 
+    lon_pole = _compute_lon_pole(crval, projection)
     skyrot = models.RotateCelestial2Native(
-        crval[0].to_value(u.deg), crval[1].to_value(u.deg), 180
+        crval[0].to_value(u.deg), crval[1].to_value(u.deg), lon_pole.to_value(u.deg)
     )
     trans = skyrot | projection
     projection_x, projection_y = trans(lon, lat)

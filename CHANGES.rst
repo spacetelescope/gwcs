@@ -17,6 +17,8 @@
 
 - Bugfix for ``outside_footprint`` modifying the input coordinates. [#595]
 
+- Derive the longitude of the celestial pole from the supplied projection. [#600]
+
 0.24.0 (2025-02-04)
 -------------------
 
