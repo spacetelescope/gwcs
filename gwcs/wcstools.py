@@ -336,7 +336,7 @@ def wcs_from_points(
         if proj_point.size != 1:
             msg = "proj_point must be a SkyCoord object with a single point."
             raise ValueError(msg)
-        proj_point.transform_to(world_coords) # ???
+        proj_point = proj_point.transform_to(world_coords) # transform to the frame of world_coords
         crval = (proj_point.data.lon, proj_point.data.lat)
         frame = proj_point.frame
     elif proj_point == "center":  # use center of input points

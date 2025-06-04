@@ -460,6 +460,17 @@ def test_wcs_from_points():
     assert_allclose(newra, ra)
     assert_allclose(newdec, dec)
 
+    w = wcs_from_points(xy=(x, y), world_coords=world_coords, proj_point='center')
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra)
+    assert_allclose(newdec, dec)
+
+    fiducial = fiducial.transform_to('galactic')
+    w = wcs_from_points(xy=(x, y), world_coords=world_coords, proj_point=fiducial)
+    newra, newdec = w(x, y)
+    assert_allclose(newra, ra)
+    assert_allclose(newdec, dec)
+
     n = rng.standard_normal(ra.size)
     n.shape = ra.shape
     nra = n * 10**-2

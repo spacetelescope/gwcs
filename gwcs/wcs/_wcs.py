@@ -31,7 +31,7 @@ from gwcs.coordinate_frames import (
     CoordinateFrame,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _toindex, is_high_level, _compute_lon_pole
+from gwcs.utils import _compute_lon_pole, _toindex, is_high_level
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -2733,7 +2733,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             if isinstance(transform, projections.Projection):
                 sky2pix_proj = transform
                 break
-        if sky2pix_proj.__name__.startswith('Pix2Sky'):
+        if sky2pix_proj.__name__.startswith("Pix2Sky"):
             sky2pix_proj = sky2pix_proj.inverse
         lon_pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         ntransform = (
