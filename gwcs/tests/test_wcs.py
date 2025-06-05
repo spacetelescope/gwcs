@@ -11,12 +11,14 @@ from astropy import wcs as astwcs
 from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models
 from astropy.modeling.bounding_box import ModelBoundingBox
+from astropy.modeling.models import Pix2Sky_TAN
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
+from gwcs import fitswcs
 from gwcs import wcs
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
 from gwcs.tests import data
@@ -1894,3 +1896,11 @@ def test_parameterless_transform():
 
     assert gwcs.invert(1, 1) == (1, 1)
     assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
+
+
+def test_fitswcs_imaging():
+    projection = Pix2Sky_TAN()
+    crval = [5.6, -72.4]
+    crpix = [5, 5]
+    fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
+    assert_allclose(fwcs(*crpix), crval)

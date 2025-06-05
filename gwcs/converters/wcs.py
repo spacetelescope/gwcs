@@ -4,6 +4,10 @@ import warnings
 from contextlib import suppress
 
 from asdf.extension import Converter
+from asdf_astropy.converters.transform.core import (
+    TransformConverterBase,
+    parameter_to_value,
+)
 
 __all__ = [
     "CelestialFrameConverter",
@@ -14,6 +18,7 @@ __all__ = [
     "StokesFrameConverter",
     "TemporalFrameConverter",
     "WCSConverter",
+    "FITSImagingWCSConverter",
 ]
 
 
@@ -213,3 +218,25 @@ class StokesFrameConverter(FrameConverter):
             node["axes_order"] = list(frame.axes_order)
 
         return node
+
+
+class FITSImagingWCSConverter(TransformConverterBase):
+    tags = ("tag:stsci.edu:gwcs/fitswcs_imaging-*",)
+    types = ("gwcs.fitswcs.FITSImagingWCSTransform",)
+
+    def from_yaml_tree_transform(self, node, tag, ctx):
+        from gwcs.fitswcs import FITSImagingWCSTransform
+
+        return FITSImagingWCSTransform(node["projection"],
+                                       node["crpix"],
+                                       node["crval"],
+                                       node["cdelt"],
+                                       node["pc"])
+
+    def to_yaml_tree_transform(self, model, tag, ctx):
+        return {"crpix": parameter_to_value(model.crpix),
+                "crval": parameter_to_value(model.crval),
+                "cdelt": parameter_to_value(model.cdelt),
+                "pc": parameter_to_value(model.pc),
+                "projection": model.projection,
+                }
