@@ -62,3 +62,4 @@ from .coordinate_frames import *  # noqa: F403
 from .selector import *  # noqa: F403
 from .wcs import *  # noqa: F403
 from .wcstools import *  # noqa: F403
+from .fitswcs import * # noqa: F403
