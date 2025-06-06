@@ -228,10 +228,10 @@ class FITSImagingWCSConverter(TransformConverterBase):
         from gwcs.fitswcs import FITSImagingWCSTransform
 
         return FITSImagingWCSTransform(node["projection"],
-                                       node["crpix"],
-                                       node["crval"],
-                                       node["cdelt"],
-                                       node["pc"])
+                                       crpix=node["crpix"],
+                                       crval=node["crval"],
+                                       cdelt=node["cdelt"],
+                                       pc=node["pc"])
 
     def to_yaml_tree_transform(self, model, tag, ctx):
         return {"crpix": parameter_to_value(model.crpix),

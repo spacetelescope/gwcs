@@ -19,6 +19,8 @@
 
 - Derive the longitude of the celestial pole from the supplied projection. [#600]
 
+- Add ``FITSImagingWCSTransform``. [#602]
+
 0.24.0 (2025-02-04)
 -------------------
 

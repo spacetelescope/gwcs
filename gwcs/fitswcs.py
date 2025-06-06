@@ -3,10 +3,6 @@
 Models for generating FITS WCS standard transforms.
 """
 
-import numbers
-
-import numpy as np
-from astropy import units as u
 from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
 from astropy.modeling.models import Shift, Scale, AffineTransformation2D, RotateNative2Celestial
@@ -81,12 +77,12 @@ class FITSImagingWCSTransform(Model):
         self.projection = projection
         self.inputs = ("x", "y")
         self.outputs = ("lon", "lat")
-        self.shift = Shift(-crpix[0]) & Shift(-crpix[1])
-        self.scale = Scale(cdelt[0]) & Scale(cdelt[1])
-        self.rotation = AffineTransformation2D(matrix=pc)
         lon_pole = _compute_lon_pole(self.crval, projection)
-        self.sky_rot = RotateNative2Celestial(crval[0], crval[1], lon_pole)
-        self.forward = self.shift | self.rotation | self.scale | self.projection | self.sky_rot
+
+        self.forward = Shift(-crpix[0]) & Shift(-crpix[1]) | AffineTransformation2D(matrix=pc*cdelt) | \
+                       Scale(cdelt[0]) & Scale(cdelt[1]) | \
+                       self.projection | RotateNative2Celestial(crval[0], crval[1], lon_pole)
+
 
     def evaluate(self, x, y, crpix, crval, cdelt, pc):
         return self.forward(x, y)
