@@ -696,7 +696,7 @@ class RegionsSelector(Model):
             else:
                 # If there's no transform for a label, return np.nan
                 result = [
-                    np.empty(inputs[0].shape) + self._undefined_transform_value
+                    np.full(inputs[0].shape, self._undefined_transform_value)
                     for i in range(self.n_outputs)
                 ]
             for j in range(self.n_outputs):
