@@ -21,6 +21,7 @@ from .converters.wcs import (
     StokesFrameConverter,
     TemporalFrameConverter,
     WCSConverter,
+    FITSImagingWCSConverter,
 )
 
 WCS_MODEL_CONVERTERS = [
@@ -41,6 +42,7 @@ WCS_MODEL_CONVERTERS = [
     Snell3DConverter(),
     DirectionCosinesConverter(),
     SphericalCartesianConverter(),
+    FITSImagingWCSConverter(),
 ]
 
 # The order here is important; asdf will prefer to use extensions
