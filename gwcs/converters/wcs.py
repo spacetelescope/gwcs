@@ -12,13 +12,13 @@ from asdf_astropy.converters.transform.core import (
 __all__ = [
     "CelestialFrameConverter",
     "CompositeFrameConverter",
+    "FITSImagingWCSConverter",
     "FrameConverter",
     "SpectralFrameConverter",
     "StepConverter",
     "StokesFrameConverter",
     "TemporalFrameConverter",
     "WCSConverter",
-    "FITSImagingWCSConverter",
 ]
 
 
@@ -227,16 +227,19 @@ class FITSImagingWCSConverter(TransformConverterBase):
     def from_yaml_tree_transform(self, node, tag, ctx):
         from gwcs.fitswcs import FITSImagingWCSTransform
 
-        return FITSImagingWCSTransform(node["projection"],
-                                       crpix=node["crpix"],
-                                       crval=node["crval"],
-                                       cdelt=node["cdelt"],
-                                       pc=node["pc"])
+        return FITSImagingWCSTransform(
+            node["projection"],
+            crpix=node["crpix"],
+            crval=node["crval"],
+            cdelt=node["cdelt"],
+            pc=node["pc"],
+        )
 
     def to_yaml_tree_transform(self, model, tag, ctx):
-        return {"crpix": parameter_to_value(model.crpix),
-                "crval": parameter_to_value(model.crval),
-                "cdelt": parameter_to_value(model.cdelt),
-                "pc": parameter_to_value(model.pc),
-                "projection": model.projection,
-                }
+        return {
+            "crpix": parameter_to_value(model.crpix),
+            "crval": parameter_to_value(model.crval),
+            "cdelt": parameter_to_value(model.cdelt),
+            "pc": parameter_to_value(model.pc),
+            "projection": model.projection,
+        }

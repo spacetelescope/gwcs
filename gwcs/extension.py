@@ -14,6 +14,7 @@ from .converters.spectroscopy import (
 from .converters.wcs import (
     CelestialFrameConverter,
     CompositeFrameConverter,
+    FITSImagingWCSConverter,
     Frame2DConverter,
     FrameConverter,
     SpectralFrameConverter,
@@ -21,7 +22,6 @@ from .converters.wcs import (
     StokesFrameConverter,
     TemporalFrameConverter,
     WCSConverter,
-    FITSImagingWCSConverter,
 )
 
 WCS_MODEL_CONVERTERS = [

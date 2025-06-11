@@ -1903,4 +1903,6 @@ def test_fitswcs_imaging():
     crval = [5.6, -72.4]
     crpix = [5, 5]
     fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
-    assert_allclose(fwcs(*crpix), crval)
+    ra, dec = fwcs(*crpix)
+    assert_allclose((ra, dec), crval)
+    assert_allclose(fwcs.inverse(ra, dec), crpix)

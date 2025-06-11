@@ -4,11 +4,15 @@ Models for generating FITS WCS standard transforms.
 """
 
 from astropy.modeling.core import Model
+from astropy.modeling.models import (
+    AffineTransformation2D,
+    RotateNative2Celestial,
+    Scale,
+    Shift,
+)
 from astropy.modeling.parameters import Parameter
-from astropy.modeling.models import Shift, Scale, AffineTransformation2D, RotateNative2Celestial
 
 from .utils import _compute_lon_pole
-
 
 __all__ = [
     "FITSImagingWCSTransform",
@@ -69,20 +73,25 @@ class FITSImagingWCSTransform(Model):
     cdelt = Parameter(default=[1.0, 1.0], description="cdelt")
     pc = Parameter(default=[[1.0, 0.0], [0.0, 1.0]], description="pc")
 
-
-    def __init__(self, projection, crpix=crpix,
-                 crval=crval, cdelt=cdelt, pc=pc, **kwargs):
-        super().__init__(crpix=crpix,
-                         crval=crval, cdelt=cdelt, pc=pc, **kwargs)
+    def __init__(
+        self, projection, crpix=crpix, crval=crval, cdelt=cdelt, pc=pc, **kwargs
+    ):
+        super().__init__(crpix=crpix, crval=crval, cdelt=cdelt, pc=pc, **kwargs)
         self.projection = projection
         self.inputs = ("x", "y")
         self.outputs = ("lon", "lat")
         lon_pole = _compute_lon_pole(self.crval, projection)
 
-        self.forward = Shift(-crpix[0]) & Shift(-crpix[1]) | AffineTransformation2D(matrix=pc*cdelt) | \
-                       Scale(cdelt[0]) & Scale(cdelt[1]) | \
-                       self.projection | RotateNative2Celestial(crval[0], crval[1], lon_pole)
-
+        self.forward = (
+            Shift(-crpix[0]) & Shift(-crpix[1])
+            | AffineTransformation2D(matrix=pc * cdelt)
+            | Scale(cdelt[0]) & Scale(cdelt[1])
+            | self.projection
+            | RotateNative2Celestial(crval[0], crval[1], lon_pole)
+        )
 
     def evaluate(self, x, y, crpix, crval, cdelt, pc):
         return self.forward(x, y)
+
+    def inverse(self):
+        return self.forward.inverse
