@@ -18,8 +18,7 @@ from astropy.wcs import wcsapi
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
-from gwcs import fitswcs
-from gwcs import wcs
+from gwcs import fitswcs, wcs
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
 from gwcs.tests import data
 from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
