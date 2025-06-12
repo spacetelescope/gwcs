@@ -59,22 +59,25 @@ The latest release of GWCS is also available as a conda package via `conda-forge
 Basic Structure of a GWCS Object
 --------------------------------
 
-The key concept to be aware of is that a GWCS Object consists of a pipeline
+The key concept to be aware of is that a GWCS Object consists of a sequence
 of steps; each step contains a transform (i.e., an Astropy model) that
 converts the input coordinates of the step to the output coordinates of
-the step. Furthermore, each step has an optional coordinate frame associated
+the step. Furthermore, each step has a required coordinate frame associated
 with the step. The coordinate frame represents the input coordinate frame, not
 the output coordinates. Most typically, the first step coordinate frame is
 the detector pixel coordinates (the default). Since no step has a coordinate
 frame for the output coordinates, it is necessary to append a step with no
 transform to the end of the pipeline to represent the output coordinate frame.
 For imaging, this frame typically references one of the Astropy standard
-Sky Coordinate Frames of Reference. The GWCS frames also serve to hold the
-units on the axes, the names of the axes and the physical type of the axis
-(e.g., wavelength).
+Sky Coordinate Frames of Reference. The GWCS frames also serves as an 
+information containe, holding the units on the axes, the names of the axes, 
+and the physical type of the axis (e.g., wavelength), as well as keeping
+track of the axis order.
 
 Since it is often useful to obtain coordinates in an intermediate frame of
-reference, GWCS allows the pipeline to consist of more than one transform.
+reference, GWCS allows to consist of multiple steps each with its own transformo,
+which itself may be a compound transform consisting of multiple elemental
+transforms.
 For example, for spectrographs, it is useful to have access to coordinates
 in the slit plane, and in such a case, the first step would transform from
 the detector to the slit plane, and the second step from the slit plane to
@@ -86,11 +89,10 @@ The GWCS object can be saved to the ASDF format using the
 `asdf <https://asdf.readthedocs.io/en/latest/>`__ package and validated
 using `ASDF Standard <https://asdf-standard.readthedocs.io/en/latest/>`__
 
-There are two ways to save the GWCS object to a files:
+The way to save the GWCS object to a file:
+`Save a WCS object as a pure ASDF file`_
 
-- `Save a WCS object as a pure ASDF file`_
 
-- `Save a WCS object as a pure ASDF file`_
 
 
 A step-by-step example of constructing an imaging GWCS object.
@@ -146,8 +148,8 @@ For the last transformation, the three arguments are, respectively:
   spherical coordinates).
   In this case we put the detector center at 30 degrees (RA = 2 hours)
 - Celestial latitude (i.e., Dec) of the fiducial point. Here Dec = 45 degrees.
-- Longitude of celestial pole in input coordinate system. With north up, this
-  always corresponds to a value of 180.
+- Longitude of celestial pole in input coordinate system. With north up, and
+  tangent projection, this always corresponds to a value of 180.
 
 The more general case where the detector is not aligned with north, would have
 a rotation transform after the pixelshift and pixelscale transformations to
@@ -231,55 +233,3 @@ from a pure ASDF file or from an ASDF extension in a FITS file.
   >>> import asdf
   >>> asdf_file = asdf.open("imaging_wcs.asdf")
   >>> wcsobj = asdf_file.tree['wcs']
-
-
-Other Examples
---------------
-
-.. toctree::
-  :maxdepth: 2
-
-  gwcs/imaging_with_distortion.rst
-  gwcs/ifu.rst
-
-
-
-Using ``gwcs``
---------------
-
-.. toctree::
-  :maxdepth: 2
-
-  gwcs/wcs_ape.rst
-  gwcs/using_wcs.rst
-  gwcs/wcstools.rst
-  gwcs/pure_asdf.rst
-  gwcs/wcs_validation.rst
-  gwcs/points_to_wcs.rst
-  gwcs/fits_analog.rst
-
-
-See also
---------
-
-- `The modeling  package in astropy
-  <http://docs.astropy.org/en/stable/modeling/>`__
-
-- `The coordinates package in astropy
-  <http://docs.astropy.org/en/stable/coordinates/>`__
-
-- `The Advanced Scientific Data Format (ASDF) standard
-  <https://asdf-standard.readthedocs.io/>`__
-  and its `Python implementation
-  <https://asdf.readthedocs.io/>`__
-
-
-Reference/API
--------------
-
-.. automodapi:: gwcs.wcs
-.. automodapi:: gwcs.coordinate_frames
-.. automodapi:: gwcs.wcstools
-.. automodapi:: gwcs.selector
-.. automodapi:: gwcs.spectroscopy
-.. automodapi:: gwcs.geometry
