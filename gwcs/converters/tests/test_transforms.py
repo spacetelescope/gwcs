@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import pytest
 from astropy import units as u
-from astropy.modeling.models import Identity
+from astropy.modeling.models import Identity, Pix2Sky_Gnomonic
 
 try:
     from asdf_astropy.testing.helpers import assert_model_roundtrip
@@ -10,7 +10,7 @@ except ImportError:
         assert_model_roundtrip,
     )
 
-from gwcs import geometry
+from gwcs import fitswcs, geometry
 from gwcs import spectroscopy as sp
 
 sell_glass = sp.SellmeierGlass(
@@ -31,6 +31,9 @@ todircos = geometry.ToDirectionCosines()
 fromdircos = geometry.FromDirectionCosines()
 tocart = geometry.SphericalToCartesian()
 tospher = geometry.CartesianToSpherical()
+tan = Pix2Sky_Gnomonic()
+fwcs = fitswcs.FITSImagingWCSTransform(tan)
+
 
 transforms = [
     todircos,
@@ -45,9 +48,10 @@ transforms = [
     sp.WavelengthFromGratingEquation(50000, -1),
     sp.AnglesFromGratingEquation3D(20000, 1),
     sp.WavelengthFromGratingEquation(15000 * 1 / u.m, -1),
+    fwcs,
 ]
 
 
 @pytest.mark.parametrize(("model"), transforms)
 def test_transforms(tmp_path, model):
-    assert_model_roundtrip(model, tmp_path)
+    assert_model_roundtrip(model, tmp_path, version="1.6.0")
