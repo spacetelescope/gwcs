@@ -35,7 +35,7 @@ Terminology and Conventions
 To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology 
 and conventions, particularly with regard to pixel coordinates. For example, are the pixel
 coordinates 0 or 1 based? That is, is the first pixel identified as 0 or 1? GWCS assumes 0 
-(whereas FITS assumes 1; do not confuse the two!). However, like FITS, integer pixel values 
+(whereas FITS assumes 1). However, like FITS, integer pixel values 
 are presumed to refer to the center of the pixel. So for GWCS, the boundaries of the first 
 pixel are at -0.5 and +0.5 for all dimensions.
 
