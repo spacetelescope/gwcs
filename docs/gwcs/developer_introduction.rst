@@ -6,52 +6,12 @@ Introduction to Constructing Generalized World Coordinate System Models
 Pixel Conventions and Definitions
 ---------------------------------
 
-This API assumes that integer pixel values fall at the center of pixels (as
-assumed in the FITS-WCS standard, see Section 2.1.4 of `Greisen et al., 2002,
-A&A 446, 747 <https://doi.org/10.1051/0004-6361:20053818>`_), while at the same
-time matching the Python 0-index philosophy.  That is, the first pixel is
-considered pixel ``0``, but pixel coordinates ``(0, 0)`` are the *center* of
-that pixel.  Hence the first pixel spans pixel values ``-0.5`` to ``0.5``.
-
-There are two main conventions for ordering pixel coordinates. In the context of
-2-dimensional imaging data/arrays, one can either think of the pixel coordinates
-as traditional Cartesian coordinates (which we call ``x`` and ``y`` here), which
-are usually given with the horizontal coordinate (``x``) first, and the vertical
-coordinate (``y``) second, meaning that pixel coordinates would be given as
-``(x, y)``. Alternatively, one can give the coordinates by first giving the row
-in the data, then the column, i.e. ``(row, column)``. While the former is a more
-common convention when e.g. plotting (think for example of the Matplotlib
-``scatter(x, y)`` method), the latter is the convention used when accessing
-values from e.g. Numpy arrays that represent images (``image[row, column]``).
-
-The GWCS object assumes Cartesian order ``(x, y)``, however the :ref:`ape14` accepts both conventions.
-The order of the pixel coordinates (``(x, y)`` vs ``(row, column)``) in the ``Common API`` depends on the method or property used, and this can normally be
-determined from the property or method name. Properties and methods containing
-``pixel`` assume ``(x, y)`` ordering, while properties and methods containing
-``array`` assume ``(row, column)`` ordering.
+:ref:`pixel-conventions-and-definitions`
 
 Installation
 ------------
 
-`gwcs <https://github.com/spacetelescope/gwcs>`__ requires:
-
-- `numpy <http://www.numpy.org/>`__
-
-- `astropy <http://www.astropy.org/>`__
-
-- `asdf <https://asdf.readthedocs.io/en/latest/>`__
-
-To install from source::
-
-    git clone https://github.com/spacetelescope/gwcs.git
-    cd gwcs
-    python setup.py install
-
-To install the latest release::
-
-    pip install gwcs
-
-The latest release of GWCS is also available as a conda package via `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__.
+:ref:`installing-gwcs`
 
 
 .. _getting-started:

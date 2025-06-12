@@ -29,6 +29,8 @@ User Perspective
 As mentioned, the focus here is on using GWCS models provided by others, most likely, models
 that are packaged with the data they apply to.
 
+.. _pixel-conventions-and-definitions:
+
 Terminology and Conventions
 ...........................
 
@@ -56,6 +58,8 @@ The GWCS object assumes Cartesian order ``(x, y)``, however it should be mention
 that there is an WCS shared API for both GWCS and FITS WCS that can use
 either ordering. The details regarding the shared API will be found later.
 
+.. _installing-gwcs:
+
 Installing GWCS
 ...............
 
@@ -63,16 +67,19 @@ To install the latest release::
 
     pip install gwcs
 
-To install as a conda package:
+To install as a conda package from `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__:
 
-    `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__.
+    conda install -c conda-forge gwcs
 
 To install the latest development version from source (not generally recommended one 
 needs a very new feature or bug fix)::
 
-    git clone https://github.com/spacetelescope/gwcs.git
-    cd gwcs
-    python setup.py install
+     pip install git+https://github.com/spacetelescope/gwcs.git
+
+If the clone has already been done:
+
+     cd gwcs
+     pip install .
 
 Simple Image Use
 ................
@@ -88,7 +95,7 @@ to ra, dec of (30, 45) in degrees.
 
   >>> import asdf
   >>> af = asdf.open('wcs_examples.asdf')
-  >>> wcs = af.tree['image_wcs']
+  >>> wcs = af['image_wcs']
   >>> wcs
   <WCS(output_frame=icrs, input_frame=detector, forward_transform=Model: CompoundModel
   Inputs: ('x0', 'x1')
@@ -160,15 +167,15 @@ the 2-d dispersion function to assign the wavelengths.
 With more complex spectral cases, much the same thing happens. All the transformation
 information is intricately bound to software to manage the resampling of the data.
 This approach has been widely accepted, without much consideration of alternate 
-approaches. With GWCS, the transforms are made explicit (not that you have to look
-at the details if you don't wish!) and bound with the data. This permits modifications
+approaches. With GWCS, the transforms are made explicit
+and bound with the data. This permits modifications
 and tweaks to these models without having to rerun the software to recalibrate the
 wavelenths. Towards the end of the User section there will be a fuller description
 of the advantages of this approach.
 
 For the following cases examples are provided. The GWCS models for each example 
 are contained in a corresponding ASDF file. In general, many of these GWCS models
-are simpler than would be found in a real instrument, and are intened to illustrate
+are simpler than would be found in a real instrument, and are intended to illustrate
 the principle being discussed. For the most part, one does not need to look at
 the details of the underlying GWCS model. The focus is on how they may be used.
 
@@ -176,7 +183,7 @@ Simple Slit Case
 ................
 
 Generally speaking, a slit will disperse a very narrow rectangular region of the sky
-(perhaps with some distortion) onto a a roughly rectanglular region of an imaging 
+(perhaps with some distortion) onto a roughly rectanglular region of an imaging 
 detector (usually more distorted in its outline). In this simple case it is presumed
 that one is interested mapping the pixels within the dispersed region into corresponding
 world coordinates. Mapping pixels outside of a dispersed region is nonsensical, of course.
@@ -187,7 +194,7 @@ RA, Dec, and wavelength.
 This particular example is taken from a real JWST case, but made simpler in that both
 the WCS model and corresponding data have been extracted from a much larger and complex
 data set and placed into a small ASDF file. In particular, this data is part of a
-Multi Object Spectrograph (MOS) mode observation using the NIRSPEC instrument. The 
+Multi Object Spectrograph (MOS) mode observation using the NIRSpec instrument. The 
 extracted data are extracted from a dataset containing many extracted subimages of
 the original exposure, where each subimage is effectively the smallest array that
 contains the full spectrum from the corresponding "slitlet" used for that spectrum.
@@ -204,7 +211,7 @@ those without NaN values comprise the area that the spectrum is dispersed onto.
 The data in this example does not have any interesting features. It is provided 
 mainly to indicate the boundaries for the spectrum in pixels.
 
-Again, we have to be careful about the order of coordinates. The GCS transformation
+Again, we have to be careful about the order of coordinates. The GWS transformation
 expects coordinates in x, y order, opposite of the Python numpy convention for 
 pixel coordinates.
 
@@ -216,8 +223,8 @@ pixel coordinates.
  >>> from matplotlib import pyplot as plt
  >>> plt.ion()
  >>> af = asdf.open('wcs_examples.asdf')
- >>> wcs = af.tree['slit_wcs']
- >>> data = af.tree['slit_data']
+ >>> wcs = af['slit_wcs']
+ >>> data = af['slit_data']
  >>> data.shape
  (20, 507)
  >>> # print world coordinates of a single pixel corresponding to data[11, 220]
@@ -262,7 +269,7 @@ Narrowing General Transforms
 ............................
 
 In the previous subsection the topic of extra coordinates to handle more general
-transform cases was introduced. Taking the MSA case in particular, how do we
+transform cases was introduced. Taking the MOS case in particular, how do we
 simplify the GWCS model for a given open slit without requiring the user to
 supply the corresponding i, j location explicitly? There is a tool called 
 fix_inputs_xxx that generates a new GWCS model where this method allows specifying
@@ -283,7 +290,7 @@ Modifying Transforms / Using Intermediate Frames
 ................................................
 
 GWCS models are usually transparent. They consist of a pipeline of transforms
-between between the starting frame (usually detector coordinates), and the final
+between the starting frame (usually detector coordinates), and the final
 frame, sky coordinates or spectral coordinates or a combination. In more complex
 there may be intermediate frames (e.g., the slit plane for spectrographs). The
 transform for each step in the pipeline is usually comprised of an assembly of
@@ -302,27 +309,23 @@ A Notes about Performance
 .........................
 
 There is a comparatively high overhead to evaluating the GWCS model since it 
-is comprised of an expression of all underlying transfor models. This overhead
+is comprised of an expression of all underlying transform models. This overhead
 is most noticeable when only computing the transformation for one point. If many
 points should be transformed, if at all possible, transform all points in one
 call to the GWCS model by passing the points as arrays rather than looping over
 individual points. Doing thousands at a time essentially renders the overhead
 insignificant. 
 
-One case that is more difficult to handle this way is if the transformation is
-needed for a dynamically changing cursor position for an interactive display.
-There is a useful technique for addressing this that will be discussed in a
-future version of the documentation
 
 Saving and Reading GWCS Objects
 ...............................
 
 The primary motivation for GWCS is the ability to save and recover GWCS models
 from a data file. FITS does not provide the necessary tools to do that in any
-standard way. The Advanced Science Data Format (ASDF) format was created 
+standard way. The Advanced Scientific Data Format (ASDF) 
+<https://www.asdf-format.org/en/latest/>` __ format was created 
 in large part to be able to store
-GWCS objects. Even for JWST, which is required to provide FITS products, the GWCS
-objects are stored in ASDF format within a FITS extension. Support for storing
+GWCS objects. Support for storing
 GWCS objects is intrinsically part of the GWCS package, which registers its
 ASDF extension with ASDF when installed. In other words, when GWCS is installed,
 ASDF understands how to save and recover GWCS objects. 
@@ -342,10 +345,10 @@ Continuing with the example of the previous spectrograph GWCS case.
 .. doctest-skip::
 
  >>> af2 = asdf.AsdfFile() # Create a new ASDF object
- >>> af2.tree = {'wcs': wcs} # Only saving gwcs object in this example
+ >>> af2['wcs'] = wcs # Only saving gwcs object in this example
  >>> af2.write_to('my_spectral_wcs.asdf')
  >>> af3 = asdf.open('my_spectral_wcs.asdf') # read it back into memory
- >>> wcs2 = af3.tree['wcs']
+ >>> wcs2 = af3['wcs']
  >>> wcs2 == wcs # Confirm it is the same as the one originally stored.
  True
 
@@ -355,8 +358,8 @@ The only format that GWCS supports at this time is ASDF.
 
 JWST currently embeds GWCS information in FITS files as an ASDF FITS extension.
 
-Using the Universal WCS API
-...........................
+Using the Shared WCS API
+........................
 
 Astropy has developed a common API for WCS libraries that permits both FITS
 WCS and GWCS libraries to be accessed using the same methods and attributes,
@@ -368,10 +371,41 @@ The general documentation for this API can be found
 
 This API consists of low-level and high-level methods. This section will only 
 deal with the high-level API, and only briefly. The main functionality is
-represented by these methods:
+represented by these high-level methods and attribute:
 
-* pixel_to_world() For example, wcs.pixel_to_world(x, y) instead of wcs(x, y)
-* world_to_pixel() wcs.world_to_pixel(ra, dec) instead of wcs.invert(ra, dec)
+* **pixel_to_world()** For example, wcs.pixel_to_world(x, y) instead of wcs(x, y)
+* **world_to_pixel()** wcs.world_to_pixel(ra, dec) instead of wcs.invert(ra, dec)
+* **array_index_to_world()** Convert array indices to world coordinates
+* **world_to_array_index()** Convert world coordinates to array indices
+* **low_level_wcs** Returns a reference to the low-level WCS object
+
+The following indicates what the low-level API can do:
+
+Attributes
+
+* **array_shape**
+* **axis_correlation_matrix** indicates which world coordinates depend on a pixel coordinate
+* **pixel_axis_names**
+* **pixel_bounds** Gives bounds for where valid world coordinates exist
+* **pixel_n_dim** Number of dimensions in pixel coordinate system
+* **pixel_shape**
+* **serialized_classes** Whether objects are in serialized form or are Python objects
+* **world_axis_names**
+* **world_axis_object_classes**
+* **world_axis_object_components** Indicates how to partition input pixel coordinates
+  for the object classes (e.g., two dimensions for celestial coordinate objects)
+* **world_axis_physical_types**
+* **world_axis_units**
+* **world_n_dim**
+
+Methods
+
+* **array_index_to_world_values**
+* **pixel_to_world_values**
+* **world_to_array_index_values**
+* **world_to_pixel_values**
+
+Refer to the above documentation on the API for details.
 
 
 Motivations for GWCS
@@ -497,24 +531,3 @@ capabilities that GWCS provides are:
 * The transforms support the use of coordinate units based on the Astropy
   unit framework, allowing easy conversion of world coordinates,
   particularly for spectral and time coordinates.
-
-Is the rest of this needed?
-===========================
-
-The goal of
-the GWCS package is to provide a flexible toolkit for expressing and evaluating
-transformations between pixel and world coordinates, as well as intermediate
-frames along the course of this transformation.The GWCS object supports a data
-model which includes the entire transformation pipeline from input pixel
-coordinates to world coordinates (and vice versa). The basis of the GWCS object
-is astropy `modeling <https://docs.astropy.org/en/stable/modeling/>`__. Models
-that describe the pixel ⟷ world transformations can be chained, joined or
-combined with arithmetic operators using the flexible framework of compound
-models in modeling. This approach allows for easy access to intermediate
-frames. In the case of a celestial output frame `coordinates
-<http://docs.astropy.org/en/stable/coordinates/>`__ provides further
-transformations between standard celestial coordinate frames. Spectral output
-coordinates are instances of `~astropy.units.Quantity` and can be transformed
-to other units with the tools in that package. `~astropy.time.Time` coordinates
-are instances of `~astropy.time.Time`. GWCS supports transforms initialized
-with `~astropy.units.Quantity` objects ensuring automatic unit conversion.
