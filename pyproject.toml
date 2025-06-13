@@ -41,6 +41,7 @@ docs = [
     "sphinx-asdf",
     "furo",
     "sphinx-tabs",
+    "matplotlib",
 ]
 test = [
     "ci-watson>=0.3.0",
