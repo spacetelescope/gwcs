@@ -358,55 +358,6 @@ The only format that GWCS supports at this time is ASDF.
 
 JWST currently embeds GWCS information in FITS files as an ASDF FITS extension.
 
-Using the Shared WCS API
-........................
-
-Astropy has developed a common API for WCS libraries that permits both FITS
-WCS and GWCS libraries to be accessed using the same methods and attributes,
-allowing application code to work with both kinds of objects. It was developed
-under APE 14 (Astropy Proposal for Enhancement)
-
-The general documentation for this API can be found
-`here <https://github.com/astropy/astropy-APEs/blob/2bed2c015ef59459f5ef44adc12ea6d72eea7e6f/APE14.rst>`__
-
-This API consists of low-level and high-level methods. This section will only 
-deal with the high-level API, and only briefly. The main functionality is
-represented by these high-level methods and attribute:
-
-* **pixel_to_world()** For example, wcs.pixel_to_world(x, y) instead of wcs(x, y)
-* **world_to_pixel()** wcs.world_to_pixel(ra, dec) instead of wcs.invert(ra, dec)
-* **array_index_to_world()** Convert array indices to world coordinates
-* **world_to_array_index()** Convert world coordinates to array indices
-* **low_level_wcs** Returns a reference to the low-level WCS object
-
-The following indicates what the low-level API can do:
-
-Attributes
-
-* **array_shape**
-* **axis_correlation_matrix** indicates which world coordinates depend on a pixel coordinate
-* **pixel_axis_names**
-* **pixel_bounds** Gives bounds for where valid world coordinates exist
-* **pixel_n_dim** Number of dimensions in pixel coordinate system
-* **pixel_shape**
-* **serialized_classes** Whether objects are in serialized form or are Python objects
-* **world_axis_names**
-* **world_axis_object_classes**
-* **world_axis_object_components** Indicates how to partition input pixel coordinates
-  for the object classes (e.g., two dimensions for celestial coordinate objects)
-* **world_axis_physical_types**
-* **world_axis_units**
-* **world_n_dim**
-
-Methods
-
-* **array_index_to_world_values**
-* **pixel_to_world_values**
-* **world_to_array_index_values**
-* **world_to_pixel_values**
-
-Refer to the above documentation on the API for details.
-
 
 Motivations for GWCS
 --------------------

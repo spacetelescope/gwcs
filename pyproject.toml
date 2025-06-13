@@ -59,6 +59,9 @@ build-backend = "setuptools.build_meta"
 "gwcs.tests.data" = [
     "*",
 ]
+"docs.gwcs" = [
+    "*.asdf",
+]
 
 [tool.setuptools.packages.find]
 namespaces = false
