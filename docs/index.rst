@@ -1,4 +1,4 @@
-.. _outline:
+.. _gwcs:
 
 GWCS Documentation
 ==================

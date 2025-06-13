@@ -1,4 +1,4 @@
-.. _gwcs:
+.. _dev_intro:
 
 Introduction to Constructing Generalized World Coordinate System Models
 =======================================================================
