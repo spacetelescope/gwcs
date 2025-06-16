@@ -6,14 +6,14 @@ Using Generalized World Coordinate System Models
 Brief Introduction and Outline
 ------------------------------
 
-`GWCS (Generalized World Coordinate System) <https://github.com/spacetelescope/gwcs>`__ 
+`GWCS (Generalized World Coordinate System) <https://github.com/spacetelescope/gwcs>`__
 package is intended as a generalization of the FITS WCS standards, which basically provides
 a transformation from detector array coordinates to sky, spectral, time or any other physical
 coordinates, and the converse: from the physical coordinates to the corresponding detector
 array coordinates. While simple in principle, it can be a complex subject. The main focus
 of this documentation is first the user, who only needs to know how to use GWCS objects,
 but doesn't care about the complexities or the internals of how they work, nor the justification
-for this new standard. Those interested in those internals or the motiviations for GWCS 
+for this new standard. Those interested in those internals or the motiviations for GWCS
 will find this material in later sections.
 
 The documentation is organized into the following sections:
@@ -34,15 +34,15 @@ that are packaged with the data they apply to.
 Terminology and Conventions
 ...........................
 
-To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology 
+To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology
 and conventions, particularly with regard to pixel coordinates. For example, are the pixel
-coordinates 0 or 1 based? That is, is the first pixel identified as 0 or 1? GWCS assumes 0 
-(whereas FITS assumes 1). However, like FITS, integer pixel values 
-are presumed to refer to the center of the pixel. So for GWCS, the boundaries of the first 
+coordinates 0 or 1 based? That is, is the first pixel identified as 0 or 1? GWCS assumes 0
+(whereas FITS assumes 1). However, like FITS, integer pixel values
+are presumed to refer to the center of the pixel. So for GWCS, the boundaries of the first
 pixel are at -0.5 and +0.5 for all dimensions.
 
 The greatest source of confusion
-will likely be the the presumed order of pixel coordinates. There are two main 
+will likely be the the presumed order of pixel coordinates. There are two main
 conventions for ordering pixel coordinates. In the context of
 2-dimensional imaging data/arrays, one can either think of the pixel coordinates
 as traditional Cartesian coordinates (which we call ``x`` and ``y`` here), which
@@ -102,7 +102,7 @@ This section will illustrate using the GWCS object packaged with the image data
 in an ASDF file to perform conversions from pixel coordinates to world coordinates
 and visa versa. The following image wcs is intended for use with a 1000 by 1000
 pixel image. This is a comparatively simple WCS model for illustration purposes,
-that has been constructed to have its reference pixel (500, 500) corresponding 
+that has been constructed to have its reference pixel (500, 500) corresponding
 to ra, dec of (30, 45) in degrees.
 
 .. doctest-skip::
@@ -116,7 +116,7 @@ to ra, dec of (30, 45) in degrees.
   Outputs: ('alpha_C', 'delta_C')
   Model set size: 1
   Expression: [0] & [1] | [2] & [3] | [4] | [5]
-  Components: 
+  Components:
       [0]: <Shift(offset=-500.)>
       [1]: <Shift(offset=-500.)>
       [2]: <Scale(factor=0.00002778)>
@@ -171,7 +171,7 @@ not all pixels in the detector array have a valid mapping to actual world coordi
 and partly due to the many forms spectral data may take. We will start with the simplest
 and then to more complex cases.
 
-Some discussion of typical past approaches to spectral WCS issues is useful. Most 
+Some discussion of typical past approaches to spectral WCS issues is useful. Most
 astronomers may not even associate WCS with spectral data. For 1-d spectra, the most
 common approach is to provide an array of wavelengths corresponding to the spectrum.
 And this only after the spectrum has been extracted. All the WCS issues are buried in
@@ -180,14 +180,14 @@ the 2-d dispersion function to assign the wavelengths.
 
 With more complex spectral cases, much the same thing happens. All the transformation
 information is intricately bound to software to manage the resampling of the data.
-This approach has been widely accepted, without much consideration of alternate 
+This approach has been widely accepted, without much consideration of alternate
 approaches. With GWCS, the transforms are made explicit
 and bound with the data. This permits modifications
 and tweaks to these models without having to rerun the software to recalibrate the
 wavelenths. Towards the end of the User section there will be a fuller description
 of the advantages of this approach.
 
-For the following cases examples are provided. The GWCS models for each example 
+For the following cases examples are provided. The GWCS models for each example
 are contained in a corresponding ASDF file. In general, many of these GWCS models
 are simpler than would be found in a real instrument, and are intended to illustrate
 the principle being discussed. For the most part, one does not need to look at
@@ -197,36 +197,36 @@ Simple Slit Case
 ................
 
 Generally speaking, a slit will disperse a very narrow rectangular region of the sky
-(perhaps with some distortion) onto a roughly rectanglular region of an imaging 
+(perhaps with some distortion) onto a roughly rectanglular region of an imaging
 detector (usually more distorted in its outline). In this simple case it is presumed
 that one is interested mapping the pixels within the dispersed region into corresponding
 world coordinates. Mapping pixels outside of a dispersed region is nonsensical, of course.
 
-Typically the transform takes 2 input pixel coordinates and produces 3 world coordinates, 
+Typically the transform takes 2 input pixel coordinates and produces 3 world coordinates,
 RA, Dec, and wavelength.
 
 This particular example is taken from a real JWST case, but made simpler in that both
 the WCS model and corresponding data have been extracted from a much larger and complex
 data set and placed into a small ASDF file. In particular, this data is part of a
-Multi Object Spectrograph (MOS) mode observation using the NIRSpec instrument. The 
+Multi Object Spectrograph (MOS) mode observation using the NIRSpec instrument. The
 extracted data are extracted from a dataset containing many extracted subimages of
 the original exposure, where each subimage is effectively the smallest array that
 contains the full spectrum from the corresponding "slitlet" used for that spectrum.
 The example ASDF file contains the subarray data and the corresponding GWCS model
-cooresponding to that subarray.
+corresponding to that subarray.
 
 Because the spectrum of the slitlet is not perfectly rectangular in the raw data,
 the subarray that contains it also contains pixels with no spectrum. Those pixels
 will not have a valid WCS transformation; for those pixels, the WCS transformation
-will yield NaN values. In fact, one way to determine the pixels that would have 
+will yield NaN values. In fact, one way to determine the pixels that would have
 flux in the spectrum is to perform the transformation on all pixels in the subarray;
 those without NaN values comprise the area that the spectrum is dispersed onto.
 
-The data in this example does not have any interesting features. It is provided 
+The data in this example does not have any interesting features. It is provided
 mainly to indicate the boundaries for the spectrum in pixels.
 
 Again, we have to be careful about the order of coordinates. The GWS transformation
-expects coordinates in x, y order, opposite of the Python numpy convention for 
+expects coordinates in x, y order, opposite of the Python numpy convention for
 pixel coordinates.
 
 
@@ -268,7 +268,7 @@ pixel coordinates.
  >>> plt.clf(); plt.imshow(lam)
  >>> plt.colorbar(orientation='horizontal', label='wavelength (microns)')
 
-.. image:: lambda.png 
+.. image:: lambda.png
 .. doctest-skip::
 
  >>> # Show that the wcs values round trip
@@ -285,7 +285,7 @@ Narrowing General Transforms
 In the previous subsection the topic of extra coordinates to handle more general
 transform cases was introduced. Taking the MOS case in particular, how do we
 simplify the GWCS model for a given open slit without requiring the user to
-supply the corresponding i, j location explicitly? There is a tool called 
+supply the corresponding i, j location explicitly? There is a tool called
 fix_inputs_xxx that generates a new GWCS model where this method allows specifying
 one or more input coordinates to a specific value, essentially removing one or
 more coordinates from the transformation. For the MOS case, a specific GWCS can
@@ -322,13 +322,13 @@ the details of how to construct and modify GWCS objects.
 A Notes about Performance
 .........................
 
-There is a comparatively high overhead to evaluating the GWCS model since it 
+There is a comparatively high overhead to evaluating the GWCS model since it
 is comprised of an expression of all underlying transform models. This overhead
 is most noticeable when only computing the transformation for one point. If many
 points should be transformed, if at all possible, transform all points in one
 call to the GWCS model by passing the points as arrays rather than looping over
 individual points. Doing thousands at a time essentially renders the overhead
-insignificant. 
+insignificant.
 
 
 Saving and Reading GWCS Objects
@@ -336,18 +336,18 @@ Saving and Reading GWCS Objects
 
 The primary motivation for GWCS is the ability to save and recover GWCS models
 from a data file. FITS does not provide the necessary tools to do that in any
-standard way. The Advanced Scientific Data Format (ASDF) 
-<https://www.asdf-format.org/en/latest/>` __ format was created 
+standard way. The Advanced Scientific Data Format (ASDF)
+<https://www.asdf-format.org/en/latest/>` __ format was created
 in large part to be able to store
 GWCS objects. Support for storing
 GWCS objects is intrinsically part of the GWCS package, which registers its
 ASDF extension with ASDF when installed. In other words, when GWCS is installed,
-ASDF understands how to save and recover GWCS objects. 
+ASDF understands how to save and recover GWCS objects.
 The structure of an ASDF file can be considered as a dictionary (technically,
 including lists as well) where the "keys" are attributes of the nested dictionaries.
 If a value of any of these attributes is an GWCS object, it will be converted
 into a form that ASDF knows how to save in the file, and upon reading, the
-corresponding information will be turned back into a GWCS object in Python 
+corresponding information will be turned back into a GWCS object in Python
 (Note that ASDF is language neutral, and implementations in other languages
 should be able to construct equivalent objects for GWCS in that languages though
 none yet exist).
@@ -376,7 +376,7 @@ JWST currently embeds GWCS information in FITS files as an ASDF FITS extension.
 Motivations for GWCS
 --------------------
 
-This section is for those that are interested in why GWCS is necessary, or, 
+This section is for those that are interested in why GWCS is necessary, or,
 in other words, what is wrong with the FITS WCS standard?
 
 The mapping from ‘pixel’ coordinates to corresponding ‘real-world’ coordinates
@@ -420,7 +420,7 @@ limitations:
   accompanying libraries are adapted for FITS only. A more flexible interface
   would be agnostic to file type, as long as the necessary information is
   present.
-* Even handling custom WCS elements within the FITS format is made awkward 
+* Even handling custom WCS elements within the FITS format is made awkward
   by FITS limitations in keyword, values and general file organization. All
   these factors caused considerable complications for HST data. A concrete
   example will be detailed below.
@@ -429,14 +429,14 @@ HST WCS Headaches
 .................
 
 Some HST data have the ability to measure positions very accurately. For example
-ACS imaging data reveals that it can detect systematic position errors down to 
+ACS imaging data reveals that it can detect systematic position errors down to
 the 0.003 pixel level. Distortion models for ACS were able obtain 0.01 pixel
 accuracy, but this could not be achieved with standard FITS WCS models. This
 was partly because the distortion model consisted of 3 different distortion
 elements: a 2-d polynomial distortion model; a residual grid-based distortion
 correction; and a discontinuous distortion offset due to chip region slight
 misalignments. The polynomial model could be handled by a widely accepted
-SIP distortion model, but since the FITS WCS model has no provision for 
+SIP distortion model, but since the FITS WCS model has no provision for
 combining multiple distortion elements, STScI had to construct a model not
 consistent with the FITS WCS standard, and not supported by any other library.
 
@@ -447,11 +447,11 @@ and extensions became a bookkeeping nightmare. The solution was yet another
 variance from the FITS standard, which was to place each WCS model as a
 FITS file stored within a FITS extension. We had wandered well down the
 road of FITS contortions. The limitations on FITS header keyword lengths
-also limits the degree of polynomials that can be employed. 
+also limits the degree of polynomials that can be employed.
 
 It should be noted that there have been attempts to try to generalize the
 available distortion solutions, most notably FITS WCS paper IV (since
-superceeded by a different paper IV!), which has languished for decades
+superseded by a different paper IV!), which has languished for decades
 with no hope of acceptance.
 
 To summarize, the FITS WCS standard is general enough to handle most
@@ -474,7 +474,7 @@ The `GWCS <https://github.com/spacetelescope/gwcs>`__ package and GWCS object is
 a generalized WCS implementation that mitigates these limitations. The
 capabilities that GWCS provides are:
 
-* Arbitrary construction of transformations from simpler transformations. 
+* Arbitrary construction of transformations from simpler transformations.
   In other words, one may combine transformations arithmetically, or feed
   the output of a transformation into another. A rich library of
   transformations, including all FITS supported projections, is provided.
@@ -483,9 +483,9 @@ capabilities that GWCS provides are:
 * Associating frames of reference with standard coordinate systems, such
   as those provided by Astropy.
 * Serializing all that information to the data file. A library that supports
-  this serialization can compute the coordinate transformations based 
-  soley on the file contents.
-* Mechanisms for extending the transformations are provided, as well as 
+  this serialization can compute the coordinate transformations based
+  solely on the file contents.
+* Mechanisms for extending the transformations are provided, as well as
   the ability to provide extensions for serializing such new transformations.
   Such extensions allow an instrument or telescope to produce data that
   uses their extension, where the serialization extension can be incorporated
