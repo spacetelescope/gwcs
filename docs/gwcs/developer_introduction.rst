@@ -30,7 +30,7 @@ frame for the output coordinates, it is necessary to append a step with no
 transform to the end of the pipeline to represent the output coordinate frame.
 For imaging, this frame typically references one of the Astropy standard
 Sky Coordinate Frames of Reference. The GWCS frames also serves as an 
-information containe, holding the units on the axes, the names of the axes, 
+information container, holding the units on the axes, the names of the axes, 
 and the physical type of the axis (e.g., wavelength), as well as keeping
 track of the axis order.
 

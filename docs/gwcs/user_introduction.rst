@@ -65,14 +65,20 @@ Installing GWCS
 
 To install the latest release::
 
+.. code-block:: shell
+
     pip install gwcs
 
 To install as a conda package from `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__:
 
+.. code-block:: shell
+
     conda install -c conda-forge gwcs
 
-To install the latest development version from source (not generally recommended one 
-needs a very new feature or bug fix)::
+To install the latest development version from source (not generally recommended
+unless one needs a very new feature or bug fix)::
+
+.. code-block:: shell
 
      pip install git+https://github.com/spacetelescope/gwcs.git
 
@@ -80,6 +86,14 @@ If the clone has already been done:
 
      cd gwcs
      pip install .
+
+If you wish to install directly from source with the ability to edit the source code:
+
+.. code-block:: shell
+
+  git clone https://github.com/spacetelescope/gwcs.git
+  cd gwcs
+  pip install -e gwcs
 
 Simple Image Use
 ................
