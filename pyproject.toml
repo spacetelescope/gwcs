@@ -38,7 +38,7 @@ docs = [
     "sphinx-automodapi",
     "sphinx-astropy",
     "sphinx-copybutton",
-    "sphinx-asdf @ git+https://github.com/asdf-format/sphinx-asdf.git@main",
+    "sphinx-asdf",
     "furo",
     "sphinx-tabs",
     "matplotlib",
