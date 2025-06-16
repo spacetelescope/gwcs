@@ -80,14 +80,14 @@ class FITSImagingWCSTransform(Model):
         self.projection = projection
         self.inputs = ("x", "y")
         self.outputs = ("lon", "lat")
-        lon_pole = _compute_lon_pole(self.crval, projection)
+        self.lon_pole = _compute_lon_pole(self.crval, projection)
 
         self.forward = (
-            Shift(-crpix[0]) & Shift(-crpix[1])
-            | AffineTransformation2D(matrix=pc * cdelt)
-            | Scale(cdelt[0]) & Scale(cdelt[1])
+            Shift(-self.crpix[0]) & Shift(-self.crpix[1])
+            | AffineTransformation2D(matrix=self.pc)
+            | Scale(self.cdelt[0]) & Scale(self.cdelt[1])
             | self.projection
-            | RotateNative2Celestial(crval[0], crval[1], lon_pole)
+            | RotateNative2Celestial(self.crval[0], self.crval[1], self.lon_pole)
         )
 
     def evaluate(self, x, y, crpix, crval, cdelt, pc):

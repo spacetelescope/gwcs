@@ -5,7 +5,7 @@ from astropy.modeling import models
 from astropy.time import Time
 
 from . import coordinate_frames as cf
-from . import geometry, wcs
+from . import fitswcs, geometry, wcs
 from . import spectroscopy as sp
 
 # frames
@@ -702,5 +702,20 @@ def gwcs_romanisim():
         wcs.Step(v2v3vacorr, tel2sky),
         wcs.Step(world, None),
     ]
+
+    return wcs.WCS(pipeline)
+
+
+def fits_wcs_imaging_simple():
+    """A simple FITS WCS imaging transform without distortion."""
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    world = cf.CelestialFrame(
+        reference_frame=coord.ICRS(), name="world", unit=(u.deg, u.deg)
+    )
+    projection = models.Pix2Sky_TAN()
+    crval = [5.6, -72.4]
+    crpix = [5, 5]
+    fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
+    pipeline = [wcs.Step(detector, fwcs), wcs.Step(world, None)]
 
     return wcs.WCS(pipeline)

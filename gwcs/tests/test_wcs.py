@@ -11,14 +11,13 @@ from astropy import wcs as astwcs
 from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models
 from astropy.modeling.bounding_box import ModelBoundingBox
-from astropy.modeling.models import Pix2Sky_TAN
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
-from gwcs import fitswcs, wcs
+from gwcs import wcs
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
 from gwcs.tests import data
 from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
@@ -1897,11 +1896,16 @@ def test_parameterless_transform():
     assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
 
 
-def test_fitswcs_imaging():
-    projection = Pix2Sky_TAN()
-    crval = [5.6, -72.4]
-    crpix = [5, 5]
-    fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
-    ra, dec = fwcs(*crpix)
-    assert_allclose((ra, dec), crval)
-    assert_allclose(fwcs.inverse(ra, dec), crpix)
+def test_fitswcs_imaging(fits_wcs_imaging_simple):
+    """Test simple FITS type imaging WCS."""
+    forward_transform = fits_wcs_imaging_simple.forward_transform
+    ra, dec = fits_wcs_imaging_simple(*forward_transform.crpix)
+    assert_allclose((ra, dec), forward_transform.crval)
+    assert_allclose(fits_wcs_imaging_simple.invert(ra, dec), forward_transform.crpix)
+
+    sky = fits_wcs_imaging_simple.pixel_to_world(*forward_transform.crpix)
+    ra, dec = sky.data.lon.value, sky.data.lat.value
+    assert_allclose((ra, dec), forward_transform.crval)
+    assert_allclose(
+        fits_wcs_imaging_simple.world_to_pixel(sky), forward_transform.crpix
+    )
