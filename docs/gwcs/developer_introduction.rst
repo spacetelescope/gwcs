@@ -6,13 +6,22 @@ Introduction to Constructing Generalized World Coordinate System Models
 Pixel Conventions and Definitions
 ---------------------------------
 
-:ref:`pixel-conventions-and-definitions`
+See :ref:`pixel-conventions-and-definitions` for an overview.
 
-Installation
-------------
+Developer Installation
+----------------------
 
-:ref:`installing-gwcs`
+Developers should generally install the clone and install the package in editable
+mode, so that their changes are immediately available without the need to reinstall
+the package. This is done by cloning the repository and installing it with
 
+.. code-block:: shell
+
+  git clone https://github.com/spacetelescope/gwcs.git
+  cd gwcs
+  pip install -e ".[test,docs]"
+
+For simipler installation, such as when no changes to the code are needed, see :ref:`installing-gwcs`.
 
 .. _getting-started:
 

@@ -32,7 +32,7 @@ that are packaged with the data they apply to.
 .. _pixel-conventions-and-definitions:
 
 Terminology and Conventions
-...........................
+***************************
 
 To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology
 and conventions, particularly with regard to pixel coordinates. For example, are the pixel
@@ -58,45 +58,9 @@ The GWCS object assumes Cartesian order ``(x, y)``, however it should be mention
 that there is an WCS shared API for both GWCS and FITS WCS that can use
 either ordering. The details regarding the shared API will be found later.
 
-.. _installing-gwcs:
-
-Installing GWCS
-...............
-
-To install the latest release::
-
-.. code-block:: shell
-
-    pip install gwcs
-
-To install as a conda package from `conda-forge <https://github.com/conda-forge/gwcs-feedstock>`__:
-
-.. code-block:: shell
-
-    conda install -c conda-forge gwcs
-
-To install the latest development version from source (not generally recommended
-unless one needs a very new feature or bug fix)::
-
-.. code-block:: shell
-
-     pip install git+https://github.com/spacetelescope/gwcs.git
-
-If the clone has already been done:
-
-     cd gwcs
-     pip install .
-
-If you wish to install directly from source with the ability to edit the source code:
-
-.. code-block:: shell
-
-  git clone https://github.com/spacetelescope/gwcs.git
-  cd gwcs
-  pip install -e gwcs
 
 Simple Image Use
-................
+****************
 
 This section will illustrate using the GWCS object packaged with the image data
 in an ASDF file to perform conversions from pixel coordinates to world coordinates
@@ -164,7 +128,7 @@ to ra, dec of (30, 45) in degrees.
 That is all there is to it. Almost.
 
 Use with Spectra
-................
+*****************
 
 GWCS models in cases of spectral data are generally more involved, partly because
 not all pixels in the detector array have a valid mapping to actual world coordinates,
@@ -194,7 +158,7 @@ the principle being discussed. For the most part, one does not need to look at
 the details of the underlying GWCS model. The focus is on how they may be used.
 
 Simple Slit Case
-................
+****************
 
 Generally speaking, a slit will disperse a very narrow rectangular region of the sky
 (perhaps with some distortion) onto a roughly rectanglular region of an imaging
@@ -280,7 +244,7 @@ Well, to within 0.005 pixel in y, and 0.27 pixel in x.
 
 
 Narrowing General Transforms
-............................
+****************************
 
 In the previous subsection the topic of extra coordinates to handle more general
 transform cases was introduced. Taking the MOS case in particular, how do we
@@ -301,7 +265,7 @@ for each identified source), or a specified spectral order.
 
 
 Modifying Transforms / Using Intermediate Frames
-................................................
+************************************************
 
 GWCS models are usually transparent. They consist of a pipeline of transforms
 between the starting frame (usually detector coordinates), and the final
@@ -320,7 +284,7 @@ not covered in this User section. Please read the developer section to undrestan
 the details of how to construct and modify GWCS objects.
 
 A Notes about Performance
-.........................
+*************************
 
 There is a comparatively high overhead to evaluating the GWCS model since it
 is comprised of an expression of all underlying transform models. This overhead
@@ -332,7 +296,7 @@ insignificant.
 
 
 Saving and Reading GWCS Objects
-...............................
+*******************************
 
 The primary motivation for GWCS is the ability to save and recover GWCS models
 from a data file. FITS does not provide the necessary tools to do that in any
@@ -426,7 +390,7 @@ limitations:
   example will be detailed below.
 
 HST WCS Headaches
-.................
+*****************
 
 Some HST data have the ability to measure positions very accurately. For example
 ACS imaging data reveals that it can detect systematic position errors down to
@@ -467,7 +431,7 @@ to use the unresampled data (e.g., Bayesian techniques). And this is where
 the FITS WCS standard often is completely inadequate.
 
 Advantages of GWCS
-..................
+******************
 
 
 The `GWCS <https://github.com/spacetelescope/gwcs>`__ package and GWCS object is
