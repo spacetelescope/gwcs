@@ -27,47 +27,32 @@ unless one needs a very new feature or bug fix):
 
   pip install git+https://github.com/spacetelescope/gwcs.git
 
-If you wish to install directly from source with the ability to edit the source code:
-
-.. code-block:: shell
-
-  git clone https://github.com/spacetelescope/gwcs.git
-  cd gwcs
-  pip install -e .
 
 Introductions
 -------------
 
 For Users
-.........
+*********
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 3
 
   gwcs/user_introduction.rst
-
-For Developers
-..............
-
-.. toctree::
-  :maxdepth: 2
-
-  gwcs/developer_introduction.rst
-
-
-Other Examples
---------------
-
-.. toctree::
-  :maxdepth: 2
-
   gwcs/imaging_with_distortion.rst
   gwcs/ifu.rst
 
+For Developers
+**************
+
+.. toctree::
+  :maxdepth: 3
+
+  gwcs/developer_introduction.rst
+  gwcs/api.rst
 
 
-Using ``gwcs``
---------------
+Using GWCS
+----------
 
 .. toctree::
   :maxdepth: 2
@@ -79,16 +64,6 @@ Using ``gwcs``
   gwcs/wcs_validation.rst
   gwcs/points_to_wcs.rst
   gwcs/fits_analog.rst
-
-
-
-References
------------
-
-.. toctree::
-  :maxdepth: 2
-
-  gwcs/api.rst
 
 
 See also
