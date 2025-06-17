@@ -38,8 +38,7 @@ For Users
   :maxdepth: 3
 
   gwcs/user_introduction.rst
-  gwcs/imaging_with_distortion.rst
-  gwcs/ifu.rst
+
 
 For Developers
 **************
@@ -48,6 +47,8 @@ For Developers
   :maxdepth: 3
 
   gwcs/developer_introduction.rst
+  gwcs/imaging_with_distortion.rst
+  gwcs/ifu.rst
   gwcs/api.rst
 
 
