@@ -35,13 +35,13 @@ Terminology and Conventions
 ***************************
 
 To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology
-and conventions, particularly with regard to pixel and array coordinates. 
+and conventions, particularly with regard to pixel and array coordinates.
 When we refer to pixel coordinates, we are referring to the coordinate conventions
 that GWCS uses, which are assumed to be in Cartesian order, i.e., ``x``, ``y``, where
 ``x`` refers to the horizontal coordinate, and ``y`` refer to th vertical coordinate.
 When we refer to array coordinates, we are assuming the numpy convention for coordinates,
 where the order is reversed, i.e., ``y``, ``x``. Put another way, when calling GWCS
-methods for conversion from detector coordinates to world coordinates, we use the 
+methods for conversion from detector coordinates to world coordinates, we use the
 pixel convention, when extracting data from the underlying numpy arrays, we use the
 numpy array convention. To be more specific, given a pixel coordinate of 50, 100, we
 call the GWCS transformation with (50, 100) as the argument, but to get the data
@@ -50,11 +50,11 @@ value from the numpy data array, we use the index of [100, 50]
 Although the FITS WCS convention assumes the detector pixels start at 1, for GWCS
 both the pixel and array conventions assume they start at 0.
 
-Like the FITS WCS convention, the pixel coordinates assume that they refer to the 
-center of the detector element, so that the detector element at 0, 0 ranges in ``x`` 
+Like the FITS WCS convention, the pixel coordinates assume that they refer to the
+center of the detector element, so that the detector element at 0, 0 ranges in ``x``
 from -0.5 to +0.5, and likewise for ``y``
 
-This convention extends naturally to 3-dimensional cartesian coordinates, i.e., presumed 
+This convention extends naturally to 3-dimensional cartesian coordinates, i.e., presumed
 to be in ``x``, ``y``, ``z`` order for GWCS, and ``z``, ``y``, ``x`` order for numpy
 arrays.
 
