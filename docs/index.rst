@@ -20,7 +20,7 @@ To install as a conda package from `conda-forge <https://github.com/conda-forge/
 
     conda install -c conda-forge gwcs
 
-To install the latest development version from source (not generally recommended
+To install the latest development version from source (not generally recommendedß
 unless one needs a very new feature or bug fix):
 
 .. code-block:: shell
@@ -40,20 +40,19 @@ For Users
   gwcs/user_introduction.rst
 
 
-For Developers
-**************
+Constructing GWCS Models
+************************
 
 .. toctree::
   :maxdepth: 3
 
-  gwcs/developer_introduction.rst
+  gwcs/constructing_gwcs_models.rst
   gwcs/imaging_with_distortion.rst
   gwcs/ifu.rst
-  gwcs/api.rst
 
 
-Using GWCS
-----------
+Advanced User Topics
+--------------------
 
 .. toctree::
   :maxdepth: 2
@@ -65,6 +64,15 @@ Using GWCS
   gwcs/wcs_validation.rst
   gwcs/points_to_wcs.rst
   gwcs/fits_analog.rst
+
+
+Reference
+---------
+
+.. toctree::
+  :maxdepth: 3
+
+  gwcs/api.rst
 
 
 See also

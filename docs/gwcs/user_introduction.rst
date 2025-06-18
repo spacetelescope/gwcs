@@ -8,7 +8,7 @@ Brief Introduction and Outline
 
 `GWCS (Generalized World Coordinate System) <https://github.com/spacetelescope/gwcs>`__
 package is intended as a generalization of the FITS WCS standards, which basically provides
-a transformation from detector array coordinates to sky, spectral, time or any other physical
+a transformation from detector pixel coordinates to sky, spectral, time or any other physical
 coordinates, and the converse: from the physical coordinates to the corresponding detector
 array coordinates. While simple in principle, it can be a complex subject. The main focus
 of this documentation is first the user, who only needs to know how to use GWCS objects,
@@ -35,29 +35,35 @@ Terminology and Conventions
 ***************************
 
 To use WCS models (of any kind, FITS or GWCS) it is important to understand the terminology
-and conventions, particularly with regard to pixel coordinates. For example, are the pixel
-coordinates 0 or 1 based? That is, is the first pixel identified as 0 or 1? GWCS assumes 0
-(whereas FITS assumes 1). However, like FITS, integer pixel values
-are presumed to refer to the center of the pixel. So for GWCS, the boundaries of the first
-pixel are at -0.5 and +0.5 for all dimensions.
+and conventions, particularly with regard to pixel and array coordinates. 
+When we refer to pixel coordinates, we are referring to the coordinate conventions
+that GWCS uses, which are assumed to be in Cartesian order, i.e., ``x``, ``y``, where
+``x`` refers to the horizontal coordinate, and ``y`` refer to th vertical coordinate.
+When we refer to array coordinates, we are assuming the numpy convention for coordinates,
+where the order is reversed, i.e., ``y``, ``x``. Put another way, when calling GWCS
+methods for conversion from detector coordinates to world coordinates, we use the 
+pixel convention, when extracting data from the underlying numpy arrays, we use the
+numpy array convention. To be more specific, given a pixel coordinate of 50, 100, we
+call the GWCS transformation with (50, 100) as the argument, but to get the data
+value from the numpy data array, we use the index of [100, 50]
 
-The greatest source of confusion
-will likely be the the presumed order of pixel coordinates. There are two main
-conventions for ordering pixel coordinates. In the context of
-2-dimensional imaging data/arrays, one can either think of the pixel coordinates
-as traditional Cartesian coordinates (which we call ``x`` and ``y`` here), which
-are usually given with the horizontal coordinate (``x``) first, and the vertical
-coordinate (``y``) second, meaning that pixel coordinates would be given as
-``(x, y)``. Alternatively, one can give the coordinates by first giving the row
-in the data, then the column, i.e. ``(row, column)``. While the former is a more
-common convention when e.g. plotting (think for example of the Matplotlib
-``scatter(x, y)`` method), the latter is the convention used when accessing
-values from e.g. Numpy arrays that represent images (``image[row, column]``).
+Although the FITS WCS convention assumes the detector pixels start at 1, for GWCS
+both the pixel and array conventions assume they start at 0.
 
-The GWCS object assumes Cartesian order ``(x, y)``, however it should be mentioned
-that there is an WCS shared API for both GWCS and FITS WCS that can use
-either ordering. The details regarding the shared API will be found later.
+Like the FITS WCS convention, the pixel coordinates assume that they refer to the 
+center of the detector element, so that the detector element at 0, 0 ranges in ``x`` 
+from -0.5 to +0.5, and likewise for ``y``
 
+This convention extends naturally to 3-dimensional cartesian coordinates, i.e., presumed 
+to be in ``x``, ``y``, ``z`` order for GWCS, and ``z``, ``y``, ``x`` order for numpy
+arrays.
+
+.. note::
+
+  This convention only applies to spatial coordinates of 2 and 3 dimensions. GWCS,
+  particularly when dealing with other kinds of coordinates (e.g., time or wavelength),
+  can do completely arbitrary mappings between pixel and array coordinates. In those
+  cases check the documentation for that specific GWCS model.
 
 Simple Image Use
 ****************
