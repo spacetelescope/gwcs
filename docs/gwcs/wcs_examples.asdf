@@ -1,0 +1,1902 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.6.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 4.1.0}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.1.1}
+    software: !core/software-1.0.0 {name: asdf, version: 4.1.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/astronomy/gwcs/extensions/gwcs-1.3.0
+    manifest_software: !core/software-1.0.0 {name: asdf_wcs_schemas, version: 0.4.0}
+    software: !core/software-1.0.0 {name: gwcs, version: 0.25.dev31}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/astronomy/coordinates/extensions/coordinates-1.0.0
+    manifest_software: !core/software-1.0.0 {name: asdf_coordinates_schemas, version: 0.3.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.7.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/transform/extensions/transform-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_transform_schemas, version: 0.5.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.7.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://astropy.org/astropy/extensions/units-1.0.0
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.7.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://stsci.edu/jwst_pipeline/extensions/jwst_transforms-1.2.0
+    software: !core/software-1.0.0 {name: stdatamodels, version: 3.0.2.dev43+ged15b5d}
+image_wcs: !<tag:stsci.edu:gwcs/wcs-1.3.0>
+  name: ''
+  pixel_shape: null
+  steps:
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: detector
+      unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
+    transform: !transform/compose-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/shift-1.3.0
+              inputs: [x]
+              offset: -500.0
+              outputs: [y]
+            - !transform/shift-1.3.0
+              inputs: [x]
+              offset: -500.0
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/scale-1.3.0
+              factor: 2.777777777777778e-05
+              inputs: [x]
+              outputs: [y]
+            - !transform/scale-1.3.0
+              factor: 2.777777777777778e-05
+              inputs: [x]
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/gnomonic-1.3.0
+          direction: pix2sky
+          inputs: [x, y]
+          outputs: [phi, theta]
+        inputs: [x0, x1]
+        outputs: [phi, theta]
+      - !transform/rotate3d-1.4.0
+        direction: native2celestial
+        inputs: [phi_N, theta_N]
+        outputs: [alpha_C, delta_C]
+        phi: 29.999999999999996
+        psi: 180.0
+        theta: 45.0
+      inputs: [x0, x1]
+      outputs: [alpha_C, delta_C]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/celestial_frame-1.1.0>
+      axes_names: [lon, lat]
+      axes_order: [0, 1]
+      axis_physical_types: [pos.eq.ra, pos.eq.dec]
+      name: icrs
+      reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+        frame_attributes: {}
+      unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
+    transform: null
+slit_data: !core/ndarray-1.1.0
+  source: 0
+  datatype: float32
+  byteorder: big
+  shape: [20, 507]
+slit_wcs: !<tag:stsci.edu:gwcs/wcs-1.3.0>
+  name: ''
+  pixel_shape: null
+  steps:
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: detector
+      unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
+    transform: !transform/compose-1.3.0
+      bounding_box: !transform/property/bounding_box-1.1.0
+        ignore: []
+        intervals:
+          x0: [-0.5, 506.5]
+          x1: [-0.5, 19.5]
+        order: F
+      forward:
+      - !transform/concatenate-1.3.0
+        forward:
+        - !transform/shift-1.3.0
+          inputs: [x]
+          offset: 1541.0
+          outputs: [y]
+        - !transform/shift-1.3.0
+          inputs: [x]
+          offset: 760.0
+          outputs: [y]
+        inputs: [x0, x1]
+        outputs: [y0, y1]
+      - !transform/compose-1.3.0
+        bounding_box: !transform/property/bounding_box-1.1.0
+          ignore: []
+          intervals:
+            x0: [1541.185092393117, 2047.5]
+            x1: [759.5, 779.5]
+          order: F
+        forward:
+        - !transform/concatenate-1.3.0
+          forward:
+          - !transform/shift-1.3.0
+            inputs: [x]
+            offset: 0.0
+            outputs: [y]
+          - !transform/shift-1.3.0
+            inputs: [x]
+            offset: 0.0
+            outputs: [y]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/identity-1.3.0
+          inputs: [x0, x1]
+          n_dims: 2
+          outputs: [x0, x1]
+        inputs: [x0, x1]
+        name: dms2sca
+        outputs: [x0, x1]
+      inputs: [x0, x1]
+      name: dms2sca
+      outputs: [x0, x1]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+      axes_names: [x, y]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:x', 'custom:y']
+      name: sca
+      unit: [!unit/unit-1.0.0 pixel, !unit/unit-1.0.0 pixel]
+    transform: !transform/compose-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/affine-1.4.0
+              inputs: [x, y]
+              matrix: !core/ndarray-1.1.0
+                source: 1
+                datatype: float64
+                byteorder: little
+                shape: [2, 2]
+              name: fpa_affine_d2s
+              outputs: [x, y]
+              translation: !core/ndarray-1.1.0
+                source: 2
+                datatype: float64
+                byteorder: little
+                shape: [2]
+            - !transform/concatenate-1.3.0
+              forward:
+              - !transform/shift-1.3.0
+                inputs: [x]
+                name: fpa_x_d2s
+                offset: -0.03817102041130744
+                outputs: [y]
+              - !transform/shift-1.3.0
+                inputs: [x]
+                name: fpa_y_d2s
+                offset: -0.018423
+                outputs: [y]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            inputs: [x, y]
+            inverse: !transform/compose-1.3.0
+              forward:
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: fpa_x_s2d
+                  offset: 0.03817102041130744
+                  outputs: [y]
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: fpa_y_s2d
+                  offset: 0.018423
+                  outputs: [y]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              - !transform/affine-1.4.0
+                inputs: [x, y]
+                matrix: !core/ndarray-1.1.0
+                  source: 3
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                name: fpa_affine_s2d
+                outputs: [x, y]
+                translation: !core/ndarray-1.1.0
+                  source: 4
+                  datatype: float64
+                  byteorder: little
+                  shape: [2]
+              inputs: [x0, x1]
+              outputs: [x, y]
+            outputs: [y0, y1]
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/remap_axes-1.4.0
+                  inputs: [x0, x1]
+                  inverse: !transform/identity-1.3.0
+                    inputs: [x0, x1]
+                    n_dims: 2
+                    outputs: [x0, x1]
+                  mapping: [0, 1, 0, 1]
+                  name: camera_inmap
+                  outputs: [x0, x1, x2, x3]
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/polynomial-1.2.0
+                    coefficients: !core/ndarray-1.1.0
+                      source: 5
+                      datatype: float64
+                      byteorder: little
+                      shape: [6, 6]
+                    domain:
+                    - [-1, 1]
+                    - [-1, 1]
+                    inputs: [x, y]
+                    inverse: !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 6
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: camera_x_backward
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    name: camera_x_forward
+                    outputs: [z]
+                    window:
+                    - [-1, 1]
+                    - [-1, 1]
+                  - !transform/polynomial-1.2.0
+                    coefficients: !core/ndarray-1.1.0
+                      source: 7
+                      datatype: float64
+                      byteorder: little
+                      shape: [6, 6]
+                    domain:
+                    - [-1, 1]
+                    - [-1, 1]
+                    inputs: [x, y]
+                    inverse: !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 8
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: camera_y_backward
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    name: camera_y_forward
+                    outputs: [z]
+                    window:
+                    - [-1, 1]
+                    - [-1, 1]
+                  inputs: [x0, y0, x1, y1]
+                  outputs: [z0, z1]
+                inputs: [x0, x1]
+                outputs: [z0, z1]
+              - !transform/identity-1.3.0
+                inputs: [x0, x1]
+                inverse: !transform/remap_axes-1.4.0
+                  inputs: [x0, x1]
+                  mapping: [0, 1, 0, 1]
+                  outputs: [x0, x1, x2, x3]
+                n_dims: 2
+                name: camera_outmap
+                outputs: [x0, x1]
+              inputs: [x0, x1]
+              outputs: [x0, x1]
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: camera_xincen_d2s
+                    offset: 2.38656283331e-06
+                    outputs: [y]
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: camera_yincen_d2s
+                    offset: -0.000218347262797
+                    outputs: [y]
+                  inputs: [x0, x1]
+                  outputs: [y0, y1]
+                - !transform/affine-1.4.0
+                  inputs: [x, y]
+                  matrix: !core/ndarray-1.1.0
+                    source: 9
+                    datatype: float64
+                    byteorder: little
+                    shape: [2, 2]
+                  name: camera_affine_d2s
+                  outputs: [x, y]
+                  translation: !core/ndarray-1.1.0
+                    source: 10
+                    datatype: float64
+                    byteorder: little
+                    shape: [2]
+                inputs: [x0, x1]
+                outputs: [x, y]
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: camera_xoutcen_d2s
+                  offset: 0.000143898033
+                  outputs: [y]
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: camera_youtcen_d2s
+                  offset: 0.293606022006
+                  outputs: [y]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x, y]
+          outputs: [y0, y1]
+        - !<tag:stsci.edu:jwst_pipeline/coords-1.1.0>
+          inputs: [x, y]
+          model_type: unitless2directional
+          name: unitless2directional_cosines
+          outputs: [x, y, z]
+        inputs: [x, y]
+        outputs: [x, y, z]
+      - !<tag:stsci.edu:jwst_pipeline/rotation_sequence-1.1.0>
+        angles: [0.02487485736070396, -0.04155698393037499, -0.09728009804304585,
+          -8.75]
+        axes_order: xyzy
+        inputs: [x, y, z]
+        name: rotation
+        outputs: [x, y, z]
+      inputs: [x, y]
+      outputs: [x, y, z]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+      axes_names: [alpha_in, beta_in]
+      axes_order: [0, 1]
+      axis_physical_types: ['custom:alpha_in', 'custom:beta_in']
+      name: gwa
+      unit: [!unit/unit-1.0.0 rad, !unit/unit-1.0.0 rad]
+    transform: !transform/compose-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/compose-1.3.0
+                  forward:
+                  - !transform/remap_axes-1.4.0
+                    inputs: [x0, x1, x2]
+                    mapping: [0, 1, 0, 1]
+                    n_inputs: 3
+                    outputs: [x0, x1, x2, x3]
+                  - !transform/concatenate-1.3.0
+                    forward:
+                    - !transform/concatenate-1.3.0
+                      forward:
+                      - !transform/multiply-1.3.0
+                        forward:
+                        - !transform/constant-1.5.0
+                          dimensions: 1
+                          inputs: [x]
+                          outputs: [y]
+                          value: 0.0
+                        - !transform/identity-1.3.0
+                          inputs: [x0]
+                          outputs: [x0]
+                        inputs: [x]
+                        outputs: [y]
+                      - !transform/multiply-1.3.0
+                        forward:
+                        - !transform/constant-1.5.0
+                          dimensions: 1
+                          inputs: [x]
+                          outputs: [y]
+                          value: -1.0
+                        - !transform/identity-1.3.0
+                          inputs: [x0]
+                          outputs: [x0]
+                        inputs: [x]
+                        outputs: [y]
+                      inputs: [x0, x1]
+                      outputs: [y0, y1]
+                    - !transform/identity-1.3.0
+                      inputs: [x0, x1]
+                      n_dims: 2
+                      outputs: [x0, x1]
+                    inputs: [x00, x10, x01, x11]
+                    outputs: [y0, y1, x0, x1]
+                  inputs: [x0, x1, x2]
+                  outputs: [y0, y1, x0, x1]
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/concatenate-1.3.0
+                    forward:
+                    - !transform/identity-1.3.0
+                      inputs: [x0]
+                      outputs: [x0]
+                    - !transform/tabular-1.3.0
+                      bounds_error: false
+                      fill_value: .nan
+                      inputs: [x]
+                      lookup_table: !core/ndarray-1.1.0
+                        source: 11
+                        datatype: float64
+                        byteorder: little
+                        shape: [1000]
+                      method: linear
+                      name: tabular
+                      outputs: [y]
+                      points:
+                      - !core/ndarray-1.1.0
+                        source: 12
+                        datatype: float64
+                        byteorder: little
+                        shape: [1000]
+                    inputs: [x0, x]
+                    outputs: [x0, y]
+                  - !transform/identity-1.3.0
+                    inputs: [x0, x1]
+                    n_dims: 2
+                    outputs: [x0, x1]
+                  inputs: [x00, x0, x01, x11]
+                  outputs: [x00, y0, x01, x11]
+                inputs: [x0, x1, x2]
+                outputs: [x00, y0, x01, x11]
+              - !transform/remap_axes-1.4.0
+                inputs: [x0, x1, x2, x3]
+                mapping: [0, 1, 0, 1, 2, 3]
+                outputs: [x0, x1, x2, x3, x4, x5]
+              inputs: [x0, x1, x2]
+              outputs: [x0, x1, x2, x3, x4, x5]
+            - !transform/concatenate-1.3.0
+              forward:
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/identity-1.3.0
+                  inputs: [x0, x1]
+                  n_dims: 2
+                  outputs: [x0, x1]
+                - &id001 !transform/compose-1.3.0
+                  forward:
+                  - !transform/compose-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/concatenate-1.3.0
+                        forward:
+                        - !transform/scale-1.3.0
+                          factor: 7.699999696342275e-05
+                          inputs: [x]
+                          outputs: [y]
+                        - !transform/scale-1.3.0
+                          factor: 0.00017699999443721026
+                          inputs: [x]
+                          outputs: [y]
+                        inputs: [x0, x1]
+                        outputs: [y0, y1]
+                      - !transform/concatenate-1.3.0
+                        forward:
+                        - !transform/shift-1.3.0
+                          inputs: [x]
+                          offset: 0.03579900786280632
+                          outputs: [y]
+                        - !transform/shift-1.3.0
+                          inputs: [x]
+                          offset: 0.0028489918913692236
+                          outputs: [y]
+                        inputs: [x0, x1]
+                        outputs: [y0, y1]
+                      inputs: [x0, x1]
+                      outputs: [y0, y1]
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/rotate2d-1.4.0
+                        angle: -0.017317574029327733
+                        inputs: [x, y]
+                        name: msa_Q2_rot
+                        outputs: [x, y]
+                      - !transform/concatenate-1.3.0
+                        forward:
+                        - !transform/shift-1.3.0
+                          inputs: [x]
+                          name: msa_Q2_x
+                          offset: -0.04280757349055325
+                          outputs: [y]
+                        - !transform/shift-1.3.0
+                          inputs: [x]
+                          name: msa_Q2_y
+                          offset: 0.0072599556631707
+                          outputs: [y]
+                        inputs: [x0, x1]
+                        outputs: [y0, y1]
+                      inputs: [x, y]
+                      outputs: [y0, y1]
+                    inputs: [x0, x1]
+                    outputs: [y0, y1]
+                  - !transform/compose-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/compose-1.3.0
+                        forward:
+                        - !transform/compose-1.3.0
+                          forward:
+                          - !transform/concatenate-1.3.0
+                            forward:
+                            - !transform/shift-1.3.0
+                              inputs: [x]
+                              name: collimator_xoutcen_d2s
+                              offset: -5.526841e-06
+                              outputs: [y]
+                            - !transform/shift-1.3.0
+                              inputs: [x]
+                              name: collimator_youtcen_d2s
+                              offset: 0.000346042594
+                              outputs: [y]
+                            inputs: [x0, x1]
+                            outputs: [y0, y1]
+                          - !transform/compose-1.3.0
+                            forward:
+                            - !transform/affine-1.4.0
+                              inputs: [x, y]
+                              matrix: !core/ndarray-1.1.0
+                                source: 13
+                                datatype: float64
+                                byteorder: little
+                                shape: [2, 2]
+                              outputs: [x, y]
+                              translation: !core/ndarray-1.1.0
+                                source: 14
+                                datatype: float64
+                                byteorder: little
+                                shape: [2]
+                            - !transform/concatenate-1.3.0
+                              forward:
+                              - !transform/shift-1.3.0
+                                inputs: [x]
+                                name: collimator_xincen_d2s
+                                offset: -0.000143900694035
+                                outputs: [y]
+                              - !transform/shift-1.3.0
+                                inputs: [x]
+                                name: collimator_yincen_d2s
+                                offset: -0.293605933112
+                                outputs: [y]
+                              inputs: [x0, x1]
+                              outputs: [y0, y1]
+                            inputs: [x, y]
+                            outputs: [y0, y1]
+                          inputs: [x0, x1]
+                          outputs: [y0, y1]
+                        - !transform/compose-1.3.0
+                          forward:
+                          - !transform/remap_axes-1.4.0
+                            inputs: [x0, x1]
+                            mapping: [0, 1, 0, 1]
+                            outputs: [x0, x1, x2, x3]
+                          - !transform/compose-1.3.0
+                            forward:
+                            - !transform/concatenate-1.3.0
+                              forward:
+                              - !transform/polynomial-1.2.0
+                                coefficients: !core/ndarray-1.1.0
+                                  source: 15
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [6, 6]
+                                domain:
+                                - [-1, 1]
+                                - [-1, 1]
+                                inputs: [x, y]
+                                name: collimator_x_backward
+                                outputs: [z]
+                                window:
+                                - [-1, 1]
+                                - [-1, 1]
+                              - !transform/polynomial-1.2.0
+                                coefficients: !core/ndarray-1.1.0
+                                  source: 16
+                                  datatype: float64
+                                  byteorder: little
+                                  shape: [6, 6]
+                                domain:
+                                - [-1, 1]
+                                - [-1, 1]
+                                inputs: [x, y]
+                                name: collimator_y_backward
+                                outputs: [z]
+                                window:
+                                - [-1, 1]
+                                - [-1, 1]
+                              inputs: [x0, y0, x1, y1]
+                              outputs: [z0, z1]
+                            - !transform/identity-1.3.0
+                              inputs: [x0, x1]
+                              n_dims: 2
+                              outputs: [x0, x1]
+                            inputs: [x0, y0, x1, y1]
+                            outputs: [x0, x1]
+                          inputs: [x0, x1]
+                          outputs: [x0, x1]
+                        inputs: [x0, x1]
+                        outputs: [x0, x1]
+                      - !<tag:stsci.edu:jwst_pipeline/coords-1.1.0>
+                        inputs: [x, y]
+                        model_type: unitless2directional
+                        name: unitless2directional_cosines
+                        outputs: [x, y, z]
+                      inputs: [x0, x1]
+                      outputs: [x, y, z]
+                    - !<tag:stsci.edu:jwst_pipeline/rotation_sequence-1.1.0>
+                      angles: [0.02487485736070396, -0.04155698393037499, -0.09728009804304585,
+                        -8.75]
+                      axes_order: xyzy
+                      inputs: [x, y, z]
+                      name: rotation
+                      outputs: [x, y, z]
+                    inputs: [x0, x1]
+                    outputs: [x, y, z]
+                  inputs: [x0, x1]
+                  outputs: [x, y, z]
+                inputs: [x00, x10, x01, x11]
+                outputs: [x0, x1, x, y, z]
+              - !transform/identity-1.3.0
+                inputs: [x0, x1]
+                n_dims: 2
+                outputs: [x0, x1]
+              inputs: [x00, x10, x01, x11, x0, x1]
+              outputs: [x00, x10, x0, y0, z0, x01, x11]
+            inputs: [x0, x1, x2]
+            outputs: [x00, x10, x0, y0, z0, x01, x11]
+          - !transform/remap_axes-1.4.0
+            inputs: [x0, x1, x2, x3, x4, x5, x6]
+            mapping: [0, 1, 2, 3, 5]
+            n_inputs: 7
+            outputs: [x0, x1, x2, x3, x4]
+          inputs: [x0, x1, x2]
+          outputs: [x0, x1, x2, x3, x4]
+        - !transform/concatenate-1.3.0
+          forward:
+          - !transform/identity-1.3.0
+            inputs: [x0, x1]
+            n_dims: 2
+            outputs: [x0, x1]
+          - !transform/compose-1.3.0
+            forward:
+            - !<tag:stsci.edu:jwst_pipeline/grating_equation-1.1.0>
+              groove_density: 150292.7
+              inputs: [alpha_in, beta_in, alpha_out]
+              name: lambda_from_gratingeq
+              order: -1.0
+              output: wavelength
+              outputs: [lam]
+            - !transform/multiply-1.3.0
+              forward:
+              - !transform/identity-1.3.0
+                inputs: [x0]
+                outputs: [x0]
+              - !transform/constant-1.5.0
+                dimensions: 1
+                inputs: [x]
+                name: velocity_correction
+                outputs: [y]
+                value: 1.0000607450443437
+              inputs: [x0]
+              inverse: !transform/divide-1.3.0
+                forward:
+                - !transform/identity-1.3.0
+                  inputs: [x0]
+                  outputs: [x0]
+                - !transform/constant-1.5.0
+                  dimensions: 1
+                  inputs: [x]
+                  name: inv_vel_correction
+                  outputs: [y]
+                  value: 1.0000607450443437
+                inputs: [x0]
+                outputs: [x0]
+              outputs: [x0]
+            inputs: [alpha_in, beta_in, alpha_out]
+            outputs: [x0]
+          inputs: [x0, x1, alpha_in, beta_in, alpha_out]
+          outputs: [x00, x10, x01]
+        inputs: [x0, x1, x2]
+        outputs: [x00, x10, x01]
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/remap_axes-1.4.0
+              inputs: [x0, x1, x2]
+              mapping: [0, 1, 2, 1]
+              outputs: [x0, x1, x2, x3]
+            - !transform/concatenate-1.3.0
+              forward:
+              - !transform/identity-1.3.0
+                inputs: [x0, x1, x2]
+                n_dims: 3
+                outputs: [x0, x1, x2]
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/compose-1.3.0
+                  forward:
+                  - !<tag:stsci.edu:jwst_pipeline/logical-1.1.0>
+                    compareto: 1.05
+                    condition: GT
+                    inputs: [x]
+                    outputs: [x]
+                    value: .nan
+                  - !<tag:stsci.edu:jwst_pipeline/logical-1.1.0>
+                    compareto: -2.2
+                    condition: LT
+                    inputs: [x]
+                    outputs: [x]
+                    value: .nan
+                  inputs: [x]
+                  outputs: [x]
+                - !transform/scale-1.3.0
+                  factor: 0.0
+                  inputs: [x]
+                  outputs: [y]
+                inputs: [x]
+                outputs: [y]
+              inputs: [x0, x1, x2, x]
+              outputs: [x0, x1, x2, y]
+            inputs: [x0, x1, x2]
+            outputs: [x0, x1, x2, y]
+          - !transform/remap_axes-1.4.0
+            inputs: [x0, x1, x2, x3]
+            mapping: [0, 1, 3, 2, 3]
+            outputs: [x0, x1, x2, x3, x4]
+          inputs: [x0, x1, x2]
+          outputs: [x0, x1, x2, x3, x4]
+        - !transform/concatenate-1.3.0
+          forward:
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/identity-1.3.0
+              inputs: [x0]
+              outputs: [x0]
+            - !transform/add-1.3.0
+              forward:
+              - !transform/remap_axes-1.4.0
+                inputs: [x0, x1]
+                mapping: [0]
+                n_inputs: 2
+                outputs: [x0]
+              - !transform/remap_axes-1.4.0
+                inputs: [x0, x1]
+                mapping: [1]
+                outputs: [x0]
+              inputs: [x0, x1]
+              outputs: [x0]
+            inputs: [x00, x01, x11]
+            outputs: [x00, x01]
+          - !transform/add-1.3.0
+            forward:
+            - !transform/remap_axes-1.4.0
+              inputs: [x0, x1]
+              mapping: [0]
+              n_inputs: 2
+              outputs: [x0]
+            - !transform/remap_axes-1.4.0
+              inputs: [x0, x1]
+              mapping: [1]
+              outputs: [x0]
+            inputs: [x0, x1]
+            outputs: [x0]
+          inputs: [x00, x01, x11, x0, x1]
+          outputs: [x00, x01, x0]
+        inputs: [x0, x1, x2]
+        inverse: !transform/identity-1.3.0
+          inputs: [x0, x1, x2]
+          n_dims: 3
+          outputs: [x0, x1, x2]
+        outputs: [x00, x01, x0]
+      inputs: [x0, x1, x2]
+      inverse: !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/concatenate-1.3.0
+            forward:
+            - *id001
+            - !transform/identity-1.3.0
+              inputs: [x0]
+              outputs: [x0]
+            inputs: [x00, x10, x01]
+            outputs: [x, y, z, x0]
+          - !transform/remap_axes-1.4.0
+            inputs: [x0, x1, x2, x3]
+            mapping: [3, 0, 1, 2]
+            outputs: [x0, x1, x2, x3]
+          inputs: [x00, x10, x01]
+          outputs: [x0, x1, x2, x3]
+        - !<tag:stsci.edu:jwst_pipeline/grating_equation-1.1.0>
+          groove_density: 150292.7
+          inputs: [lam, alpha_in, beta_in, z]
+          name: alpha_from_greq
+          order: -1.0
+          output: angle
+          outputs: [alpha_out, beta_out, zout]
+        inputs: [x00, x10, x01]
+        outputs: [alpha_out, beta_out, zout]
+      outputs: [x00, x01, x0]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+        axes_names: [x_slit, y_slit]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:x_slit', 'custom:y_slit']
+        name: slit_spatial
+        unit: [!unit/unit-1.0.0 '', !unit/unit-1.0.0 '']
+      - &id002 !<tag:stsci.edu:gwcs/spectral_frame-1.1.0>
+        axes_names: [wavelength]
+        axes_order: [2]
+        axis_physical_types: [em.wl]
+        name: spectral
+        unit: [!unit/unit-1.0.0 um]
+      name: slit_frame
+    transform: !transform/concatenate-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/scale-1.3.0
+              factor: 7.699999696342275e-05
+              inputs: [x]
+              outputs: [y]
+            - !transform/scale-1.3.0
+              factor: 0.00017699999443721026
+              inputs: [x]
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/shift-1.3.0
+              inputs: [x]
+              offset: 0.03579900786280632
+              outputs: [y]
+            - !transform/shift-1.3.0
+              inputs: [x]
+              offset: 0.0028489918913692236
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/rotate2d-1.4.0
+            angle: -0.017317574029327733
+            inputs: [x, y]
+            name: msa_Q2_rot
+            outputs: [x, y]
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/shift-1.3.0
+              inputs: [x]
+              name: msa_Q2_x
+              offset: -0.04280757349055325
+              outputs: [y]
+            - !transform/shift-1.3.0
+              inputs: [x]
+              name: msa_Q2_y
+              offset: 0.0072599556631707
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x, y]
+          outputs: [y0, y1]
+        inputs: [x0, x1]
+        outputs: [y0, y1]
+      - !transform/identity-1.3.0
+        inputs: [x0]
+        outputs: [x0]
+      inputs: [x00, x10, x01]
+      outputs: [y0, y1, x0]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+        axes_names: [x_msa, y_msa]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:x_msa', 'custom:y_msa']
+        name: msa_spatial
+        unit: [!unit/unit-1.0.0 m, !unit/unit-1.0.0 m]
+      - *id002
+      name: msa_frame
+    transform: !transform/compose-1.3.0
+      forward:
+      - !transform/remap_axes-1.4.0
+        inputs: [x0, x1, x2]
+        inverse: !transform/identity-1.3.0
+          inputs: [x0, x1, x2]
+          n_dims: 3
+          outputs: [x0, x1, x2]
+        mapping: [0, 1, 2, 2]
+        name: msa2fore_mapping
+        outputs: [x0, x1, x2, x3]
+      - !transform/concatenate-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/remap_axes-1.4.0
+                inputs: [x0, x1, x2]
+                inverse: !transform/identity-1.3.0
+                  inputs: [x0, x1]
+                  n_dims: 2
+                  outputs: [x0, x1]
+                mapping: [0, 1, 2, 0, 1, 2]
+                name: fore_inmap
+                outputs: [x0, x1, x2, x3, x4, x5]
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/add-1.3.0
+                  forward:
+                  - !transform/compose-1.3.0
+                    forward:
+                    - !transform/remap_axes-1.4.0
+                      inputs: [x0, x1, x2]
+                      mapping: [0, 1]
+                      n_inputs: 3
+                      outputs: [x0, x1]
+                    - !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 17
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: fore_x_forw
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  - !transform/multiply-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [0, 1]
+                        n_inputs: 3
+                        outputs: [x0, x1]
+                      - !transform/polynomial-1.2.0
+                        coefficients: !core/ndarray-1.1.0
+                          source: 18
+                          datatype: float64
+                          byteorder: little
+                          shape: [6, 6]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        inputs: [x, y]
+                        name: fore_x_forwdist
+                        outputs: [z]
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [2]
+                        outputs: [x0]
+                      - !transform/identity-1.3.0
+                        inputs: [x0]
+                        outputs: [x0]
+                      inputs: [x0, x1, x2]
+                      outputs: [x0]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  inputs: [x0, x1, x2]
+                  inverse: !transform/add-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [0, 1]
+                        n_inputs: 3
+                        outputs: [x0, x1]
+                      - !transform/polynomial-1.2.0
+                        coefficients: !core/ndarray-1.1.0
+                          source: 19
+                          datatype: float64
+                          byteorder: little
+                          shape: [6, 6]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        inputs: [x, y]
+                        name: fore_x_back
+                        outputs: [z]
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    - !transform/multiply-1.3.0
+                      forward:
+                      - !transform/compose-1.3.0
+                        forward:
+                        - !transform/remap_axes-1.4.0
+                          inputs: [x0, x1, x2]
+                          mapping: [0, 1]
+                          n_inputs: 3
+                          outputs: [x0, x1]
+                        - !transform/polynomial-1.2.0
+                          coefficients: !core/ndarray-1.1.0
+                            source: 20
+                            datatype: float64
+                            byteorder: little
+                            shape: [6, 6]
+                          domain:
+                          - [-1, 1]
+                          - [-1, 1]
+                          inputs: [x, y]
+                          name: fore_x_backdist
+                          outputs: [z]
+                          window:
+                          - [-1, 1]
+                          - [-1, 1]
+                        inputs: [x0, x1, x2]
+                        outputs: [z]
+                      - !transform/compose-1.3.0
+                        forward:
+                        - !transform/remap_axes-1.4.0
+                          inputs: [x0, x1, x2]
+                          mapping: [2]
+                          outputs: [x0]
+                        - !transform/identity-1.3.0
+                          inputs: [x0]
+                          outputs: [x0]
+                        inputs: [x0, x1, x2]
+                        outputs: [x0]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  outputs: [z]
+                - !transform/add-1.3.0
+                  forward:
+                  - !transform/compose-1.3.0
+                    forward:
+                    - !transform/remap_axes-1.4.0
+                      inputs: [x0, x1, x2]
+                      mapping: [0, 1]
+                      n_inputs: 3
+                      outputs: [x0, x1]
+                    - !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 21
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: fore_y_forw
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  - !transform/multiply-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [0, 1]
+                        n_inputs: 3
+                        outputs: [x0, x1]
+                      - !transform/polynomial-1.2.0
+                        coefficients: !core/ndarray-1.1.0
+                          source: 22
+                          datatype: float64
+                          byteorder: little
+                          shape: [6, 6]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        inputs: [x, y]
+                        name: fore_y_forwdist
+                        outputs: [z]
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [2]
+                        outputs: [x0]
+                      - !transform/identity-1.3.0
+                        inputs: [x0]
+                        outputs: [x0]
+                      inputs: [x0, x1, x2]
+                      outputs: [x0]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  inputs: [x0, x1, x2]
+                  inverse: !transform/add-1.3.0
+                    forward:
+                    - !transform/compose-1.3.0
+                      forward:
+                      - !transform/remap_axes-1.4.0
+                        inputs: [x0, x1, x2]
+                        mapping: [0, 1]
+                        n_inputs: 3
+                        outputs: [x0, x1]
+                      - !transform/polynomial-1.2.0
+                        coefficients: !core/ndarray-1.1.0
+                          source: 23
+                          datatype: float64
+                          byteorder: little
+                          shape: [6, 6]
+                        domain:
+                        - [-1, 1]
+                        - [-1, 1]
+                        inputs: [x, y]
+                        name: fore_y_back
+                        outputs: [z]
+                        window:
+                        - [-1, 1]
+                        - [-1, 1]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    - !transform/multiply-1.3.0
+                      forward:
+                      - !transform/compose-1.3.0
+                        forward:
+                        - !transform/remap_axes-1.4.0
+                          inputs: [x0, x1, x2]
+                          mapping: [0, 1]
+                          n_inputs: 3
+                          outputs: [x0, x1]
+                        - !transform/polynomial-1.2.0
+                          coefficients: !core/ndarray-1.1.0
+                            source: 24
+                            datatype: float64
+                            byteorder: little
+                            shape: [6, 6]
+                          domain:
+                          - [-1, 1]
+                          - [-1, 1]
+                          inputs: [x, y]
+                          name: fore_y_backdist
+                          outputs: [z]
+                          window:
+                          - [-1, 1]
+                          - [-1, 1]
+                        inputs: [x0, x1, x2]
+                        outputs: [z]
+                      - !transform/compose-1.3.0
+                        forward:
+                        - !transform/remap_axes-1.4.0
+                          inputs: [x0, x1, x2]
+                          mapping: [2]
+                          outputs: [x0]
+                        - !transform/identity-1.3.0
+                          inputs: [x0]
+                          outputs: [x0]
+                        inputs: [x0, x1, x2]
+                        outputs: [x0]
+                      inputs: [x0, x1, x2]
+                      outputs: [z]
+                    inputs: [x0, x1, x2]
+                    outputs: [z]
+                  outputs: [z]
+                inputs: [x00, x10, x20, x01, x11, x21]
+                outputs: [z0, z1]
+              inputs: [x0, x1, x2]
+              outputs: [z0, z1]
+            - !transform/identity-1.3.0
+              inputs: [x0, x1]
+              inverse: !transform/remap_axes-1.4.0
+                inputs: [x0, x1, x2]
+                mapping: [0, 1, 2, 0, 1, 2]
+                outputs: [x0, x1, x2, x3, x4, x5]
+              n_dims: 2
+              name: fore_outmap
+              outputs: [x0, x1]
+            inputs: [x0, x1, x2]
+            outputs: [x0, x1]
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: fore_xincen_d2s
+                  offset: 0.00011845636313016025
+                  outputs: [y]
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: fore_yincen_d2s
+                  offset: 0.00031645198856325804
+                  outputs: [y]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              - !transform/affine-1.4.0
+                inputs: [x, y]
+                matrix: !core/ndarray-1.1.0
+                  source: 25
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                name: fore_affine_d2s
+                outputs: [x, y]
+                translation: !core/ndarray-1.1.0
+                  source: 26
+                  datatype: float64
+                  byteorder: little
+                  shape: [2]
+              inputs: [x0, x1]
+              outputs: [x, y]
+            - !transform/concatenate-1.3.0
+              forward:
+              - !transform/shift-1.3.0
+                inputs: [x]
+                name: fore_xoutcen_d2s
+                offset: 0.0
+                outputs: [y]
+              - !transform/shift-1.3.0
+                inputs: [x]
+                name: fore_youtcen_d2s
+                offset: 0.0
+                outputs: [y]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            inputs: [x0, x1]
+            inverse: !transform/concatenate-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: fore_xoutcen_d2s
+                    offset: -0.0
+                    outputs: [y]
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: fore_youtcen_d2s
+                    offset: -0.0
+                    outputs: [y]
+                  inputs: [x0, x1]
+                  outputs: [y0, y1]
+                - !transform/compose-1.3.0
+                  forward:
+                  - !transform/affine-1.4.0
+                    inputs: [x, y]
+                    matrix: !core/ndarray-1.1.0
+                      source: 27
+                      datatype: float64
+                      byteorder: little
+                      shape: [2, 2]
+                    outputs: [x, y]
+                    translation: !core/ndarray-1.1.0
+                      source: 28
+                      datatype: float64
+                      byteorder: little
+                      shape: [2]
+                  - !transform/concatenate-1.3.0
+                    forward:
+                    - !transform/shift-1.3.0
+                      inputs: [x]
+                      name: fore_xincen_d2s
+                      offset: -0.00011845636313016025
+                      outputs: [y]
+                    - !transform/shift-1.3.0
+                      inputs: [x]
+                      name: fore_yincen_d2s
+                      offset: -0.00031645198856325804
+                      outputs: [y]
+                    inputs: [x0, x1]
+                    outputs: [y0, y1]
+                  inputs: [x, y]
+                  outputs: [y0, y1]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              - !transform/identity-1.3.0
+                inputs: [x0]
+                outputs: [x0]
+              inputs: [x00, x10, x01]
+              outputs: [y0, y1, x0]
+            outputs: [y0, y1]
+          inputs: [x0, x1, x2]
+          outputs: [y0, y1]
+        - !transform/identity-1.3.0
+          inputs: [x0]
+          outputs: [x0]
+        inputs: [x00, x10, x20, x01]
+        outputs: [y0, y1, x0]
+      inputs: [x0, x1, x2]
+      name: msa2oteip
+      outputs: [y0, y1, x0]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+        axes_names: [X_OTEIP, Y_OTEIP]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:X_OTEIP', 'custom:Y_OTEIP']
+        name: oteip
+        unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
+      - *id002
+      name: oteip
+    transform: !transform/compose-1.3.0
+      forward:
+      - !transform/identity-1.3.0
+        inputs: [x0, x1, x2]
+        inverse: !transform/remap_axes-1.4.0
+          inputs: [x0, x1, x2]
+          mapping: [0, 1, 2, 2]
+          outputs: [x0, x1, x2, x3]
+        n_dims: 3
+        name: fore2ote_mapping
+        outputs: [x0, x1, x2]
+      - !transform/concatenate-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/remap_axes-1.4.0
+                  inputs: [x0, x1]
+                  inverse: !transform/identity-1.3.0
+                    inputs: [x0, x1]
+                    n_dims: 2
+                    outputs: [x0, x1]
+                  mapping: [0, 1, 0, 1]
+                  name: ote_inmap
+                  outputs: [x0, x1, x2, x3]
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/polynomial-1.2.0
+                    coefficients: !core/ndarray-1.1.0
+                      source: 29
+                      datatype: float64
+                      byteorder: little
+                      shape: [6, 6]
+                    domain:
+                    - [-1, 1]
+                    - [-1, 1]
+                    inputs: [x, y]
+                    inverse: !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 30
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: ote_x_back
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    name: ote_x_forw
+                    outputs: [z]
+                    window:
+                    - [-1, 1]
+                    - [-1, 1]
+                  - !transform/polynomial-1.2.0
+                    coefficients: !core/ndarray-1.1.0
+                      source: 31
+                      datatype: float64
+                      byteorder: little
+                      shape: [6, 6]
+                    domain:
+                    - [-1, 1]
+                    - [-1, 1]
+                    inputs: [x, y]
+                    inverse: !transform/polynomial-1.2.0
+                      coefficients: !core/ndarray-1.1.0
+                        source: 32
+                        datatype: float64
+                        byteorder: little
+                        shape: [6, 6]
+                      domain:
+                      - [-1, 1]
+                      - [-1, 1]
+                      inputs: [x, y]
+                      name: ote_y_backw
+                      outputs: [z]
+                      window:
+                      - [-1, 1]
+                      - [-1, 1]
+                    name: ote_y_forw
+                    outputs: [z]
+                    window:
+                    - [-1, 1]
+                    - [-1, 1]
+                  inputs: [x0, y0, x1, y1]
+                  outputs: [z0, z1]
+                inputs: [x0, x1]
+                outputs: [z0, z1]
+              - !transform/identity-1.3.0
+                inputs: [x0, x1]
+                inverse: !transform/remap_axes-1.4.0
+                  inputs: [x0, x1]
+                  mapping: [0, 1, 0, 1]
+                  outputs: [x0, x1, x2, x3]
+                n_dims: 2
+                name: ote_outmap
+                outputs: [x0, x1]
+              inputs: [x0, x1]
+              outputs: [x0, x1]
+            - !transform/compose-1.3.0
+              forward:
+              - !transform/compose-1.3.0
+                forward:
+                - !transform/concatenate-1.3.0
+                  forward:
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: ote_xincen_d2s
+                    offset: 5.18289805611e-07
+                    outputs: [y]
+                  - !transform/shift-1.3.0
+                    inputs: [x]
+                    name: ote_yincen_d2s
+                    offset: 1.92704532397e-09
+                    outputs: [y]
+                  inputs: [x0, x1]
+                  outputs: [y0, y1]
+                - !transform/affine-1.4.0
+                  inputs: [x, y]
+                  matrix: !core/ndarray-1.1.0
+                    source: 33
+                    datatype: float64
+                    byteorder: little
+                    shape: [2, 2]
+                  name: ote_affine_d2s
+                  outputs: [x, y]
+                  translation: !core/ndarray-1.1.0
+                    source: 34
+                    datatype: float64
+                    byteorder: little
+                    shape: [2]
+                inputs: [x0, x1]
+                outputs: [x, y]
+              - !transform/concatenate-1.3.0
+                forward:
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: ote_xoutcen_d2s
+                  offset: 0.10539
+                  outputs: [y]
+                - !transform/shift-1.3.0
+                  inputs: [x]
+                  name: ote_youtcen_d2s
+                  offset: -0.11913000025
+                  outputs: [y]
+                inputs: [x0, x1]
+                outputs: [y0, y1]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          - !transform/concatenate-1.3.0
+            forward:
+            - !transform/scale-1.3.0
+              factor: 3600.0
+              inputs: [x]
+              outputs: [y]
+            - !transform/scale-1.3.0
+              factor: 3600.0
+              inputs: [x]
+              outputs: [y]
+            inputs: [x0, x1]
+            outputs: [y0, y1]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/scale-1.3.0
+          factor: 1000000.0
+          inputs: [x]
+          outputs: [y]
+        inputs: [x0, x1, x]
+        outputs: [y0, y1, y]
+      inputs: [x0, x1, x2]
+      name: oteip2v23
+      outputs: [y0, y1, y]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+        axes_names: [v2, v3]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:v2', 'custom:v3']
+        name: v2v3_spatial
+        unit: [!unit/unit-1.0.0 arcsec, !unit/unit-1.0.0 arcsec]
+      - *id002
+      name: v2v3
+    transform: !transform/concatenate-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/concatenate-1.3.0
+          forward:
+          - !transform/scale-1.3.0
+            factor: 1.0000607413550973
+            inputs: [x]
+            name: dva_scale_v2
+            outputs: [y]
+          - !transform/scale-1.3.0
+            factor: 1.0000607413550973
+            inputs: [x]
+            name: dva_scale_v3
+            outputs: [y]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/concatenate-1.3.0
+          forward:
+          - !transform/shift-1.3.0
+            inputs: [x]
+            name: dva_v2_shift
+            offset: -0.02299444187943784
+            outputs: [y]
+          - !transform/shift-1.3.0
+            inputs: [x]
+            name: dva_v3_shift
+            offset: 0.026021768543183905
+            outputs: [y]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        inputs: [x0, x1]
+        name: DVA_Correction
+        outputs: [y0, y1]
+      - !transform/identity-1.3.0
+        inputs: [x0]
+        outputs: [x0]
+      inputs: [x00, x10, x01]
+      outputs: [y0, y1, x0]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/frame2d-1.1.0>
+        axes_names: [v2, v3]
+        axes_order: [0, 1]
+        axis_physical_types: ['custom:v2', 'custom:v3']
+        name: v2v3vacorr_spatial
+        unit: [!unit/unit-1.0.0 arcsec, !unit/unit-1.0.0 arcsec]
+      - *id002
+      name: v2v3vacorr
+    transform: !transform/concatenate-1.3.0
+      forward:
+      - !transform/compose-1.3.0
+        forward:
+        - !transform/compose-1.3.0
+          forward:
+          - !transform/compose-1.3.0
+            forward:
+            - !transform/concatenate-1.3.0
+              forward:
+              - !transform/scale-1.3.0
+                factor: 0.0002777777777777778
+                inputs: [x]
+                outputs: [y]
+              - !transform/scale-1.3.0
+                factor: 0.0002777777777777778
+                inputs: [x]
+                outputs: [y]
+              inputs: [x0, x1]
+              outputs: [y0, y1]
+            - !<tag:stsci.edu:gwcs/spherical_cartesian-1.2.0>
+              inputs: [lon, lat]
+              outputs: [x, y, z]
+              transform_type: spherical_to_cartesian
+              wrap_lon_at: 180
+            inputs: [x0, x1]
+            outputs: [x, y, z]
+          - !transform/rotate_sequence_3d-1.1.0
+            angles: [0.105156445, 0.11900078666666665, -87.69308928294737, -27.805664626870584,
+              -53.14184082697473]
+            axes_order: zyxyz
+            inputs: [x, y, z]
+            outputs: [x, y, z]
+            rotation_type: cartesian
+          inputs: [x0, x1]
+          outputs: [x, y, z]
+        - !<tag:stsci.edu:gwcs/spherical_cartesian-1.2.0>
+          inputs: [x, y, z]
+          outputs: [lon, lat]
+          transform_type: cartesian_to_spherical
+          wrap_lon_at: 360
+        inputs: [x0, x1]
+        name: v23tosky
+        outputs: [lon, lat]
+      - !transform/identity-1.3.0
+        inputs: [x0]
+        outputs: [x0]
+      inputs: [x00, x10, x01]
+      name: v2v3_to_sky
+      outputs: [lon, lat, x0]
+  - !<tag:stsci.edu:gwcs/step-1.2.0>
+    frame: !<tag:stsci.edu:gwcs/composite_frame-1.0.0>
+      frames:
+      - !<tag:stsci.edu:gwcs/celestial_frame-1.1.0>
+        axes_names: [lon, lat]
+        axes_order: [0, 1]
+        axis_physical_types: [pos.eq.ra, pos.eq.dec]
+        name: sky
+        reference_frame: !<tag:astropy.org:astropy/coordinates/frames/icrs-1.1.0>
+          frame_attributes: {}
+        unit: [!unit/unit-1.0.0 deg, !unit/unit-1.0.0 deg]
+      - *id002
+      name: world
+    transform: null
+...
+ÓBLK 0              p      p      pŠ¸*‘„~?LÇ»›ÇÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¾iúz¾©~b>Ÿ’=!2ˆ½á+¾Å>µ@>ıR>`v‡¾š%¾_‚¾‹è¯¾6¦t¾
+#¾ÚP½Ó€Š>ş²©=Qà	=şÕy>\H¾¤R>ÇÇ½ğŒ=•û°¼©ÚÕ½ïr$¾¹ Û¾v¾<^=ßKÇ¼àk‡¾~´½¦³¾—*½CØ¼â!½3ã5½rãù<œM¾Õ­¾s$•½=Hó½ğšO¾;Ò™=ªûV¿Œ=¥ÖĞ¾…=ù˜+<übª¾a…M=¨E…¾0q¾¡ã>=Ï|É¾t00»¤ó½×©™=âé–¾“÷<=à*¼ÔÜ‚>S¹D¾|aG¾w0¾-ÜS¾É%d¾…¨¥¾1gÍ¾ËÍ½Ãu]¾Ôş ¾áH¾.À=k‘ú¾”Z¾w^È½—šÿ½¯óU½Ó&7¾9>
+–;¾,¾FòZ¾/#¥¾0c¢¾©J=û=Ä¾¯¼¼=Äİ9½@ÚL½Çœ½†sl=ÿ¼"¼ÇÀÚ½¤Óµ>;Ut¼Ç ´¾C›é½ñ š½Çœ×½ÕÒŞ¾†vl<ƒ‚ã¾0½ÚFs½Àxk¾KÁø¾×¤¬:İó½ğÈ¾jZ}<Éİ¾€˜½A[ü¿%½éûş½î—¡¾µº=ta§;Óšy>=}b½šøM¾¶hš¿#ÅÕ=µ-#½1ª!¿#zÀ  À  > Ë9¾rÅâ¾™¸¤½Ë²Ù¾Jx¾!)¼’–¾9ÃÉ¾9•ƒ¾»4w>wÕ½¿,>kÑ=MaŸ¾9Nã¾€E½£àL¾¬ïËÀ  ?kÚ¾;ú½×áR½°3¾’*¥¾‰îä¾Im¾B˜ï¾t,i½hJ=–šÛ½¼Ê,¾îª ¾›½€©<fàú¾©š=½7İg>êP+½êoÚ¾r¾¼‚›¾R“”;ˆzõ>#.¾ÇA>iñÁ¾pï¾ ä¼W‰å¾² ¾«)¼îËó<Ó
+)>rü;ÌP¾ˆ?I¾k}ù<«ö{¾u¯>³½= @¢¾—Ü´=•Ù:¾ZÉ;€[u>i„½²ÍÏ=øx½Àa)¿Óº=Ÿ~¾€=Ÿn¾-i=µ°v¾=9TÄ=nõR¾r÷"½¿jÁ¼¦­=`¾¼0Š½©–Y<Px$¾en—½.°¸¾]®7=yO§½Š±ş¾(èP¾¯ëb¾1¦B½¬­è¾Ò –¾ŒÏ‡½¦¿¾†Y¾há½ä°¾.W;ã?¾	g¾8Ç\¾x²»¾Àİ<vÄ2¾ƒ“¾¨Î(½qš½´Ü¾ãë<ÛÔµ¾	…¾‘şZÀ  ¾À•İ¿Ş=÷´L¾)˜ó¾ém¾L¾Ñ¼¾TWT¼¤.a¾³„ó>)ğ'À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¾É#8¾èCŒ½:Ó=â=—eà=€¾9’ã¾pF¾>•~¾®Ò¾X…²¾7 I¾‰J¤¾+#=¾¤=ïj@¾Ú3;¾I!®½bİ´½á×>‘—(½RŸ!=å;ê¿ ÜB¾Í6½Ä‡•>Ÿ^¾hVì=ß
+Ÿ¾MR+>›í½Ü‰¾fŒ¾'h¾0u½J¬û>Jü¡>mp<È¤M¾‘õ{¿	îB¾ˆå‘¾P—â?’±<ş™¾İ&½™Hâ<RÍ;³¯Å=ã
+Ş=¼ÊÆ½p÷*¾±>¹uª½ÙÙX¾gXé½ø>@\º½ş"½î•õ½AÃ>¾Ø¾em¾2S2<‡/¿¾UÖÍ¾°¡é=p1š¾ÑÃ;·İ€>LÜ ½˜¤#=0	#½}À¼äaQ¾"Í×½¶S¿âeÀ  >,æ1½‘~»=İä¥¾ŒÍ¿V¾0¶c>ŠCÜ<eº–&¼údÖ¼c@n>D#¾Å¤¾EÍ¾Õ½ç<	uÄ¾X¾T’‹¾¤n=™q¡¾–¹à>%?¿?éë½œTĞ=’"¿¥ê¾W7F=Gƒ¥¾1Å%¾€:ƒ½ÒÃ¼×=¹U¾÷>¾nc=(ïE¼—â?¾É˜x>-ò•>(ø<Í`¾#2¾”‹„¾I¾u&$>—Ş¾VgC=Ô&>_³ƒ¾ÎŠı<ñ;{¾©9Î=’†A>På¾Ì”V>ïı½/•e¾A%¾@×¾ë@³=×b½©Îó¾‘_Ï>w_>®@K¼)N¾€5¸<"Òx½1ì>xÏ>ÔLì¾^9À3¾€6¾)aC<¶?l><c½ûı½\œ½‚1µ=‰¾‚‚¾šâ¿	·¾¾‡×¾æâ¾bÃ®½7Cô>`İ8¾p	I½Ó=¾¹s=ù^8¾I¾[lÕ=Â'Ô¼…hÑ¾%«½¾½ì¥½ÜÅÆ=ÁÙÑ½É(½ñ&>½ûæ”>"_ŸÀ  ¾w¯¾”ê½Æ+Ó¾71½Ñ
+L=ÿõ+½±ƒ‹½…°]½]ã¾"Í•¾kşí¾=G¾Å.9¾5<‚½ùÑ½ˆÁ¾U Ã¾«_H>’ˆY<ÊŞ9¾3!¡½¢“•=Vç¾>¤½ú—7>™ád¾¹â½VB}>çŸ>KCø¿&dN>#
+>İ¾³„¾sP>¦ò™À  =jc<f÷º¾€)’¾«ù=Ğ\¼^8}¾€&½¨Mz¾ÏÛ?½¥‚E¾Mà{¾SÁƒ¼ä«Ô½Õ’F½3©¿&²¾Rq¼½–±¾åÑ¾øĞ½
+út¾i2Ş>Kì‹¾1‘â½ÈÏâ¾Šz½kIx¾1¦<ßÎ<z8»©sæ¾‡+½üºe½Q.½İ<Ÿ>ıò=ƒlä¾,^ğ½»jQ¾ŒŞ¾2Uª¼r“9¾„;]¾w¿¾3À˜¾Ròk½OQ0¾cY¾$ˆ¿½Õ€È¾}¼F½¸S`>‚Ùã>Jİ¾¾++¾>°2¾Ğç¾.Eå>Xh»Í­n½£å¾S&=iÅ>|’6¾¥VÎ¼êµ¾ñuT¾¤­û¾ºƒ‹½ÏÆO>íuV½ği ½º-½oÙ¼½ö!'¾¢ù
+¾Dˆ'<xõç¿Í¾„ş=¾‰Î¾‡L =â-ë¾ˆ‹¾:5°¾5
+r>ı¼¾„rW½å¾à´¾Ov>Xf·¾›~¾Dœ¾u| ¾¯[Ÿ¾P½¥¼½½ ¸Ş¾œµ¾U 8¾:E5¾İÀ£>?è$½¾2é½¤u½H´r=ò¨ÿ¿8;¾Œ¢Á¼ÜA¾o p>ÏL¾Ó.­¾…¾¯3¾Ã¦Æ½§•½ë´½•¾¬ÈØ¾õ¶¾…R6¾p÷l¾£Xj¾ãë>ˆmU<ëª™>…HÁ¾"Ãˆ½Ì¶Ì=”t…¾®q§¾‹‡Í¾GÅ¾ıO¾j¾Çv¾¸ìù>ã*=ô¸;¿†';l­=‡e¾dm>%ë/¾MWİ¾¨T¾³_¾sÅ‰¼r-¾4ª¾vt¾I.Ê;"Ú¾ıÍ¥¾OÜÎ¾SB¾
+s¾[³Õ¾¡èå¾ï·¾C%”¾{ÃG¾Ã¾ÖşO¾ÚûĞÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¾”_u¾›4…¾pu¼¥?¤½8Ã1À  ¾…°R>Ça¾ïDZ¾Ò€0½Ì–İ½œ¿…ö¾@¾›m¿Â¾‰©>\oÂ>3È¾TİQ½Ûñ]=´ÃA¼ª ñ¾Äâ,¾– ¾Èş¼½ûò¼Hâ×¾©CÚ¼ã8d>EÁÈ=~~j¾Uñ‘¾+Û3½ şÃ¾b\\½ÀÇ×¾€s»©qÔ¼¢ni¾©è ¾™W×½sÈ¹<mK=R¾R¾ºE?¾öû¾?`­¾ Ô„¾P:½¨Í=İZ.¾*“¢¾VÓ<På¾¬ï¿ú¾³Ğ ;¬Î>¬Üò¾Ïˆ<üŠä>R²Ç¾ñ¼¾Éä>5?ù=™5™¼ÇçÈ¾"0M¿<¾/›|¾»â¾€u=gj¾p<\(ê¾®Ç¿ ~½pN™¾7ÀÂ>OäÀ¾¶¿=$¾Š@¾_±;¾®Õâ½¼’v?	0¾6l¾Ê¥>¿¸i¾xS¾-#¾mî7¾FhÄ¾! €>ñ²¾!¶_¾¥ªM½—JÔ½jü ¾´V¾‘¡x¾;^¾Ğz$¾6Îé¹L¾¾ù½Ée3¾/q?½Ş
+.¾t&/>¡l¦¿,DÓ¾oD…¾Ú@¼´Q<bV¾pZh>/÷¾ğî>cBÌ=Á
+|¼ÄŠÙ¾5‘	¾Pd
+=ÌÎm¼¿ø“¾hè­¾Ï'¾«®‘>§/$¾&`%<X”>vöS¾¤ ¾‰áÈ½DY ¾–Ø¨¾•†¬¿/‚½Ó[Z=£I»á¢I¾À6j¾0
+ª¼f¼/½í»Í¾'A>!¾0s$>{=ş# ¾6‘i>ÎÓ’¾Úãë¾ ½±{*=$É³>Şêé¾…(x¾Jxl¾0×à¾ĞÆÁ¾±EX¾»®½Öü—½„;Í¾ [U½KNk½:×®¾¥"]=cà>év½|Y¹=ëÔ¾gkN;1¯½Ş¬X=Ì˜=ÕŞ½­Xì¾Kå¾Lrt¾,¥óÀ  >ƒ9˜»´ÙÀ>‡¬a¾28G¾\}=Ğ‚¨=cÃºÿ›=Æ'>®b¾M·e½½c4¾ ­’=Ó5Œ¾›ü²=™(j¼¯Eã=Á@Æ>”»ø½˜-3¾¼¾WÉ¾½Î¶ó½¸\>,û8¾İN=®N½Ì@G>4Àt¾2rH¾.¹9=KŒ«¾cÄ>s Ì=û–;ˆ„½½õ>öÚ=¾.C¾(¾« b>F,¼ôÅí>|”ñ<är„»>»‰=JŒ9¾@I<”_>u»>e>ßl¾5ì¼ª¥¾lêü=2=´¶¼/Çó»æÅ¾\M)¾ lÚ=ı>Ö=ºz=¦6½ßñ=¸‹áÀ  <b¦¾ò\=†r’½ı°>¯ï½3"’=kBÉ½ù€>¶ùJ<bó½‡‘=qs~½¦}N½9=—®õ=’§X=Û±¢½¸Mk¾µĞ>¾ÿ›>/=ü>c'˜¾FgĞ¾w>>TÕ=D™‘½‘*%>-PÒ½-‚b½Òø—½j¥<¯ 1<İ<¦-&<¥­˜¾í<ğ©>6±½¡Ã6>W=ú¾¾U]½¯w>_Q½©e¼Á¡í½ñı3À  =‡N‹¼¨Ü½·>°¼¾¯ç¶À  ¾FÊ>6Øu=HK½¨êQ=n–L¾ÑÍ½İã+¼ˆ—F¼¤óW<Ö¹I½.´•=Ä<uÙ·¾ö>Æµ=ãŠ¾*¤r½É®+=ãŠĞ=dœ½ bºÙ!=œ;½vö=<BU½g&W½:=÷½Ó<•v½Æ¼R> XÒ¼¨ÍL½ï)e=sËÅ½bœ·¼×ër<—f½Ëvt>Ã}¼„Ù»=h}ÒÀ  <åÿ=TBE½Ò_½-¸¬s¥=Ï—î½gSç½£;¡=Ï
+>>-t=]ß°>"A¾3Z>_K=ë²<ôA¾ˆ¼kĞÿ¾R;<¦%½x3Ş=­J¢=%+4¾Ó•½=¶5n½hO®>×)½‘­¬=¸I=‡yŸ=	?÷=p2=uß§º‘<x½ötÅºö½XÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ½´­A>i1Ê¾ˆfÖ¾|[<Å%–½¿#¾Bpà>ä/¾‹à½x¾éß>Ê½½í@ğ¼ Ó>7‡È½ğ¯û>¡O½ÓÁ¥¼0ë½<µ>?p=bşŸ>'=µú•=÷Àï=Gäu¿ÑD=Û»»¾\"Í>Sw>lXØ½j'F¼5X <³Æ:¾Y*»QEÕ;¿UÓ>Å=Ú¹1=.ÀS=Ùwò=Í>ê»@éb<äC’=Z£…>VóÏ¾¥L>k¼£>$pØ½š»>l>1/>xÎ>–êB=÷¬Ï½¦Y‘>1>vz¼æ+½ÆÔ>­›<«s>Ğ”=‘ò>6)à½¶H-¼Çoğ><QV½fç¾¨›À  <ô  < V=O¡†=M‘>@¾Ui>Eå>-…=ŒTO>bB„=ƒ½A=Iµş=ºB½ã†¼ÈŞ¡>ßIÇ=CN>¬|¦>˜ş{;Ø‡Ô>q>®”6=MÅÖ=wHó>aÕŸ>È¼ùb=Êìm=çşÛ=Ë¼ì0m<ÉÜ<ï²V¾$Zì< C‚=£†0=ÙÿF¼Ã9·=×”=WËŠ>j?K½\8=î&,>Ûï=¶¤¾¾€—7=‘rÆ;5m¼=f0A<ÌAq=H,>Wu=]§=¢}_¾søº=ş-3=×Ê>díS>¥l=@]Y=¿\§>*Mˆ=Šy<>;x=¨¼ã½¤Í½Ø-l=Ş\¿U”^½aÌû<áŸ>>|>¨×â>¹S=D'=‹ÅÔ=åD½
+”»‚¸=å#<½–ë>³²=œØ>1¥H>_I=ó=/>‹9¼çs<>°>Ü²=«Ÿ>ÇĞ=ûcQ¼š¤>>×^=kñ^=Âƒ>M_*>$l¹>…oñ=¼LÇ½±÷=Æ„=/¡=Ú¡u<ùy§=b·#=J½€9è=Ô €>*Ù9>?¤=šÿ>~•æ;‹°Ç=³í¸=%*>kÔ>A™?W‹>8‹·>4py=¾Š<²'B>xí>Dc'< @É=yD=ªé=³x{>#Kç>A$İ=Øjv>Dº†½§é=Øí…>>Å­=\™Á=µÏA<ùÂ½é$J½Ã½¾
+x‹=’Î?¼ï–=±‚ú=Apç>DI>=¡™ƒ=zQ=Á§(>Œì= x¼¸è<ò8>WìÉ>ˆ  >)Æ¼=än>P=´³Ÿ=ªùš½?ñ=Ô¦=Û@Ú>4t<øä0>ZÈ>Ü·½pm5=<<HgÖ=¾¬G¼L:
+>"l >Ò=ìWÊ»ËÖM>M\=Œ›Ñ=…eÔ>X?=¾Éš>M!,=§ g>T—=/0½‹ ¼ˆÇµ> €§¼”úé½Ÿ½	y¢>fª¼»´<v<]=ÍŒ’>50ª={~Ø>_I<|r=ÉJ>X´p=Wûñ>•‰½Åç=ú<¾½à~<œM±>+ú­»&ğ>‡=‹ ‘>bğ>¡=•8x=kBp=‡k¯½Û»æ¼µ5K=ó¹á=å>FÒ²<¢ñÖ>¤Z=ˆ¬«=‹—
+;¦>=&‚+¾%^¾=­Í÷¼='Ó=R°=DzH½üm=	×f=yÇM=‰µº>/Ì½£¼`<°o=ò“Ú<˜¾¼ÑæG=9~®>/%‚=xîj¼Á]©¼œ*j=s¥p=‚»Œ=­ÇÂ=PÕX¼Õâ=Ämà½I-`½ƒ[²=
+Ñ§½‚_á=·¡Ë=úS=˜Û= :U´M½Ë=§
+=v‘u½ı	¶=ã¦=ö#V½¿’%¼jº>X<!·±<³Á=äg/<ZLø=–Í=å\w½Ã>A7a=©ÕÈ=‘½{Ì<Wî=\%½"Ô5=à1==áp¼à6‘=´DS<yÏµ=ŞZ#»¢
+j=º|<¼£ˆó½"ƒ½&ÉV¼ùLÜ=6”¢=ƒ?=àó0¼	¿U½Å€<=èŞ½8¬R<8¢¼Şmê¼‡¼ŞI¼ïıß<ãÄ<=ø÷c<ÿMj¾m“½…›½d¸8À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  =»ß>İ|>TSÖ>SÀ">cl–>T7x>cİ <Ø(:c2ß=Œ{~>‹Ñ>Wbı>Ç"ƒ<Ü\=çOm<øf£> 'Š=º	½
+==—µ?=‚üÏ=©\\À  =±-=>1ôC=´=¼“–=gQ;Ş¯K>nğä½Ê	»Œàÿ<‡m=¬¿È:İJÀ>/Ç„<£Â<>bÑl=Ä >«]½#>]±<äNæ=}1t;¨áÑ=ò3í>¬õ>+}M=è¨=à@=™ó«½øtÙ>yìü=mN>[<÷Fù>nõ¼>¡=ûk”=«L‚<†tí>œXN¾8‰Ç¾w²Ö=áH¯>"®°;–Şô<,^=£C>!Â`¾7Ôù>Fr>e£%>š|=×¿y=•ËÆ<Ÿ}ğ>Œ&©=ÏPö=…#6=aç>–R¼$	>O¬;˜\ÿ=ÑY5=ß>µë>'÷>zS>.…>‡m¨=«ê¼Ö¤w»®à‚=øÏ‡=ğÄº=ZE=;¨õ>»ş>
+š»".T=7¤¼õú=ëÍş>€)g=…B=&Qº<ÇÑN>[hå>Vxm>\Ç= ıì=ÌS$=N<»=ª´T=/²>>WTZ=æğV=ğÃĞ=ÖÕ±>Ç={'½=	$=65h=¦Âõ>Í=ı“@>EŠ=‚2†<™İl=İ†½v’°=ÛªË=æò…>647<Yz:=Ï¹X=Í Q>Xæ´>V±<¥8=ü+‡=ñ™ù>&N¬=ş^><PM=€™<Ïq>ˆ=Éz‡>Û÷>4K«>Uqq>(&|=ÛÈ™¼ö­@À  ¾‹Ò='fÎ>#¿<ttÇ=	ß¼>^bÂ=Òzô>îº>mÉ>Š§=è=Ğî!=j'ñ»¨N=†f=ßÿ»=›˜ë>1‰D>„Øä>n‰ß=ŸÄÌ>G³Ù=]´;½£Bc=Çj_>ŠË>g†q»Ô’=;=êU÷½„j'<·h>Wc/¼@5>+¼¶=VË<åMm=f¤j¼oÒ==&İ–=K>¹·>C`¸¼«y½‹x>t=^-=úNÛ=çR´=»øœ>9ˆ×=·J>*±¼¼OZG:Ş&=O´$;•É©>	w=‘W~=““–<ñÎ><¿ûa<SÙ®=ôëÌ=šx>ô2> Óş>ˆì{<í > “>p‡t=d³>–Úä>Me?=‹l>ëÒ»g=Q&Í>”­	½ÂÄ=êx>#”>?ö>+eÜ½Ë¶	>o#< /=¹üZ¼êÒ=jb|>}Ê=[¾Ø=”ş=˜ı>=­½‘>k`x<>¹Z=°šY>/„ÿ>J9>+ğà>)—/=‚<è=xE×>®è=³–=Mû>4=Ë›Î=‘ÎÄ=¼¡Ì<’Ú=~=>>ş<22=ÎzÃ>›—(=ÙÚ>=6<³C=–´>	é7>3==Q©:^Cÿ=™,»>)r>.wk=sœú½†ô=®¸Ù½@Y=™Á$½/ÓA¾—p½"4Ğ<Ù=J¡w=™¨Ã½Yè=‡#Ø=ë€=Ø¶=šb2=*á<%w³<¹_Ù=ƒN>ËÔ>C:x½0œß=‹af=‚ûî¼RQ6=“‡=©‰>3=eÎ™=íµé=¹+ó½[=§-£<û Ñ=Âç¹<€§l½ƒoj¼à)EÀ  =…Um¼¿Ô>øÛ=ó%‚½ƒÇ;®Šg<É­&:a<dPº®¾½15û=¾=£µ=ÊbÍ=ukÁ>EÓ=ÑŞ½²H=Õã>s£>0I½^ A½>¹Y>>{½>'t½;a>êî=ú¬=…û=¬3¼¼|Š	<ïX=$îê=¶8†>% 0>7AÊ½B‡‡=NAÂ<™ƒ<²N>"))=¼XÎ¼ îú<Ó®¼¼¥¥>Pü<G`«=ü@=¨Å:=5Æ<q†C>/Ú=È©¼®:½0öI=®–à½‰¾‡y½Ó˜<º—>:]=È…^<•Ø¾À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  >„g,=‡®}=Ùi>X£·>.9=¢7á=éòó>qã=/84=·³2>hû¦¼¯=ı=Úr>HÈ«½¢…7=Ãz=Z£p¼ğ?Å=îØë=±d7=Ëø=kĞ7=‰p=~wO>=>=ı`=ämD=Ä.Ñ¼ÁŠm<¶™9>y½M=gRÂ=cß‡=# I>_>,©ÿ=¾…é½/ÇA=âÁn><w€=R!}¾„.=Øb$>7Ç%=Ğ^ĞÀ  »Ù†—=ƒ^=‚Vš=ª¹5>‰‹>,$>3>¶=+,»>!r	=ßp×=\:^>p=È=ÂWó>q8áÀ  À  À  ¾—<`«>ş¼)£=…ÚF>7Şİ=—ñ¾=ˆÀƒ=©û:›}¾&î£=¯M=¡=è½¼›e=šI2<dÔe<n@œ=‘¥¬>
+H…¼¼q=FLæ=­¤=n#>8>.„X>ût> ¿Ç>ŒÜ=ı¼¿>}‡œ>@Ÿ>=-»>	î>‡?>‚„¾Û5=¿å¼=º_==¥ˆ¹ƒ$Ñ¾]AŒ>.P‘><î`>'ÔL½©x>Ï;½Zú‡=!ü?@µÓ>'Yk¾²\>4„H¼ûH•¾M7½;¼ä =Å·J>yî> ¹­=ë¾¼ Á=î•å>ª+>8Sv>!û‘=ø"ê=çDw½X¡¼>D3q½+å	=8«U>ˆÚE>ı&=â==¿I©<ÚÍ.=ì·¡=Öÿí=#ù—>2eÇ=š¾3>„à‡=Í³Ù>C`»ğè=x )=±È’=é}à>‹Ÿ=?‚=~e>†Áş;ë1O¼Š—İ½HÜĞ>—È=µ¬>'5> KV>)€N>!‘¼Û¨¤>.ó‚>ú¨=XJ>ts™>#©y>4œ™>A	<F=2!’¼á=…Û»ÈxŸ=Úø=æìì>,>P‚î<Ö4;³î—=„Ô>=áJ½î.>:}7=åœ<Øß…<Ty”<xT<S˜J=‚íj=Üzí=½¡=šäØ=á;PAo=ËrÚºÇ(!<åñÌ=B{>2C>.½œ«o<ßu¼eK‘=‚j˜»3Bw½=^¼=×üf>k¼¦=i•©<«,»M1?½ÇQ¸=”ÿW=™•~½’¥õ>
+|¶=íxM<<î¡>»ó=Sé*=ÂÅœ>””>§Z>«J>Hà>V>pKÚ=j¹Ô=ÓmY>,l=@ue½Û+W<¡æ4=ÄLê>ƒÜ½0Ûs=ğØ(>;N<ü	aÀ  À  À  <óŠ‚=Š =×ğì=Ÿ>$Ø	=îj> p<×M0=>Ÿ=õs=¿öİ=›«=Œfÿ=Iâ=¸÷÷;Ïª2;Âòj¼…¦ü=£tß=ù‡3=Z¶S=®r´=z±¸¼š×=œ?<¿JÓ=·¬>,2¯>÷(¼ĞtÍ½_±¼â½Á<¦Ï½xÆ<° =Ï;=r¼QÌ•=Àd=!C]¾&¹ñ»·w=¦&¬½ÛXî=­§Ï½Ÿ6=¿8P»@|¢<hÖ=äÿÖ=“·=øVl=–s=Ö‰X¼9’>a<¹^½vâ¼ÁÛ<ú3Í½œØæ½ñ=™Ñ>;13;¥BŒ=†!¼qá=¡AœÀ  ½ÃÛ›=«=­³6~)Ú=swÁ<É»ÉPÊ=3V¹$Şa>k‹=fû=¸y–¼€ı>„ŒÁ=q+=À;=G¹<ú6¾=?‡Û¾ª=eé=¢:’=kıD=NFÂ=5³û¼tJÆ=yr/=a&½ÕcŒ=óª¯»Åår>8˜=8!K>VËÓ»=œ,=-xd=ª±¦=Àÿ>Xë´=ãà=4Æõ=4]/>¥j½;ˆî=0ç2<ªL½=›®D=Ø%¥=º`”=î*=H…T=¼Ûê=Áxç<u™º=~½dV>ô“:i½½„¨6½Ó<ü¯=d¸]=0Tr½^~Ó>A¥.»íŸ‡<ÿ¾<É‡½ƒû‘=¸¸e=Å3=É`!À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  >?üe=£Ù>t/£=ç1#>'Å=åK>ÁÜ>Ü!¼Êó®>á½	›O>*ó=œ…Í=‹`†>%T/>f$=VC=µO>İ>9#@=°cÀ  =ÈOÎ>)¤±>Z'p=ôŸ½˜Õ½ T<½´	O><ş>6ê‡>Ó»>[V=“Ê½NˆR>„iÄ>2ö{>:¬”¼{4=È\;ù¦>yñ= ş>4œI=Ş¥= M;»„‚8>òé>	)>K9î>"N˜<è?<sjû¼Sï©º‡Ø=ÏĞ¯>^">lë¾>Yn>†©·=ÖÁÙ>{7¾	&%¾Y{º>k2>Gj>l`º=»¼d=Ÿ•n=X”=8¬>Îö<‚Ó=Ñ»½âl=³ù>Q@=èmˆ>ç$=Ò #¹æC\>1 >%d>r¦<ø>¼=İô=ÿ	=ğìz=- Ä=´µ*½¬§°>†zU¼!1½…_A¾C€>cµ>\§õ=Á/à>ê›>4Øˆ<	ùŸ>0Jş=ó¨D>62>k)=2Z=>+¼!Ñ›< ©>FwÌ½qö×>j~½ÍQ >Eã>n¿Ú½©4K=ı>8ƒ™>?ì"½6¡=ö·˜=Æ(Ï=Ó&ã>`€M>@½Â>Å>ãr=°¸{>Ñ=×¨»¡äq>MCM¾•=şÜlÀ  >‚Â#>“Œæ=ÕKH>7Òu>C`<ıq
+=¢œ—¾Şë>6ÇX=Ykw>ğ-=ë=¹4°½¹&@½¤	¼gO=÷C>ÿ=æ6Â=úÁ>/V¼´ÉÍ>«èŒ>ê˜>#xu> U4>wU >½i„½U2¹=25¢>r'<=ù:<Ù¢>n BºÔîY¼z®>d™ƒ>¬Ÿ­=üsa½]éÒ¹hĞ·=ª¬>&ş<š‘h>d¸=ŒLº=¹+Ã=ì7E?©¶À  >…”>^ss½`>c%=Ø=áq->>èM>õm=?Œš=ıkÒ>0€<¹ZO;½'U>t@=×Š=öŠ=É)©=Ö2)=<¥¼o8	>©<Éœ>SY¨¼Q+â=”õ>Û>ÜÆ=Â×½Iv= Tš=­Í.=ÙI{=pàŸ=H£=UEQ=Úøe=ÚÄ;=©Òé>J¹è>ˆLX¾mœ=úæ=âè¼ X=Ï™>“>…ãá>İ5»•èr=¹Ö¾:úÈ=¹ôí>ŠÉ=ùú^½rW²¼÷£;Œ¬½í"5>s$ÅÀ  À  À  =|xC½í™+>+'²¼¯=õ!¾=ÈëI<¨ÙÕ=¶*•>¼â=®C!<Ã/¼ùò¼$<:‘½—Zî½Ña	½$5ô;¢ÎÔ½0¬2>‚û¿=\¡Ø¼ôaõ=øóÜ=×2”½py_½ÜĞ½»<İ¶¬>)‡¾#}O¾,â>Päç=½‹â=Lôó½Ò4Â= W»½B±³¼rã>óÑ>åh<*½½hÉ­¾A—0¾9wj>¯ÂF=iú>_Ÿe=¡Ÿw¼¬áy½/¯à=\/=¯Ä=»ÙŠ<óN½¸0ë½IË=‡¡â>e½Ç¾>Tj=¤›±=‘:Áº¢¾Ë¼i¨Î=¼êV=äÀ  =iT×¾âÙ>›%Z=æĞ=[>>x¾7«4=Gäñ<Y½¸Óù;ŒÊ>÷q¾Ÿ->'z$=à¬‡=¶™Ş½İ±-½Ç¹9¾#ï½ß9=év®>Grw>¢_|¾Wˆ<¤†c¾Iœõ:.ã¾By1=â2Z»(<ƒ>PÉI>cy=G3c½´Ä¾ïR<”•l>…·‚¾$åk>/ØÒ>EGq¿[¹½rÈö=ô ¶> =Q¢½÷ Æ½±õL<ÕUô½Ÿİ ¾Oæ½ÜŠ>Wt.½ÛHq=¨çõ<b.Ş>•J½Ÿ|È¾W¬Ü=Åø¾(Hÿ½§J7;[š<¡ì=)>Fì ½ƒ©½¯Fø>šZ;LÇ9¾g¾-ÕY=“·Q=­á»kı•>TÁxÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¾#nr=êU`¾¹½¾ˆ¾)=ªyñ?.à/?
+Oy>N ×½ã½e
+<‰÷å>½*Qá¼¡€=¹a,> ”=¡C‚»îå%¼œ¥©>3>,á>3ıó>Az=¿û¾2y»Ì¤>Û´¶=Åñ½£4ò½Ì‘G¾>[c½T#ºÏ˜r=†@ì>[šU=ÜSÀ>\dÅ=ñyÉ=©‚p½Æe·=dô<˜Äï> ¹.>j0¼=¾µ˜Y>1á*=ã D½/ÇG>Rš‡¼âÓ=ÉC¾­>šØ=Ş·>mü>¼[À´>w1ï>©¥c>bYo>È…½ç
+F>->ƒR,=µI½î[F¾®Ÿ>?"r½½»Ô½¾Õ9ÖY<İp¾Sÿp¼ç(Û=ŠÅ=:>Õì¹=Û'='
+ ½İf½¾‡áL=Ë6¼-’>¡eZ=³ÇÜ»"œ•¾Çİ6=™¤»gr¦>/áÖ½r¾£‡h½¨H½çÄÚ=ÔL=ô1Ì=Ë½4Ä >ÁëU9¢j>Iâ½R±½ëæä=.oÑ¾E:i½ßQ=Ñ‰Ë=C±|¾b÷y½¿(ì½Ñş>Ü5µ>sïR</w¾MóI¾P2=°°<ºşá¿6¾Ÿª=²£İ½¸tª>Sæê=!‚G»Ø-R=|dd=Õh?>;è½¾¨Cî>	Ìš>$´î¼^œ>%O¾Oï£>~§
+¼®jÍ½—Ğ3<İ$^¾Œçü¼Ã_‰¾)Ğî¾j1Á4]8>N5à½“ˆ¾¡TM=j(‰>±<u³½>^Å…½á¨H<ô€Î¾`“±½Ëµ =´	·>·Œ°½å‹ü>Œl¾öæ½Ú ><
+¨ê>¹î±>àj¾	=”=¶VÕ=tf|>~é>H²<’T=ù/k½—õ>ƒMä½%…¾0à=B&¶¾€HS¾r–0=h,¾U}»°,>v*½+ø¼á}LÀ0igÀ  ¿©ºÎ½ñØV>ú‡¿ ³¾#ÿ½Jë¼»Ç]=Ì:½5Şy½;
+µ>/×¾rµ>Ö>1=|é0=_Î­¾!l¾#É½šLY>3=ı³¡¼:J¼¾0b>)cª=½ŸV=–€¢¼İ³‚½óJ»½
+şH¾P(¾“áU½’Û#½j%9¾ö‹>VÕ÷¾•{Â½G[!¾—-P=ÃÍÀ>OÙ=¾oÂ>HÅ´?ãø=•ï´=±Ã&>¾g^½Ã£>‰¢ş<Ê”¾Qƒ~>ªè:½ÊF½|]Z¾g{ü>E¾Fš>><Ÿ½ªjQ½Ü·ËÀ  À  À  <Ñ¨l>%TÓ½šëO½ò>N‰>ó=$Ï;‡€P=jj>…ßC=,P<º%½À —=h<>~>g1Ğ½©›”>Ç·
+>¡ÿ3½Ë"ô¾¹Ôô>$8½ºAË>‚ÜÍ<8mŸ½#/>™&ô½x²Q=Ç N½ZŸJ¾ŠÕ=h2½”ï×½bÚ>W¥#<Øş>«ˆ=+mw>ÃE*<„*Q>”âü¾SïV> ¥½¼?k>CŠ…=§$„=²ïÌ=ïA½±¡+>yï¾s[ä¾‰
+=ƒ›f>h¼4>]²¼>·Ì=˜L:¾„9¢½–…¼´>†!»¼üÙ\½ó®†¾õ">*F±>7–=Ü¬>@ú½z¹—À  À  =&ÀE½e~->(k½şØ½á0¾ñµ[¾VÉ <¾Q¾p4¾?ù»i»<âbg¾A×½ñYÚ>A•½™‘p¾v<>v=BÃ½Z`(¾d~;½ÜÈ`½c­ö=°Ü%=Y¶b½I@/¾=t‰>™<´àÀ  >4>=¼OŠ>c9½O<½‹_œ>[š>]Ã½Ê»I=º]_¼8‘œ¾4Æ>6¶>…ÊL¾)á¿=¾Z¯_=EkÓ<k'I½„=><ì¬;¼O€<Ò£= =üì³>š;º¾q¿†¾UÑ ¾L=¾7Ú=°Êt=ĞÁr=m¸<Tà‘<E¡÷¼•A¾<«a½ÏGÇ½™ı¾d•’½pïÆ=„ºÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ½ä('>m‰ä={$ë?Eğ>•V9?¶lŸ?7Ñ8>°î³¾b8>mÄ>=êe\?/¼Mã9½2y/¼ÍDˆ>¤¾@D¾A.¬>Ã=ĞHB¼è"<¼µwU½­Ç¼KÂl>Cİ=<ÉÚ<ŞõP;ıåõ>
+¿>…%´½‹uJ=•â½®¬´½4‚=õ2=s‚> 	e>"û¾=0£§¾v&½à‹¥¾kuÏ½üîÂ=õÌµ¼˜v¦>‰X½íÄ>§>H>ÄŒS>pÊ“¾kƒ>v¨¢>˜Ø¾H£¾Ó€>€çû>û:>@H÷>œÌ<D\Û<m€¾W–>Y|ğ¼ÎìŠ½õşD»Z§_<ª&Š>pØ=\¼Ã=]>ú<¾#ŸB½é÷>ƒô²½‡½=Ì|ï>˜•'=¾{ï=:îk½¦Š{=~-{>‰í†=½¡c=ÛzŠ=²M¯>sL¼CÒ*=Rí>Tua>zoé¼ëİ™=ƒcì=´;½®Ú±>oi¹>³EÀ>§M«=œ`û>äï>‚vÒ>ƒ_º½
+µ=½ê=Ïğ=	„?>2…½s)=áí=Ri¾¼>uø
+>L¤³¾%Íø¼À³>¤>U!œ¾EÎ>'„>¢ã=¡V[ºV³•¼Ş­¶= 2c>Â–>ˆ:ù=¥ì˜>?Ä<,*.= Ú>E•<Ü?Ê=¶·c>æ)l=øID>"™B½Øİv>ZyÌ>˜ú=ŒÇƒ><a`>€?=‰ıì<ílø>8o=Ì½¼Ôr>fæ¢=ÈÜ—=šûÀ<àÑ>n¬½oSI=ÊD<à‚]=ñrF>ñĞ=]Z‚>Ñ=„v<< >KFÄ¼ÜíA¾R;"C>£,=“sI>Ioñ>t;ïÃ>6ğ½2¼(=*fø=@”–< C„>Z>>A+*½Ä@>\r¡=çg²>´>±£>!”ó>‡ò½7Ö?égÀŞ¢À  =½Ó=öUó½K'>	äª¼EéB=Äï*>ÂX.>LX<SQŸ=®ÁÚ;ÏdT=öL>")š>l…j=”ß¤<~µ=Ù‚›½ÿJ0<±¹=îÜî½kCR=Rİ=éw=é¤º>„=Ğæ5;Ìû™> ä<iš=á´ä>%=çz=¤Ş£=Õ:é=ÎË>=E>=.Æ=©ıŸ=‰H>>	¾H>°Y=ÿT>`İ2>Óó>qK= ¶!=2Rp=Û«H½ƒ™°>­îß=0™/»²m-¾ ãÓ=J'½¼àÀ²=bÓÆ=Èy^=Ó‡=İ»<»=‚>Å"<$ =­øí=ò½=òCñ=ç^ˆ>‘CØ>WO.;’Vš=³ÃO=Éè->4J*>2w•=jM#=èÔà¼ùÇİ>.Ï†>pı>>o‹=¹ÒÌ=«;Ÿ»Õ+6½°=ˆ>İØ$=Èa_¼®Ô=gæ>É’>,&Ş>LQ¼·ã×>Jt>|=t„>_Rr>[ÿì>UøÕ=¯Ä:¼‚¯“>tJ=™Jœ=”<İ6=¨ö>pj>5£=¥E÷>2O·<½¸9»[K5=õ5"< •=¹2=aRC=Yïx>Ô§=å‹=1Q°=ïûZ¼Ğp’¾3¨=Ûã¼)½ù=³º€= ò[<v ¼Êµ]=ğà'>Î¼=òå.=üÒc=•Ö6=tY<¼=0<j)=©¿=Õh<İîÚ;ØÓ±½~Âô92¯=ı·Ğ<×Kº½CÍ~;·[!=Ì?©>
+wC< 1<ÜóÀ=§C<¨(Â».‹F=ÄØ¸½g;=V@="#:¼õ#=’¹=Ó¦<”®¼%Q=ÃÃ§>ÑF<¸9>Ïw=c~œ=ğÊ³=FW—;»Ÿ™>š²=°ª÷<—¢è=‚%=\¼Óe¼> ´<¥S‚=‡øÓ¼®)=B^>Õ3=,¶“=^‹û={iñ¼zs;3“>ıQ=Ì ½½ñ—T>‡>c1½X>M¼éŒ¬=úã¾=NÔ½²…k¼†S;=\ûŠ½ã¶¼z}®½H¬¼§À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¿*†>DC=óäÁ>,“=ñ^Û>’l'=k˜F>Z9½¦´>jcPºgÓB=8ä>=*D½p2=U‹<=Íâ¥>Í=µ?–>&6½÷®=ß²>!9ç½i[=¬3­½µ©R=ã²>p¡¤=ã¯Ş=¡>mÇ=Â‰=ÑÒX=\>B:À<!:/=äe–> ‰ú½j ä>*÷½ŠÌD½·*>Q=µ—«=h•l<ÈSÑ<\„«>?h<êŠİ=¹¿\;µÈÔ=RUp=å#3=ú’|:ÃÇ½€æz>+vß=7ÂX=ÁÒî<™ğ3>‹÷¯>É“ª=0=äód>,IÍ¾lÍ=óëx=ÎoY=`g½°”m=áÊp=—IŸ<~`®=ûµ½=+Š½å·j=ÅD=@H7=’å¶>9å>4-=	'ë<¸>w¡F<|Kr¼‹Ç=3>rÄ>/@5½ØôG=¹ßa>?OD=šª°=î2Á=° U=Y(FÀ  >:3‚½a„=¾‘>yI5=ıù"< õå<'F<ëc=Îâ>!ò8uÌÑ¼¯ªg»ë¥©»xcs>æ“½~ŞL=§RÔ=Ái=y§Õ>F_s>
+X¼İ ¿<°b‘¾/s+>«>•Tî>2ÉJ>
+Â:=¿B_>–bj<™\À  >ú½/œ=Œ4½Éé¥>`¶/¼€„x>V–½¡Í=B=ˆ>,_Q=ı‰=ÙŸç=Æ$>§~¼U™»½ Š=Ö|Â>))í>×¨×=eDö=©­> }²<P)¢=Ç×_½7¼+>Û9½}{æ=¾¼Ê=›Äo=œ N½tå¾=Àõ=ìŠZ=·“£>pØ<¹òú>+>á>‰I=ÛË>2¹=^;³Í9=gÎ=ÛÇ9=¨]=Ãöü>á¶=m[°>?k7¼f™=ù¢º=»=^‡[½Vñİ»ÓwÓ>–,=Ï <äq¨<<[Q=Ü»Êÿ¸»oU=@ã¼–Uh<ô_«=DUu=¤êĞ=ï§U¼¡Ôª<a<˜¨¡<]—J=òiM¼ïcù¼ìÚs=ğa½RÛE=UÀË=flp=®¢=üë©=Ÿ+Ÿ=Èñ=C¯°>=<‹!Ù=æĞ¯=YxÊ<¥ó¡="è>Sò=›~æ½0k½ŠƒŞ½b³=(^ì½fá>vƒ¼Éjæ>€\=>V ß>¨2(>ù=ü•¿<¦^½ABt½ÔŸ<Ã•<=»=	=M7Å½æ=â æ>>;ù=íä¼±Q»hú=‰Ü=Ö±Ä»„}/=©w)>OK=äAC<·E–¾Æ=µ¦3<™Y=×1¼=şzß>s¨=¬æU=ß“R>2›g=³†¡<“º<µŠz<©çÊ>&Kˆ=vñ½G3?=«ºœ=!4Å>)7=—dë=/=é"g=´l§»$ßê=b7<­§b=fÕ =ì½·50=†»‰<½Àd=S—½LtŸ¼ï2«¼6@»<{gõ=îï¥=ÙØœ<Y»±9ç>IZ>Q!<Ë‘=ô¿=H½,¼"w<oì(<?½J¢=Ân†=O³=¬€³>gu<ŸİG½cñ=¦ÙË= i|<Ú6½|nw=E£­=ÁÌ¼@¼¦7¤º–*=`)á½aÒÕ=”…Ù=­ê=ºì‡=T¬<4Ú•=¼f½vT¼È½¾cş>7ıU<Ìæf<=Á5	<ËÃS¼Õ[A½à=«‘i=nwé;Új=9P<†uÔ=ùª˜½R;Ñ<Fç¼?ä;Â<¿º=Ÿq>NÖÜ>õ!½–m>k=©=âõ±==¡×»¥¼ƒ=Üt<®|ã=5à½8¾[¶ê¾Ã»ú¡¼Ñ+=@‡2=,Ê=Ê,M½»Nr=3½•8ê<ÌÉ	=º´)=Šûj=î¸ =$÷=*Bu¾ Ö½àl‹>`]<ôP4<ªAÙ¼ôáT=h(?½1×S¾h~½Óh¼¦'w¾
+©=z>Y|ì=¾‰;ÒEÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  =Â“>§m¾>3€¬>’¶>'4ş>"J"<gŒ€=Õş†»Gz‰=ü>˜=Ök9>–\=İ€`<ô<=¤;_=€>5Ø{>sg=¿çß<ş‘¼CD•<Õàm>8½ÂKÓ>t¶N=¶ÂÄ=ÑU=89›;İyÑ=¯G.>"y<Ny+<¯h>Iy>s›<ïA>‚ë™<4= ‘>j+0¼±”ê<.íy='¤=ur=Îyô=î^¶><»=³‘»nhĞ>
+/Û>5œ]>IŞ²»fF>#Ìx>ÁO=¿Uÿ=ÒÜ >‡4>›j=öu)>±ŞŸ¼­ T=¥ÿ/=ÑÕ>†²Ì»s„¼¾+>Ó>Ë{=ÑÙ=Ë=ï2j½£êˆ½¡ÇÏÀ  À  >p8>Ÿİ<>Åİ>2‚S>ª°„=Ş’R>@*<Kô=ØÕ¯>I=S€/=-f>)P¾>1N¨»9É<¤D>)CØ=ÒØ[=ñãK¼¼Ğh>a]ï>GÄ’>…b'>4J½ıyÕ>24=œÃ>&iF>ÀŸ=ß¬a=T=dI½t[=µ0Y=-Xr=§C=êu½ X¼Ù{ù=½À¼Çá>$”ş<¦ìB=G.=Í7=ŞDâ=Ü=–½d›å>v6À  >6nc;¸¥$=ğ&">ş|=ÜFœ=ˆq-=kHß>7‰P>“¾ê=ÀDÏ>f=YrD> Æ8> Æ>?{Â½·Á_=“,±»E›=Aêj=
+ZL=Õê…=ÂìU=Ï~½l².>*3Œ=i¢N=Ám£>pg=ğ¡¼ª
+íÀ  ½¦Í&=Ê7>,j=Á+°>çŸ½€k>e>=ƒ¸,=·'Y>‹C¦<SßÄ»›„	<„lI=Ï7=ìaÿ=~<=¾K>=–Š=–
+¼ñ‘™=3yÕ>¨¥=¦›=™öv=qdı¼VôË¹çë»=»¼>]"==ı§E=Øèd<‹<å\D>*L>hÁ»=ôƒT=¼ù	=»Úè=³´=Ä-”; =‹e@>PUK=­(q=.=Œ=µ=öQ½1Ì6>Ğ5>1 ©<¦·½1ë=¬¼>¶&;º¸?>âÿ<c³ü>Ru@=§š>˜í=•ê¼6œ‘=¥ÒZ> ™>‚š=Ç†
+½½>â#=ˆĞ½vä€>!õ¦>1  >LÁt>$şv=ÏÖ±>Vİ@=?~®=R.=Æ:å>==÷ö¼0Úª>z‘Í=vI1><çì>&ĞÏ<¤Ø+=ß0=ä=ÌG=¾pA=à¨;ûç¥=¯út>-Æ=Ñ§‰=_&È>2°y>:@>†L> ü
+=//õ=`hÅ=åğ÷;¼ş½=2>ı[»œÜô=œâô;˜@×>.Û„>Éª=ò@]=úM¤>xKß>l\<>
+¶j=OT™=Æ+<t:=`‡f=ìÀ<=’=¥z°>q¶y>›,#>))…=õ ò½(w[>ô*=#ÙÊ=Åc>~Œ<k²;'[b=tğ?=İ<5¼¥	´<XOx=^È=î•¾+^£>$È]> „¼Mé×==Ã=µôo> íH<‘ˆ=ó“u=Uôï>b•>I³½¼ˆMá<‰é»]¶*¼ËxŒ<¬±Ÿ>[eø=Î,¼YĞ\=67Y»ıv=ªÈy;¿~½™Ï>9ì½‹e=Z8¢=ƒâö=‡9=šì½MÌ=] =õh½Ká~=b”,;ù#^>;S>v@>
+nõ<0ùª½T¯>Ê¼Æo=¼°=X:¼7œâ;á@N>49=³î¼Ö~==¼7=	a’>„4>@ñ=°!<=˜q>oœb½€ÆĞ>^Ó<7Ğ®À  ¹º‰½u)<× Ã=¨ìÃ=ÜOÏ=Âùİ;Ë
+="U²=»«¨½ı‹= ¿ü=»6†=Î·J¼uäk½Dÿ½9`=	<á<¸nŞ=¼5=Èå@;cZ*=å'¾:± ¼Àâ½¥ƒ»cş> º;9¼b—Û<®P3À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  =w[>K°ã>%!>]{>Mş>êó=`i;½ˆ|>n»5=¯,q=s!8=Ø“=ÇÆ=ô…?½H µ>]F =k1>…Çn½e7V½‚FM½xb¾=ş=ã=šI®=ÍÉ>„½4>]v‡>
+;Ï¼„¼§œ,=iÈ]<ßä==Kš<G—Å>Î¬¢=é™Š<ÏFÂ=½=Z¡	=‚€F=ÆŞv<²->=Y=Í@ú<ë1	>t|r>_h=Õ	–>+”À=µ¢;½N¢>„úò½†,Í>7w=ÌÈò> M®>H^Ğ>FÜ½aƒ>9Xy>\xx>,d§=~x>{ùª=§Új>	÷>
+Úç>Y®½úÊ>E¾Õ=…Óe>!>b½#ÊÎ>VF™>D>1Úø<èÿ=U >[oğ=AïŒ>QæQ>(ap>‹A•=Š¼æ\0>#o<Ôõ=6ùĞ>	ûé>5QÔ<¾ÙY=ı§>"Åk¼Y®>eJ=ƒpû½ø‚G>oê<ËGy=ìVu½ê<Ù¡=¯c=‡‡>MDc=$ga½vúÒ>/*~>@‡=~•ó=™îG>)‡Ø½üR2½"½>†ÛC>)1¼ñé=|3Ì½[]M¼%0Ò=ñJÑ<•¬÷=Ì•¢½c&½½’ç;ìf·=¬>)`7>e3Á=G 1>+ ù=CèÅ>-gQ=ôER<âˆ¾½IEƒ=·•Q=Š8½ôÙ'½B4_>~¼TE±½IË>‚Ê­=¼¼ø=®¯l>›â¼Dñ”=›Q­==N]=µÂ¼¥…¥½¡}k=Š=½Ì¾M
+.=£0¹=j²Ø>-‹l>P“»='<ÆQµ<Êím=Ş	…=„|	¼‹gÈ½qx1½pÉÄ½©Ê=N6m=Wt>D=£%½% —=!<ÙÓ>ve½®U>¼(|=øæ>u[%¼Ã7 =Õd·½#\<‡Û>m*<¹k«=Ìóâ=üuî=Ã¬Â>6¢<ÅTj>GÃ«>4Î>)lí>|¼<ÒÂœ=>H‘¼¼Åm<$Âı½¹„Ä>NÂÍ<ï_x>jG˜¼³Ù”=ù)h> e	=®ú¼Ø;€¼~çŒ¾rtÀ  ½”ˆ=ÙàÎ=Cğ=ãæ;ø<â=ï³S½k‹Ù=Âô=±ù>.TÀ  =¯|+=Ğß¾<a
+<­q>qß8=LÖ±> o>}”~>KÊò> Pb½·F»¾m‡<=èN=i<O%˜¼¾ó½
+Ä=Ê¤>*z½Q`t>@ =ˆoA;ıKØ=<(C=Qˆ=¢07>\‚ı>2#‹·]É–½Åé¼ s_<Š€˜½©Mh>¨¾X9½èZX<’	è=ê–ß»7oÖ=¼a°=›hÒ=Œ0Œ¼©Ôt>ßl>9W$=¤,½Ú3½ =VÛä=Ÿœ)>¸~¼¯–M¼.òE½©˜>@¦ª¾5->Új½h¾j¾Vi=£B½ty>5‡=^½´†Á=!Ğ÷¼È*½şÙ¾;Ç÷>P^İ>=Û¹=µ½µ¾(§ñ>[7r½¸G½‚JV¾2Ö½}õİ=ñÜ=Íğ4¾‚:ôÕ=´fö<Ş³¦¾üA¾Ò½: =Ñ”½TŞ½0¦½¾ãà½·Ü=->
+x¾2ßQ=İ n½ƒÁh¾Oh>
+³Ä<ê>p´¾fbû¾9±=3}Ì>î9½¸ùÌ¾ş¾)­é¾	3½ =ä½üMŸ>Yd<Ú…Ÿ½æ½ª½D½ÿC=¯®½¨ÎÙ> ­¼°·0>yz#=Àkû>v•è=V˜»w3@½º*ş½Ò8¾P¯Í½­5T¾/©½öú=§¥½8L½ÇÁ¾Õ\½˜0=¢=™t¥=Ù˜‡½9í½p‰R½š`j<eÍ<‰ù=¾7}Ù=ÓÑì¾{C‹>Ca«¾ãm¾~>½—Rr½péš½ö:¾œ2b½;?÷=Ü¶4¾Ñ±a¾u€¾q¾JÎ•¼ÉQ´>M?¾Ì_)¾.3:¾¾;'>l]E¾£òñÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  >-\=ˆí=µ²ş>ÃÅ>4}ñ>%Ÿ<>!øç>÷¶=-ˆ÷<É®Ü>İ=¯"İ¼Í&ZÀ  >I‹s¼ÄXì>¨Ï+=«G–=sÉG½B:½- ;>™µı½ß?=_ñ=°¥=Ú\„¼×„>|Z=·w=•B¼
+À?½Ba=p-ñ>nğ¾OQ <©'Å>,	Œ=¿d½ÇÛÿ¾$‚<fÆÓ:.ç*¾²@<Ù¿>Qj¼¸Gj½ƒYÊ><å>]À½©éÓ=»å>#²8½ ”<¤©Š=Ø>¼âŸ\¾5qn½]„ú½Ğ½ x>&"í½¤±Ø>,Oö;Ç'v=I•>‚ìº»™Äq=±vå=
+¨œ>fR½uŠb½ñ<öï<Öß‘=ÎÄ)¼î9+½ùÅî>„3>$;;>bK÷?_´>•/=ÅÇ0¾bœ½<ş=ï5Şºøë½Ì‡¼ó”|¼€Gñ½¬¥>31w½@¼¼‘¤ »í{ö¾I“±¾ê°>Q!^==é‹½÷J=íÇ=„€S>E°1¾µ;¾pS¾?ûV½Ğ½VÎëºê(é>™A‘½`t¾–g!¿¼c>¬>ëì|½Ñ¯t¾ hä=ëJT¼	q>>B…‰¾G¢½² B>v"‚>¢_(¾‹d¨>'8Y>gD”¾	C¾IZs>Ï\? gh>´7u=„X+>‘h¨¾Öâ—½¤°™>~<é6€=ËF¼=A™™>,¯’=ÆHŠ½ »¾š¶û¾”ğ“=ëö±>*äZ>Å6L<„ò>„î<Ápp¾A8½àñx½¡°.>Qáœ¾ST·>xg½§¹
+<o=@¤½Ÿpt½ë7½5¨"¼öN¾^~À  ¾P¿©¾™‚¾0Ñ×;q5G½4å¸=í6A:€ôo½ŠQk¾D¾<âø=ëİ>¯Í)=öQ=®ş9=~¸½¾ŠÅ:>­g>â¶À  ¾ô	£=ÊX¹¾<@½Mı>Ûî¾¥‰‚¾9‡0> Ï½6ß¦¾©À½y^«¾@Eì=@Ş½6T½¼–J¾M®.>¦K—=·l¸¾^Ú-½Ìê>%½‚q—½›ô;>gÏÁ½ì{¬¾cY¾l˜3=Õü÷¾šq½ª_n>M¼=ñ[î¾R2>›–K¾†´=³ax> ô”¾Oıû¾;vN>ıûz¾İ½²=¢&©½#YÇ¾€|°>4Î=³•S<¼1©¾rúí½»Îš»{òK¼Ÿ¼]â9<Õ&¹¾(R´¾M5l=]Ew½.Àm¾¯Rò¾­Ô¶¾–½¾ÚL¾…‚7¾ûâØ¾õ¼Ê=óEÍ¾=Ã7¾Å5e>º}½@>2½‡©Å>T!½—‚¾)Ò¾ÂfÓ=E¬¾¨gG¾í½¢¶C¾ús¾¯Nö¾cú,¾e]½š+E½ŞY¾™ş¼ı`*¼¼+Ş½1¶E¾‰é¿>ƒ†=b]=èÎ½¡óM¾±%>9c¾p|l¾hôB? 9Û½S<÷>WŞ0¾£¶¾F ¾l·)½â>M¤_>}½š»h½·¸Õ½é\]¼u†Æ¾.|6<´½¸M¾Ãe–?Ò<½zÒ¾²4¾LÆ»¾+-‘>ƒû¾<æÏä¾¬8„½®W¾Ği¾’a¥>JÙ½Ûi½üW>~²¾¿Æ‹¾ìÉé=§ú¼Ëà¼—š½¯Œ¾EM»’]ƒ¾OÇš=A¿V>7¾¢`›>r{¿ Ï>W¦r¾È¿)/¾ª~¾Ãˆb¾@êp¾†–ñ¾Jè†¾9è
+>B+ >Œ½C”È¾Q¤±¾ğ¾›;6>tK=&”@½ª]¾¦şÖ½—zÀ½fk½¾föÅ½ôyq¾¼rL¾‚›N¾utÒ<ùKG½Ã’n¿â†¾0V]¾Mi¼Äø=@i<Ğé½C'ü¾¯`¾ˆ	û½¨Ú¡¿	ºa=Î½¯¾•Aˆ¾ríñ=€¯L¾2%X¾xş¾2å9=–ü¾›"Ş>&óı¾Àhk¾†/ÿ¾m¦ˆ¾†À¸¾÷¿C°¾ÂÓ7¾»Š=¿-©#¾÷&!¾êD‡À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  :÷êC¾Hé¾aÛš¾ô÷»¼8—e>4ù¾¾î‘¿¨ˆ½-Ï>Œ<"<²âË¾&ÿø¾ËÕ¾J]¾lâd¾9æ½×ŠÉ½Îß¾¥CÃ<a)Ä;ùÜ‡½ĞVv=]È’¿Ës>—6µ> ~=dŠ¡½U‘C<îO¾
+³³¾pÀ÷¿+‘E½\¾øï‰¾Uî¾:ôêË>(u=?"­>”Õ¸<˜­;Ä¦¾‡­y>‰¾ÏÌy¾ÌÉ½ıh‚¾£ÿô¾¸,š¾Šµ¾Œì¾÷Qu¾½œy¾à:¾:J¾N.¾Ù_q¾OÓ¾·L‰¾–¾ƒ·=¶å7¿˜"½¯F>)x¿aÀ  ¾T¾D=ÜÌb>Ü¡Ó¾„Ôi½ìH ¾¸™P¿ >¾¥¿S>=¯Ö¾®O¾ÇwR¾ëß³¾‚´7¾¢}¼Ó€¨?mm¾ÀÒ>èZ¾¨M½W¦µ¾»ÜZ½´”3¼İ«í¾ğ¾`˜¡=dÓ¾Ùç¾‡”–¿%iB>(o×¾I–ˆ¾¯{=±ĞU½• w¾WÊG½ÅŞD¾ÿq3<•ğ#¾>¿µ¾²=«ñŞ=ëà—>Ğ^#¾Û~‡¾~–7>sĞ?xs½ÅÑ¾1?‰½$`Ö½Ö‰¿.¹¿1-³¾”JO¾wô½šƒ†=Ë¨“='<%<Çx»¾¯—Z¾Ÿs ½³&>5œ‹½Ş>£Ci¾‚´t<ã‚Q¾NÍ=R´È¾…1E¾½À`½§Ô~=sV
+½ Í½7Óá¾œXû½ïK®¾¦Øµ¾…rÚ½¾d„¾±%‚=‹ĞÁ=Ë™¾•[ó¾M:=]iÚ¾º“³<Ø-¾88¾šºå½£ Š½@½KiÁ¾MÒ¼|¯¾²?‘¾Â ¤¾-ºÆ=ü¥ƒ=¹Â¾gÊN¾ßá¾ÿ~¾q€,½§°Q½ù·¾.ˆİ¼İÿ¾¾˜Öÿ¾o¾¸Ê.¾v#ò¾
+õ½xÇj¿!Ğ±¾Üg¾İò¹¾éÃO¾$V5=;;R¾-ëPÀ  À  ¾†ó–¾¹ÇÂ¾}&U¾Í÷	½×%l¾’¹Õ½Âß>‡%½¼ïL¾a™½hø>CR½ˆ4‘¾CÀ@>Ã¾ˆÆº¾öÅ½<™¾Ø£/¾-;é¾K®ˆ½4u¾Î¬¾ØPû½ÜX_½Ü y¾4Š¾#®õ¼ì¨<$%(=ÅûÈ¾	J>oÜ•¾»÷`¾4¾Z8½øÑI>Zã2>ï'J¾®xf½ï¡ó¾—»¾šªÉ¼xx¾F?¾–N¾ÑDC½’¼7q¾¦Ïı¾`½¬Oğ½ÓÁ½(³>J×q¾¶J¾‹Í>FN¾º³.=ÿ¼_V¾&•b=uÚ&½óÑ;¼y¾œ¾‰3"¿}Á¾y×ô¾€¥°¾‹Gb¾ìxe¾ûF¶¼ªÉF¾ h[¾R/ı¾o#½ú_U¾²Äã>H l¾÷òF>©aÏ¾.•¾±µÇ¾áJºB¨J½•Ïš¾1å=a““¾÷°´¿i>›49½Ş¬¾Û1¾8ä¾•¾S©Š=Tí>/|)>6ÂA½m’u=çÉ‹¾'Áq½òÇ¾!h^¿BÉt¾\à3¾³Bê¾‹@|¾¸Áh¿©½ÀëÀ>ˆÃÔ½ğ&¼ğ,*¾~!Í¾œLá½Æ f¾ÓÊÙ¿ `¾!Üô¾ëÔu¾¢‹‘¾]Éë>ˆ6O¾¸âí=æ”>¶>¾W@¾å\Ë>&†ì½?)Ê¾¶¤g¾ŠXÚ¾q³¾“‹“¾q½l¾ƒ¢½Ôe,½‹3¼=½Ÿ±½J*¾‚½®Y½Ç“ø¼E(@¾ŒÓ¾÷…¿H*¾hº1<Âµ¾—IË¾l;Ö;ÑoÉ¾(Rü<ìÁ¾‰C½ş¤‚¾½¾‡~ı¾F²ä=ƒQ=‡-¾;ÄS5½ÍŸq¾Ekp¾11z¾cm?¾²Â¾õ*¾¼vê¾ƒ¾SK½ƒi|½×6q¾¯Mû¾™lô¾m’Y¾½°¾CÈ¿AÖ¾ë%r½÷…;èQ!¾½_¾:}¡¾€¼Qˆt¾Ós>21¼eÆ³¾=5›:>(¨¾Š·Q¿È’¾’Ï¾©ú¾ÿÇ’¿¾aÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ¾z‚½@Ñ‹>‡r>uoÌ¾™L‰¾á$e=SE¿Q°¾,EÙ<‡Tù¾eş&½«ıY=¨Z¸¿£ØŸ¾£U9¾a·½†ç/¾.(±½Š›ç¾O19>.ÀA¾|µ½u8©¾Á_M¼ã5>3jó¾Z¥¾¶–¾@ƒO=¨½(>>5(>5QÊ¾ªÄ%¾-Gá½ã.¿²…¿c!¿BÏ>Hqé¾…-d¾‡+C¾9ü!¾›x¬¾‡üÙ¾ã9½Æ§°¿ğ´¾“İ¾®Pö=ï1Ç<¬-Å¾„2>yÊˆ=­iï½ùÈ½¾0ù=¾oJ¾÷Ñ‘>8½¾Rz[>»»“¾‚ğ[½Ì;Û:œ<¶ój=q{;¾=¬½òL7?3Ü3>šëX¾µaÃ¾Ë†Ÿ=÷4ü<Á2İ=Wi¾ÓY¼¼Ş™O½ûĞ'¾üq½>ú„=T\¼{%=2²Š½ª\„¾ ¾A1¢¼ó~Š>ÁÉ–¾@4{>3¾•å¿$/¿Wß¼İ2>±iì>©àÈ=’nˆÀ  À  À  >·ß1=„·»¾SæE½ÛÆN¾â±¶¾0ÿ½¦ÃR½§å¾4\¾ŠàÏ¾à¿½hOœ¼ÙX3¾”Ñ+=›Ì=™¾¼ö¼Æd•=1íõ=öv?=ÀŒ¢>7$8¾«­º?C–M½Ój¾ T(¾gb%½î„º¿E­¾¿˜Ñ¾•g¾i™½á‚¾*Ìy>Uq>AÎn>‡ü!¾Ãü2½Ïİv<Z_½TÃá=2Å±¾bsÙ¾¡Ö¯¾ú¾Ş%»=—T¾Ÿ+½Ç\í½Â©‡¿4ñÒ½²‘œ="#¾ãvS=:ÓÌ½óÙµ¾Ò$½³Ï]»¾§@¼ò²>½
+Øª=å2½ìü¾Št4¾‹öN¾—\¾h%ª¾‚¾‡)v¾ëÏ¾Ñõ~>¦Ù}¾cŒx¾™c=ò¥¾>F¼Xe…¾åô¾§¾S—\>oí•¾x¿%'¾™ñ ½8Sëº+‚º¾pûVÀ  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  À  ÓBLK 0                                ùĞµ¢*%ß ^šŠH\¬?«Ì”Ößò>                ?«Ì”Ößò>ÓBLK 0                             Jç6äKù¿yÒu.#H¥                ÓBLK 0                                UsnŸ°ü&ŸiéäàÛÇqÇq ë@                ÇqÇq ë@ÓBLK 0                             Jç6äKù¿yÒu.#H¥                ÓBLK 0                             5¯>úqÌÆ'ò3Å»ÁŸëIºáÁ%¿³3±»©(¿tóõ¡Uƒ?÷œD_Ç?E±Â’¯(ÀGâ1Ól:@MÂ»
+ğ?&Î•%Aíê?TvE:7f@·ÔÇ"àÀ‚V¡u@        ĞQÀuó®W?›t<4¾³?'Œ=jÍÀ…¤q)27À                Çje‹<á@k–épÛÀîß»¡C1@                        ‡!‡vÖ?>äÚ¼$2@                                ãôìàîiÀ                                        ÓBLK 0                             ´4¨H<Ç'ğàrÅ«†]“Ëæº}³%?K§+E<r?½¸»Œœ„¿Ä®CÆ¿‡\`ı(U*@ B;
+ò3VÀşêxñIîï?èÿ¸Òê¿Š¨Àf¼IÀ;5R~Õb4@æ²\^¾vÀ        N2ÚúÔÆm¿¦øG²©(°¿f7$uÎö@ÄÏ–=ù’À                P3Ø*¿ÀÈf;o{6@pŞãpã@À                        †_Óˆ^±¿®©0À                                ‹$y?¤él@                                        ÓBLK 0                             %Åzšå˜Âşö aôÄÌ6?P=P˜1Ûï?RÉ®ñkÒğ?yô"
+@¥Ù¸ÏFµ"@‰j©oêÀŒÇD•7Ú ?õ^Õ—‘6¿<"ßú\.¶?¼}¹³»ÀğRX”pÀ        .¿1ÙxªÑ?ÂI¨w.@ò³¶fĞ4Àƒ[>åòa]À                ]Ëâ ?İce‡×Ó?¾3ş£<ŸP@                        ä%?)÷mÀ¶ıª\loÀ                                Ï2›ŞGÛ0À                                        ÓBLK 0                             ›	ê=Yœ©øPø¸7Q!ŞwİÓqê6¿‚ñp‚ğ?Û\¼Ëöÿğ¿¨P(ı¿øÆoxBç¿2î{”[Â@¨æ$Uÿ2 ¿(û<¿‹ìRC$$³¿@Ë±.o¼
+@˜auqqm@        —q¯•yÑ¿SF&”ÀPjŒ£dB@zyvX¥·)À                ¶V7tš¿ß­º™
+¤?bJä‰*QÀ                        »~ûâ~ö@0¼Auj@                                Ê9Ác#d0@                                        ÓBLK 0                                ÍÏö3èÜÔQ˜ğwbSÿyø³xáÊ@­xJ¢äŸ(?Íwr>'¿õ„cIÅ@ÓBLK 0                             Jç6äKù¿yÒu.#H¥                ÓBLK 0              @      @      @Ì…9=ÑÖdö'€ñÿOù‡š™™™™™À/ùVõï’ÀÅXQFŒÀZ¸Ñ¬œ…Àğó~À…wLdIxÀ×	ÀŸqÀ°6ÇöjÀE–„wLdÀÛõAÓ¢]ÀpUÿ.ùVÀµ¼ŠOPÀ›zæ¥IÀ0t7BüBÀÆÓôR<À[3²ù¨5Àğ’oUÿ.À†ò,±U(ÀRê¬!À±±§hÀFeÄXÀÛp" ¯ÀqĞß{À0×[ ÀœZ3²ù À1ïó ÀÆNÕê^ì À\®’Fµå ÀñP¢ß À‡mşaØ ÀÍÊY¸Ñ À±,ˆµË ÀGŒEeÄ ÀÜëm»½ ÀrKÀÈ· À«}$h° Àœ
+;€¾© À2jøÛ£ ÀÇÉµ7kœ À\)s“Á• Àòˆ0ï À‡èíJnˆ ÀH«¦Ä À²§h{ ÀH&^qt Àİfã¹Çm ÀrÆ g À&^qt` À…ÍÊY À2åØ(!S ÀÈD–„wL À]¤SàÍE Àó<$? ÀˆcÎ—z8 ÀÃ‹óĞ1 À³"IO'+ ÀH‚«}$ ÀŞáÃÔ ÀsAb* À¡>¾€ À ü×	 À3`¹u- À‘í¢ùÿ¿¼>hZ´ëÿ¿çıâaŞÿ¿½]ÉÑÿ¿<|Ø€ºÃÿ¿g;S8g¶ÿ¿’úÍï©ÿ¿½¹H§À›ÿ¿èxÃ^mÿ¿8>ÿ¿=÷¸ÍÆsÿ¿h¶3…sfÿ¿“u®< Yÿ¿¾4)ôÌKÿ¿èó£«y>ÿ¿³c&1ÿ¿>r™Ó#ÿ¿i1Òÿ¿”ğ‰,	ÿ¿¾¯	AÙûş¿én„ø…îş¿.ÿ¯2áş¿?íygßÓş¿j¬ôŒÆş¿”koÖ8¹ş¿¿*êå«ş¿êédE’ş¿©ßü>‘ş¿@hZ´ëƒş¿j'Õk˜vş¿•æO#Eiş¿À¥ÊÚñ[ş¿ëdE’Nş¿$ÀIKAş¿@ã:ø3ş¿k¢µ¸¤&ş¿–a0pQş¿Á «'şş¿ìß%ßªşı¿Ÿ –Wñı¿A^Näı¿l–±Öı¿—Ü½]Éı¿Â›‹t
+¼ı¿ìZ,·®ı¿ãc¡ı¿BÙûš”ı¿m˜vR½†ı¿˜Wñ	jyı¿ÂlÁlı¿íÕæxÃ^ı¿•a0pQı¿BTÜçDı¿nWŸÉ6ı¿˜ÒÑVv)ı¿Ã‘L#ı¿îPÇÅÏı¿B}|ı¿DÏ¼4)ôü¿n7ìÕæü¿™M²£‚Ùü¿Ä-[/Ìü¿îË§Ü¾ü¿‹"Êˆ±ü¿DJ5¤ü¿o	9â–ü¿šÈ’ğ‰ü¿Ä‡¨;|ü¿ïFˆ_ènü¿•aü¿EÅ}ÎATü¿p„ø…îFü¿šCs=›9ü¿ÅîôG,ü¿ğÁh¬ôü¿ãc¡ü¿F@^Nü¿pÿØÒúöû¿›¾SŠ§éû¿Æ}ÎATÜû¿ñ<Iù Ïû¿üÃ°­Áû¿F»>hZ´û¿qz¹§û¿œ94×³™û¿Çø®`Œû¿ò·)Fû¿w¤ı¹qû¿G6µfdû¿rõ™lWû¿´$ÀIû¿ÈsÛl<û¿ò2
+“/û¿ò„JÆ!û¿H±ÿsû¿spz¹û¿/õpÌùú¿Èîo(yìú¿ó­êß%ßú¿me—ÒÑú¿I,àNÄú¿tëZ,·ú¿ªÕ½Ø©ú¿ÉiPu…œú¿ô(Ë,2ú¿èEäŞú¿J§À›‹tú¿tf;S8gú¿Ÿ%¶
+åYú¿Êä0Â‘Lú¿ô£«y>?ú¿ c&1ë1ú¿J"¡è—$ú¿uá Dú¿  –Wñ	ú¿Ê_üù¿öŒÆJïù¿ Ş~÷áù¿K5¤Ôù¿v\üìPÇù¿ w¤ı¹ù¿ÌÚñ[ª¬ù¿ö™lWŸù¿!YçÊ’ù¿Lb‚°„ù¿v×Ü9]wù¿¢–Wñ	jù¿ÌUÒ¨¶\ù¿÷M`cOù¿"ÔÇBù¿L“BÏ¼4ù¿xR½†i'ù¿¢8>ù¿ÍĞ²õÂù¿ø-­oÿø¿"O¨dòø¿N#Éäø¿xÍÓu×ø¿£Œ‹"Êø¿ÎK“BÏ¼ø¿ø
+ú{¯ø¿$Êˆ±(¢ø¿N‰iÕ”ø¿yH~ ‚‡ø¿¤ù×.zø¿ÎÆsÛlø¿ú…îFˆ_ø¿$Eiş4Rø¿OäµáDø¿zÃ^m7ø¿¤‚Ù$;*ø¿ĞATÜçø¿ú Ï“”ø¿%ÀIKAø¿PÄîô÷¿z>?ºšç÷¿¦ı¹qGÚ÷¿Ğ¼4)ôÌ÷¿û{¯à ¿÷¿&;*˜M²÷¿Pú¤Oú¤÷¿|¹§—÷¿¦xš¾SŠ÷¿Ñ7v }÷¿üö-­o÷¿&¶
+åYb÷¿Qu…œU÷¿|4 T³G÷¿§óz`:÷¿Ò²õÂ-÷¿üqpz¹÷¿'1ë1f÷¿Rğeé÷¿}¯à ¿÷ö¿¨n[Xlêö¿Ò-Öİö¿ıìPÇÅÏö¿(¬Ë~rÂö¿SkF6µö¿~*ÁíË§ö¿¨é;¥xšö¿Ó¨¶\%ö¿şg1Òö¿)'¬Ë~rö¿Tæ&ƒ+eö¿~¥¡:ØWö¿©dò„Jö¿Ô#—©1=ö¿şâaŞ/ö¿*¢Œ‹"ö¿TaĞ7ö¿ ‚‡äö¿ªßü>‘úõ¿Ôwö=íõ¿ ^ò­êßõ¿*me—Òõ¿UÜçDÅõ¿€›bÔğ·õ¿ªZİ‹ªõ¿ÖXCJõ¿ ÙÒúöõ¿+˜M²£‚õ¿VWÈiPuõ¿€C!ıgõ¿¬Õ½Ø©Zõ¿Ö”8VMõ¿T³G@õ¿,.ÿ¯2õ¿VÒ¨¶\%õ¿‚‘#n	õ¿¬P%¶
+õ¿×İbıô¿Ï“”ğô¿,L¼âô¿XM‰iÕô¿‚»Èô¿­Ë~rÂºô¿ØŠù)o­ô¿Jtá ô¿.	ï˜È’ô¿XÈiPu…ô¿ƒ‡ä"xô¿®F_¿Îjô¿ØÚv{]ô¿ÅT.(Pô¿.„ÏåÔBô¿YCJ5ô¿„ÅT.(ô¿®Á?Ûô¿Ú€ºÃ‡ô¿@5{4 ô¿/ÿ¯2áòó¿Z¾*êåó¿„}¥¡:Øó¿°< YçÊó¿Úûš”½ó¿»È@°ó¿0zí¢ó¿Z97š•ó¿†ø…îFˆó¿°· ¦ózó¿Ûv{] mó¿6öM`ó¿0õpÌùRó¿[´ëƒ¦Eó¿†sf;S8ó¿±2áòÿ*ó¿Üñ[ª¬ó¿±ÖaYó¿1pQó¿\/ÌĞ²õò¿‡îFˆ_èò¿²­Á?Ûò¿Ül<÷¸Íò¿,·®eÀò¿2ë1f³ò¿]ª¬¿¥ò¿ˆi'Õk˜ò¿²(¢Œ‹ò¿İçDÅ}ò¿§—ûqpò¿3f³cò¿^%jËUò¿ˆä"xHò¿³£‚Ù$;ò¿ŞbıÑ-ò¿	"xH~ ò¿4áòÿ*ò¿^ m·×ò¿‰_èn„øñ¿´c&1ëñ¿ßİİİİİñ¿
+X•ŠĞñ¿4\ÓL7Ãñ¿_Näµñ¿ŠÚÈ»¨ñ¿µ™Cs=›ñ¿ßX¾*êñ¿
+9â–€ñ¿5×³™Csñ¿`–.Qğeñ¿‹U©Xñ¿µ$ÀIKñ¿àÓwö=ñ¿“/£0ñ¿6R”æO#ñ¿aüñ¿‹Ğ‰U©ñ¿¶Vûğ¿áNÄîğ¿ú{¯àğ¿7Ít3\Óğ¿aŒïêÆğ¿ŒKj¢µ¸ğ¿·
+åYb«ğ¿âÉ_ğ¿‰ÚÈ»ğ¿7HU€hƒğ¿bĞ7vğ¿ÆJïÁhğ¿¸…Å¦n[ğ¿ãD@^Nğ¿»È@ğ¿8Ã5Ít3ğ¿c‚°„!&ğ¿A+<Îğ¿¹ ¦ózğ¿ÆAVOüï¿ş6Å¨áï¿r|,4Çï¿Èú!£[¬ï¿yµ‘ï¿r÷wï¿Èuğg\ï¿ô÷^ÁAï¿tríÍ'ï¿Èğâ<tï¿oØ«Íñî¿tíÍ'×î¿ÊkÃ‰€¼î¿ ê¸øÙ¡î¿th®g3‡î¿Êæ£ÖŒlî¿ e™EæQî¿vã´?7î¿Ìa„#™î¿ ày’òî¿v^oLçí¿ÌÜdp¥Ìí¿"[Zßş±í¿xÙONX—í¿ÌWE½±|í¿"Ö:,bí¿xT0›dGí¿ÎÒ%
+¾,í¿$Qyí¿xÏèp÷ì¿ÎMWÊÜì¿$ÌûÅ#Âì¿zJñ4}§ì¿ĞÈæ£ÖŒì¿$GÜ0rì¿zÅÑ‰Wì¿ĞCÇğâ<ì¿&Â¼_<"ì¿|@²Î•ì¿Ğ¾§=ïìë¿&=¬HÒë¿|»’¢·ë¿Ò9ˆŠûœë¿(¸}ùT‚ë¿|6sh®gë¿Ò´h×Më¿(3^Fa2ë¿~±Sµºë¿Ò/I$ıê¿(®>“mâê¿~,4ÇÇê¿Ôª)q ­ê¿*)ày’ê¿~§OÓwê¿Ô%
+¾,]ê¿*¤ÿ,†Bê¿€"õ›ß'ê¿Ö ê
+9ê¿*ày’òé¿€Õèë×é¿ÖËWE½é¿,šÀÆ¢é¿‚¶5ø‡é¿Ö–«¤Qmé¿,¡«Ré¿‚“–‚8é¿ØŒñ]é¿.`·é¿‚wÏèè¿ØŒl>jÍè¿.b­Ã²è¿„‰W˜è¿ÚM‹v}è¿.†BúÏbè¿„8i)Hè¿Ú‚-Ø‚-è¿0#GÜè¿†¶5øç¿Úı%İç¿0|”èÂç¿†úøB¨ç¿Üxîq›ç¿2÷ãàôrç¿†uÙONXç¿ÜóÎ¾§=ç¿2rÄ-#ç¿ˆğ¹œZç¿Ün¯´íæ¿2í¤zÓæ¿ˆkšéf¸æ¿ŞéXÀæ¿4h…Çƒæ¿ˆæz6shæ¿Şdp¥ÌMæ¿4ãe&3æ¿Ša[ƒæ¿àßPòØıå¿4^Fa2ãå¿ŠÜ;Ğ‹Èå¿àZ1?å­å¿6Ù&®>“å¿ŒW˜xå¿àÕŒñ]å¿6TûJCå¿ŒÒüi¤(å¿âPòØıå¿8ÏçGWóä¿ŒMİ¶°Øä¿âËÒ%
+¾ä¿8JÈ”c£ä¿È½½ˆä¿äF³rnä¿8Å¨áoSä¿CPÉ8ä¿äÁ“¿"ä¿:@‰.|ä¿¾~Õèã¿ä<t/Îã¿:»i{ˆ³ã¿9_êá˜ã¿æ·TY;~ã¿<6JÈ”cã¿´?7îHã¿æ25¦G.ã¿<±*¡ã¿’/ „úøâ¿æ­óSŞâ¿<,b­Ãâ¿’ª Ñ©â¿è(ö?`â¿>§ë®¹sâ¿’%áYâ¿è£ÖŒl>â¿>"ÌûÅ#â¿” Áj	â¿ê·Ùxîá¿>¬HÒÓá¿”¢·+¹á¿ê™—&…á¿@•Şƒá¿––‚8iá¿êxs‘Ná¿@“mâê3á¿–cQDá¿ìXÀşà¿BN/÷ãà¿–ŒCPÉà¿ì
+9ª®à¿B‰.|”à¿˜$ë\yà¿î…Z¶^à¿BÉDà¿˜‚8i)à¿î ú¦Âà¿ˆşŞ+8èß¿4ûÉ	ë²ß¿Ü÷´ç}ß¿ˆôŸÅPHß¿4ñŠ£ß¿àíu¶İŞ¿Œê`_i¨Ş¿4çK=sŞ¿àã6Ï=Ş¿Œà!ùŞ¿8İ×4Óİ¿àÙ÷´çİ¿ŒÖâ’šhİ¿8ÓÍpM3İ¿äÏ¸N şÜ¿Ì£,³ÈÜ¿8É
+f“Ü¿äÅyè^Ü¿ÂdÆË(Ü¿<¿O¤~óÛ¿è»:‚1¾Û¿¸%`äˆÛ¿<µ>—SÛ¿è±ûJÛ¿”®æùüèÚ¿@«Ñ×¯³Ú¿è§¼µb~Ú¿”¤§“IÚ¿@¡’qÈÚ¿ì}O{ŞÙ¿˜šh-.©Ù¿@—SásÙ¿ì“>é“>Ù¿˜)ÇF	Ù¿D¥ùÓØ¿ğ‰ÿ‚¬Ø¿˜†ê`_iØ¿DƒÕ>4Ø¿ğÀÅş×¿œ|«úwÉ×¿Hy–Ø*”×¿ğu¶İ^×¿œrl”)×¿HoWrCôÖ¿ôkBPö¾Ö¿ h-.©‰Ö¿He\TÖ¿ôaêÖ¿ ^îÇÁéÕ¿L[Ù¥t´Õ¿ôWÄƒ'Õ¿ T¯aÚIÕ¿LQš?Õ¿øM…@ßÔ¿¤Jpûò©Ô¿LG[Ù¥tÔ¿øCF·X?Ô¿¤@1•
+Ô¿P=s¾ÔÓ¿ü9QqŸÓ¿¤6ò.$jÓ¿P3İ×4Ó¿ü/Èê‰ÿÒ¿¨,³È<ÊÒ¿T)¦ï”Ò¿ü%‰„¢_Ò¿¨"tbU*Ò¿T_@õÑ¿ J»¿Ñ¿¬5ümŠÑ¿T Ú UÑ¿ ¸ÓÑ¿¬ö•†êĞ¿Xás9µĞ¿ÌQìĞ¿¬·/ŸJĞ¿X¢RĞ¿ü×	ÀÏ¿`õï’oUÏ¿¸îÅNÕêÎ¿è›
+;€Î¿`áqÆ Î¿¸ÚG‚«Í¿Ô>l@Í¿hÍóùÑÕÌ¿¸ÆÉµ7kÌ¿ÀŸq Ì¿h¹u-–Ë¿À²Kéh+Ë¿¬!¥ÎÀÊ¿h¥÷`4VÊ¿ÀÍšëÉ¿˜£Øÿ€É¿p‘y”eÉ¿ÀŠOPË«È¿ „%1AÈ¿p}ûÇ–ÖÇ¿ÀvÑƒükÇ¿ p§?bÇ¿pi}ûÇ–Æ¿ĞbS·-,Æ¿ \)s“ÁÅ¿pUÿ.ùVÅ¿ĞNÕê^ìÄ¿ H«¦ÄÄ¿€Ab*Ä¿Ğ:W¬Ã¿ 4-ÚõAÃ¿€-–[×Â¿Ğ&ÙQÁlÂ¿0 ¯'Â¿€…ÉŒ—Á¿Ğ[…ò,Á¿01AXÂÀ¿€ı½WÀ¿Àı¹qGÚ¿¿`ğeé¿¿ ãaŞ/¾¿ÀÕ½Ø©Z½¿`ÈiPu…¼¿ »È@°»¿À­Á?Ûº¿` m·×º¿ “/£0¹¿À…Å¦n[¸¿€xq:†·¿ k–±¶¿À]ÉÑÛµ¿€Pu…œµ¿ C!ıg1´¿à5Ít3\³¿€(yìş†²¿ %dÊ±±¿àÑÛ•Ü°¿€ }Sa°¿€æQ–Yd®¿ÀË©…ğ¹¬¿ ±u‡«¿€–Yde©¿À{±Sµº§¿@a	CL¦¿€Fa2ãe¤¿À+¹!z»¢¿@¡¿ íÑ PÍ¿ ¸ß}x›¿€‚1¾«#˜¿ MáœÙÎ”¿ ‘{z‘¿ Å´jJŒ¿ ZáqÆ …¿ à^Dî}¿ 
+AÙûšp¿ ° š=J¿ @b*d? v¶İ^w? %áY‚? `·‰? ú!£[¬?€2áòÿ*“? h1Ò–? 5¤Ô™?€ÒÑVv)?À<$? ?€¹Lé¡?@9a]ö“£?ÀS	n_>¥?€n±~Èè¦? ‰Y1“¨?À£ š=ª?€¾©°è«? ÙQÁl’­?ÀóùÑÕ<¯? QqŸs°?€¥ùÓH±?à!ù²? /M
+=ó²?€<¡’qÈ³?ÀIõ¦´? WI£Úrµ?€d+H¶?Àqñ³C·? E<xò·?`Œ™Ä¬Ç¸?À™íLáœ¹? §AÕrº?`´•]JG»?ÀÁéå~¼? Ï=n³ñ¼?`Ü‘öçÆ½?Àéå~œ¾? ÷9Qq¿?0ÇÇB#À?ĞñİÀ?€PwøÀ?0E”cÁ?ĞoØ«ÍÁ?€#™F8Â? *Ã`à¢Â?Ğ0í¤zÃ?€7éxÃ? >A-¯âÃ?ĞDkqIMÄ?pK•µã·Ä? R¿ù}"Å?ĞXé=Å?p_‚²÷Å? f=ÆLbÆ?Àlg
+çÌÆ?ps‘N7Ç? z»’¢Ç?À€åÖµÈ?p‡PwÈ?9_êáÈ?À”c£„LÉ?p›ç·É?¢·+¹!Ê?À¨áoSŒÊ?`¯´íöÊ?¶5ø‡aË?À¼_<"ÌË?`Ã‰€¼6Ì?Ê³ÄV¡Ì?°ĞİñÍ?`×M‹vÍ?Ş1‘%áÍ?°ä[Õ¿KÎ?`ë…Z¶Î?ò¯]ô Ï?°øÙ¡‹Ï?`ÿæ(öÏ? •a0Ğ?X,·®eĞ?°	AÙûšĞ? VûHĞĞ?Xk–Ñ?¨€?ã:Ñ? •a0pÑ?Xªƒ}¥Ñ?¨¿¥ÊÚÑ? !ÔÇÒ?P$éédEÒ?¨'ş²zÒ? +.ÿ¯Ò?P.(PLåÒ?¨1=r™Ó?ø4R”æOÓ?P8g¶3…Ó?¨;|Ø€ºÓ?ø>‘úÍïÓ?PB¦%Ô? E»>hZÔ?øHĞ`µÔ?PLå‚ÅÔ? Oú¤OúÔ?øRÇœ/Õ?HV$éédÕ? Y97šÕ?ø\N-„ÏÕ?H`cOÑÖ? cxq:Ö?ğf“koÖ?Hj¢µ¸¤Ö? m·×ÚÖ?ğpÌùR×?Htá D×?˜wö=íy×?ğz`:¯×?H~ ‚‡ä×?˜5¤ÔØ?ğ„JÆ!OØ?@ˆ_èn„Ø?˜‹t
+¼¹Ø?ğ‰,	ïØ?@’NV$Ù?˜•³p£YÙ?è˜È’ğÙ?@œİ´=ÄÙ?˜ŸòÖŠùÙ?è¢ù×.Ú?@¦%dÚ?©1=r™Ú?è¬F_¿ÎÚ?@°[Û?³p£Y9Û?è¶…Å¦nÛ?8ºšçó£Û?½¯	AÙÛ?èÀÄ+Ü?8ÄÙMÛCÜ?Çîo(yÜ?àÊ’u®Ü?8Î´ÂãÜ?Ñ-Öİ?àÔBø\Nİ?8ØWªƒİ?ˆÛl<÷¸İ?àŞ^Dîİ?8â–€‘#Ş?ˆå«¢ŞXŞ?àèÀÄ+Ş?0ìÕæxÃŞ?ˆïêÆøŞ?àòÿ*.ß?0öM`cß?ˆù)o­˜ß?àü>‘úÍß? ªÙ£à?Ä´jJà?l¿ûğ6à?…ÉŒ—Qà?ÄÔ>là?lˆŞ®ä†à?
+é?‹¡à?À‹óĞ1¼à?lşaØÖà?ó~ñà?À„%á?l’Ì&á?(¦rAá?À•27\á?l=È¿vá?™GYf‘á?ÀRê¬á?hœ\{³Æá?gZáá?ÀŸq üá?h!|.§â?£†¿M1â?¼$‘PôKâ?h¦›ášfâ?(¦rAâ?¼©°è›â?h+»”¶â?­Å%5Ñâ?¼.Ğ¶Ûëâ?h°ÚG‚ã?2åØ(!ã?¼³ïiÏ;ã?d5úúuVã?·Œqã?¼8Ã‹ã?dº®i¦ã?<$?Áã?¸½.Ğ¶Ûã?d?9a]öã?ÁCòä?¸BNƒª+ä?dÄXQFä?Fc¥÷`ä?¸Çm6{ä?dIxÇD–ä?Ë‚Xë°ä?¸Lé‘Ëä?`Î—z8æä?P¢ß å?¸Ñ¬œ…å?`S·-,6å?ÕÁ¾ÒPå?´VÌOykå?`ØÖà†å?ZáqÆ å?´Ûëm»å?`]ö“Öå?ß %ºğå?´`¶`æ?`âG&æ?d Ø­@æ?´å*iT[æ?\g5úúuæ?é?‹¡æ?´jJH«æ?\ìT­îÅæ?n_>•àæ?°ïiÏ;ûæ?\qt`âç?ó~ñˆ0ç?°t‰‚/Kç?\ö“Öeç?x¤|€ç?°ù¨5#›ç?\{³ÆÉµç?ı½WpĞç?°~Èèëç?\ Óy½è?‚İ
+d è?°è›
+;è?X…ò,±Uè?ı½Wpè?°ˆOşŠè?X
+à¤¥è?ŒqKÀè?¬'òÚè?X1“˜õè?<$?é?¬’Fµå*é?XQFŒEé? –[×2`é?¬fhÙzé?X™pù•é? {Š&°é?¬œ…ÍÊé?T¬såé?  š= ê?¬!¥ÎÀê?T£¯_g5ê? %ºğPê?¨¦Ä´jê?T(Ï[…ê? ªÙ£ ê?¨+ä4¨ºê?T­îÅNÕê?ü.ùVõïê?¨°è›
+ë?T2yB%ë?ü³
+é?ë?¨5#›Zë?P·-,6uë?ü88½Üë?¨ºBNƒªë?P<Mß)Åë?ü½WpĞßë?¤?bwúë?PÁl’ì?üBw#Ä/ì?¤Ä´jJì?PFŒEeì?øÇ–Ö·ì?¤I¡g^šì?PË«øµì?øL¶‰«Ïì?¤ÎÀRêì?LPË«øí?øÑÕ<Ÿí?¤SàÍE:í?LÕê^ìTí?øVõï’oí? Øÿ€9Ší?LZ
+à¤í?øÛ£†¿í? ]4-Úí?Lß)ÅÓôí?ô`4Vzî? â>ç *î?LdIxÇDî?ôåS	n_î? g^šzî?Héh+»”î?ôjs¼a¯î? ì}MÊî?HnˆŞ®äî?ôï’oUÿî?œq üï?Hó§‘¢4ï?ôt²"IOï?œö¼³ïiï?HxÇD–„ï?ğùÑÕ<Ÿï?œ{Üfã¹ï?Hıæ÷‰Ôï?ğ~ñˆ0ïï?N şŒëğ?$AƒÕ>ğ?ø’ğ?ÎÂfå,ğ?¢¯8:ğ?xD˜÷‹Gğ?N…@ßTğ?"Æ¢ˆ2bğ?ø(Ñ…oğ?ÌG­Ù|ğ?¢ˆ2b,Šğ?xÉ·ª—ğ?L
+=óÒ¤ğ?"KÂ;&²ğ?ö‹G„y¿ğ?ÍÌÌÌÌÌğ?ÓBLK 0              @      @      @	qèæ0©Vz
+Ø\Õx˜>f&Ñ¿ß^F·b&Ñ¿ô/_&Ñ¿Ë¢¨[&Ñ¿¸åP!X&Ñ¿5íş™T&Ñ¿÷á¬Q&Ñ¿ıÃZ‹M&Ñ¿I“J&Ñ¿ØO¶|F&Ñ¿¯ùcõB&Ñ¿Ën?&Ñ¿*¿æ;&Ñ¿Ğ†l_8&Ñ¿ºåØ4&Ñ¿è1ÇP1&Ñ¿\ktÉ-&Ñ¿’!B*&Ñ¿¦Îº&&Ñ¿W§{3#&Ñ¿á•(¬&Ñ¿­qÕ$&Ñ¿Á:‚&Ñ¿ñ.&Ñ¿¸”Û&Ñ¿š%ˆ&Ñ¿Á£4€
+&Ñ¿0áø&Ñ¿ãgq&Ñ¿Û­9êÿ%Ñ¿áåbü%Ñ¿š’Ûø%Ñ¿c>Tõ%Ñ¿q
+êÌñ%Ñ¿Ãò•Eî%Ñ¿[ÈA¾ê%Ñ¿8‹í6ç%Ñ¿[;™¯ã%Ñ¿ÃØD(à%Ñ¿qcğ Ü%Ñ¿fÛ›Ù%Ñ¿Ÿ@G’Õ%Ñ¿“ò
+Ò%Ñ¿ãÒƒÎ%Ñ¿êÿHüÊ%Ñ¿9ôtÇ%Ñ¿Í!ŸíÃ%Ñ¿¨JfÀ%Ñ¿ÇøôŞ¼%Ñ¿.ÈŸW¹%Ñ¿Ø„JĞµ%Ñ¿É.õH²%Ñ¿şÅŸÁ®%Ñ¿{JJ:«%Ñ¿<¼ô²§%Ñ¿FŸ+¤%Ñ¿gI¤ %Ñ¿#¡ó%Ñ¿üÇ•™%Ñ¿ÜG–%Ñ¿}İñ†’%Ñ¿'Ì›ÿ%Ñ¿¨Ex‹%Ñ¿Mqïğ‡%Ñ¿Ç'™i„%Ñ¿ŠËBâ€%Ñ¿‘\ìZ}%Ñ¿ßÚ•Óy%Ñ¿qF?Lv%Ñ¿JŸèÄr%Ñ¿få‘=o%Ñ¿Ì;¶k%Ñ¿w9ä.h%Ñ¿fG§d%Ñ¿œB6 a%Ñ¿+ß˜]%Ñ¿Ü ˆZ%Ñ¿åÃ0ŠV%Ñ¿3tÙS%Ñ¿Ç‚{O%Ñ¿¡œ*ôK%Ñ¿ÃÓlH%Ñ¿)z{åD%Ñ¿ÕÌ#^A%Ñ¿ÉÌÖ=%Ñ¿:tO:%Ñ¿TÈ6%Ñ¿F\Ä@3%Ñ¿RQl¹/%Ñ¿¥32,%Ñ¿>¼ª(%Ñ¿Àc#%%Ñ¿@jœ!%Ñ¿©³%Ñ¿[†Z%Ñ¿Rø%Ñ¿W©~%Ñ¿¤P÷%Ñ¿ßİ÷o%Ñ¿îŸè%Ñ¿FFa%Ñ¿äíÙ%Ñ¿É	”Rş$Ñ¿ñå:Ëú$Ñ¿b¯áC÷$Ñ¿fˆ¼ó$Ñ¿
+/5ğ$Ñ¿\›Õ­ì$Ñ¿æ|&é$Ñ¿·…"Ÿå$Ñ¿ÎŞÈâ$Ñ¿,%oŞ$Ñ¿ĞX	Û$Ñ¿¼y»×$Ñ¿ï‡aúÓ$Ñ¿fƒsĞ$Ñ¿%l­ëÌ$Ñ¿+BSdÉ$Ñ¿vùÜÅ$Ñ¿
+¶UÂ$Ñ¿äSDÎ¾$Ñ¿ßéF»$Ñ¿jW¿·$Ñ¿½48´$Ñ¿Ú°°$Ñ¿IP)­$Ñ¿É}$¢©$Ñ¿’˜É¦$Ñ¿¡ n“¢$Ñ¿ø•Ÿ$Ñ¿”x¸„›$Ñ¿xH]ı—$Ñ¿¤v”$Ñ¿°¦î$Ñ¿ËGKg$Ñ¿ÌÌïß‰$Ñ¿?”X†$Ñ¿8Ñ‚$Ñ¿sëÜI$Ñ¿%Â{$Ñ¿ğL%;x$Ñ¿˜aÉ³t$Ñ¿ˆcm,q$Ñ¿¾R¥m$Ñ¿=/µj$Ñ¿ùX–f$Ñ¿°üc$Ñ¿bT ‡_$Ñ¿ûåC \$Ñ¿ÜdçxX$Ñ¿ÑŠñT$Ñ¿t*.jQ$Ñ¿+qÑâM$Ñ¿)¥t[J$Ñ¿nÆÔF$Ñ¿ùÔºLC$Ñ¿ÍĞ]Å?$Ñ¿ç¹ ><$Ñ¿I£¶8$Ñ¿òSF/5$Ñ¿âé§1$Ñ¿£‹ .$Ñ¿˜..™*$Ñ¿_§Ğ'$Ñ¿msŠ#$Ñ¿À` $Ñ¿]¡·{$Ñ¿@ÏYô$Ñ¿kêûl$Ñ¿Şòå$Ñ¿˜è?^$Ñ¿™ËáÖ
+$Ñ¿á›ƒO$Ñ¿rY%È$Ñ¿FÇ@ $Ñ¿fœh¹ü#Ñ¿Î!
+2ù#Ñ¿{”«ªõ#Ñ¿rôL#ò#Ñ¿®Aî›î#Ñ¿1|ë#Ñ¿ÿ£0ç#Ñ¿¹Ñä#Ñ¿m»r~à#Ñ¿«÷Ü#Ñ¿û‡´oÙ#Ñ¿.RUèÕ#Ñ¿§	ö`Ò#Ñ¿h®–ÙÎ#Ñ¿r@7RË#Ñ¿Á¿×ÊÇ#Ñ¿[,xCÄ#Ñ¿<†¼À#Ñ¿cÍ¸4½#Ñ¿ÓY­¹#Ñ¿Š#ù%¶#Ñ¿‹2™²#Ñ¿Ó.9¯#Ñ¿aÙ«#Ñ¿7ïx¨#Ñ¿V³¤#Ñ¿¼d¸ù #Ñ¿lXr#Ñ¿a÷ê™#Ñ¿ —c–#Ñ¿&o6Ü’#Ñ¿ôÂÕT#Ñ¿uÍ‹#Ñ¿i2Fˆ#Ñ¿N³¾„#Ñ¿ıVR7#Ñ¿3Mñ¯}#Ñ¿²0(z#Ñ¿w/¡v#Ñ¿‡¿Ís#Ñ¿İjl’o#Ñ¿zl#Ñ¿a‰©ƒh#Ñ¿üGüd#Ñ¿]æta#Ñ¿Åª„í]#Ñ¿Íå"fZ#Ñ¿ÁŞV#Ñ¿³#_WS#Ñ¿’&ıÏO#Ñ¿»›HL#Ñ¿,ô8ÁH#Ñ¿ã¾Ö9E#Ñ¿åvt²A#Ñ¿-+>#Ñ¿À®¯£:#Ñ¿™.M7#Ñ¿¹›ê”3#Ñ¿#ö‡0#Ñ¿×=%†,#Ñ¿ÓrÂş(#Ñ¿•_w%#Ñ¿ ¤üï!#Ñ¿s¡™h#Ñ¿“‹6á#Ñ¿÷bÓY#Ñ¿¤'pÒ#Ñ¿šÙK#Ñ¿Ùx©Ã#Ñ¿aF<	#Ñ¿1â´#Ñ¿Hæ~-#Ñ¿©:¦ş"Ñ¿Q|·û"Ñ¿F«S—÷"Ñ¿}Çïô"Ñ¿ÿĞ‹ˆğ"Ñ¿ÌÇ'í"Ñ¿ß«Ãyé"Ñ¿?}_òå"Ñ¿ã;ûjâ"Ñ¿Ñç–ãŞ"Ñ¿2\Û"Ñ¿ˆÎÔ×"Ñ¿Q{iMÔ"Ñ¿cÜÆĞ"Ñ¿¼* >Í"Ñ¿^f;·É"Ñ¿LÖ/Æ"Ñ¿¥q¨Â"Ñ¿ı¨!¿"Ñ¿Â™§™»"Ñ¿ÑwB¸"Ñ¿(CİŠ´"Ñ¿Éûw±"Ñ¿³¡|­"Ñ¿ä4­ô©"Ñ¿`µGm¦"Ñ¿%#âå¢"Ñ¿2~|^Ÿ"Ñ¿‡Æ×›"Ñ¿'ü°O˜"Ñ¿KÈ”"Ñ¿A/å@‘"Ñ¿º,¹"Ñ¿}2Š"Ñ¿‰ï²ª†"Ñ¿ß´L#ƒ"Ñ¿~gæ›"Ñ¿f€|"Ñ¿””x"Ñ¿³u"Ñ¿ÓvL~q"Ñ¿àËåöm"Ñ¿4oj"Ñ¿Ó=èf"Ñ¿¼Z±`c"Ñ¿ìdJÙ_"Ñ¿f\ãQ\"Ñ¿)A|ÊX"Ñ¿7CU"Ñ¿ŒÒ­»Q"Ñ¿+F4N"Ñ¿ß¬J"Ñ¿D w%G"Ñ¿ÄC"Ñ¿†v¨@"Ñ¿”Å@<"Ñ¿êÙ9"Ñ¿+q€5"Ñ¿vB	ù1"Ñ¿©F¡q."Ñ¿'89ê*"Ñ¿îÑb'"Ñ¿ıâhÛ#"Ñ¿Wœ T "Ñ¿úB˜Ì"Ñ¿æÖ/E"Ñ¿XÇ½"Ñ¿›Æ^6"Ñ¿d"ö®"Ñ¿wk'"Ñ¿Ô¡$ "Ñ¿{Å»"Ñ¿iÖR‘ "Ñ¿¤Ôé	ı!Ñ¿'À€‚ù!Ñ¿ô˜ûõ!Ñ¿_®sò!Ñ¿hEìî!Ñ¿³Ûdë!Ñ¿Arİç!Ñ¿D¼Vä!Ñ¿É$ŸÎà!Ñ¿›z5Gİ!Ñ¿µ½Ë¿Ù!Ñ¿îa8Ö!Ñ¿Æø°Ò!Ñ¿¿)Ï!Ñ¿ $¢Ë!Ñ¿ô¹È!Ñ¿bÇO“Ä!Ñ¿‚‡åÁ!Ñ¿ê4{„½!Ñ¿Ïı¹!Ñ¿šW¦u¶!Ñ¿âÌ;î²!Ñ¿s/Ñf¯!Ñ¿Nfß«!Ñ¿s¼ûW¨!Ñ¿áæĞ¤!Ñ¿ş%I¡!Ñ¿Ÿ»Á!Ñ¿îõO:š!Ñ¿…Õä²–!Ñ¿e¢y+“!Ñ¿\¤!Ñ¿£Œ!Ñ¿Å˜7•ˆ!Ñ¿ÑÌ…!Ñ¿"Š`†!Ñ¿Àæôş}!Ñ¿«0‰wz!Ñ¿İgğv!Ñ¿ZŒ±hs!Ñ¿ Eáo!Ñ¿2ÙYl!Ñ¿‰mÒh!Ñ¿3cKe!Ñ¿#*•Ãa!Ñ¿]Ş(<^!Ñ¿ã¼´Z!Ñ¿±P-W!Ñ¿ÌŠã¥S!Ñ¿0ôvP!Ñ¿ŞJ
+—L!Ñ¿ÕI!Ñ¿À0ˆE!Ñ¿§ŞÃ B!Ñ¿êVy>!Ñ¿ãéñ:!Ñ¿Ê|j7!Ñ¿Äã3!Ñ¿È^¢[0!Ñ¿5Ô,!Ñ¿©¨ÇL)!Ñ¿Œ1ZÅ%!Ñ¿·§ì="!Ñ¿/¶!Ñ¿ğ[/!Ñ¿ú™£§!Ñ¿OÅ5 !Ñ¿òİÇ˜!Ñ¿ŞãY!Ñ¿×ë‰	!Ñ¿•·}!Ñ¿a…{!Ñ¿x@¡óş Ñ¿Øè2lû Ñ¿„~Ää÷ Ñ¿|V]ô Ñ¿¼qçÕğ Ñ¿HÏxNí Ñ¿ 
+Çé Ñ¿BR›?æ Ñ¿°w,¸â Ñ¿fŠ½0ß Ñ¿gŠN©Û Ñ¿µwß!Ø Ñ¿ORpšÔ Ñ¿1Ñ Ñ¿aÏ‘‹Í Ñ¿Ùq"Ê Ñ¿œ³|Æ Ñ¿ª~CõÂ Ñ¿éÓm¿ Ñ¿ª@dæ» Ñ¿˜…ô^¸ Ñ¿Ó·„×´ Ñ¿X×P± Ñ¿,ä¤È­ Ñ¿GŞ4Aª Ñ¿¯ÅÄ¹¦ Ñ¿ašT2£ Ñ¿]\äªŸ Ñ¿¥t#œ Ñ¿9¨œ˜ Ñ¿2“• Ñ¿C©"‘ Ñ¿º² Ñ¿y_A~Š Ñ¿ƒĞö† Ñ¿ÚÊ_oƒ Ñ¿|äîç Ñ¿ië}`| Ñ¿¡ßÙx Ñ¿&Á›Qu Ñ¿ö*Êq Ñ¿L¹Bn Ñ¿võG»j Ñ¿&ŒÖ3g Ñ¿"e¬c Ñ¿ló$` Ñ¿ à\ Ñ¿ß+Y Ñ¿	eU Ñ¿‹,R Ñ¿@ŸºN Ñ¿K HøJ Ñ¿¡ÖpG Ñ¿HjdéC Ñ¿83òa@ Ñ¿qéÚ< Ñ¿÷ŒS9 Ñ¿É›Ë5 Ñ¿æ›(D2 Ñ¿O¶¼. Ñ¿`C5+ Ñ¿¦Ğ­' Ñ¿OÙ]&$ Ñ¿åùê  Ñ¿Êx Ñ¿ø Ñ¿rë‘ Ñ¿8Á Ñ¿J„«ù Ñ¿ª48r Ñ¿SÒÄê Ñ¿G]Qc Ñ¿‰ÕİÛ  Ñ¿;jTıÑ¿íöÌùÑ¿Î‚EöÑ¿‚û¾òÑ¿>›6ïÑ¿F'¯ëÑ¿š³'èÑ¿:ö> äÑ¿#ÆÊáÑ¿\ƒV‘İÑ¿á-â	ÚÑ¿±Åm‚ÖÑ¿ÌJùúÒÑ¿3½„sÏÑ¿åìËÑ¿äi›dÈÑ¿2¤&İÄÑ¿ÉË±UÁÑ¿¬à<Î½Ñ¿İâÇFºÑ¿XÒR¿¶Ñ¿!¯İ7³Ñ¿4yh°¯Ñ¿–0ó(¬Ñ¿AÕ}¡¨Ñ¿;g¥Ñ¿æ’’¡Ñ¿SÑ¿í¬§ƒšÑ¿ô1ü–Ñ¿‹(¼t“Ñ¿OJFíÑ¿]YĞeŒÑ¿¸UZŞˆÑ¿`?äV…Ñ¿RnÏÑ¿’Ú÷G~Ñ¿ŒÀzÑ¿ö*9wÑ¿·”±sÑ¿‹0*pÑ¿J—§¢lÑ¿Që0iÑ¿§,º“eÑ¿K[CbÑ¿=wÌ„^Ñ¿w€UıZÑ¿ÿvŞuWÑ¿ÓZgîSÑ¿ô+ğfPÑ¿aêxßLÑ¿–XIÑ¿$/ŠĞEÑ¿vµIBÑ¿)›Á>Ñ¿Š#:;Ñ¿<Ø«²7Ñ¿Å4+4Ñ¿˜<¼£0Ñ¿µRD-Ñ¿#VÌ”)Ñ¿ÛFT&Ñ¿à$Ü…"Ñ¿2ğcşÑ¿Ò¨ëvÑ¿¼NsïÑ¿öáúgÑ¿{b‚àÑ¿MĞ	YÑ¿m+‘Ñ	Ñ¿ÚsJÑ¿‘©ŸÂÑ¿—Ì&;ÿÑ¿éÜ­³ûÑ¿‰Ú4,øÑ¿wÅ»¤ôÑ¿­BñÑ¿4cÉ•íÑ¿	PêÑ¿(¶Ö†æÑ¿—C]ÿâÑ¿P¾ãwßÑ¿W&jğÛÑ¿«{ğhØÑ¿M¾váÔÑ¿:îüYÑÑ¿wƒÒÍÑ¿	KÊÑ¿ÕÃÆÑ¿÷ò<ÃÑ¿hÅš´¿Ñ¿$… -¼Ñ¿02¦¥¸Ñ¿†Ì+µÑ¿+T±–±Ñ¿É6®Ñ¿]+¼‡ªÑ¿ézA §Ñ¿Ã·Æx£Ñ¿êáKñŸÑ¿[ùĞiœÑ¿şUâ˜Ñ¿.ğÚZ•Ñ¿ˆÏ_Ó‘Ñ¿5œäKÑ¿*ViÄŠÑ¿mıí<‡Ñ¿ ’rµƒÑ¿à÷-€Ñ¿
+ƒ{¦|Ñ¿…ßÿyÑ¿M)„—uÑ¿b`rÑ¿Å„ŒˆnÑ¿t–kÑ¿s•”ygÑ¿¼òcÑ¿U[œj`Ñ¿:" ã\Ñ¿nÖ£[YÑ¿îw'ÔUÑ¿À«LRÑ¿Ü‚.ÅNÑ¿Cì±=KÑ¿üB5¶GÑ¿‡¸.DÑ¿W¸;§@Ñ¿öÖ¾=Ñ¿äâA˜9Ñ¿ ÜÄ6Ñ¿«ÂG‰2Ñ¿–Ê/Ñ¿¨WMz+Ñ¿Ğò'Ñ¿İ¡Rk$Ñ¿ê*Õã Ñ¿H¡W\Ñ¿óÚÔÑ¿ëU\MÑ¿1”ŞÅÑ¿Å¿`>Ñ¿§Øâ¶Ñ¿×Şd/Ñ¿VÒæ§Ñ¿!³h Ñ¿;ê˜ıÑ¿¡<lúÑ¿Xåí‰öÑ¿Z{oóÑ¿¯şğzïÑ¿NoróëÑ¿<ÍókèÑ¿xuääÑ¿Qö\áÑ¿ÛvwÕİÑ¿ÿ‰øMÚÑ¿uŠyÆÖÑ¿7xú>ÓÑ¿GS{·ÏÑ¿§ü/ÌÑ¿TÑ|¨ÈÑ¿Ptı ÅÑ¿˜~™ÁÑ¿1‚ş¾Ñ¿í~ŠºÑ¿KEÿ·Ñ¿ÍŠ{³Ñ¿Ÿ½ÿó¯Ñ¿¾İl¬Ñ¿+ëÿä¨Ñ¿æå]¥Ñ¿òÍÿÕ¡Ñ¿K£NÑ¿ñeÿÆšÑ¿ç?—Ñ¿)³ş·“Ñ¿¼=~0Ñ¿œµı¨ŒÑ¿Í}!‰Ñ¿Imü™…Ñ¿­{‚Ñ¿1ÚúŠ~Ñ¿™ôy{Ñ¿Rüø{wÑ¿WñwôsÑ¿¬ÓölpÑ¿N£uålÑ¿@`ô]iÑ¿€
+sÖeÑ¿¢ñNbÑ¿î&pÇ^Ñ¿™î?[Ñ¿’øl¸WÑ¿_Eë0TÑ¿wi©PÑ¿à¦ç!MÑ¿•»ešIÑ¿˜½ãFÑ¿ì¬a‹BÑ¿‰ß?Ñ¿S]|;Ñ¿¿
+Ûô7Ñ¿N¯Xm4Ñ¿,AÖå0Ñ¿WÀS^-Ñ¿Ñ,ÑÖ)Ñ¿œ†NO&Ñ¿µÍËÇ"Ñ¿I@Ñ¿Ô#Æ¸Ñ¿Ù2C1Ñ¿-/À©Ñ¿Ğ="Ñ¿Äï¹šÑ¿´6
+Ñ¿–e³‹Ñ¿u0Ñ¿¤¬|ÿÑ¿
+)õûÑ¿îp¥møÑ¿Å!æôÑ¿s^ñÑ¿/5×íÑ¿8Q–OêÑ¿ZÈæÑ¿8Q@ãÑ¿05
+¹ßÑ¿s†1ÜÑ¿ÅªØÑ¿íp}"ÕÑ¿
+ùšÑÑ¿¤tÎÑ¿uğ‹ÊÑ¿—ekÇÑ¿´æ|ÃÑ¿Èïaõ¿Ñ¿×İm¼Ñ¿5/Xæ¸Ñ¿ã2Ó^µÑ¿ß#N×±Ñ¿,ÉO®Ñ¿ÉÍCÈªÑ¿³†¾@§Ñ¿ï,9¹£Ñ¿xÀ³1 Ñ¿SA.ªœÑ¿}¯¨"™Ñ¿ô
+#›•Ñ¿¿S’Ñ¿Ô‰ŒÑ¿=­‘‹Ñ¿ó½}‡Ñ¿ú»…õƒÑ¿N§ÿm€Ñ¿ôyæ|Ñ¿êEó^yÑ¿-ùl×uÑ¿Ä™æOrÑ¿§'`ÈnÑ¿Û¢Ù@kÑ¿_S¹gÑ¿1aÌ1dÑ¿U¤Eª`Ñ¿ÇÔ¾"]Ñ¿ˆò7›YÑ¿œı°VÑ¿şõ)ŒRÑ¿¯Û¢OÑ¿¯®}KÑ¿o”õGÑ¿¢nDÑ¿•·…æ@Ñ¿Ó?ş^=Ñ¿dµv×9Ñ¿FïO6Ñ¿whgÈ2Ñ¿ø¥ß@/Ñ¿ÇĞW¹+Ñ¿èèÏ1(Ñ¿WîGª$Ñ¿á¿"!Ñ¿*Á7›Ñ¿ˆ¯Ñ¿9I'ŒÑ¿8ñÑ¿‰†}Ñ¿+	õÑ¿ynÑ¿ZÖ|æÑ¿ì ô^Ñ¿ÍXk×ıÑ¿ı}âOúÑ¿€YÈöÑ¿QĞ@óÑ¿t}G¹ïÑ¿äW¾1ìÑ¿¦5ªèÑ¿¸Ô«"åÑ¿w"›áÑ¿Î™ŞÑ¿ÑƒŒÚÑ¿%î…×Ñ¿ÆEü|ÓÑ¿»ŠrõÏÑ¿ş¼èmÌÑ¿•Ü^æÈÑ¿yéÔ^ÅÑ¿­ãJ×ÁÑ¿4ËÀO¾Ñ¿ 6ÈºÑ¿1b¬@·Ñ¿©"¹³Ñ¿n®—1°Ñ¿‰8ª¬Ñ¿ğ¯‚"©Ñ¿©øš¥Ñ¿´fm¢Ñ¿¦â‹Ñ¿¹ÒW›Ñ¿´ìÌ|—Ñ¿ÿóAõ“Ñ¿šè¶mÑ¿ˆÊ+æŒÑ¿Æ™ ^‰Ñ¿TV×…Ñ¿3 ŠO‚Ñ¿d—şÇ~Ñ¿äs@{Ñ¿¶ç¸wÑ¿×ì[1tÑ¿G9Ğ©pÑ¿sD"mÑ¿š¸šiÑ¿ƒ®,fÑ¿9° ‹bÑ¿AŸ_Ñ¿–{ˆ|[Ñ¿>EüôWÑ¿7üomTÑ¿‚ ãåPÑ¿2W^MÑ¿±ÊÖIÑ¿D>OFÑ¿Ğv±ÇBÑ¿¯½$@?Ñ¿Şñ—¸;Ñ¿`18Ñ¿."~©4Ñ¿Rñ!1Ñ¿Ådš-Ñ¿‰ŞÖ*Ñ¿¢I‹&Ñ¿T¼#Ñ¿¼ò.|Ñ¿Ä~¡ôÑ¿ømÑ¿Ç^†åÑ¿Å²ø]Ñ¿ôjÖÑ¿®"İN
+Ñ¿>OÇÑ¿àGÁ?Ñ¿q>3¸ÿÑ¿S"¥0üÑ¿‡ó©øÑ¿²ˆ!õÑ¿ã]ú™ñÑ¿÷kîÑ¿„}İŠêÑ¿PñNçÑ¿jRÀ{ãÑ¿Ù 1ôßÑ¿–Ü¢lÜÑ¿§åØÑ¿…]ÕÑ¿¼öÕÑÑ¿¿gNÎÑ¿ï×ÆÊÑ¿¼ºH?ÇÑ¿µs¹·ÃÑ¿ *0ÀÑ¿™­š¨¼Ñ¿‡.!¹Ñ¿Äœ{™µÑ¿Vøë²Ñ¿6A\Š®Ñ¿kwÌ«Ñ¿îš<{§Ñ¿Æ«¬ó£Ñ¿ì©l Ñ¿f•ŒäœÑ¿2nü\™Ñ¿M4lÕ•Ñ¿½çÛM’Ñ¿|ˆKÆÑ¿»>‹Ñ¿ó‘*·‡Ñ¿¨ú™/„Ñ¿®P	¨€Ñ¿”x }Ñ¿±Äç˜yÑ¿°âVvÑ¿şíÅ‰rÑ¿Ÿæ4oÑ¿Ì£zkÑ¿ÓŸógÑ¿i`kdÑ¿Rğã`Ñ¿Š©^\]Ñ¿2ÍÔYÑ¿ò§;MVÑ¿!ªÅRÑ¿¢[>OÑ¿w™†¶KÑ¿›Äô.HÑ¿İb§DÑ¿ÛâĞAÑ¿öÕ>˜=Ñ¿d¶¬:Ñ¿%„‰6Ñ¿4?ˆ3Ñ¿˜çõy/Ñ¿M}cò+Ñ¿V Ñj(Ñ¿®p>ã$Ñ¿[Î«[!Ñ¿XÔÑ¿©Q†LÑ¿LwóÄÑ¿@Š`=Ñ¿‡ŠÍµÑ¿!x:.Ñ¿S§¦Ñ¿KÑ¿ÚĞ€—Ñ¿¼síşÑ¿ñZˆúÑ¿yÆ ÷Ñ¿Rì2yóÑ¿}DŸñïÑ¿ù‰jìÑ¿Ì¼wâèÑ¿íÜãZåÑ¿fêOÓáÑ¿+å»KŞÑ¿EÍ'ÄÚÑ¿±¢“<×Ñ¿peÿ´ÓÑ¿‚k-ĞÑ¿ç²Ö¥ÌÑ¿œ=BÉÑ¿¦µ­–ÅÑ¿ÂÑ¿°m„‡¾Ñ¿±­ïÿºÑ¿ÛZx·Ñ¿ªõÅğ³Ñ¿£ı0i°Ñ¿íò›á¬Ñ¿ÕZ©Ñ¿}¥qÒ¥Ñ¿ÁbÜJ¢Ñ¿UGÃÑ¿?¥±;›Ñ¿z*´—Ñ¿
+†,”Ñ¿ëüğ¤Ñ¿J[Ñ¿£„Å•‰Ñ¿€¬/†Ñ¿ªÁ™†‚Ñ¿+Äÿ~Ñ¿û³mw{Ñ¿ ‘×ïwÑ¿–[AhtÑ¿b«àpÑ¿~¸YmÑ¿ñJ~ÑiÑ¿²ÊçIfÑ¿Ê7QÂbÑ¿4’º:_Ñ¿ğÙ#³[Ñ¿ÿ+XÑ¿a1ö£TÑ¿A_QÑ¿>È”MÑ¿{(1JÑ¿) š…FÑ¿+ÅşBÑ¿wkv?Ñ¿&Ôî;Ñ¿"¤<g8Ñ¿p¥ß4Ñ¿†X1Ñ¿ÛuĞ-Ñ¿MŞH*Ñ¿èLFÁ&Ñ¿×i®9#Ñ¿t²Ñ¿¬k~*Ñ¿”Pæ¢Ñ¿Ò"NÑ¿^âµ“Ñ¿@Ñ¿w)…„
+Ñ¿ÿ°ìüÑ¿Ü%TuÑ¿
+ˆ»íÿÑ¿Œ×"füÑ¿bŠŞøÑ¿Œ>ñVõÑ¿
+VXÏñÑ¿ÚZ¿GîÑ¿şL&ÀêÑ¿t,8çÑ¿@ùó°ãÑ¿_³Z)àÑ¿ÑZÁ¡ÜÑ¿–ï'ÙÑ¿¯q’ÕÑ¿áô
+ÒÑ¿Ü=[ƒÎÑ¿ñ‡ÁûÊÑ¿X¿'tÇÑ¿äìÃÑ¿ öódÀÑ¿‚õYİ¼Ñ¿9â¿U¹Ñ¿D¼%ÎµÑ¿ ƒ‹F²Ñ¿P8ñ¾®Ñ¿VÚV7«Ñ¿¯i¼¯§Ñ¿[æ!(¤Ñ¿]P‡  Ñ¿ÓBLK 0                                im­Ë¹„»ôšé¯<šóa³Ñ I.ù?!Š§”6¿8HQô®7?Ÿ!2Ÿ]ú?ÓBLK 0                             [ñà‘ì7éC¥~´;Å-       €       €ÓBLK 0                             r¶Šy${i¡ç&ã%QÒñäÉ¥²¿~n?Ü­}ÃÛ­? 9ıÓ×?„§ú#‹ñ?¨Ø§¯ø?øÙµ7½ë?,9Ü¶òï?ûçÊóéÑ?ÏÆKß—ù?œMŞÁ…@XiXş@        dø£Îvl¿7¸‡ÚeÇ¿›ô!Tó;â¿oíSğ~ã¿                ¡& ¼
+ ¿Ì:C$7+ Àì£ÈqçxÀ                        ~fvç"±Ğ?}¨œ¿
+.ø?                                º®GM €ö¿                                        ÓBLK 0                             ïkDğb²ëQ–ÏÚğ[[e2œ¿’EĞÊæ?X­ÛÂFSø¿X~j©„èÀBnè=}ò!ÀlÑ¯õRwÀ¯ŒèÎÌŸ¿É²~œÜ¿ç—ÑàÀY¤ô­ĞÀC™®£°À        `XÀSN+¡?şJ3¹ƒÜ?¦ŒñıhÎ?X–Ÿ2Æ÷·?                8Ø9Aj°¿Û”æ–Œá¿´‹c7ğ¿                        Õûa>Ê Àé„U=ˆÀ                                Á/3ã3ï¿                                        ÓBLK 0                             j1…º¾ÔÃ>âígÖ’`1ÆÄ²ß¾ • N3?Î`å©2¿(rºùm¸†?£öqù¶*ã¿TZÚXñt À§>¤qZÿï?¥h«]DÁ¿©i».Üà?Ô`+Ä@=›_0D’1À        ‹ \£—i0¿y34¼|!°¿(†2„Ö‡Ÿ¿úwl<ßâ?                §•s¡å?œğË³×@-—r[ÅÀ                        ºXPCÑ¿¼U@¸âa=@                                ¡âo ò@@                                        ÓBLK 0                             EV]äw ËäU¥v}@                                                                                                                                                                                                                                                                                                ÓBLK 0                             ı›óÂğfOgîfF éˆ†Efó$>$}„J3¿÷D^Ö&?p Q†¿R€<ÑMä?Z269p!@`)S ğ?ä€mâÁ?”Ë\3Îß¿Ëå“’Y¥À¸Ï¦Tğ¢/@        s<ĞÃ1?¥Áò‚*=°?ÄN^ğı„?x[K¼×¿                _é]Vå¿S¿– ŞšÀ¥¢ºàX@                        {N_q•Î?s™ˆéÜÈ<À                                sHñ3¬ì?À                                        ÓBLK 0                             EV]äw ËäU¥v}@                                                                                                                                                                                                                                                                                                ÓBLK 0                             ’æ;ÅÜ‹^ĞxÌBİöÛz›>íHÁŒİşï?°ƒ„JHÇ¿€Áº¤ÑïÇ?K…äÇ“Ëñ?½F	3w2@Ø¤Ï«Z0?'4’&½Ø]¿3Ÿäù‘<¨?8¸{¶ç?<åcüI$AÀ        bŒ«®7´¿´®U>#ã?1ÿ©v\´@ßQÉ€îæ?                Ğ‰øÙª¿U"3ÍìÃ?´äŒü(@                        ¢ª[´Ç?ò]omI	RÀ                                Z3“¦[0@                                        ÓBLK 0                             EV]äw ËäU¥v}@                                                                                                                                                                                                                                                                                                ÓBLK 0                             Æ	—Õ=E)WÉ_U"O…ÒÌ~˜¾´Ä|‘ ğ?&š"UğJÇ?÷è®z÷¾¿×ãıHõ¿nÙ90F¤3ÀsÑI¨K0¿Bá}9¤Z?’ï†İ§¿æ'¸àåå¿qœdÊ7Ü@@        &ë›ªØ,´?¹§­ƒŞ„á¿	bÃáŸ
+À=	L–r´À                ”Ì™±‰ª?´ù ^JËÇ¿3 ß)Øh'À                        rçşfåĞ¿¼Â‰ğ£ÂQ@                                ƒXÎ‡¹0À                                        ÓBLK 0                             EV]äw ËäU¥v}@                                                                                                                                                                                                                                                                                                ÓBLK 0                                aOöÜÒAİˆ¶°Ó“eìXa5(»•ó?ÚÌğ¾sñ?ä
+ú¤%ñ¿3‰Àîó?ÓBLK 0                             Jç6äKù¿yÒu.#H¥                ÓBLK 0                                »b“ÈòSİbi)M×CKù;İéı˜İ?å"íìêÙ¿sšuvÙ?®•2Šİ?ÓBLK 0                             [ñà‘ì7éC¥~´;Å-       €       €ÓBLK 0                             `Í±şS²Aæªš\]It‡ $>å™=ÇN1"]S?ñ^8êñq?ş3pÆù¿îş#¤?%¿ ‚`FøWb?§úŠˆ
+ ğ?}æ{O_”¿´çş_’¿ì²Xîù<I? T5Æ¶Ãv?        ÷©7§?¥Š¿àŞÙ*îÌG?}Äğs2? ×JfÂ’¿                ñs£WÙ~’¿ØŠl²5£G?ş×/Îˆ¿                        ºª.Dm/;? „Aü¦”ƒ¿                                 ğ`R}B?                                        ÓBLK 0                             gÃÆÃzäÍPt¦~t%ÇeĞ²¥^À½éÍà]S¿×Î|¾r¿+ë[*±$¿”.­m¸<¿ÿE<ş¼Ob¿-ŒÛíÿï?c}çfT”?¸»Ú^tÎ’?HÚ–¥ÆK? KÆr¿        ÿîá›Š?¿ŠÍ‹c4? Ô‰$BE? ¤Sk8À’?                ş£Ø/½’?™Ø7¾÷:M?ÿe$¡·Œ?                        Vƒ¬Õ~"I? l…Ï‘ƒ?                                †£*<?                                        ÓBLK 0                             Å¥Û+xòâ#ŸZ†Îï„‡˜uÖ
+>şÅõ" ğ?æïdaº_¿§Û$‹›k’¿ƒ*µ«¶g;?  ²	§G?—,²ßTS?.½ú%å‘¿ Ái¤F?(®nµ¤YC?øÍ¯ÖX?        ,•`%Æƒt?{ zŸ·‰’¿`ş<#?ÿçv¯jA‡?                 ¶aÁB¿^†œd”àC?ÿ6\h¿                        ~†-v¹&,¿ ì©Ê¥ø?                                €®äè?                                        ÓBLK 0                             &Te*¢ı3‡øâ„÷óúZÂ•‚Õ¾¿°Å¦äÿï??*!QW?6y%$vÊ’?V·f_jN?ÿíùVd3?¯qTS¿eO ÑÇØ‘?ÄCæÃå7?°ößÖJ?p"­MX¿        Y;à&G©t¿¡M«=•¹’?·ÚYÜM? 8õâè,ƒ¿                B ²w[Ÿ%¿Å9 Ç¢J? ¯›h?                        *vÄH2¿ 8!î¿                                  û‰.şü¾                                        ÓBLK 0                                d£J?F[Wı“]óÎ0ó†lz×ßÛ¿ûN;üÑÙY¿lôxÍ×Y¿’õ—âÛ?ÓBLK 0                             Jç6äKù¿yÒu.#H¥                #ASDF BLOCK INDEX
+%YAML 1.1
+---
+- 64006
+- 104620
+- 104706
+- 104776
+- 104862
+- 104932
+- 105274
+- 105616
+- 105958
+- 106300
+- 106386
+- 106456
+- 114510
+- 122564
+- 122650
+- 122720
+- 123062
+- 123404
+- 123746
+- 124088
+- 124430
+- 124772
+- 125114
+- 125456
+- 125798
+- 126140
+- 126226
+- 126296
+- 126382
+- 126452
+- 126794
+- 127136
+- 127478
+- 127820
+- 127906
+...

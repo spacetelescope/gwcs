@@ -1,6 +1,8 @@
 0.25.0 (unreleased)
 -------------------
 
+- Reorganize documentation to have two separate introductions (user and developer) [#604]
+
 - Test with latest version of Python and drop Python 3.10 [#569]
 
 - Fix API issue with ``wcs.numerical_inverse``. [#565]
