@@ -1894,3 +1894,18 @@ def test_parameterless_transform():
 
     assert gwcs.invert(1, 1) == (1, 1)
     assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
+
+
+def test_fitswcs_imaging(fits_wcs_imaging_simple):
+    """Test simple FITS type imaging WCS."""
+    forward_transform = fits_wcs_imaging_simple.forward_transform
+    ra, dec = fits_wcs_imaging_simple(*forward_transform.crpix)
+    assert_allclose((ra, dec), forward_transform.crval)
+    assert_allclose(fits_wcs_imaging_simple.invert(ra, dec), forward_transform.crpix)
+
+    sky = fits_wcs_imaging_simple.pixel_to_world(*forward_transform.crpix)
+    ra, dec = sky.data.lon.value, sky.data.lat.value
+    assert_allclose((ra, dec), forward_transform.crval)
+    assert_allclose(
+        fits_wcs_imaging_simple.world_to_pixel(sky), forward_transform.crpix
+    )
