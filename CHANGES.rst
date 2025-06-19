@@ -1,4 +1,4 @@
-0.25.0 (unreleased)
+0.25.0 (2025-06-19)
 -------------------
 
 - Reorganize documentation to have two separate introductions (user and developer) [#604]
