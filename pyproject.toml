@@ -41,6 +41,7 @@ docs = [
     "sphinx-asdf",
     "furo",
     "sphinx-tabs",
+    "matplotlib",
 ]
 test = [
     "ci-watson>=0.3.0",
@@ -58,6 +59,9 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.package-data]
 "gwcs.tests.data" = [
     "*",
+]
+"docs.gwcs" = [
+    "*.asdf",
 ]
 
 [tool.setuptools.packages.find]
