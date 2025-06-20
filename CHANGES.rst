@@ -1,5 +1,12 @@
+0.25.1 (2025-06-20)
+-------------------
+
+- Relax the oldest allowed numpy version to 1.25 [#607]
+
 0.25.0 (2025-06-19)
 -------------------
+
+- Removed from PyPi
 
 - Reorganize documentation to have two separate introductions (user and developer) [#604]
 
