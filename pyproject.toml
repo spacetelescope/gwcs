@@ -169,6 +169,8 @@ ignore = [
     "PLR0912", # Too many branches in function
     "PLR0913", # Too many arguments in function
     "PLR0915", # Too many statements in function
+    "PLC0415", # import outside toplevel, this creates issues with circular and
+               # delayed imports
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
