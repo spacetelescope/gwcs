@@ -450,7 +450,7 @@ def test_wcs_from_points():
         #   FITSFixedWarning: 'datfix' made the change
         #       'Set MJD-OBS to 53436.000000 from DATE-OBS'. [astropy.wcs.wcs]
         w = astwcs.WCS(hdr)
-        assert len(caught_warnings) == 2
+    assert len(caught_warnings) == 2
     y, x = np.mgrid[:2046:20j, :4023:10j]
     ra, dec = w.wcs_pix2world(x, y, 1)
     fiducial = coord.SkyCoord(ra.mean() * u.deg, dec.mean() * u.deg, frame="icrs")
@@ -670,7 +670,7 @@ class TestImaging:
             #   FITSFixedWarning: 'datfix' made the change
             #       'Set MJD-OBS to 53436.000000 from DATE-OBS'. [astropy.wcs.wcs]
             self.fitsw = astwcs.WCS(hdr)
-            assert len(caught_warnings) == 2
+        assert len(caught_warnings) == 2
         a_coeff = hdr["A_*"]
         a_order = a_coeff.pop("A_ORDER")
         b_coeff = hdr["B_*"]
