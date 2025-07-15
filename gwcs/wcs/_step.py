@@ -54,9 +54,22 @@ class Step:
 
     @transform.setter
     def transform(self, val):
-        if val is not None and not isinstance(val, (Model)):
-            msg = '"transform" should be an instance of astropy.modeling.Model.'
-            raise TypeError(msg)
+        if val is not None:
+            if not isinstance(val, Model):
+                msg = (
+                    '"transform" should be an instance of astropy.modeling.Model '
+                    "or None."
+                )
+                raise TypeError(msg)
+            if (
+                not isinstance(self.frame, EmptyFrame)
+                and self.frame.naxes != val.n_inputs
+            ):
+                msg = (
+                    f"Number of inputs ({val.n_inputs}) does not match the number "
+                    f"of axes ({self.frame.naxes}) in the frame."
+                )
+                raise ValueError(msg)
         self._transform = val
 
     @property

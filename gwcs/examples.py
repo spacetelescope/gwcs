@@ -738,3 +738,30 @@ def fits_wcs_imaging_simple(params):
         w.wcs.lonpole = 180
     w.wcs.set()
     return gw, w
+
+
+def compound_bounding_box_wcs():
+    """
+    A WCS with a compound bounding box.
+    """
+    detector_plane = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    spectral_order = cf.DiscreteFrame(name="spectral_order", axis_index=2)
+    detector = cf.CompositeFrame(
+        [detector_plane, spectral_order], name="detector_with_order"
+    )
+    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
+    trans3 = (models.Shift(10) & models.Scale(2) & models.Shift(-1)) | models.Mapping(
+        (0, 1), n_inputs=3
+    )
+
+    pipeline = [wcs.Step(detector, trans3), wcs.Step(world, None)]
+
+    w = wcs.WCS(pipeline)
+    cbb = {
+        1: ((-1, 10), (6, 15)),
+        2: ((-1, 5), (3, 17)),
+        3: ((-3, 7), (1, 27)),
+    }
+    w.attach_compound_bounding_box(cbb, [("x",)])
+
+    return w
