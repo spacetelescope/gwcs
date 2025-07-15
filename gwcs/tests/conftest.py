@@ -166,3 +166,8 @@ def gwcs_romanisim():
 @pytest.fixture
 def fits_wcs_imaging_simple():
     return examples.fits_wcs_imaging_simple()
+
+
+@pytest.fixture
+def compound_bounding_box_wcs():
+    return examples.compound_bounding_box_wcs()

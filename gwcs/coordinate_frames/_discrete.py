@@ -13,7 +13,7 @@ class DiscreteFrame(CoordinateFrame):
         super().__init__(
             naxes=1,
             axes_type=(AxisType.DISCRETE,),
-            axes_order=axis_index,
+            axes_order=(axis_index,),
             name=name,
             axes_names=axes_names,
         )

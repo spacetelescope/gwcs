@@ -221,6 +221,7 @@ from ._base import BaseCoordinateFrame
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
 from ._core import CoordinateFrame
+from ._discrete import DiscreteFrame
 from ._empty import EmptyFrame
 from ._frame import Frame2D
 from ._spectral import SpectralFrame
@@ -234,6 +235,7 @@ __all__ = [
     "CelestialFrame",
     "CompositeFrame",
     "CoordinateFrame",
+    "DiscreteFrame",
     "EmptyFrame",
     "Frame2D",
     "SpectralFrame",
