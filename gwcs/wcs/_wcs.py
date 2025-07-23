@@ -9,6 +9,7 @@ import astropy.units as u
 import numpy as np
 from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
+from astropy.modeling.bounding_box import CompoundBoundingBox as Cbox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
 from astropy.modeling.models import (
     Mapping,
@@ -1270,44 +1271,129 @@ class WCS(GWCSAPIMixin, Pipeline):
             is clockwise, starting from the bottom left corner.
 
         """
-        axis_type = AxisType.from_input("all" if axis_type is None else axis_type)
 
-        def _order_clockwise(v):
-            return np.asarray(
-                [
-                    [v[0][0], v[1][0]],
-                    [v[0][0], v[1][1]],
-                    [v[0][1], v[1][1]],
-                    [v[0][1], v[1][0]],
-                ]
-            ).T
+        def _remove_ignored(bounding_box: Bbox) -> tuple[float, ...]:
+            intervals = tuple(bounding_box.intervals.values())
+            bbox = bounding_box.bounding_box(order="F")
+
+            return tuple(b for b in bbox if b in intervals)
 
         if bounding_box is None:
             if self.bounding_box is None:
                 msg = "Need a valid bounding_box to compute the footprint."
                 raise TypeError(msg)
-            bb = self.bounding_box.bounding_box(order="F")
-        else:
-            bb = bounding_box
+
+            bounding_box = self.bounding_box
+
+        if isinstance(bounding_box, Cbox):
+            footprints = {}
+            for selector, bbox in bounding_box.bounding_boxes.items():
+                footprints[selector] = self._footprint(
+                    _remove_ignored(bbox),
+                    center=center,
+                    axis_type=axis_type,
+                    selector=selector,
+                )
+
+            return footprints
+
+        if isinstance(bounding_box, Bbox):
+            bounding_box = bounding_box.bounding_box(order="F")
+
+        return self._footprint(bounding_box, center=center, axis_type=axis_type)
+
+    def _footprint(
+        self,
+        bounding_box,
+        center=False,
+        axis_type: AxisType | str | None = None,
+        selector: tuple[float, ...] | None = None,
+    ):
+        """
+        Return the footprint in world coordinates.
+
+        Parameters
+        ----------
+        bounding_box : tuple of floats: (start, stop)
+            ``prop: bounding_box``
+        center : bool
+            If `True` use the center of the pixel, otherwise use the corner.
+        axis_type : AxisType
+            A supported ``output_frame.axes_type`` or ``"all"`` (default).
+            One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
+        selector : tuple of floats, optional
+            A tuple of the selector values used for the discrete coordinate of the WCS
+            to feed into the compound bounding box.
+        """
+        axis_type = AxisType.from_input("all" if axis_type is None else axis_type)
+
+        def _insert_selector(
+            bounding_box_inputs: tuple[float, ...],
+            selector: tuple[float, ...] | None,
+            input_frame: CoordinateFrame,
+        ):
+            if selector is None:
+                return bounding_box_inputs
+
+            if len(selector) != input_frame.axes_type.count(AxisType.DISCRETE):
+                msg = (
+                    "The number of selector values does not match the number of "
+                    "discrete axes in the input frame."
+                )
+                raise ValueError(msg)
+
+            bounding_box_inputs = list(bounding_box_inputs)
+            selector = list(selector)
+            inputs = []
+            for axes_type in input_frame.axes_type:
+                if axes_type == AxisType.DISCRETE:
+                    inputs.append(selector.pop(0))
+                else:
+                    inputs.append(bounding_box_inputs.pop(0))
+
+            return tuple(inputs)
+
+        def _order_clockwise(v):
+            return np.asarray(
+                [
+                    _insert_selector((v[0][0], v[1][0]), selector, self.input_frame),
+                    _insert_selector((v[0][0], v[1][1]), selector, self.input_frame),
+                    _insert_selector((v[0][1], v[1][1]), selector, self.input_frame),
+                    _insert_selector((v[0][1], v[1][0]), selector, self.input_frame),
+                ]
+            ).T
 
         all_spatial = all(t.lower() == "spatial" for t in self.output_frame.axes_type)
         if self.output_frame.naxes == 1:
-            if isinstance(bb[0], u.Quantity):
-                bb = np.asarray([b.value for b in bb]) * bb[0].unit
-            vertices = (bb,)
+            if isinstance(bounding_box[0], u.Quantity):
+                bounding_box = (
+                    np.asarray([b.value for b in bounding_box]) * bounding_box[0].unit
+                )
+            vertices = _insert_selector((bounding_box,), selector, self.input_frame)
         elif all_spatial:
             vertices = _order_clockwise(
-                [self._remove_units_input(b, self.input_frame) for b in bb]
+                [
+                    self._remove_units_input(
+                        _insert_selector(b, selector, self.input_frame),
+                        self.input_frame,
+                    )
+                    for b in bounding_box
+                ]
             )
         else:
-            vertices = np.array(list(itertools.product(*bb))).T
+            vertices = np.array(
+                [
+                    _insert_selector(b, selector, self.input_frame)
+                    for b in itertools.product(*bounding_box)
+                ]
+            ).T
 
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
         if center:
             vertices = _toindex(vertices)
 
-        result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
+        result = np.asarray(self(*vertices, with_bounding_box=False))
 
         if axis_type is AxisType.SPATIAL and all_spatial:
             return result.T

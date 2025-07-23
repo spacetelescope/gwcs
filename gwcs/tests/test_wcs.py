@@ -323,9 +323,9 @@ def test_compound_bounding_box(compound_bounding_box_wcs):
     assert w.bounding_box == cbb
 
     # Test evaluating
-    assert_allclose(w(13, 2, 1), (np.nan, np.nan))
-    assert_allclose(w(13, 2, 2), (np.nan, np.nan))
-    assert_allclose(w(13, 0, 3), (np.nan, np.nan))
+    assert_allclose(w(13, 2, 1), (np.nan, np.nan, np.nan))
+    assert_allclose(w(13, 2, 2), (np.nan, np.nan, np.nan))
+    assert_allclose(w(13, 0, 3), (np.nan, np.nan, np.nan))
     # No bounding box for selector
     with pytest.raises(RuntimeError):
         w(13, 13, 4)
@@ -595,6 +595,65 @@ def test_footprint():
     )
 
     assert_equal(w.footprint(axis_type="spectral"), np.array([2, 12]))
+
+
+def test_footprint_compound_bounding_box(compound_bounding_box_wcs):
+    """
+    Test that we can compute the footprint of a WCS with a CompoundBoundingBox.
+    """
+    footprint = compound_bounding_box_wcs.footprint()
+    assert list(footprint.keys()) == list(
+        compound_bounding_box_wcs.bounding_box.bounding_boxes.keys()
+    )
+
+    for selector, bbox in compound_bounding_box_wcs.bounding_box.bounding_boxes.items():
+        vertices = np.asarray(
+            [
+                (bbox.intervals[0][0], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][0], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][0], selector[0]),
+            ]
+        ).T
+        assert (
+            footprint[selector]
+            == np.asarray(
+                compound_bounding_box_wcs(*vertices, with_bounding_box=False)
+            ).T
+        ).all()
+
+
+def test_footprint_compound_bounding_box_spectral(
+    compound_bounding_box_wcs_spectral_out,
+):
+    """
+    Test that we can compute the footprint of a WCS with a CompoundBoundingBox.
+    """
+    footprint = compound_bounding_box_wcs_spectral_out.footprint()
+    assert list(footprint.keys()) == list(
+        compound_bounding_box_wcs_spectral_out.bounding_box.bounding_boxes.keys()
+    )
+
+    for (
+        selector,
+        bbox,
+    ) in compound_bounding_box_wcs_spectral_out.bounding_box.bounding_boxes.items():
+        vertices = np.asarray(
+            [
+                (bbox.intervals[0][0], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][0], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][1], selector[0]),
+            ]
+        ).T
+        assert (
+            footprint[selector]
+            == np.asarray(
+                compound_bounding_box_wcs_spectral_out(
+                    *vertices, with_bounding_box=False
+                )
+            ).T
+        ).all()
 
 
 def test_outside_footprint_inputs(gwcs_2d_spatial_shift):

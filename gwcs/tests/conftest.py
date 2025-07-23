@@ -171,3 +171,8 @@ def fits_wcs_imaging_simple():
 @pytest.fixture
 def compound_bounding_box_wcs():
     return examples.compound_bounding_box_wcs()
+
+
+@pytest.fixture
+def compound_bounding_box_wcs_spectral_out():
+    return examples.compound_bounding_box_wcs_spectral_out()
