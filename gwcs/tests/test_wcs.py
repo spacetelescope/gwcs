@@ -656,6 +656,15 @@ def test_footprint_compound_bounding_box_spectral(
         ).all()
 
 
+def test_invert_compound_bounding_box(compound_bounding_box_wcs):
+    """
+    Test that we can invert a WCS with a CompoundBoundingBox.
+    """
+
+    ra, dec, lam = compound_bounding_box_wcs(1, 2, 3)
+    assert_allclose(compound_bounding_box_wcs.invert(ra, dec, lam), (1, 2, 3))
+
+
 def test_outside_footprint_inputs(gwcs_2d_spatial_shift):
     """
     Regression test for #594

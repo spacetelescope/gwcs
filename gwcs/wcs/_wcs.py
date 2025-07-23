@@ -433,6 +433,27 @@ class WCS(GWCSAPIMixin, Pipeline):
         return result
 
     def outside_footprint(self, world_arrays):
+        def _outside_footprint(footprint, ind, idim, phys, coord) -> np.ndarray:
+            axis_range = footprint[:, idim] if np.asarray(ind).sum() > 1 else footprint
+
+            min_ax = axis_range.min()
+            max_ax = axis_range.max()
+
+            if (
+                axtyp == "SPATIAL"
+                and str(phys).endswith((".ra", ".lon"))
+                and (max_ax - min_ax) > 180
+            ):
+                # most likely this coordinate is wrapped at 360
+                d = 0.5 * (min_ax + max_ax)
+                m = axis_range <= d
+                min_ax = axis_range[m].max()
+                max_ax = axis_range[~m].min()
+                return (coord > min_ax) & (coord < max_ax)
+
+            coord_ = self._remove_quantity_output(world_arrays, self.output_frame)[idim]
+            return (coord_ < min_ax) | (coord_ > max_ax)
+
         world_arrays = [copy(array) for array in world_arrays]
 
         axes_types = set(self.output_frame.axes_type)
@@ -451,35 +472,24 @@ class WCS(GWCSAPIMixin, Pipeline):
                 zip(world_arrays, axes_phys_types, strict=False)
             ):
                 coord = _tofloat(coordinate)
-                if np.asarray(ind).sum() > 1:
-                    axis_range = footprint[:, idim]
-                else:
-                    axis_range = footprint
-                min_ax = axis_range.min()
-                max_ax = axis_range.max()
 
-                if (
-                    axtyp == "SPATIAL"
-                    and str(phys).endswith((".ra", ".lon"))
-                    and (max_ax - min_ax) > 180
-                ):
-                    # most likely this coordinate is wrapped at 360
-                    d = 0.5 * (min_ax + max_ax)
-                    m = axis_range <= d
-                    min_ax = axis_range[m].max()
-                    max_ax = axis_range[~m].min()
-                    outside = (coord > min_ax) & (coord < max_ax)
+                if not isinstance(footprint, dict):
+                    outside = _outside_footprint(footprint, ind, idim, phys, coord)
                 else:
-                    coord_ = self._remove_quantity_output(
-                        world_arrays, self.output_frame
-                    )[idim]
-                    outside = (coord_ < min_ax) | (coord_ > max_ax)
+                    outside = None
+                    for ftp in footprint.values():
+                        if outside is None:
+                            outside = _outside_footprint(ftp, ind, idim, phys, coord)
+                        else:
+                            outside &= _outside_footprint(ftp, ind, idim, phys, coord)
+
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
                     else:
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
+
         if not_numerical:
             world_arrays = values_to_high_level_objects(
                 *world_arrays, low_level_wcs=self
@@ -490,10 +500,22 @@ class WCS(GWCSAPIMixin, Pipeline):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
             pixel_arrays = [pixel_arrays]
 
+        def _outside(pix, index, bbox):
+            return (pix < bbox[index][0]) | (pix > bbox[index][1])
+
         pixel_arrays = list(pixel_arrays)
         bbox = self.bounding_box
         for idim, pix in enumerate(pixel_arrays):
-            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            if isinstance(bbox, Cbox):
+                outside = None
+                for b in bbox.bounding_boxes.values():
+                    if outside is None:
+                        outside = _outside(pix, idim, b)
+                    else:
+                        outside &= _outside(pix, idim, b)
+            else:
+                outside = _outside(pix, idim, bbox)
+
             if np.any(outside):
                 if np.isscalar(pix):
                     pixel_arrays[idim] = np.nan
