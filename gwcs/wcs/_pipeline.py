@@ -162,11 +162,31 @@ class Pipeline:
             msg = "The last step in the pipeline must have a None transform."
             raise ValueError(msg)
 
+    def _check_step_axes(self, in_step: Step, out_step: Step) -> None:
+        if (
+            not isinstance(in_step.frame, EmptyFrame)
+            and not isinstance(out_step.frame, EmptyFrame)
+            and out_step.transform is not None
+            and in_step.frame.naxes != out_step.transform.n_inputs
+        ):
+            warnings.warn(
+                f"Number of outputs ({in_step.transform.n_outputs}) does not match the "
+                f"number of axes ({out_step.frame.naxes}) in the output frame."
+                "This may lead to unexpected behavior.\n"
+                "This will be an error in a future version.",
+                Step.StepAxisWarning,
+                stacklevel=2,
+            )
+
     def _insert(self, index: int, value: Step | StepTuple) -> None:
         """
         Handle insertion of a step into the pipeline.
         """
-        self._pipeline.insert(index, self._wrap_step(value))
+        step = self._wrap_step(value)
+        if index > 0:
+            self._check_step_axes(self._pipeline[index - 1], step)
+
+        self._pipeline.insert(index, step)
         self._check_last_step()
 
     def _extend(self, values: list[Step]) -> None:
@@ -174,7 +194,11 @@ class Pipeline:
         Handle extending the pipeline with a list of steps
         """
         for value in values:
-            self._pipeline.append(self._wrap_step(value))
+            step = self._wrap_step(value)
+            if len(self._pipeline) > 0:
+                self._check_step_axes(self._pipeline[-1], step)
+
+            self._pipeline.append(step)
 
         self._check_last_step()
 

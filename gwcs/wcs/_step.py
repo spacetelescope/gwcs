@@ -13,6 +13,9 @@ __all__ = [
 
 
 StepTuple: TypeAlias = tuple[CoordinateFrame, Union[Model, None]]  # noqa: UP007
+# Define a type alias for Model or None, the union is necessary because the Model class
+#    does not support the | operator for type hinting
+Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 
 
 class Step:
@@ -28,7 +31,13 @@ class Step:
         The transform of the last step should be `None`.
     """
 
-    def __init__(self, frame: str | CoordinateFrame | None, transform=None):
+    class StepAxisWarning(DeprecationWarning):
+        """
+        Warning raised when the number of axes in the step does not match the
+        the number of inputs/outputs of the transform.
+        """
+
+    def __init__(self, frame: str | CoordinateFrame | None, transform: Mdl = None):
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         self.frame = (
@@ -37,7 +46,7 @@ class Step:
         self.transform = transform
 
     @property
-    def frame(self):
+    def frame(self) -> CoordinateFrame:
         return self._frame
 
     @frame.setter
@@ -49,7 +58,7 @@ class Step:
         self._frame = val
 
     @property
-    def transform(self):
+    def transform(self) -> Mdl:
         return self._transform
 
     @transform.setter
@@ -65,11 +74,14 @@ class Step:
                 not isinstance(self.frame, EmptyFrame)
                 and self.frame.naxes != val.n_inputs
             ):
-                msg = (
+                warnings.warn(
                     f"Number of inputs ({val.n_inputs}) does not match the number "
                     f"of axes ({self.frame.naxes}) in the frame."
+                    "This may lead to unexpected behavior.\n"
+                    "This will be an error in a future version.",
+                    self.StepAxisWarning,
+                    stacklevel=2,
                 )
-                raise ValueError(msg)
         self._transform = val
 
     @property
