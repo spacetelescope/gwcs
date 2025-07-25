@@ -29,7 +29,7 @@ class WCSConverter(Converter):
     def from_yaml_tree(self, node, tag, ctx):
         from gwcs.wcs import WCS, GwcsBoundingBoxWarning
 
-        gwcsobj = WCS(node["steps"], name=node["name"])
+        gwcsobj = WCS(node["steps"], name=node["name"], _check_step=False)
         if "pixel_shape" in node:
             gwcsobj.pixel_shape = node["pixel_shape"]
 
@@ -56,7 +56,11 @@ class StepConverter(Converter):
     def from_yaml_tree(self, node, tag, ctx):
         from gwcs.wcs import Step
 
-        return Step(frame=node["frame"], transform=node.get("transform", None))
+        return Step(
+            frame=node["frame"],
+            transform=node.get("transform", None),
+            _check_step=False,
+        )
 
     def to_yaml_tree(self, step, tag, ctx):
         from gwcs.coordinate_frames import EmptyFrame
