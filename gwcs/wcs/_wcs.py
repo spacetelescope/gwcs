@@ -111,8 +111,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         input_frame: CoordinateFrame | None = None,
         output_frame: CoordinateFrame | None = None,
         name: str | None = None,
+        *,
+        _check_step: bool = True,
     ) -> None:
-        super(GWCSAPIMixin, self).__init__(forward_transform, input_frame, output_frame)
+        super(GWCSAPIMixin, self).__init__(
+            forward_transform, input_frame, output_frame, _check_step=_check_step
+        )
 
         self._approx_inverse = None
         self._name = "" if name is None else name
