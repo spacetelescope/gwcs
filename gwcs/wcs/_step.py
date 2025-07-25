@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import NamedTuple, TypeAlias, Union
 
@@ -32,18 +34,35 @@ class Step:
     """
 
     class StepAxisWarning(DeprecationWarning):
+        # Allow for a string to be passed in for the frame but be turned into a
+        # frame object
         """
         Warning raised when the number of axes in the step does not match the
         the number of inputs/outputs of the transform.
         """
 
-    def __init__(self, frame: str | CoordinateFrame | None, transform: Mdl = None):
+    def __init__(
+        self,
+        frame: str | CoordinateFrame | None,
+        transform: Mdl = None,
+        *,
+        _check_step: bool = True,
+    ):
+        # Possibly turn off step checking during initialization
+        #   This is so that asdf files can be loaded without checking the steps
+        self._check_step = _check_step
+
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         self.frame = (
             frame if isinstance(frame, CoordinateFrame) else EmptyFrame(name=frame)
         )
         self.transform = transform
+
+        # Reset the check_step flag to True after initialization
+        #   This is to ensure that the checks are performed if the step is modified
+        #   later.
+        self._check_step = True
 
     @property
     def frame(self) -> CoordinateFrame:
@@ -70,13 +89,15 @@ class Step:
                     "or None."
                 )
                 raise TypeError(msg)
+
             if (
-                not isinstance(self.frame, EmptyFrame)
+                self._check_step
+                and not isinstance(self.frame, EmptyFrame)
                 and self.frame.naxes != val.n_inputs
             ):
                 warnings.warn(
                     f"Number of inputs ({val.n_inputs}) does not match the number "
-                    f"of axes ({self.frame.naxes}) in the frame."
+                    f"of axes ({self.frame.naxes}) in the frame: {self.frame}."
                     "This may lead to unexpected behavior.\n"
                     "This will be an error in a future version.",
                     self.StepAxisWarning,
@@ -116,8 +137,8 @@ class Step:
             f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
         )
 
-    def copy(self):
-        return Step(self.frame, self.transform)
+    def copy(self, *, _check_step: bool = True) -> Step:
+        return Step(self.frame, self.transform, _check_step=_check_step)
 
 
 class IndexedStep(NamedTuple):
