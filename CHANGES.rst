@@ -1,3 +1,7 @@
+0.25.2 (unreleased)
+-------------------
+- Fix the computation of ``lon_pole`` for Zenitahl projections and declination of +/-90 deg. [#616]
+
 0.25.1 (2025-06-20)
 -------------------
 
