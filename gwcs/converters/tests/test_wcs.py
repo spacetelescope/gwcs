@@ -1,6 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from warnings import catch_warnings
 
 import asdf
+import pytest
 from asdf_astropy.testing.helpers import (
     assert_model_equal,
 )
@@ -80,6 +82,60 @@ def test_create_wcs(tmp_path):
     assert_wcs_roundtrip(gw2, tmp_path)
     assert_wcs_roundtrip(gw3, tmp_path)
     assert_wcs_roundtrip(gw4, tmp_path)
+
+
+def test_wcs_missing_input_frame_axis(tmp_path):
+    """
+    Check that the WCS can still be roundtripped even if the input frame
+    is not specified in the WCS.
+    """
+    m1 = (models.Shift(12.4) & models.Shift(-2) & models.Shift(0.5)) | models.Mapping(
+        (0, 1), n_inputs=3
+    )
+    det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
+
+    pipeline = [(det, m1), (icrs, None)]
+
+    # Check that the WCS will raise a warning if the input frame is not specified when
+    # created (showing that when deserialized, the warning should be raised if not
+    # suppressed).
+    with pytest.warns(
+        wcs.Step.StepAxisWarning,
+        match=r"Number of inputs .* does not match the number of axes .*\.",
+    ):
+        gw = wcs.WCS(pipeline)
+
+    # Determine if the warning is raised during the roundtrip.
+    with catch_warnings(record=True) as w:
+        assert_wcs_roundtrip(gw, tmp_path)
+    assert not w, "No warnings should be raised during the roundtrip."
+
+
+def test_wcs_missing_output_frame_axis(tmp_path):
+    """
+    Check that the WCS can still be roundtripped even if the output frame
+    is not specified in the WCS.
+    """
+    m1 = (models.Shift(12.4) & models.Shift(-2)) | models.Mapping((0, 1, 1))
+    det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
+
+    pipeline = [(det, m1), (icrs, None)]
+
+    # Check that the WCS will raise a warning if the output frame is not specified when
+    # created (showing that when deserialized, the warning should be raised if not
+    # suppressed).
+    with pytest.warns(
+        wcs.Step.StepAxisWarning,
+        match=r"Number of outputs .* does not match the number of axes .*\.",
+    ):
+        gw = wcs.WCS(pipeline)
+
+    # Determine if the warning is raised during the roundtrip.
+    with catch_warnings(record=True) as w:
+        assert_wcs_roundtrip(gw, tmp_path)
+    assert not w, "No warnings should be raised during the roundtrip."
 
 
 def test_composite_frame(tmp_path):
