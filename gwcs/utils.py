@@ -120,29 +120,31 @@ def _compute_lon_pole(skycoord, projection):
         lon = skycoord.spherical.lon.value
         lat = skycoord.spherical.lat.value
         unit = u.deg
-
     else:
         lon, lat = skycoord
         unit = None
         if isinstance(lon, u.Quantity):
-            lon = lon.to(u.deg).to_value()
+            lon = lon.to_value(u.deg)
             unit = u.deg
-
         if isinstance(lat, u.Quantity):
-            lat = lat.to(u.deg).to_value()
+            lat = lat.to_value(u.deg)
             unit = u.deg
 
-    cel = Celprm()
-    cel.ref = [lon, lat]
-    cel.prj.code = projection.prjprm.code
-    pvrange = projection.prjprm.pvrange
-    if pvrange:
-        i1 = pvrange // 100
-        i2 = i1 + (pvrange % 100) + 1
-        cel.prj.pv = i1 * [None] + list(projection.prjprm.pv[i1:i2])
-    cel.set()
+    #unit = u.deg
+    if isinstance(projection, projections.Zenithal) and lat in (90, -90):
+        lonpole = 180
+    else:
+        cel = Celprm()
+        cel.ref = [lon, lat]
+        cel.prj.code = projection.prjprm.code
+        pvrange = projection.prjprm.pvrange
+        if pvrange:
+            i1 = pvrange // 100
+            i2 = i1 + (pvrange % 100) + 1
+            cel.prj.pv = i1 * [None] + list(projection.prjprm.pv[i1:i2])
+        cel.set()
 
-    lonpole = cel.ref[2]
+        lonpole = cel.ref[2]
     if unit is not None:
         lonpole = lonpole * unit
 
