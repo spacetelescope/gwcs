@@ -130,7 +130,6 @@ def _compute_lon_pole(skycoord, projection):
             lat = lat.to_value(u.deg)
             unit = u.deg
 
-    #unit = u.deg
     if isinstance(projection, projections.Zenithal) and lat in (90, -90):
         lonpole = 180
     else:

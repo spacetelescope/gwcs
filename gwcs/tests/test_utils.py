@@ -62,6 +62,8 @@ def test_lon_pole():
         gwutils._compute_lon_pole((1 * u.rad, 0.34 * u.rad), azp), 180 * u.deg
     )
     assert_allclose(gwutils._compute_lon_pole((1, -34), tan), 180)
+    assert_allclose(gwutils._compute_lon_pole((1, -90), tan), 180)
+    assert_allclose(gwutils._compute_lon_pole((1, 90), tan), 180)
 
 
 def test_unknown_ctype():
