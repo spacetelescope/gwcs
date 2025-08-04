@@ -11,13 +11,14 @@ from astropy import wcs as astwcs
 from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models
 from astropy.modeling.bounding_box import ModelBoundingBox
+from astropy.modeling import projections
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
-from gwcs import wcs
+from gwcs import fitswcs, wcs
 from gwcs.examples import gwcs_2d_bad_bounding_box_order
 from gwcs.tests import data
 from gwcs.tests.utils import _gwcs_from_hst_fits_wcs
@@ -1909,3 +1910,20 @@ def test_fitswcs_imaging(fits_wcs_imaging_simple):
     assert_allclose(
         fits_wcs_imaging_simple.world_to_pixel(sky), forward_transform.crpix
     )
+
+
+@pytest.mark.parametrize(("lon", "lat"), [(0, 90), (0, -90), (83.19300506082001, 90.)])
+def test_fitswcs_transform(lon, lat):
+    # test at the poles
+    tan = projections.Pix2Sky_TAN()
+    fwcs = fitswcs.FITSImagingWCSTransform(tan, crval=(lon, lat))
+    assert_allclose(fwcs(0, 0), (lon, lat), atol=1e-14)
+    assert_allclose(fwcs(0, lat)[0], lon + 180, atol=1e-14)
+    assert_allclose(fwcs.inverse(lon, lat), (0, 0), atol=1e-14)
+
+    # fwcs = fitswcs.FITSImagingWCSTransform(tan, crval=[0, -90])
+    # assert fwcs(0, 0) == (0, -90)
+    # assert fwcs(0, -90) == tan(0, -90)
+    #
+    # lon, lat = 83.19300506082001, 90
+    # assert_equal(fwcs(0, 0), (lon, lat))
