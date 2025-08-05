@@ -1914,9 +1914,7 @@ def test_fitswcs_imaging(fits_wcs_imaging_simple):
     sky = gwcs.pixel_to_world(*forward_transform.crpix)
     ra, dec = sky.data.lon.value, sky.data.lat.value
     assert_allclose((ra, dec), forward_transform.crval)
-    assert_allclose(
-        gwcs.world_to_pixel(sky), forward_transform.crpix
-    )
+    assert_allclose(gwcs.world_to_pixel(sky), forward_transform.crpix)
 
 
 @pytest.mark.parametrize(("lon", "lat"), [(0, 90), (0, -90), (83.19300506082001, 90.0)])

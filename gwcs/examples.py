@@ -729,7 +729,7 @@ def fits_wcs_imaging_simple(params):
     w.wcs.crpix = crpix
     w.wcs.crval = crval
     if crval[1] in (90, -90):
-        # following the errata WCS paper 
+        # following the errata WCS paper
         w.wcs.lonpole = 180
     w.wcs.set()
     return gw, w
