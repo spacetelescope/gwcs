@@ -1898,16 +1898,24 @@ def test_parameterless_transform():
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):
     """Test simple FITS type imaging WCS."""
-    forward_transform = fits_wcs_imaging_simple.forward_transform
-    ra, dec = fits_wcs_imaging_simple(*forward_transform.crpix)
-    assert_allclose((ra, dec), forward_transform.crval)
-    assert_allclose(fits_wcs_imaging_simple.invert(ra, dec), forward_transform.crpix)
+    gwcs, astwcs = fits_wcs_imaging_simple
+    forward_transform = gwcs.forward_transform
+    crpix = forward_transform.crpix
+    crval = forward_transform.crval
+    ra, dec = gwcs(*crpix)
+    ast_ra, ast_dec = astwcs.wcs_pix2world(crpix[0], crpix[1], 1)
+    assert_allclose((ra, dec), crval)
+    if crval[1] in (90, -90):
+        assert_allclose((ast_ra, ast_dec), crval)
+    else:
+        assert_allclose((ast_ra, ast_dec), crval)
+    assert_allclose(gwcs.invert(ra, dec), forward_transform.crpix)
 
-    sky = fits_wcs_imaging_simple.pixel_to_world(*forward_transform.crpix)
+    sky = gwcs.pixel_to_world(*forward_transform.crpix)
     ra, dec = sky.data.lon.value, sky.data.lat.value
     assert_allclose((ra, dec), forward_transform.crval)
     assert_allclose(
-        fits_wcs_imaging_simple.world_to_pixel(sky), forward_transform.crpix
+        gwcs.world_to_pixel(sky), forward_transform.crpix
     )
 
 
