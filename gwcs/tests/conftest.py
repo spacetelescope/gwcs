@@ -163,6 +163,14 @@ def gwcs_romanisim():
     return examples.gwcs_romanisim()
 
 
-@pytest.fixture
-def fits_wcs_imaging_simple():
-    return examples.fits_wcs_imaging_simple()
+@pytest.fixture(
+    params=[
+        (5.6, -72.4),
+        (5.6, 90),
+        (5.6, -90),
+        (5.6, 0),
+    ],
+)
+def fits_wcs_imaging_simple(request):
+    params = request.param
+    return examples.fits_wcs_imaging_simple(params)

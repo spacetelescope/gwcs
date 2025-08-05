@@ -3,6 +3,7 @@ import numpy as np
 from astropy import coordinates as coord
 from astropy.modeling import models
 from astropy.time import Time
+from astropy.wcs import WCS as ASTWCS
 
 from . import coordinate_frames as cf
 from . import fitswcs, geometry, wcs
@@ -706,16 +707,29 @@ def gwcs_romanisim():
     return wcs.WCS(pipeline)
 
 
-def fits_wcs_imaging_simple():
+def fits_wcs_imaging_simple(params):
     """A simple FITS WCS imaging transform without distortion."""
+    # Check for several values of cravl2, including at the poles
+    lon, lat = params
+    # First, generate a GWCS object
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     world = cf.CelestialFrame(
         reference_frame=coord.ICRS(), name="world", unit=(u.deg, u.deg)
     )
     projection = models.Pix2Sky_TAN()
-    crval = [5.6, -72.4]
+    crval = [lon, lat]
     crpix = [5, 5]
     fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
     pipeline = [wcs.Step(detector, fwcs), wcs.Step(world, None)]
+    gw = wcs.WCS(pipeline)
 
-    return wcs.WCS(pipeline)
+    # Generate a FITSWCS object
+    w = ASTWCS(naxis=2)
+    w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+    w.wcs.crpix = crpix
+    w.wcs.crval = crval
+    if crval[1] in (90, -90):
+        # following the errata WCS paper
+        w.wcs.lonpole = 180
+    w.wcs.set()
+    return gw, w
