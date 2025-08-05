@@ -706,14 +706,15 @@ def gwcs_romanisim():
     return wcs.WCS(pipeline)
 
 
-def fits_wcs_imaging_simple():
+def fits_wcs_imaging_simple(params):
     """A simple FITS WCS imaging transform without distortion."""
+    lon, lat = params
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
     world = cf.CelestialFrame(
         reference_frame=coord.ICRS(), name="world", unit=(u.deg, u.deg)
     )
     projection = models.Pix2Sky_TAN()
-    crval = [5.6, -72.4]
+    crval = [lon, lat]
     crpix = [5, 5]
     fwcs = fitswcs.FITSImagingWCSTransform(projection, crpix=crpix, crval=crval)
     pipeline = [wcs.Step(detector, fwcs), wcs.Step(world, None)]
