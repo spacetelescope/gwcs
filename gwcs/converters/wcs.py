@@ -12,6 +12,7 @@ from asdf_astropy.converters.transform.core import (
 __all__ = [
     "CelestialFrameConverter",
     "CompositeFrameConverter",
+    "DiscreteFrameConverter",
     "FITSImagingWCSConverter",
     "FrameConverter",
     "SpectralFrameConverter",
@@ -148,6 +149,34 @@ class Frame2DConverter(FrameConverter):
 
         node = self._from_yaml_tree(node, tag, ctx)
         return Frame2D(**node)
+
+
+class DiscreteFrameConverter(FrameConverter):
+    types = ("gwcs.coordinate_frames.DiscreteFrame",)
+    tags = ("tag:stsci.edu:gwcs/discrete_frame-*",)
+
+    def to_yaml_tree(self, frame, tag, ctx):
+        node = self._to_yaml_tree(frame, tag, ctx)
+        if "unit" in node:
+            del node["unit"]
+
+        if frame.discrete_set is not None:
+            node["discrete_set"] = list(frame.discrete_set)
+
+        return node
+
+    def from_yaml_tree(self, node, tag, ctx):
+        from gwcs.coordinate_frames import DiscreteFrame
+
+        discrete_set = set(node["discrete_set"]) if "discrete_set" in node else None
+
+        node = self._from_yaml_tree(node, tag, ctx)
+        node["discrete_set"] = discrete_set
+
+        node["axis_index"] = node["axes_order"][0]
+        del node["axes_order"]
+
+        return DiscreteFrame(**node)
 
 
 class CelestialFrameConverter(FrameConverter):

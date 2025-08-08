@@ -32,6 +32,10 @@ def _assert_frame_equal(a, b):
         assert a.axes_names == b.axes_names  # nosec
         assert a.unit == b.unit  # nosec
         assert a.reference_frame == b.reference_frame  # nosec
+
+    if isinstance(a, cf.DiscreteFrame):
+        assert a.discrete_set == b.discrete_set
+
     return None
 
 
@@ -199,13 +203,13 @@ def create_test_frames():
         ),
         cf.StokesFrame(),
         cf.TemporalFrame(time.Time("2011-01-01")),
+        cf.DiscreteFrame(name="spectral_order", axis_index=2, discrete_set={1, 2, 3}),
     ]
 
 
-def test_frames(tmp_path):
-    frames = create_test_frames()
-    for f in frames:
-        assert_frame_roundtrip(f, tmp_path)
+@pytest.mark.parametrize("frame", create_test_frames())
+def test_frames(tmp_path, frame):
+    assert_frame_roundtrip(frame, tmp_path)
 
 
 def test_references(tmp_path):
