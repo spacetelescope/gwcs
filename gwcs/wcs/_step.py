@@ -148,3 +148,7 @@ class IndexedStep(NamedTuple):
 
     index: int
     step: Step
+
+
+# Make warning visible for pytest filtering in other projects
+StepAxisWarning = Step.StepAxisWarning

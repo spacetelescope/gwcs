@@ -10,7 +10,8 @@ dependencies = [
     "astropy >= 6.0",
     "numpy>=1.25",
     "scipy>=1.14.1",
-    "asdf_wcs_schemas >= 0.5.0",
+    # "asdf_wcs_schemas >= 0.5.0",
+    "asdf_wcs_schemas @ git+https://github.com/WilliamJamieson/asdf-wcs-schemas.git@discrete_frame",
     "asdf-astropy >= 0.8.0",
 ]
 license-files = ["licenses/LICENSE.rst"]
