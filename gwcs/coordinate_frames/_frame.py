@@ -3,6 +3,7 @@
 
 from astropy import units as u
 
+from ._axis import AxisType
 from ._core import CoordinateFrame
 
 __all__ = ["Frame2D"]
@@ -34,7 +35,7 @@ class Frame2D(CoordinateFrame):
         axis_physical_types=None,
     ):
         if axes_type is None:
-            axes_type = ["SPATIAL", "SPATIAL"]
+            axes_type = (AxisType.SPATIAL, AxisType.SPATIAL)
         pht = axis_physical_types or self._default_axis_physical_types(
             axes_names, axes_type
         )
