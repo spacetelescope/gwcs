@@ -726,7 +726,8 @@ def fits_wcs_imaging_simple(params):
     # Generate a FITSWCS object
     w = ASTWCS(naxis=2)
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-    w.wcs.crpix = crpix
+    # Add 1 to CRPIX for FITS compatibility
+    w.wcs.crpix = np.array(crpix) + 1
     w.wcs.crval = crval
     if crval[1] in (90, -90):
         # following the errata WCS paper
