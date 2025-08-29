@@ -246,27 +246,30 @@ class LabelMapperArray(_LabelMapper):
     values correspond to the IFU slice label.
 
     """
-
-    n_inputs = 2
     n_outputs = 1
 
     linear = False
     fittable = False
 
-    def __init__(self, mapper, inputs_mapping=None, name=None, **kwargs):
+    def __init__(self, mapper, inputs_mapping=None, name=None, inputs=('x', 'y'), **kwargs):
         if mapper.dtype.type is not np.str_:
             mapper = np.asanyarray(mapper, dtype=int)
             _no_label = 0
         else:
             _no_label = ""
-        super().__init__(mapper, _no_label, name=name, **kwargs)
-        self.inputs = ("x", "y")
+        super().__init__(mapper, _no_label, inputs_mapping=inputs_mapping, name=name, **kwargs)
+        self._inputs = inputs
+        self._n_inputs = len(inputs)
         self.outputs = ("label",)
 
     def evaluate(self, *args):
-        args = tuple([_toindex(a) for a in args])
+        if self.inputs_mapping is not None:
+            keys = self._inputs_mapping.evaluate(*args)
+        else:
+            keys = args
+        keys = tuple([_toindex(a) for a in keys])
         try:
-            result = self._mapper[args[::-1]]
+            result = self._mapper[keys[::-1]]
         except IndexError as e:
             raise LabelMapperArrayIndexingError(e) from e
         return result
