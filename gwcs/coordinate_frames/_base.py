@@ -128,6 +128,8 @@ class BaseCoordinateFrame(abc.ABC):
         """
         Add units to the arrays
         """
+        if self.naxes == 1 and np.isscalar(arrays):
+            return u.Quantity(arrays, self.unit[0])
         return tuple(
             u.Quantity(array, unit=unit)
             for array, unit in zip(arrays, self.unit, strict=True)
@@ -139,10 +141,11 @@ class BaseCoordinateFrame(abc.ABC):
         """
         Remove units from the input arrays
         """
-        if self.naxes == 1:
+        if self.naxes == 1 and (np.isscalar(arrays) or isinstance(arrays, u.Quantity)):
             arrays = (arrays,)
 
-        return tuple(
+        result = tuple(
             array.to_value(unit) if isinstance(array, u.Quantity) else array
             for array, unit in zip(arrays, self.unit, strict=True)
         )
+        return result
