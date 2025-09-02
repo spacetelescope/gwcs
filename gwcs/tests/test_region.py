@@ -292,3 +292,17 @@ def test_unique_labels():
     expected = ["S100A1", "S1600", "S200A2", "S200B1", "S400A1"]
     result = selector.get_unique_regions(labels)
     assert_equal(expected, result)
+
+
+def test_label_mapper_array_mapping():
+    """Test LabelMapperArray with inputs_mapping"""
+    mapper=np.zeros((4,5))
+    mapper[1:, 3:4]=2
+    mapper[1:, 1:2]=1
+    lm=selector.LabelMapperArray(mapper,
+                                 inputs_mapping=models.Mapping((0, 1), n_inputs=3),
+                                 inputs=('x', 'y', 'order')
+                                 )
+    assert lm(3, 1, 1) == 2
+    assert lm(1, 1, 1) == 1
+    assert_equal(lm([1, 3, 0], [1, 1, 0], 1), [1, 2, 0])

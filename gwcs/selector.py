@@ -222,6 +222,13 @@ class _LabelMapper(Model):
         msg = "Subclasses should implement this method."
         raise NotImplementedError(msg)
 
+    def filter_inputs(self, args, inputs_mapping):
+        if self.inputs_mapping is not None:
+            keys = self._inputs_mapping.evaluate(*args)
+        else:
+            keys = args
+        return keys
+
 
 class LabelMapperArray(_LabelMapper):
     """
@@ -260,13 +267,10 @@ class LabelMapperArray(_LabelMapper):
         super().__init__(mapper, _no_label, inputs_mapping=inputs_mapping, name=name, **kwargs)
         self._inputs = inputs
         self._n_inputs = len(inputs)
-        self.outputs = ("label",)
+        self._outputs = ("label",)
 
     def evaluate(self, *args):
-        if self.inputs_mapping is not None:
-            keys = self._inputs_mapping.evaluate(*args)
-        else:
-            keys = args
+        keys = self.filter_inputs(args, self.inputs_mapping)
         keys = tuple([_toindex(a) for a in keys])
         try:
             result = self._mapper[keys[::-1]]
@@ -365,25 +369,7 @@ class LabelMapperDict(_LabelMapper):
         self._input_units_strict = dict.fromkeys(self._inputs, False)
         self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
-        self.outputs = ("labels",)
-
-    @property
-    def n_inputs(self):
-        return self._n_inputs
-
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
-
-    @inputs.setter
-    def inputs(self, val):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        self._inputs = val
+        self._outputs = ("labels",)
 
     @property
     def atol(self):
@@ -397,10 +383,7 @@ class LabelMapperDict(_LabelMapper):
         shape = args[0].shape
         args = [a.flatten() for a in args]
         # if n_inputs > 1, determine which one is to be used as keys
-        if self.inputs_mapping is not None:
-            keys = self._inputs_mapping.evaluate(*args)
-        else:
-            keys = args
+        keys = self.filter_inputs(args, self.inputs_mapping)
         keys = keys.flatten()
         # create an empty array for the results
         res = np.zeros(keys.shape) + self._no_label
@@ -465,25 +448,7 @@ class LabelMapperRange(_LabelMapper):
         self._input_units_strict = dict.fromkeys(self._inputs, False)
         self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super().__init__(mapper, _no_label, inputs_mapping, name=name, **kwargs)
-        self.outputs = ("labels",)
-
-    @property
-    def n_inputs(self):
-        return self._n_inputs
-
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
-
-    @inputs.setter
-    def inputs(self, val):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        self._inputs = val
+        self._outputs = ("labels",)
 
     @staticmethod
     def _has_overlapping(ranges):
@@ -530,10 +495,7 @@ class LabelMapperRange(_LabelMapper):
     def evaluate(self, *args):
         shape = args[0].shape
         args = [a.flatten() for a in args]
-        if self.inputs_mapping is not None:
-            keys = self._inputs_mapping.evaluate(*args)
-        else:
-            keys = args
+        keys = self.filter_inputs(args, self.inputs_mapping)
         keys = keys.flatten()
         # Define an array for the results.
         res = np.zeros(keys.shape) + self._no_label
@@ -715,42 +677,8 @@ class RegionsSelector(Model):
         self._undefined_transform_value = value
 
     @property
-    def outputs(self):
-        """The name(s) of the output(s) of the model."""
-        return self._outputs
-
-    @property
     def selector(self):
         return self._selector
-
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
-
-    @inputs.setter
-    def inputs(self, val):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        self._inputs = val
-
-    @outputs.setter
-    def outputs(self, val):
-        """
-        The name(s) of the output variable(s).
-        """
-        self._outputs = val
-
-    @property
-    def n_inputs(self):
-        return self._n_inputs
-
-    @property
-    def n_outputs(self):
-        return self._n_outputs
 
 
 class LabelMapper(_LabelMapper):
@@ -797,41 +725,9 @@ class LabelMapper(_LabelMapper):
         self._input_units_strict = dict.fromkeys(self._inputs, False)
         self._input_units_allow_dimensionless = dict.fromkeys(self._inputs, False)
         super(_LabelMapper, self).__init__(name=name, **kwargs)
-        self.outputs = ("label",)
-
-    @property
-    def inputs(self):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        return self._inputs
-
-    @inputs.setter
-    def inputs(self, val):
-        """
-        The name(s) of the input variable(s) on which a model is evaluated.
-        """
-        self._inputs = val
-
-    @property
-    def n_inputs(self):
-        return self._n_inputs
-
-    @property
-    def mapper(self):
-        return self._mapper
-
-    @property
-    def inputs_mapping(self):
-        return self._inputs_mapping
-
-    @property
-    def no_label(self):
-        return self._no_label
 
     def evaluate(self, *args):
-        if self.inputs_mapping is not None:
-            args = self.inputs_mapping(*args)
+        args = self.filter_inputs(args, self.inputs_mapping)
         if self.n_outputs == 1:
             args = [args]
         res = self.mapper(*args)
