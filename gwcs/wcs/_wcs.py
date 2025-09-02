@@ -43,6 +43,7 @@ from ._utils import (
     store_2D_coefficients,
 )
 
+
 __all__ = ["WCS"]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
@@ -161,6 +162,8 @@ class WCS(GWCSAPIMixin, Pipeline):
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
         if with_units:
+            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
+                          "Use the shared API method 'pixel_to_world'", DeprecationWarning)
             # values are always expected to be arrays or scalars not quantities
             results = self._remove_units_input(results, self.output_frame)
             high_level = values_to_high_level_objects(*results, low_level_wcs=self)
@@ -376,7 +379,8 @@ class WCS(GWCSAPIMixin, Pipeline):
         )
 
         if with_units:
-            # values are always expected to be arrays or scalars not quantities
+            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
+                          "Use the shared API method 'pixel_to_world'", DeprecationWarning)
             results = self._remove_units_input(results, self.input_frame)
             high_level = values_to_high_level_objects(
                 *results, low_level_wcs=self.input_frame
@@ -1192,7 +1196,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         )
 
         if with_units:
-            # values are always expected to be arrays or scalars not quantities
+            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release.", DeprecationWarning)
             results = self._remove_units_input(results, to_step.step.frame)
 
             high_level = values_to_high_level_objects(
