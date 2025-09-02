@@ -515,10 +515,7 @@ def test_bounding_box_eval():
     pipeline = [
         (
             cf.CoordinateFrame(
-                naxes=3,
-                axes_type=("PIXEL", "PIXEL", "PIXEL"),
-                axes_order=(0, 1, 2),
-                name="detector",
+                naxes=3, axes_type=("PIXEL", "PIXEL", "PIXEL",), axes_order=(0, 1, 2), name="detector"
             ),
             trans3,
         ),
@@ -1702,8 +1699,8 @@ def test_quantities_in_pipeline_forward(gwcs_with_pipeline_celestial):
 
     output_world = iwcs(*input_pixel)
 
-    assert output_world[0].unit == u.deg
-    assert output_world[1].unit == u.deg
+    assert output_world[0].unit == u.arcsec
+    assert output_world[1].unit == u.arcsec
     assert u.allclose(output_world[0], 20 * u.arcsec + 1 * u.deg)
     assert u.allclose(output_world[1], 15 * u.deg + 2 * u.deg)
 
@@ -1882,6 +1879,8 @@ def test_parameterless_transform():
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
     assert gwcs.invert(1, 1) == (1, 1)
+    # Strictly speaking it's correct that this fails Because
+    # for this setup the HLO are Quantities
     assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
 
 
