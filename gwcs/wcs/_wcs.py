@@ -43,6 +43,7 @@ from ._utils import (
     store_2D_coefficients,
 )
 
+
 __all__ = ["WCS"]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
@@ -161,6 +162,8 @@ class WCS(GWCSAPIMixin, Pipeline):
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
         if with_units:
+            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
+                          "Use the shared API method 'pixel_to_world'", DeprecationWarning)
             # values are always expected to be arrays or scalars not quantities
             results = self._remove_units_input(results, self.output_frame)
             high_level = values_to_high_level_objects(*results, low_level_wcs=self)
@@ -323,7 +326,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
-        with_units: bool = False,
+        #with_units: bool = False,
         **kwargs,
     ):
         """
@@ -375,15 +378,15 @@ class WCS(GWCSAPIMixin, Pipeline):
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
 
-        if with_units:
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, self.input_frame)
-            high_level = values_to_high_level_objects(
-                *results, low_level_wcs=self.input_frame
-            )
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
+        # if with_units:
+        #     # values are always expected to be arrays or scalars not quantities
+        #     results = self._remove_units_input(results, self.input_frame)
+        #     high_level = values_to_high_level_objects(
+        #         *results, low_level_wcs=self.input_frame
+        #     )
+        #     if len(high_level) == 1:
+        #         high_level = high_level[0]
+        #     return high_level
 
         return results
 
@@ -769,12 +772,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value=np.nan,
         **kwargs,
     ):
-        if kwargs.pop("with_units", False):
-            msg = (
-                "Support for with_units in numerical_inverse has been removed, "
-                "use inverse"
-            )
-            raise ValueError(msg)
+        # if kwargs.pop("with_units", False):
+        #     msg = (
+        #         "Support for with_units in numerical_inverse has been removed, "
+        #         "use inverse"
+        #     )
+        #     raise ValueError(msg)
 
         args_shape = np.shape(args)
         nargs = args_shape[0]
@@ -1153,7 +1156,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_frame: str | CoordinateFrame,
         to_frame: str | CoordinateFrame,
         *args,
-        with_units: bool = False,
+        #with_units: bool = False,
         **kwargs,
     ):
         """
@@ -1191,16 +1194,16 @@ class WCS(GWCSAPIMixin, Pipeline):
             **kwargs,
         )
 
-        if with_units:
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, to_step.step.frame)
-
-            high_level = values_to_high_level_objects(
-                *results, low_level_wcs=to_step.step.frame
-            )
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
+        # if with_units:
+        #     # values are always expected to be arrays or scalars not quantities
+        #     results = self._remove_units_input(results, to_step.step.frame)
+        #
+        #     high_level = values_to_high_level_objects(
+        #         *results, low_level_wcs=to_step.step.frame
+        #     )
+        #     if len(high_level) == 1:
+        #         high_level = high_level[0]
+        #     return high_level
 
         return results
 
