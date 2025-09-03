@@ -25,7 +25,7 @@ class WavelengthFromGratingEquation(Model):
       With paraxial systems the inputs are ``sin`` of the angles and it
       transforms to
 
-      :math:`(\sin(alpha_in) + \sin(alpha_out)) / (groove_density * spectral_order)`.
+      :math:`(\sin(\alpha_{in}) + \sin(\alpha_{out})) / (groove\_density * spectral\_order)`.
 
       With oblique angles the inputs are the direction cosines
       of the angles.
