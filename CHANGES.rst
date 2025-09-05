@@ -2,6 +2,8 @@
 -------------------
 - Fix the computation of ``lon_pole`` for Zenitahl projections and declination of +/-90 deg. [#616]
 
+- Enable ``inputs_mapping`` in ``selector.LabelMapperArray``. [#626]
+
 0.25.1 (2025-06-20)
 -------------------
 
