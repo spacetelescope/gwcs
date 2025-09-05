@@ -7,7 +7,6 @@ git+https://github.com/asdf-format/asdf-coordinates-schemas
 git+https://github.com/asdf-format/asdf-wcs-schemas
 
 astropy>=0.0.dev0
-pyerfa>=0.0.dev0
 
 numpy>=0.0.dev0
 scipy>=0.0.dev0
