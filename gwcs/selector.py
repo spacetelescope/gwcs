@@ -140,7 +140,7 @@ from astropy.modeling import models as astmodels
 from astropy.modeling.core import Model
 
 from . import region
-from .utils import RegionError, _toindex
+from .utils import RegionError, to_index
 
 __all__ = [
     "LabelMapper",
@@ -264,7 +264,7 @@ class LabelMapperArray(_LabelMapper):
         self.outputs = ("label",)
 
     def evaluate(self, *args):
-        args = tuple([_toindex(a) for a in args])
+        args = tuple([to_index(a) for a in args])
         try:
             result = self._mapper[args[::-1]]
         except IndexError as e:
