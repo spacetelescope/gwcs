@@ -34,7 +34,7 @@ jobs:
       data_path: ${{ steps.data_path.outputs.path }}
 
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@master
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@main
 
   jwst:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@28e947497bed4d6ec3fa1d66d198e95a1d17bc63  # v2.2.1
