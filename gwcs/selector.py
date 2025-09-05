@@ -271,7 +271,7 @@ class LabelMapperArray(_LabelMapper):
 
     def evaluate(self, *args):
         keys = self.filter_inputs(args, self.inputs_mapping)
-        keys = tuple([_toindex(a) for a in keys])
+        keys = tuple(_toindex(a) for a in keys)
         try:
             result = self._mapper[keys[::-1]]
         except IndexError as e:
