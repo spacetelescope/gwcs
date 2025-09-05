@@ -253,18 +253,23 @@ class LabelMapperArray(_LabelMapper):
     values correspond to the IFU slice label.
 
     """
+
     n_outputs = 1
 
     linear = False
     fittable = False
 
-    def __init__(self, mapper, inputs_mapping=None, name=None, inputs=('x', 'y'), **kwargs):
+    def __init__(
+        self, mapper, inputs_mapping=None, name=None, inputs=("x", "y"), **kwargs
+    ):
         if mapper.dtype.type is not np.str_:
             mapper = np.asanyarray(mapper, dtype=int)
             _no_label = 0
         else:
             _no_label = ""
-        super().__init__(mapper, _no_label, inputs_mapping=inputs_mapping, name=name, **kwargs)
+        super().__init__(
+            mapper, _no_label, inputs_mapping=inputs_mapping, name=name, **kwargs
+        )
         self._inputs = inputs
         self._n_inputs = len(inputs)
         self._outputs = ("label",)
