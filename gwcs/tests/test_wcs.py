@@ -1896,13 +1896,15 @@ def test_parameterless_transform():
     assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
 
 
-@pytest.mark.skip(reason="See issue #621")
 def test_fitswcs_imaging(fits_wcs_imaging_simple):
     """Test simple FITS type imaging WCS."""
     gwcs, astwcs = fits_wcs_imaging_simple
     forward_transform = gwcs.forward_transform
     crpix = forward_transform.crpix
     crval = forward_transform.crval
+    # Do not run this test - see issue #621
+    if crval[1] == -90:
+        return
     ra, dec = gwcs(*crpix)
 
     # FITS CRPIX is set to crpix + 1 but we need to subtract one when calling
