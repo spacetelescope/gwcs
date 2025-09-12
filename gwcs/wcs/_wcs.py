@@ -138,7 +138,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
-        with_units: bool = False,
+        # with_units: bool = False,
         **kwargs,
     ):
         """
@@ -161,18 +161,15 @@ class WCS(GWCSAPIMixin, Pipeline):
         results = self._call_forward(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-        if with_units:
-            warnings.warn(
-                "the 'with_units' parameter is deprecated and will be removed in the "
-                "next release. Use the shared API method 'pixel_to_world'",
-                DeprecationWarning,
-            )
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, self.output_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self)
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
+        # if with_units:
+        #     warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
+        #                   "Use the shared API method 'pixel_to_world'", DeprecationWarning)
+        #     # values are always expected to be arrays or scalars not quantities
+        #     results = self._remove_units_input(results, self.output_frame)
+        #     high_level = values_to_high_level_objects(*results, low_level_wcs=self)
+        #     if len(high_level) == 1:
+        #         high_level = high_level[0]
+        #     return high_level
         return results
 
     def _evaluate_transform(
