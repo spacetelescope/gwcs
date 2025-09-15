@@ -80,7 +80,7 @@ class LabelMapperConverter(TransformConverterBase):
         elif isinstance(model, LabelMapper):
             node["mapper"] = model.mapper
             node["inputs"] = list(model.inputs)
-        elif isinstance(model, (LabelMapperDict, LabelMapperRange)):  # noqa: UP038
+        elif isinstance(model, (LabelMapperDict, LabelMapperRange)):
             if hasattr(model, "atol"):
                 node["atol"] = model.atol
             mapper = OrderedDict()
