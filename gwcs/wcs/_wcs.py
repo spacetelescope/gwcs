@@ -138,7 +138,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
-        with_units: bool = False,
         **kwargs,
     ):
         """
@@ -154,23 +153,63 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value : float, optional
             Output value for inputs outside the bounding_box
             (default is np.nan).
-        with_units : bool, optional
-            If ``True`` then high level Astropy objects will be returned.
-            Optional, default=False.
         """
+        transform = self.forward_transform
+        if transform is None:
+            raise NotImplementedError("Transform is not defined.")
+        args = self._make_input_units_consistent(*args, transform=transform, from_frame=self.input_frame, to_frame=self.output_frame)\
+
         results = self._call_forward(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-        if with_units:
-            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
-                          "Use the shared API method 'pixel_to_world'", DeprecationWarning)
-            # values are always expected to be arrays or scalars not quantities
-            results = self._remove_units_input(results, self.output_frame)
-            high_level = values_to_high_level_objects(*results, low_level_wcs=self)
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
+
         return results
+
+    def _make_input_units_consistent(
+        self,
+        *args,
+        transform,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+        **kwargs
+        ):
+        """
+        Adds or removes units from the arguments as needed so that the transform
+        can be successfully evaluated.
+        """
+        # Validate that the input type matches what the transform expects
+        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
+        transform_uses_quantity = False if transform is None or not transform.uses_quantity else True
+        if (
+            not input_is_quantity
+            and transform_uses_quantity
+            and transform.parameters.size
+        ):
+            args = self._add_units_input(args, from_frame)
+        if not transform_uses_quantity and input_is_quantity:
+            args = self._remove_units_input(args, from_frame)
+        return args
+
+    def _get_transform(
+        self,
+        *args,
+        from_frame: CoordinateFrame | None = None,
+        to_frame: CoordinateFrame | None = None,
+        **kwargs,
+    ):
+        """
+        Executes the forward transform, but values only.
+        """
+        if from_frame is None and to_frame is None:
+            transform = self.forward_transform
+        else:
+            transform = self.get_transform(from_frame, to_frame)
+
+        if transform is None:
+            msg = "WCS.forward_transform is not implemented."
+            raise NotImplementedError(msg)
+        return transform
+
 
     def _evaluate_transform(
         self,
@@ -225,17 +264,6 @@ class WCS(GWCSAPIMixin, Pipeline):
                 fill_value=fill_value,
                 **kwargs,
             )
-
-        # Models with no parameters claim they use quantities but this may incorrectly
-        # introduce units so we don't at first
-        if (
-            not input_is_quantity
-            and transform.uses_quantity
-            and transform.parameters.size
-        ):
-            args = self._add_units_input(args, from_frame)
-        if not transform.uses_quantity and input_is_quantity:
-            args = self._remove_units_input(args, from_frame)
 
         try:
             return _transform(*args)
@@ -326,7 +354,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
-        with_units: bool = False,
         **kwargs,
     ):
         """
@@ -352,10 +379,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
-        with_units : bool, optional
-            If ``True`` then high level astropy object (i.e. ``Quantity``) will
-            be returned.  Optional, default=False.
-
         Other Parameters
         ----------------
         kwargs : dict
@@ -371,23 +394,17 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform returns ``Quantity`` objects, else values.
 
         """  # noqa: E501
+        try:
+            transform = self.backward_transform
+        except NotImplementedError:
+            transform = None
         if is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
+        args = self._make_input_units_consistent(*args, transform=transform, from_frame=self.output_frame, to_frame=self.input_frame)
 
         results = self._call_backward(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-
-        if with_units:
-            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release."
-                          "Use the shared API method 'pixel_to_world'", DeprecationWarning)
-            results = self._remove_units_input(results, self.input_frame)
-            high_level = values_to_high_level_objects(
-                *results, low_level_wcs=self.input_frame
-            )
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
 
         return results
 
@@ -773,13 +790,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         fill_value=np.nan,
         **kwargs,
     ):
-        if kwargs.pop("with_units", False):
-            msg = (
-                "Support for with_units in numerical_inverse has been removed, "
-                "use inverse"
-            )
-            raise ValueError(msg)
-
         args_shape = np.shape(args)
         nargs = args_shape[0]
         arg_dim = len(args_shape) - 1
@@ -1157,7 +1167,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_frame: str | CoordinateFrame,
         to_frame: str | CoordinateFrame,
         *args,
-        with_units: bool = False,
         **kwargs,
     ):
         """
@@ -1194,17 +1203,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             to_frame=to_step.step.frame,
             **kwargs,
         )
-
-        if with_units:
-            warnings.warn("the 'with_units' parameter is deprecated and will be removed in the next release.", DeprecationWarning)
-            results = self._remove_units_input(results, to_step.step.frame)
-
-            high_level = values_to_high_level_objects(
-                *results, low_level_wcs=to_step.step.frame
-            )
-            if len(high_level) == 1:
-                high_level = high_level[0]
-            return high_level
 
         return results
 
