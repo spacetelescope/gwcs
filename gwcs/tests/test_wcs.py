@@ -4,7 +4,6 @@ from pathlib import Path
 
 import asdf
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
@@ -16,6 +15,7 @@ from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
+from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
 from gwcs import fitswcs, wcs
@@ -1830,10 +1830,7 @@ def test_array_high_level_output():
     gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
     result = gwcs(np.array([0, 1, 2]))
     result = values_to_high_level_objects(result, low_level_wcs=gwcs)
-    assert (
-        result
-        == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
-    ).all()
+    assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
 
 
 def test_parameterless_transform():
