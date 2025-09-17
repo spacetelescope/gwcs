@@ -93,7 +93,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         order, where for an image, ``x`` is the horizontal coordinate and ``y``
         is the vertical coordinate.
         """
-        result = self._call_forward(*pixel_arrays)
+        result = self.__call__(*pixel_arrays)
 
         return self._remove_quantity_output(result, self.output_frame)
 
@@ -120,7 +120,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
-        result = self._call_backward(*world_arrays)
+        result = self.invert(*world_arrays)
 
         return self._remove_quantity_output(result, self.input_frame)
 
