@@ -15,6 +15,7 @@ from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
+from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
 
 from gwcs import coordinate_frames as cf
 from gwcs import fitswcs, wcs
@@ -1811,26 +1812,28 @@ def test_direct_numerical_inverse(gwcs_romanisim):
     assert_allclose(xy, out)
 
 
-# def test_array_high_level_output():
-#     """
-#     Test that we don't loose array values when requesting a high-level output
-#     from a WCS object.
-#     """
-#     input_frame = cf.CoordinateFrame(
-#         naxes=1,
-#         axes_type=("SPATIAL",),
-#         axes_order=(0,),
-#         name="pixels",
-#         unit=(u.pix,),
-#         axes_names=("x",),
-#     )
-#     output_frame = cf.SpectralFrame(unit=(u.nm,), axes_names=("lambda",))
-#     wave_model = models.Scale(0.1) | models.Shift(500)
-#     gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
-#     assert (
-#         gwcs(np.array([0, 1, 2]), with_units=True)
-#         == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
-#     ).all()
+def test_array_high_level_output():
+    """
+    Test that we don't loose array values when requesting a high-level output
+    from a WCS object.
+    """
+    input_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type=("SPATIAL",),
+        axes_order=(0,),
+        name="pixels",
+        unit=(u.pix,),
+        axes_names=("x",),
+    )
+    output_frame = cf.SpectralFrame(unit=(u.nm,), axes_names=("lambda",))
+    wave_model = models.Scale(0.1) | models.Shift(500)
+    gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
+    result = gwcs(np.array([0, 1, 2]))
+    result = values_to_high_level_objects(result, low_level_wcs=gwcs)
+    assert (
+        result
+        == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
+    ).all()
 
 
 def test_parameterless_transform():
