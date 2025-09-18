@@ -14,6 +14,7 @@ from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
+from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
@@ -747,12 +748,12 @@ class TestImaging:
         assert_allclose(footprint, fits_footprint)
 
     def test_inverse(self):
-        sky_coord = self.wcs(10, 20, with_units=True)
-        assert np.allclose(self.wcs.invert(sky_coord), (10, 20))
+        sky_coord = self.wcs(10, 20)
+        assert np.allclose(self.wcs.invert(*sky_coord), (10, 20))
 
     def test_back_coordinates(self):
-        sky_coord = self.wcs(1, 2, with_units=True)
-        res = self.wcs.transform("sky", "focal", sky_coord, with_units=False)
+        sky_coord = self.wcs(1, 2)
+        res = self.wcs.transform("sky", "focal", *sky_coord)
         assert_allclose(res, self.wcs.get_transform("detector", "focal")(1, 2))
 
     def test_units(self):
@@ -1697,12 +1698,6 @@ def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
     assert u.allclose(output_world[0], 20 * u.arcsec + 1 * u.deg)
     assert u.allclose(output_world[1], 15 * u.deg + 2 * u.deg)
 
-    # with_units=True puts the result in the frame units rather than in the
-    # model units.
-    output_world_with_units = iwcs(*input_pixel, with_units=True)
-    assert output_world_with_units[0].unit is u.arcsec
-    assert output_world_with_units[1].unit is u.arcsec
-
     # This should be in model units of the spatial model
     intermediate_world = iwcs.transform(
         "input",
@@ -1713,14 +1708,6 @@ def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
     assert intermediate_world[1].unit == u.deg
     assert u.allclose(intermediate_world[0], 20 * u.arcsec)
     assert u.allclose(intermediate_world[1], 15 * u.deg)
-
-    intermediate_world_with_units = iwcs.transform(
-        "input", "celestial", *input_pixel, with_units=True
-    )
-    assert isinstance(intermediate_world_with_units, coord.SkyCoord)
-    sc = intermediate_world_with_units
-    assert u.allclose(sc.ra, 20 * u.arcsec)
-    assert u.allclose(sc.dec, 15 * u.deg)
 
 
 def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
@@ -1739,14 +1726,6 @@ def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
     assert all(isinstance(p, u.Quantity) for p in pixel)
     assert u.allclose(pixel, [1, 1] * u.pix)
 
-    pixel = iwcs.invert(
-        *input_world,
-        with_units=True,
-    )
-
-    assert all(isinstance(p, u.Quantity) for p in pixel)
-    assert u.allclose(pixel, [1, 1] * u.pix)
-
     intermediate_world = iwcs.transform(
         "output",
         "celestial",
@@ -1754,14 +1733,6 @@ def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
     )
     assert all(isinstance(p, u.Quantity) for p in intermediate_world)
     assert u.allclose(intermediate_world, [20 * u.arcsec, 15 * u.deg])
-
-    intermediate_world = iwcs.transform(
-        "output",
-        "celestial",
-        *input_world,
-        with_units=True,
-    )
-    assert isinstance(intermediate_world, coord.SkyCoord)
 
 
 def test_error_with_duplicate_frames():
@@ -1857,10 +1828,19 @@ def test_array_high_level_output():
     output_frame = cf.SpectralFrame(unit=(u.nm,), axes_names=("lambda",))
     wave_model = models.Scale(0.1) | models.Shift(500)
     gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
-    assert (
-        gwcs(np.array([0, 1, 2]), with_units=True)
-        == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)
-    ).all()
+
+    result = gwcs(np.array([0, 1, 2]))
+    result = values_to_high_level_objects(result, low_level_wcs=gwcs)
+    assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
+
+    result = gwcs.pixel_to_world(
+        [
+            0,
+            1,
+            2,
+        ]
+    )
+    assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
 
 
 def test_parameterless_transform():
