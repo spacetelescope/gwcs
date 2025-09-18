@@ -4,6 +4,8 @@
 
 - Enable ``inputs_mapping`` in ``selector.LabelMapperArray``. [#626]
 
+- Deprecate ``with_units`` argument in favor of the high level Shared API. [#634]
+
 0.25.1 (2025-06-20)
 -------------------
 

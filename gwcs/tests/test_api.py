@@ -10,6 +10,7 @@ import pytest
 from astropy import coordinates as coord
 from astropy import time
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
+from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_array_equal
 
 import gwcs
@@ -306,8 +307,12 @@ def test_high_level_wrapper(wcsobj, request):
     # Assert that both APE 14 API and GWCS give the same answer The APE 14 API
     # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
-    wc2 = wcsobj(*pixel_input, with_units=True)
+    wc2 = wcsobj(*pixel_input)
 
+    wc2 = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
+    wc2 = values_to_high_level_objects(*wc2, low_level_wcs=wcsobj)
+    if len(wc2) == 1:
+        wc2 = wc2[0]
     assert type(wc1) is type(wc2)
 
     if isinstance(wc1, list | tuple):
@@ -529,7 +534,7 @@ def test_world_to_array_index(gwcs_simple_imaging, sky_ra_dec):
 
     assert_allclose(
         wcsobj.world_to_array_index(sky),
-        wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1],
+        wcsobj.invert(ra, dec)[::-1],
     )
 
 
@@ -546,7 +551,7 @@ def test_world_to_array_index_values(gwcs_simple_imaging, sky_ra_dec):
 
     assert_allclose(
         wcsobj.world_to_array_index_values(ra, dec),
-        wcsobj.invert(ra * u.deg, dec * u.deg, with_units=False)[::-1],
+        wcsobj.invert(ra, dec)[::-1],
     )
 
 
