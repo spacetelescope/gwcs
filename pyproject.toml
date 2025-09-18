@@ -171,6 +171,8 @@ ignore = [
     "PLR0915", # Too many statements in function
     "PLC0415", # import outside toplevel, this creates issues with circular and
                # delayed imports
+    "RUF059",  # Unpacked variable is never used
+    "B028",    # No explicit stacklevel found
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
