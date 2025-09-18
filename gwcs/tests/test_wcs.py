@@ -1828,8 +1828,12 @@ def test_array_high_level_output():
     output_frame = cf.SpectralFrame(unit=(u.nm,), axes_names=("lambda",))
     wave_model = models.Scale(0.1) | models.Shift(500)
     gwcs = wcs.WCS([(input_frame, wave_model), (output_frame, None)])
+
     result = gwcs(np.array([0, 1, 2]))
     result = values_to_high_level_objects(result, low_level_wcs=gwcs)
+    assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
+
+    result = gwcs.pixel_to_world([0, 1, 2,])
     assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
 
 
