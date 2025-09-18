@@ -1833,7 +1833,13 @@ def test_array_high_level_output():
     result = values_to_high_level_objects(result, low_level_wcs=gwcs)
     assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
 
-    result = gwcs.pixel_to_world([0, 1, 2,])
+    result = gwcs.pixel_to_world(
+        [
+            0,
+            1,
+            2,
+        ]
+    )
     assert (result == coord.SpectralCoord([500, 500.1, 500.2] * u.nm)).all()
 
 
