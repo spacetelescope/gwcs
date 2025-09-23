@@ -1741,7 +1741,7 @@ def test_error_with_duplicate_frames():
     """
     pipeline = [(detector, m1), (detector, m2), (focal, None)]
 
-    with pytest.raises(ValueError, match="Frame detector is already in the pipeline."):
+    with pytest.raises(ValueError, match=r"Frame detector is already in the pipeline."):
         wcs.WCS(pipeline)
 
 
@@ -1753,7 +1753,7 @@ def test_error_with_not_none_last():
     pipeline = [(detector, m1), (focal, m2)]
 
     with pytest.raises(
-        ValueError, match="The last step in the pipeline must have a None transform."
+        ValueError, match=r"The last step in the pipeline must have a None transform."
     ):
         wcs.WCS(pipeline)
 
