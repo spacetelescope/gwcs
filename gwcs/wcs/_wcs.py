@@ -162,8 +162,8 @@ class WCS(GWCSAPIMixin, Pipeline):
         )
         if with_units:
             warnings.warn(
-                "the 'with_units' parameter is deprecated and will be removed in the next release."
-                "Use the shared API method 'pixel_to_world'",
+                "the 'with_units' parameter is deprecated and will be removed in the "
+                "next release. Use the shared API method 'pixel_to_world'",
                 DeprecationWarning,
             )
             # values are always expected to be arrays or scalars not quantities
@@ -382,8 +382,8 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         if with_units:
             warnings.warn(
-                "the 'with_units' parameter is deprecated and will be removed in the next release."
-                "Use the shared API method 'pixel_to_world'",
+                "the 'with_units' parameter is deprecated and will be removed in the "
+                "next release. Use the shared API method 'pixel_to_world'",
                 DeprecationWarning,
             )
             results = self._remove_units_input(results, self.input_frame)
@@ -1202,7 +1202,8 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         if with_units:
             warnings.warn(
-                "the 'with_units' parameter is deprecated and will be removed in the next release.",
+                "the 'with_units' parameter is deprecated and will be removed in "
+                "the next release.",
                 DeprecationWarning,
             )
             results = self._remove_units_input(results, to_step.step.frame)
