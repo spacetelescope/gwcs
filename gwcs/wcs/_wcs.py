@@ -1203,7 +1203,8 @@ class WCS(GWCSAPIMixin, Pipeline):
         if with_units:
             warnings.warn(
                 "the 'with_units' parameter is deprecated and will be removed in "
-                "the next release.", DeprecationWarning,
+                "the next release.",
+                DeprecationWarning,
             )
             results = self._remove_units_input(results, to_step.step.frame)
 
