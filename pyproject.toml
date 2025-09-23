@@ -173,6 +173,7 @@ ignore = [
                # delayed imports
     "RUF059",  # Unpacked variable is never used
     "B028",    # No explicit stacklevel found
+    "RUF043",  # pytest-raises-ambiguous-pattern
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

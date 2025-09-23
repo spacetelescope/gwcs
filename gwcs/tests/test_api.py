@@ -627,8 +627,8 @@ def test_mismatched_high_level_types(gwcs_3d_identity_units):
     with pytest.raises(
         TypeError,
         match=(
-            r"Invalid types were passed.*(tuple, SpectralCoord)"
-            r".*(SkyCoord, SpectralCoord).*",
+            "Invalid types were passed.*(tuple, SpectralCoord)"
+            ".*(SkyCoord, SpectralCoord).*",
         ),
     ):
         wcs.invert((1 * u.deg, 2 * u.deg), coord.SpectralCoord(10 * u.nm))
@@ -636,6 +636,6 @@ def test_mismatched_high_level_types(gwcs_3d_identity_units):
     # Oh astropy why do you make us do this
     with pytest.raises(
         TypeError,
-        match=(r"Invalid types were passed.*got.*Quantity.*expected.*SpectralCoord.*",),
+        match=("Invalid types were passed.*got.*Quantity.*expected.*SpectralCoord.*",),
     ):
         wcs.invert(coord.SkyCoord(1 * u.deg, 2 * u.deg), 10 * u.nm)
