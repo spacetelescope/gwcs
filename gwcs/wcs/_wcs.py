@@ -1188,21 +1188,22 @@ class WCS(GWCSAPIMixin, Pipeline):
         # -> this also turns the frame name strings into frame objects
         from_step = self._get_step(from_frame)
         to_step = self._get_step(to_frame)
+        transform = self.get_transform(from_step.step.frame, to_step.step.frame)
 
         # Determine if the transform is actually an inverse
         backward = to_step.index < from_step.index
 
-        if backward and is_high_level(*args, low_level_wcs=from_step.step.frame):
+        if not transform.uses_quantity and is_high_level(*args, low_level_wcs=from_step.step.frame):
             args = high_level_objects_to_values(
                 *args, low_level_wcs=from_step.step.frame
             )
 
-        results = self._call_forward(
+        results = self._evaluate_transform(
+            transform,
+            from_step.step.frame,
+            to_step.step.frame,
             *args,
-            from_frame=from_step.step.frame,
-            to_frame=to_step.step.frame,
-            **kwargs,
-        )
+            **kwargs)
 
         return results
 
