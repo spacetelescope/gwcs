@@ -43,7 +43,6 @@ from ._utils import (
     store_2D_coefficients,
 )
 
-
 __all__ = ["WCS"]
 
 _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "quiet"]
@@ -156,14 +155,18 @@ class WCS(GWCSAPIMixin, Pipeline):
         """
         transform = self.forward_transform
         if transform is None:
-            raise NotImplementedError("Transform is not defined.")
-        args = self._make_input_units_consistent(*args, transform=transform, from_frame=self.input_frame, to_frame=self.output_frame)\
-
-        results = self._call_forward(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+            msg = "Transform is not defined."
+            raise NotImplementedError(msg)
+        args = self._make_input_units_consistent(
+            *args,
+            transform=transform,
+            from_frame=self.input_frame,
+            to_frame=self.output_frame,
         )
 
-        return results
+        return self._call_forward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
     def _make_input_units_consistent(
         self,
@@ -171,15 +174,15 @@ class WCS(GWCSAPIMixin, Pipeline):
         transform,
         from_frame: CoordinateFrame | None = None,
         to_frame: CoordinateFrame | None = None,
-        **kwargs
-        ):
+        **kwargs,
+    ):
         """
         Adds or removes units from the arguments as needed so that the transform
         can be successfully evaluated.
         """
         # Validate that the input type matches what the transform expects
         input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        transform_uses_quantity = False if transform is None or not transform.uses_quantity else True
+        transform_uses_quantity = not (transform is None or not transform.uses_quantity)
         if (
             not input_is_quantity
             and transform_uses_quantity
@@ -209,7 +212,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             msg = "WCS.forward_transform is not implemented."
             raise NotImplementedError(msg)
         return transform
-
 
     def _evaluate_transform(
         self,
@@ -400,13 +402,16 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform = None
         if is_high_level(*args, low_level_wcs=self):
             args = high_level_objects_to_values(*args, low_level_wcs=self)
-        args = self._make_input_units_consistent(*args, transform=transform, from_frame=self.output_frame, to_frame=self.input_frame)
-
-        results = self._call_backward(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        args = self._make_input_units_consistent(
+            *args,
+            transform=transform,
+            from_frame=self.output_frame,
+            to_frame=self.input_frame,
         )
 
-        return results
+        return self._call_backward(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
     def _call_backward(
         self,
@@ -1190,22 +1195,16 @@ class WCS(GWCSAPIMixin, Pipeline):
         to_step = self._get_step(to_frame)
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
 
-        # Determine if the transform is actually an inverse
-        backward = to_step.index < from_step.index
-
-        if not transform.uses_quantity and is_high_level(*args, low_level_wcs=from_step.step.frame):
+        if not transform.uses_quantity and is_high_level(
+            *args, low_level_wcs=from_step.step.frame
+        ):
             args = high_level_objects_to_values(
                 *args, low_level_wcs=from_step.step.frame
             )
 
-        results = self._evaluate_transform(
-            transform,
-            from_step.step.frame,
-            to_step.step.frame,
-            *args,
-            **kwargs)
-
-        return results
+        return self._evaluate_transform(
+            transform, from_step.step.frame, to_step.step.frame, *args, **kwargs
+        )
 
     @property
     def name(self) -> str:
