@@ -4,7 +4,6 @@ from pathlib import Path
 
 import asdf
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
@@ -1811,7 +1810,6 @@ def test_direct_numerical_inverse(gwcs_romanisim):
     out = gwcs_romanisim.numerical_inverse(*ra_dec)
 
     assert_allclose(xy, out)
-
 
 
 def test_array_high_level_output():
