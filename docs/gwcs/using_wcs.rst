@@ -39,7 +39,7 @@ them to other standard coordinate frames supported by `astropy.coordinates`.
 
 .. doctest-skip::
 
-  >>> skycoord = wcsobj(1, 2, with_units=True)
+  >>> skycoord = wcsobj.pixel_to_world(1, 2)
   >>> print(skycoord)
   <SkyCoord (ICRS): (ra, dec) in deg
       (5.50090023, -72.04553535)>
