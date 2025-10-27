@@ -3,7 +3,7 @@ name = "gwcs"
 description = "Generalized World Coordinate System"
 requires-python = ">=3.11"
 authors = [
-    { name = "gwcs developers", email = "help@stsci.edu" },
+    { name = "gwcs developers" },
 ]
 dependencies = [
     "asdf >= 3.3.0",
