@@ -1,6 +1,10 @@
 0.26.1 (unreleased)
 -------------------
 
+- Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
+  inputs had the correct shape, but had the same value for all elements. [#642]
+
+
 0.26.0 (2025-09-18)
 -------------------
 - Fix the computation of ``lon_pole`` for Zenitahl projections and declination of +/-90 deg. [#616]
