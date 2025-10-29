@@ -1,6 +1,9 @@
 0.26.1 (unreleased)
 -------------------
 
+- Deprecate the private ``_toindex`` function in favor of a public ``to_index`` function. [#619]
+
+
 0.26.0 (2025-09-18)
 -------------------
 - Fix the computation of ``lon_pole`` for Zenitahl projections and declination of +/-90 deg. [#616]

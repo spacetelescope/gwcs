@@ -136,7 +136,7 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         results = self.world_to_pixel_values(*world_arrays)
         results = (results,) if self.pixel_n_dim == 1 else results[::-1]
 
-        results = tuple(utils._toindex(result) for result in results)
+        results = tuple(utils.to_index(result) for result in results)
         return results[0] if self.pixel_n_dim == 1 else results
 
     @property
