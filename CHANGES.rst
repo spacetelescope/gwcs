@@ -1,5 +1,6 @@
 0.26.1 (unreleased)
 -------------------
+- Remove ``with_units`` argument. [#635]
 
 - Deprecate the private ``_toindex`` function in favor of a public ``to_index`` function. [#619]
 
