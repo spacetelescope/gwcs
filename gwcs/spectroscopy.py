@@ -384,7 +384,7 @@ class SellmeierZemax(Model):
         # Compute the relative index of the glass at Tref and Pref using
         # Sellmeier equation I.
         lamrel = wavelength * nair_obs / nair_ref
-        nrel = SellmeierGlass.evaluate(lamrel[0], B_coef, C_coef)
+        nrel = SellmeierGlass.evaluate(lamrel, B_coef, C_coef)
         # Convert the relative index of refraction at the reference temperature
         # and pressure to absolute.
         nabs_ref = nrel * nair_ref

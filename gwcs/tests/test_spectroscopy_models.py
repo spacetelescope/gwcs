@@ -73,6 +73,17 @@ def test_SellmeierZemax(sellmeier_zemax):
     assert_allclose(sellmeier_zemax(2), n)
 
 
+def test_SellmeierZemax_array(sellmeier_zemax):
+    """Covers a bug where multiple inputs would result in identical outputs"""
+    wl = np.linspace(0.5, 8.0, 50)
+    n = sellmeier_zemax(wl)
+    expected_n0 = 1.43802003
+    expected_nf = 1.35076012
+    assert np.isclose(n[0], expected_n0)
+    assert np.isclose(n[-1], expected_nf)
+    assert np.unique(n).size == wl.size
+
+
 def test_Snell3D(sellmeier_glass):
     """Test from Nirspec."""
     expected = (0.07015255913513296, 0.07015255913513296, 0.9950664484814988)

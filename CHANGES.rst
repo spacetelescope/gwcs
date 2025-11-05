@@ -1,6 +1,9 @@
 0.26.1 (unreleased)
 -------------------
 
+- Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
+  inputs had the correct shape, but had the same value for all elements. [#642]
+
 - Deprecate the private ``_toindex`` function in favor of a public ``to_index`` function. [#619]
 
 
