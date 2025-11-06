@@ -14,6 +14,7 @@ from .converters.spectroscopy import (
 from .converters.wcs import (
     CelestialFrameConverter,
     CompositeFrameConverter,
+    DiscreteFrameConverter,
     FITSImagingWCSConverter,
     Frame2DConverter,
     FrameConverter,
@@ -43,6 +44,7 @@ WCS_MODEL_CONVERTERS = [
     DirectionCosinesConverter(),
     SphericalCartesianConverter(),
     FITSImagingWCSConverter(),
+    DiscreteFrameConverter(),
 ]
 
 # The order here is important; asdf will prefer to use extensions
