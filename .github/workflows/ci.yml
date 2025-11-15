@@ -30,11 +30,12 @@ jobs:
         - linux: py311-oldestdeps
         - linux: py311
         - linux: py312
+        - linux: py314
         # `tox` does not currently respect `requires-python` versions when creating testing environments;
         # if this breaks, add an upper pin to `requires-python` and revert this py3 to the latest working version
-        - linux: py3-cov
+        - linux: py313-cov
           coverage: codecov
           pytest-results-summary: true
-        - macos: py3
+        - macos: py313
           pytest-results-summary: true
-        - linux: py3-dev
+        - linux: py314-dev
