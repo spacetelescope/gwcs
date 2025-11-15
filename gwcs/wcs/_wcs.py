@@ -500,6 +500,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         pixel_arrays = list(pixel_arrays)
         bbox = self.bounding_box
         for idim, pix in enumerate(pixel_arrays):
+            print(f"pix, bbox, {pix}, {bbox}")
             outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
             if np.any(outside):
                 if np.isscalar(pix):
