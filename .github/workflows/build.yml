@@ -11,5 +11,3 @@ jobs:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish_pure_python.yml@d9b81a07e789d1b1921ab5fe33de2ddcbbd02c3f  # v2.3.0
     with:
       upload_to_pypi: ${{ (github.event_name == 'release') && (github.event.action == 'released') }}
-    secrets:
-      pypi_token: ${{ secrets.PYPI_PASSWORD_STSCI_MAINTAINER }}
