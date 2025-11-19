@@ -1,4 +1,4 @@
-0.26.1 (unreleased)
+0.26.1 (2025-11-19)
 -------------------
 
 - Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
