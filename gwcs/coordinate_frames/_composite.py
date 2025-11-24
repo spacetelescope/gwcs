@@ -49,7 +49,7 @@ class CompositeFrame(CoordinateFrame):
 
         super().__init__(
             naxes,
-            axes_type=axes_type,
+            axes_type=tuple(axes_type),
             axes_order=axes_order,
             unit=unit,
             axes_names=axes_names,
