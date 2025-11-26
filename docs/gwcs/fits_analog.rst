@@ -90,13 +90,12 @@ This WCS pipeline has only one step - from ``detector`` to ``sky``:
 Now we have a complete WCS object. The next example will use it to convert pixel
 coordinates(1, 2) to sky coordinates:
 
-  >>> sky = wcsobj(1*u.pix, 2*u.pix, with_units=True)
+  >>> sky = wcsobj(1*u.pix, 2*u.pix)
   >>> print(sky)
-  <SkyCoord (ICRS): (ra, dec) in deg
-    (5.52515954, -72.05190935)>
+  (<Quantity 5.52515954 deg>, <Quantity -72.05190935 deg>)
 
 The :meth:`~gwcs.wcs.WCS.invert` method evaluates the :meth:`~gwcs.wcs.WCS.backward_transform` to provide a mapping from sky coordinates to pixel coordinates
 if available, otherwise it applies an iterative method to calculate the pixel coordinates.
 
-  >>> wcsobj.invert(sky)
+  >>> wcsobj.invert(*sky)
   (<Quantity 1. pix>, <Quantity 2. pix>)
