@@ -147,7 +147,7 @@ def test_insert_transform():
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame="icrs", transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"A transform can not be inserted before"):
         gw.insert_transform(frame='detector', transform=m2)
 
 
