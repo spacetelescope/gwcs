@@ -1,3 +1,8 @@
+0.26.2(unreleased)
+------------------
+
+- Raise an error when inserting a transform before the first coordinate frame. [#654]
+
 0.26.1 (2025-11-19)
 -------------------
 
