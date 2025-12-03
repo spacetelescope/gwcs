@@ -353,6 +353,9 @@ class Pipeline:
         if index == 0 and not after:
             msg = "A transform can not be inserted before the first coordinate frame."
             raise ValueError(msg)
+        if index == len(self.available_frames) - 1 and after:
+            msg = "A transform can not be inserted after the last coordinate frame."
+            raise ValueError(msg)
 
         if not after:
             index -= 1
