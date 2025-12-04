@@ -1,6 +1,17 @@
-0.26.1 (unreleased)
+0.26.2(unreleased)
+------------------
+
+- Raise an error when inserting a transform before the first coordinate frame. [#654]
+
+0.26.1 (2025-11-19)
 -------------------
 - Remove ``with_units`` argument. [#635]
+
+- Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
+  inputs had the correct shape, but had the same value for all elements. [#642]
+
+- Deprecate the private ``_toindex`` function in favor of a public ``to_index`` function. [#619]
+
 
 0.26.0 (2025-09-18)
 -------------------

@@ -31,7 +31,7 @@ from gwcs.coordinate_frames import (
     CoordinateFrame,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _compute_lon_pole, _toindex, is_high_level
+from gwcs.utils import _compute_lon_pole, is_high_level, to_index
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -1303,7 +1303,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
         if center:
-            vertices = _toindex(vertices)
+            vertices = to_index(vertices)
 
         result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
 
