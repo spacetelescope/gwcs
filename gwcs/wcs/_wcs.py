@@ -193,26 +193,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             args = self._remove_units_input(args, from_frame)
         return args
 
-    def _get_transform(
-        self,
-        *args,
-        from_frame: CoordinateFrame | None = None,
-        to_frame: CoordinateFrame | None = None,
-        **kwargs,
-    ):
-        """
-        Executes the forward transform, but values only.
-        """
-        if from_frame is None and to_frame is None:
-            transform = self.forward_transform
-        else:
-            transform = self.get_transform(from_frame, to_frame)
-
-        if transform is None:
-            msg = "WCS.forward_transform is not implemented."
-            raise NotImplementedError(msg)
-        return transform
-
     def _evaluate_transform(
         self,
         transform,
