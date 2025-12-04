@@ -5,6 +5,7 @@
 
 0.26.1 (2025-11-19)
 -------------------
+- Remove ``with_units`` argument. [#635]
 
 - Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
   inputs had the correct shape, but had the same value for all elements. [#642]
