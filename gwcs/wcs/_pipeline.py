@@ -169,7 +169,7 @@ class Pipeline:
         self._pipeline.insert(index, self._wrap_step(value))
         self._check_last_step()
 
-    def _extend(self, values: list[Step]) -> None:
+    def _extend(self, values: list[Step | StepTuple]) -> None:
         """
         Handle extending the pipeline with a list of steps
         """
@@ -179,7 +179,7 @@ class Pipeline:
         self._check_last_step()
 
     @staticmethod
-    def _handle_empty_frame(frame: CoordinateFrame) -> CoordinateFrame | None:
+    def _handle_empty_frame(frame: CoordinateFrame | None) -> CoordinateFrame | None:
         """
         Handle the case where the frame is an EmptyFrame.
         """
@@ -231,7 +231,7 @@ class Pipeline:
         """
         return frame.name if isinstance(frame, CoordinateFrame) else frame
 
-    def _frame_index(self, frame: str | CoordinateFrame) -> int:
+    def _frame_index(self, frame: str | CoordinateFrame | None) -> int:
         """
         Return the index of the given frame in the pipeline.
 
@@ -244,10 +244,15 @@ class Pipeline:
         -------
         Index of the frame in the pipeline.
         """
+        if frame is None:
+            msg = "Cannot get index of a `None` frame."
+            raise CoordinateFrameError(msg)
+
+        name = self._frame_name(frame)
         try:
-            return self.available_frames.index(self._frame_name(frame))
+            return self.available_frames.index(name)
         except ValueError as err:
-            msg = f"Frame {self._frame_name(frame)} is not in the available frames"
+            msg = f"Frame {name} is not in the available frames"
             raise CoordinateFrameError(msg) from err
 
     def _get_step(self, frame: str | CoordinateFrame) -> IndexedStep:
@@ -259,7 +264,9 @@ class Pipeline:
         return IndexedStep(index, self._pipeline[index])
 
     def get_transform(
-        self, from_frame: str | CoordinateFrame, to_frame: str | CoordinateFrame
+        self,
+        from_frame: str | CoordinateFrame | None,
+        to_frame: str | CoordinateFrame | None,
     ) -> Mdl:
         """
         Return a transform between two coordinate frames.
@@ -410,17 +417,8 @@ class Pipeline:
         input_index = get_index(input_frame)
         output_index = get_index(output_frame)
 
-        new_frames = [input_index, output_index].count(None)
-
-        match new_frames:
-            case 0:
-                msg = (
-                    "Could not insert frame as both frames "
-                    f"{self._frame_name(input_frame)} and "
-                    f"{self._frame_name(output_frame)} already exist"
-                )
-                raise ValueError(msg)
-            case 2:
+        if input_index is None:
+            if output_index is None:
                 msg = (
                     "Could not insert frame as neither frame "
                     f"{self._frame_name(input_frame)} and "
@@ -428,10 +426,16 @@ class Pipeline:
                 )
                 raise ValueError(msg)
 
-        # so input_index is None or output_index is None
-        if input_index is None:
             self._insert(output_index, Step(input_frame, transform))
         else:
+            if output_index is not None:
+                msg = (
+                    "Could not insert frame as both frames "
+                    f"{self._frame_name(input_frame)} and "
+                    f"{self._frame_name(output_frame)} already exist"
+                )
+                raise ValueError(msg)
+
             current = self._pipeline[input_index].transform
             self._pipeline[input_index].transform = transform
             self._insert(input_index + 1, Step(output_frame, current))
@@ -494,19 +498,24 @@ class Pipeline:
             Tuple of tuples with ("low", high") values for the range.
         """
         frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
+        transform = self.get_transform(frames[0], frames[1])
+
+        if transform is None:
+            msg = "No transform exists between the first two frames."
+            raise ValueError(msg)
+
         if value is None:
-            transform_0.bounding_box = value
+            transform.bounding_box = value
         else:
             # Make sure the dimensions of the new bbox are correct.
             if isinstance(value, CompoundBoundingBox):
-                bbox = CompoundBoundingBox.validate(transform_0, value, order="F")
+                bbox = CompoundBoundingBox.validate(transform, value, order="F")
             else:
-                bbox = ModelBoundingBox.validate(transform_0, value, order="F")
+                bbox = ModelBoundingBox.validate(transform, value, order="F")
 
-            transform_0.bounding_box = bbox
+            transform.bounding_box = bbox
 
-        self.set_transform(frames[0], frames[1], transform_0)
+        self.set_transform(frames[0], frames[1], transform)
 
     def attach_compound_bounding_box(
         self, cbbox: dict[tuple[str], tuple], selector_args: tuple[str]

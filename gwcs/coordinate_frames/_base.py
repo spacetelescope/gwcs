@@ -124,7 +124,9 @@ class BaseCoordinateFrame(abc.ABC):
         to be able to get the components in their native order.
         """
 
-    def add_units(self, arrays: u.Quantity | np.ndarray | float) -> tuple[u.Quantity]:
+    def add_units(
+        self, arrays: u.Quantity | np.ndarray | list[float]
+    ) -> tuple[u.Quantity, ...]:
         """
         Add units to the arrays
         """
@@ -134,8 +136,8 @@ class BaseCoordinateFrame(abc.ABC):
         )
 
     def remove_units(
-        self, arrays: u.Quantity | np.ndarray | float
-    ) -> tuple[np.ndarray]:
+        self, arrays: u.Quantity | np.ndarray | list[float]
+    ) -> tuple[np.ndarray, ...]:
         """
         Remove units from the input arrays
         """

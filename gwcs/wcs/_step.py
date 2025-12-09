@@ -100,5 +100,5 @@ class IndexedStep(NamedTuple):
     Class to handle a step and its index in the pipeline.
     """
 
-    index: int
+    idx: int
     step: Step

@@ -10,10 +10,10 @@ __all__ = ["FrameProperties"]
 @dataclass
 class FrameProperties:
     naxes: InitVar[int]
-    axes_type: tuple[str]
-    unit: tuple[u.Unit] = None
-    axes_names: tuple[str] = None
-    axis_physical_types: list[str] = None
+    axes_type: tuple[str, ...]
+    unit: tuple[u.Unit, ...] | None = None
+    axes_names: tuple[str, ...] | None = None
+    axis_physical_types: list[str] | None = None
 
     def __post_init__(self, naxes):
         if isinstance(self.axes_type, str):

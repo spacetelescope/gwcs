@@ -122,15 +122,16 @@ class WCS(GWCSAPIMixin, Pipeline):
         if frame is not None:
             return frame.add_units(arrays)
 
-        return arrays
+        # This is a fallback that should rarely be used
+        return arrays  # type: ignore[return-value]
 
     def _remove_units_input(
-        self, arrays: list[u.Quantity], frame: CoordinateFrame | None
+        self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrame | None
     ) -> tuple[np.ndarray, ...]:
         if frame is not None:
             return frame.remove_units(arrays)
 
-        return arrays
+        return tuple(arrays)
 
     def __call__(
         self,
@@ -188,7 +189,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             and transform_uses_quantity
             and transform.parameters.size
         ):
-            return self._add_units_input(args, from_frame)
+            return self._add_units_input(args, from_frame)  # type: ignore[arg-type]
         if not transform_uses_quantity and input_is_quantity:
             return self._remove_units_input(args, from_frame)
         return args
@@ -257,7 +258,9 @@ class WCS(GWCSAPIMixin, Pipeline):
                 and transform.uses_quantity
                 and not transform.parameters.size
             ):
-                return _transform(*self._add_units_input(args, from_frame))
+                return _transform(
+                    *self._add_units_input(args, from_frame)  # type: ignore[arg-type]
+                )
 
             raise
 
@@ -1174,6 +1177,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_step = self._get_step(from_frame)
         to_step = self._get_step(to_frame)
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
+
+        if transform is None:
+            msg = f"No transformation found from {from_frame} to {to_frame}"
+            raise ValueError(msg)
 
         if not transform.uses_quantity and is_high_level(
             *args, low_level_wcs=from_step.step.frame
