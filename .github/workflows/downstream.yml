@@ -48,7 +48,7 @@ jobs:
       cache-path: ${{ needs.environment.outputs.data_path }}/crds
       cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
-        - linux: py311-test-jwst-cov
+        - linux: py311-test-jwst
 
   romancal:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
@@ -62,7 +62,7 @@ jobs:
       cache-path: ${{ needs.environment.outputs.data_path }}/crds
       cache-key: crds-${{ needs.crds_contexts.outputs.jwst }}
       envs: |
-        - linux: py311-test-romancal-cov-xdist
+        - linux: py311-test-romancal
 
   romanisim_data:
     needs: [ environment ]
@@ -87,11 +87,11 @@ jobs:
         CRDS_CLIENT_RETRY_COUNT: 3
         CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
       cache-path: ${{ needs.romanisim_data.outputs.cache_path }}
-      cache-key: ${{ needs.romanisim_data.outputs.cache_key }}-${{ needs.crds_contexts.outputs.roman }}
+      cache-key: crds-${{ needs.crds_contexts.outputs.roman }}-${{ needs.romanisim_data.outputs.cache_key }}
       cache-restore-keys: |
         ${{ needs.romanisim_data.outputs.cache_key }}
       envs: |
-        - linux: py311-test-romanisim-cov-xdist
+        - linux: py311-test-romanisim-xdist
 
   astropy:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
