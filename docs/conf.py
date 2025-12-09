@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 #
 # Astropy documentation build configuration file.
