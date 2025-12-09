@@ -1,12 +1,12 @@
 0.26.2(unreleased)
 ------------------
-
 - Raise an error when inserting a transform before the first coordinate frame. [#654]
+
+- Remove ``with_units`` argument from ``__call__`` and ``invert``. Use the Shared API
+  functions instead, ``pixel_to_world`` and `world_to_pixel``. [#635]
 
 0.26.1 (2025-11-19)
 -------------------
-- Remove ``with_units`` argument. [#635]
-
 - Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
   inputs had the correct shape, but had the same value for all elements. [#642]
 
