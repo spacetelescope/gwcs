@@ -9,6 +9,7 @@ import astropy.units as u
 import numpy as np
 from astropy.io import fits
 from astropy.modeling import fix_inputs, projections
+from astropy.modeling.bounding_box import CompoundBoundingBox as Cbox
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
 from astropy.modeling.models import (
     Mapping,
@@ -26,6 +27,7 @@ from scipy import optimize
 
 from gwcs.api import GWCSAPIMixin
 from gwcs.coordinate_frames import (
+    AxisType,
     CelestialFrame,
     CompositeFrame,
     CoordinateFrame,
@@ -109,8 +111,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         input_frame: CoordinateFrame | None = None,
         output_frame: CoordinateFrame | None = None,
         name: str | None = None,
+        *,
+        _check_step: bool = True,
     ) -> None:
-        super(GWCSAPIMixin, self).__init__(forward_transform, input_frame, output_frame)
+        super(GWCSAPIMixin, self).__init__(
+            forward_transform, input_frame, output_frame, _check_step=_check_step
+        )
 
         self._approx_inverse = None
         self._name = "" if name is None else name
@@ -437,6 +443,27 @@ class WCS(GWCSAPIMixin, Pipeline):
         return result
 
     def outside_footprint(self, world_arrays):
+        def _outside_footprint(footprint, ind, idim, phys, coord) -> np.ndarray:
+            axis_range = footprint[:, idim] if np.asarray(ind).sum() > 1 else footprint
+
+            min_ax = axis_range.min()
+            max_ax = axis_range.max()
+
+            if (
+                axtyp == "SPATIAL"
+                and str(phys).endswith((".ra", ".lon"))
+                and (max_ax - min_ax) > 180
+            ):
+                # most likely this coordinate is wrapped at 360
+                d = 0.5 * (min_ax + max_ax)
+                m = axis_range <= d
+                min_ax = axis_range[m].max()
+                max_ax = axis_range[~m].min()
+                return (coord > min_ax) & (coord < max_ax)
+
+            coord_ = self._remove_quantity_output(world_arrays, self.output_frame)[idim]
+            return (coord_ < min_ax) | (coord_ > max_ax)
+
         world_arrays = [copy(array) for array in world_arrays]
 
         axes_types = set(self.output_frame.axes_type)
@@ -455,35 +482,24 @@ class WCS(GWCSAPIMixin, Pipeline):
                 zip(world_arrays, axes_phys_types, strict=False)
             ):
                 coord = _tofloat(coordinate)
-                if np.asarray(ind).sum() > 1:
-                    axis_range = footprint[:, idim]
-                else:
-                    axis_range = footprint
-                min_ax = axis_range.min()
-                max_ax = axis_range.max()
 
-                if (
-                    axtyp == "SPATIAL"
-                    and str(phys).endswith((".ra", ".lon"))
-                    and (max_ax - min_ax) > 180
-                ):
-                    # most likely this coordinate is wrapped at 360
-                    d = 0.5 * (min_ax + max_ax)
-                    m = axis_range <= d
-                    min_ax = axis_range[m].max()
-                    max_ax = axis_range[~m].min()
-                    outside = (coord > min_ax) & (coord < max_ax)
+                if not isinstance(footprint, dict):
+                    outside = _outside_footprint(footprint, ind, idim, phys, coord)
                 else:
-                    coord_ = self._remove_quantity_output(
-                        world_arrays, self.output_frame
-                    )[idim]
-                    outside = (coord_ < min_ax) | (coord_ > max_ax)
+                    outside = None
+                    for ftp in footprint.values():
+                        if outside is None:
+                            outside = _outside_footprint(ftp, ind, idim, phys, coord)
+                        else:
+                            outside &= _outside_footprint(ftp, ind, idim, phys, coord)
+
                 if np.any(outside):
                     if np.isscalar(coord):
                         coord = np.nan
                     else:
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
+
         if not_numerical:
             world_arrays = values_to_high_level_objects(
                 *world_arrays, low_level_wcs=self
@@ -494,10 +510,22 @@ class WCS(GWCSAPIMixin, Pipeline):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
             pixel_arrays = [pixel_arrays]
 
+        def _outside(pix, index, bbox):
+            return (pix < bbox[index][0]) | (pix > bbox[index][1])
+
         pixel_arrays = list(pixel_arrays)
         bbox = self.bounding_box
         for idim, pix in enumerate(pixel_arrays):
-            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            if isinstance(bbox, Cbox):
+                outside = None
+                for b in bbox.bounding_boxes.values():
+                    if outside is None:
+                        outside = _outside(pix, idim, b)
+                    else:
+                        outside &= _outside(pix, idim, b)
+            else:
+                outside = _outside(pix, idim, bbox)
+
             if np.any(outside):
                 if np.isscalar(pix):
                     pixel_arrays[idim] = np.nan
@@ -1227,7 +1255,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             f"forward_transform={self.forward_transform})>"
         )
 
-    def footprint(self, bounding_box=None, center=False, axis_type="all"):
+    def footprint(
+        self, bounding_box=None, center=False, axis_type: AxisType | str | None = None
+    ):
         """
         Return the footprint in world coordinates.
 
@@ -1237,7 +1267,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             ``prop: bounding_box``
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
-        axis_type : str
+        axis_type : AxisType
             A supported ``output_frame.axes_type`` or ``"all"`` (default).
             One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
 
@@ -1250,50 +1280,136 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         """
 
-        def _order_clockwise(v):
-            return np.asarray(
-                [
-                    [v[0][0], v[1][0]],
-                    [v[0][0], v[1][1]],
-                    [v[0][1], v[1][1]],
-                    [v[0][1], v[1][0]],
-                ]
-            ).T
+        def _remove_ignored(bounding_box: Bbox) -> tuple[float, ...]:
+            intervals = tuple(bounding_box.intervals.values())
+            bbox = bounding_box.bounding_box(order="F")
+
+            return tuple(b for b in bbox if b in intervals)
 
         if bounding_box is None:
             if self.bounding_box is None:
                 msg = "Need a valid bounding_box to compute the footprint."
                 raise TypeError(msg)
-            bb = self.bounding_box.bounding_box(order="F")
-        else:
-            bb = bounding_box
+
+            bounding_box = self.bounding_box
+
+        if isinstance(bounding_box, Cbox):
+            footprints = {}
+            for selector, bbox in bounding_box.bounding_boxes.items():
+                footprints[selector] = self._footprint(
+                    _remove_ignored(bbox),
+                    center=center,
+                    axis_type=axis_type,
+                    selector=selector,
+                )
+
+            return footprints
+
+        if isinstance(bounding_box, Bbox):
+            bounding_box = bounding_box.bounding_box(order="F")
+
+        return self._footprint(bounding_box, center=center, axis_type=axis_type)
+
+    def _footprint(
+        self,
+        bounding_box,
+        center=False,
+        axis_type: AxisType | str | None = None,
+        selector: tuple[float, ...] | None = None,
+    ):
+        """
+        Return the footprint in world coordinates.
+
+        Parameters
+        ----------
+        bounding_box : tuple of floats: (start, stop)
+            ``prop: bounding_box``
+        center : bool
+            If `True` use the center of the pixel, otherwise use the corner.
+        axis_type : AxisType
+            A supported ``output_frame.axes_type`` or ``"all"`` (default).
+            One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
+        selector : tuple of floats, optional
+            A tuple of the selector values used for the discrete coordinate of the WCS
+            to feed into the compound bounding box.
+        """
+        axis_type = AxisType.from_input("all" if axis_type is None else axis_type)
+
+        def _insert_selector(
+            bounding_box_inputs: tuple[float, ...],
+            selector: tuple[float, ...] | None,
+            input_frame: CoordinateFrame,
+        ):
+            if selector is None:
+                return bounding_box_inputs
+
+            if len(selector) != input_frame.axes_type.count(AxisType.DISCRETE):
+                msg = (
+                    "The number of selector values does not match the number of "
+                    "discrete axes in the input frame."
+                )
+                raise ValueError(msg)
+
+            bounding_box_inputs = list(bounding_box_inputs)
+            selector = list(selector)
+            inputs = []
+            for axes_type in input_frame.axes_type:
+                if axes_type == AxisType.DISCRETE:
+                    inputs.append(selector.pop(0))
+                else:
+                    inputs.append(bounding_box_inputs.pop(0))
+
+            return tuple(inputs)
+
+        def _order_clockwise(v):
+            return np.asarray(
+                [
+                    _insert_selector((v[0][0], v[1][0]), selector, self.input_frame),
+                    _insert_selector((v[0][0], v[1][1]), selector, self.input_frame),
+                    _insert_selector((v[0][1], v[1][1]), selector, self.input_frame),
+                    _insert_selector((v[0][1], v[1][0]), selector, self.input_frame),
+                ]
+            ).T
 
         all_spatial = all(t.lower() == "spatial" for t in self.output_frame.axes_type)
         if self.output_frame.naxes == 1:
-            if isinstance(bb[0], u.Quantity):
-                bb = np.asarray([b.value for b in bb]) * bb[0].unit
-            vertices = (bb,)
+            if isinstance(bounding_box[0], u.Quantity):
+                bounding_box = (
+                    np.asarray([b.value for b in bounding_box]) * bounding_box[0].unit
+                )
+            vertices = _insert_selector((bounding_box,), selector, self.input_frame)
         elif all_spatial:
             vertices = _order_clockwise(
-                [self._remove_units_input(b, self.input_frame) for b in bb]
+                [
+                    self._remove_units_input(
+                        _insert_selector(b, selector, self.input_frame),
+                        self.input_frame,
+                    )
+                    for b in bounding_box
+                ]
             )
         else:
-            vertices = np.array(list(itertools.product(*bb))).T
+            vertices = np.array(
+                [
+                    _insert_selector(b, selector, self.input_frame)
+                    for b in itertools.product(*bounding_box)
+                ]
+            ).T
 
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
         if center:
             vertices = to_index(vertices)
 
-        result = np.asarray(self.__call__(*vertices, with_bounding_box=False))
+        result = np.asarray(self(*vertices, with_bounding_box=False))
 
-        axis_type = axis_type.lower()
-        if axis_type == "spatial" and all_spatial:
+        if axis_type is AxisType.SPATIAL and all_spatial:
             return result.T
 
         if axis_type != "all":
             axtyp_ind = (
-                np.array([t.lower() for t in self.output_frame.axes_type]) == axis_type
+                np.array([AxisType.from_input(t) for t in self.output_frame.axes_type])
+                == axis_type
             )
             if not axtyp_ind.any():
                 msg = f'This WCS does not have axis of type "{axis_type}".'
@@ -1301,13 +1417,15 @@ class WCS(GWCSAPIMixin, Pipeline):
             if len(axtyp_ind) > 1:
                 result = np.asarray([(r.min(), r.max()) for r in result[axtyp_ind]])
 
-            if axis_type == "spatial":
+            if axis_type is AxisType.SPATIAL:
                 result = _order_clockwise(result)
             else:
                 result.sort()
                 result = np.squeeze(result)
+
         if self.output_frame.naxes == 1:
             return np.array([result]).T
+
         return result.T
 
     def fix_inputs(self, fixed):

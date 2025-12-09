@@ -10,7 +10,7 @@ from astropy import units as u
 from astropy import wcs as astwcs
 from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models, projections
-from astropy.modeling.bounding_box import ModelBoundingBox
+from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.time import Time
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
@@ -312,22 +312,20 @@ def test_bounding_box_units():
     assert_allclose(world, (np.nan, np.nan))
 
 
-def test_compound_bounding_box():
-    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    pipeline = [("detector", trans3), ("sky", None)]
-    w = wcs.WCS(pipeline)
-    cbb = {
+def test_compound_bounding_box(compound_bounding_box_wcs):
+    w = compound_bounding_box_wcs
+    cbb_raw = {
         1: ((-1, 10), (6, 15)),
         2: ((-1, 5), (3, 17)),
         3: ((-3, 7), (1, 27)),
     }
-    # Test attaching a valid bounding box (ignoring input 'x')
-    w.attach_compound_bounding_box(cbb, [("x",)])
-    from astropy.modeling.bounding_box import CompoundBoundingBox
+    assert w.bounding_box == w.forward_transform.bounding_box
 
-    cbb = CompoundBoundingBox.validate(trans3, cbb, selector_args=[("x",)], order="F")
+    cbb = CompoundBoundingBox.validate(
+        w.forward_transform, cbb_raw, selector_args=[("x",)], order="F"
+    )
+
     assert w.bounding_box == cbb
-    assert w.bounding_box is trans3.bounding_box
 
     # Test evaluating
     assert_allclose(w(13, 2, 1), (np.nan, np.nan, np.nan))
@@ -347,8 +345,6 @@ def test_compound_bounding_box():
     w = wcs.WCS(pipeline)
     cbb = {1 * u.pix: (1 * u.pix, 5 * u.pix), 2 * u.pix: (2 * u.pix, 6 * u.pix)}
     w.attach_compound_bounding_box(cbb, [("x1",)])
-
-    from astropy.modeling.bounding_box import CompoundBoundingBox
 
     cbb = CompoundBoundingBox.validate(trans, cbb, selector_args=[("x1",)], order="F")
     assert w.bounding_box == cbb
@@ -516,13 +512,13 @@ def test_bounding_box_eval():
     pipeline = [
         (
             cf.CoordinateFrame(
-                naxes=1, axes_type=("PIXEL",), axes_order=(0,), name="detector"
+                naxes=3, axes_type=("PIXEL",) * 3, axes_order=(0, 1, 2), name="detector"
             ),
             trans3,
         ),
         (
             cf.CoordinateFrame(
-                naxes=1, axes_type=("SPATIAL",), axes_order=(0,), name="sky"
+                naxes=3, axes_type=("SPATIAL",) * 3, axes_order=(0, 1, 2), name="sky"
             ),
             None,
         ),
@@ -604,6 +600,74 @@ def test_footprint():
     )
 
     assert_equal(w.footprint(axis_type="spectral"), np.array([2, 12]))
+
+
+def test_footprint_compound_bounding_box(compound_bounding_box_wcs):
+    """
+    Test that we can compute the footprint of a WCS with a CompoundBoundingBox.
+    """
+    footprint = compound_bounding_box_wcs.footprint()
+    assert list(footprint.keys()) == list(
+        compound_bounding_box_wcs.bounding_box.bounding_boxes.keys()
+    )
+
+    for selector, bbox in compound_bounding_box_wcs.bounding_box.bounding_boxes.items():
+        vertices = np.asarray(
+            [
+                (bbox.intervals[0][0], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][0], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][0], selector[0]),
+            ]
+        ).T
+        assert (
+            footprint[selector]
+            == np.asarray(
+                compound_bounding_box_wcs(*vertices, with_bounding_box=False)
+            ).T
+        ).all()
+
+
+def test_footprint_compound_bounding_box_spectral(
+    compound_bounding_box_wcs_spectral_out,
+):
+    """
+    Test that we can compute the footprint of a WCS with a CompoundBoundingBox.
+    """
+    footprint = compound_bounding_box_wcs_spectral_out.footprint()
+    assert list(footprint.keys()) == list(
+        compound_bounding_box_wcs_spectral_out.bounding_box.bounding_boxes.keys()
+    )
+
+    for (
+        selector,
+        bbox,
+    ) in compound_bounding_box_wcs_spectral_out.bounding_box.bounding_boxes.items():
+        vertices = np.asarray(
+            [
+                (bbox.intervals[0][0], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][0], bbox.intervals[1][1], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][0], selector[0]),
+                (bbox.intervals[0][1], bbox.intervals[1][1], selector[0]),
+            ]
+        ).T
+        assert (
+            footprint[selector]
+            == np.asarray(
+                compound_bounding_box_wcs_spectral_out(
+                    *vertices, with_bounding_box=False
+                )
+            ).T
+        ).all()
+
+
+def test_invert_compound_bounding_box(compound_bounding_box_wcs):
+    """
+    Test that we can invert a WCS with a CompoundBoundingBox.
+    """
+
+    ra, dec, lam = compound_bounding_box_wcs(1, 2, 3)
+    assert_allclose(compound_bounding_box_wcs.invert(ra, dec, lam), (1, 2, 3))
 
 
 def test_outside_footprint_inputs(gwcs_2d_spatial_shift):
@@ -1493,15 +1557,14 @@ def test_spatial_spectral_stokes():
     det2stokes = (
         models.Shift(-crpix[3]) | models.Scale(cdelt[3]) | models.Shift(crval[3])
     )
+    transform = models.Mapping((0, 0, 0, 1)) | (det2sky & det2freq & det2stokes)
 
-    gw = wcs.WCS(
-        [wcs.Step(detector, det2sky & det2freq & det2stokes), wcs.Step(world, None)]
-    )
+    gw = wcs.WCS([wcs.Step(detector, transform), wcs.Step(world, None)])
 
     x1 = np.array([0, 0, 0, 0, 0])
     x2 = np.array([0, 1, 2, 3, 4])
 
-    gw_sky, gw_spec, gw_stokes = gw.pixel_to_world(x1 + 1, x1 + 1, x1 + 1, x2 + 1)
+    gw_sky, gw_spec, gw_stokes = gw.pixel_to_world(x1 + 1, x2 + 1)
     aw_sky, aw_spec, aw_stokes = aw.pixel_to_world(x1, x1, x1, x2)
 
     assert_allclose(gw_sky.data.lon, aw_sky.data.lon)

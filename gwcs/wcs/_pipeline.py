@@ -33,9 +33,13 @@ class Pipeline:
         forward_transform: ForwardTransform = None,
         input_frame: str | CoordinateFrame | None = None,
         output_frame: str | CoordinateFrame | None = None,
+        *,
+        _check_step: bool = True,
     ) -> None:
         self._pipeline: list[Step] = []
+        self._check_step = _check_step
         self._initialize_pipeline(forward_transform, input_frame, output_frame)
+        self._check_step = True
 
     def _initialize_pipeline(
         self,
@@ -84,7 +88,9 @@ class Pipeline:
                 raise CoordinateFrameError(msg)
 
             forward_transform = [
-                Step(input_frame, forward_transform.copy()),
+                Step(
+                    input_frame, forward_transform.copy(), _check_step=self._check_step
+                ),
                 Step(output_frame, None),
             ]
 
@@ -135,7 +141,11 @@ class Pipeline:
         """
         # Copy externally created steps to ensure they are not modified outside
         # the control of the pipeline
-        value = step.copy() if isinstance(step, Step) else Step(*step)
+        value = (
+            step.copy(_check_step=self._check_step)
+            if isinstance(step, Step)
+            else Step(*step, _check_step=self._check_step)
+        )
 
         frames = self.available_frames
 
@@ -162,11 +172,32 @@ class Pipeline:
             msg = "The last step in the pipeline must have a None transform."
             raise ValueError(msg)
 
+    def _check_step_axes(self, in_step: Step, out_step: Step) -> None:
+        if (
+            self._check_step
+            and not isinstance(in_step.frame, EmptyFrame)
+            and not isinstance(out_step.frame, EmptyFrame)
+            and in_step.transform is not None
+            and in_step.transform.n_outputs != out_step.frame.naxes
+        ):
+            warnings.warn(
+                f"Number of outputs ({in_step.transform.n_outputs}) does not match the "
+                f"number of axes ({out_step.frame.naxes}) in the output frame."
+                "This may lead to unexpected behavior.\n"
+                "This will be an error in a future version.",
+                Step.StepAxisWarning,
+                stacklevel=2,
+            )
+
     def _insert(self, index: int, value: Step | StepTuple) -> None:
         """
         Handle insertion of a step into the pipeline.
         """
-        self._pipeline.insert(index, self._wrap_step(value))
+        step = self._wrap_step(value)
+        if index > 0:
+            self._check_step_axes(self._pipeline[index - 1], step)
+
+        self._pipeline.insert(index, step)
         self._check_last_step()
 
     def _extend(self, values: list[Step]) -> None:
@@ -174,7 +205,11 @@ class Pipeline:
         Handle extending the pipeline with a list of steps
         """
         for value in values:
-            self._pipeline.append(self._wrap_step(value))
+            step = self._wrap_step(value)
+            if len(self._pipeline) > 0:
+                self._check_step_axes(self._pipeline[-1], step)
+
+            self._pipeline.append(step)
 
         self._check_last_step()
 
@@ -430,11 +465,16 @@ class Pipeline:
 
         # so input_index is None or output_index is None
         if input_index is None:
-            self._insert(output_index, Step(input_frame, transform))
+            self._insert(
+                output_index, Step(input_frame, transform, _check_step=self._check_step)
+            )
         else:
             current = self._pipeline[input_index].transform
             self._pipeline[input_index].transform = transform
-            self._insert(input_index + 1, Step(output_frame, current))
+            self._insert(
+                input_index + 1,
+                Step(output_frame, current, _check_step=self._check_step),
+            )
 
     @property
     def bounding_box(self) -> ModelBoundingBox | CompoundBoundingBox | None:

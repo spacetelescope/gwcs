@@ -4,6 +4,7 @@ import numpy as np
 from astropy import coordinates as coord
 from astropy import units as u
 
+from ._axis import AxisType
 from ._core import CoordinateFrame
 
 __all__ = ["SpectralFrame"]
@@ -45,7 +46,7 @@ class SpectralFrame(CoordinateFrame):
 
         super().__init__(
             naxes=1,
-            axes_type="SPECTRAL",
+            axes_type=AxisType.SPECTRAL,
             axes_order=axes_order,
             axes_names=axes_names,
             reference_frame=reference_frame,

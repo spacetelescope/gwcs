@@ -31,7 +31,7 @@ def gwcs_2d_quantity_shift():
         name="quantity",
         axes_order=(0, 1),
         naxes=2,
-        axes_type=("SPATIAL", "SPATIAL"),
+        axes_type=(cf.AxisType.SPATIAL,) * 2,
         unit=(u.km, u.km),
     )
     pipe = [(DETECTOR_2D_FRAME, MODEL_2D_SHIFT), (frame, None)]
@@ -71,7 +71,7 @@ def gwcs_3d_spatial_wave():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         axes_names=("x", "y", "z"),
         unit=(u.pix, u.pix, u.pix),
     )
@@ -150,7 +150,7 @@ def gwcs_3d_identity_units():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         axes_names=("x", "y", "z"),
         unit=(u.pix, u.pix, u.pix),
     )
@@ -184,7 +184,7 @@ def gwcs_4d_identity_units():
         name="detector",
         naxes=4,
         axes_order=(0, 1, 2, 3),
-        axes_type=("pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 4,
         axes_names=("x", "y", "z", "s"),
         unit=(u.pix, u.pix, u.pix, u.pix),
     )
@@ -270,7 +270,7 @@ def gwcs_stokes_lookup():
         name="detector",
         naxes=1,
         axes_order=(0,),
-        axes_type=("pixel",),
+        axes_type=(cf.AxisType.PIXEL,),
         axes_names=("x",),
         unit=(u.pix,),
     )
@@ -346,7 +346,7 @@ def gwcs_3d_galactic_spectral():
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -425,7 +425,7 @@ def gwcs_spec_cel_time_4d():
         name="detector",
         naxes=4,
         axes_order=(0, 1, 2, 3),
-        axes_type=("pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 4,
         unit=(u.pix, u.pix, u.pix, u.pix),
     )
 
@@ -491,7 +491,7 @@ def gwcs_cube_with_separable_spectral(axes_order):
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -522,7 +522,7 @@ def gwcs_cube_with_separable_time(axes_order):
         name="detector",
         naxes=3,
         axes_order=(0, 1, 2),
-        axes_type=("pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 3,
         unit=(u.pix, u.pix, u.pix),
     )
 
@@ -591,7 +591,12 @@ def gwcs_7d_complex_mapping():
         naxes=4,
         axes_order=(3, 5, 0, 6),
         axis_physical_types=(["em.wl", "em.wl", "time", "time"]),
-        axes_type=("SPATIAL", "SPATIAL", "TIME", "TIME"),
+        axes_type=(
+            cf.AxisType.SPATIAL,
+            cf.AxisType.SPATIAL,
+            cf.AxisType.TIME,
+            cf.AxisType.TIME,
+        ),
         axes_names=("x", "y", "t", "tau"),
         unit=(u.m, u.m, u.second, u.second),
     )
@@ -608,7 +613,7 @@ def gwcs_7d_complex_mapping():
         name="detector",
         naxes=6,
         axes_order=(0, 1, 2, 3, 4, 5),
-        axes_type=("pixel", "pixel", "pixel", "pixel", "pixel", "pixel"),
+        axes_type=(cf.AxisType.PIXEL,) * 6,
         unit=(u.pix, u.pix, u.pix, u.pix, u.pix, u.pix),
     )
 
@@ -734,3 +739,54 @@ def fits_wcs_imaging_simple(params):
         w.wcs.lonpole = 180
     w.wcs.set()
     return gw, w
+
+
+def compound_bounding_box_wcs():
+    """
+    A WCS with a compound bounding box.
+    """
+    detector_plane = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    spectral_order = cf.DiscreteFrame(name="spectral_order", axis_index=2)
+    detector = cf.CompositeFrame(
+        [detector_plane, spectral_order], name="detector_with_order"
+    )
+    world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
+    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+
+    pipeline = [wcs.Step(detector, trans3), wcs.Step(world, None)]
+
+    w = wcs.WCS(pipeline)
+    cbb = {
+        1: ((-1, 10), (6, 15)),
+        2: ((-1, 5), (3, 17)),
+        3: ((-3, 7), (1, 27)),
+    }
+    w.attach_compound_bounding_box(cbb, [("x",)])
+
+    return w
+
+
+def compound_bounding_box_wcs_spectral_out():
+    """
+    A WCS with a compound bounding box.
+    """
+    detector_plane = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
+    spectral_order = cf.DiscreteFrame(name="spectral_order", axis_index=2)
+    detector = cf.CompositeFrame(
+        [detector_plane, spectral_order], name="detector_with_order"
+    )
+    spatial_world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
+    world = cf.CompositeFrame([spatial_world, WAVE_FRAME], name="world_with_wave")
+    trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
+
+    pipeline = [wcs.Step(detector, trans3), wcs.Step(world, None)]
+
+    w = wcs.WCS(pipeline)
+    cbb = {
+        1: ((-1, 10), (6, 15)),
+        2: ((-1, 5), (3, 17)),
+        3: ((-3, 7), (1, 27)),
+    }
+    w.attach_compound_bounding_box(cbb, [("x",)])
+
+    return w

@@ -21,7 +21,7 @@ class CoordinateFrame(BaseCoordinateFrame):
     ----------
     naxes : int
         Number of axes.
-    axes_type : str
+    axes_type : AxesType
         One of ["SPATIAL", "SPECTRAL", "TIME"]
     axes_order : tuple of int
         A dimension in the input data that corresponds to this axis.

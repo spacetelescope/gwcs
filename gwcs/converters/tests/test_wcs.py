@@ -1,6 +1,8 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from warnings import catch_warnings
 
 import asdf
+import pytest
 from asdf_astropy.testing.helpers import (
     assert_model_equal,
 )
@@ -30,6 +32,10 @@ def _assert_frame_equal(a, b):
         assert a.axes_names == b.axes_names  # nosec
         assert a.unit == b.unit  # nosec
         assert a.reference_frame == b.reference_frame  # nosec
+
+    if isinstance(a, cf.DiscreteFrame):
+        assert a.discrete_set == b.discrete_set
+
     return None
 
 
@@ -80,6 +86,60 @@ def test_create_wcs(tmp_path):
     assert_wcs_roundtrip(gw2, tmp_path)
     assert_wcs_roundtrip(gw3, tmp_path)
     assert_wcs_roundtrip(gw4, tmp_path)
+
+
+def test_wcs_missing_input_frame_axis(tmp_path):
+    """
+    Check that the WCS can still be roundtripped even if the input frame
+    is not specified in the WCS.
+    """
+    m1 = (models.Shift(12.4) & models.Shift(-2) & models.Shift(0.5)) | models.Mapping(
+        (0, 1), n_inputs=3
+    )
+    det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
+
+    pipeline = [(det, m1), (icrs, None)]
+
+    # Check that the WCS will raise a warning if the input frame is not specified when
+    # created (showing that when deserialized, the warning should be raised if not
+    # suppressed).
+    with pytest.warns(
+        wcs.Step.StepAxisWarning,
+        match=r"Number of inputs .* does not match the number of axes .*\.",
+    ):
+        gw = wcs.WCS(pipeline)
+
+    # Determine if the warning is raised during the roundtrip.
+    with catch_warnings(record=True) as w:
+        assert_wcs_roundtrip(gw, tmp_path)
+    assert not w, "No warnings should be raised during the roundtrip."
+
+
+def test_wcs_missing_output_frame_axis(tmp_path):
+    """
+    Check that the WCS can still be roundtripped even if the output frame
+    is not specified in the WCS.
+    """
+    m1 = (models.Shift(12.4) & models.Shift(-2)) | models.Mapping((0, 1, 1))
+    det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
+
+    pipeline = [(det, m1), (icrs, None)]
+
+    # Check that the WCS will raise a warning if the output frame is not specified when
+    # created (showing that when deserialized, the warning should be raised if not
+    # suppressed).
+    with pytest.warns(
+        wcs.Step.StepAxisWarning,
+        match=r"Number of outputs .* does not match the number of axes .*\.",
+    ):
+        gw = wcs.WCS(pipeline)
+
+    # Determine if the warning is raised during the roundtrip.
+    with catch_warnings(record=True) as w:
+        assert_wcs_roundtrip(gw, tmp_path)
+    assert not w, "No warnings should be raised during the roundtrip."
 
 
 def test_composite_frame(tmp_path):
@@ -143,13 +203,13 @@ def create_test_frames():
         ),
         cf.StokesFrame(),
         cf.TemporalFrame(time.Time("2011-01-01")),
+        cf.DiscreteFrame(name="spectral_order", axis_index=2, discrete_set={1, 2, 3}),
     ]
 
 
-def test_frames(tmp_path):
-    frames = create_test_frames()
-    for f in frames:
-        assert_frame_roundtrip(f, tmp_path)
+@pytest.mark.parametrize("frame", create_test_frames())
+def test_frames(tmp_path, frame):
+    assert_frame_roundtrip(frame, tmp_path)
 
 
 def test_references(tmp_path):
