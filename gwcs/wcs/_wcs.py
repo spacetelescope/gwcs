@@ -188,9 +188,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             and transform_uses_quantity
             and transform.parameters.size
         ):
-            args = self._add_units_input(args, from_frame)
+            return self._add_units_input(args, from_frame)
         if not transform_uses_quantity and input_is_quantity:
-            args = self._remove_units_input(args, from_frame)
+            return self._remove_units_input(args, from_frame)
         return args
 
     def _evaluate_transform(
