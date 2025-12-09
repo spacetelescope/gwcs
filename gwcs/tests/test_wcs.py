@@ -1686,7 +1686,7 @@ def test_reordered_celestial():
     assert_allclose(obj_pixel, u.Quantity(input_pixel).to_value(u.pix))
 
 
-def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
+def test_quantities_in_pipeline_forward(gwcs_with_pipeline_celestial):
     """
     This test checks that high level objects still work with a multi-stage
     pipeline when doing forward transforms.
@@ -1714,7 +1714,7 @@ def test_high_level_objects_in_pipeline_forward(gwcs_with_pipeline_celestial):
     assert u.allclose(intermediate_world[1], 15 * u.deg)
 
 
-def test_high_level_objects_in_pipeline_backward(gwcs_with_pipeline_celestial):
+def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
     """
     This test checks that high level objects still work with a multi-stage
     pipeline when doing backward transforms.
