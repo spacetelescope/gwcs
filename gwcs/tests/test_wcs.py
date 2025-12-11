@@ -516,13 +516,17 @@ def test_bounding_box_eval():
     pipeline = [
         (
             cf.CoordinateFrame(
-                naxes=3, axes_type=("PIXEL", "PIXEL", "PIXEL"), axes_order=(0, 1,2), name="detector"
+                naxes=3, axes_type=("PIXEL", "PIXEL", "PIXEL"),
+                axes_order=(0, 1,2),
+                name="detector"
             ),
             trans3,
         ),
         (
             cf.CoordinateFrame(
-                naxes=3, axes_type=("SPATIAL", "SPATIAL", "SPATIAL"), axes_order=(0, 1, 2), name="sky"
+                naxes=3, axes_type=("SPATIAL", "SPATIAL", "SPATIAL"),
+                axes_order=(0, 1, 2),
+                name="sky"
             ),
             None,
         ),
