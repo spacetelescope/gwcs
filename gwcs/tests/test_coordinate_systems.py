@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import contextlib
-import logging
+import warnings
 
 import astropy
 import astropy.units as u
@@ -531,7 +531,7 @@ def test_ucd1_to_ctype_not_out_of_sync(caplog):
     assert len(caplog.record_tuples) == 0
 
 
-def test_ucd1_to_ctype(caplog):
+def test_ucd1_to_ctype():
     new_ctype_to_ucd = {
         "RPT1": "new.repeated.type",
         "RPT2": "new.repeated.type",
@@ -540,14 +540,14 @@ def test_ucd1_to_ctype(caplog):
 
     ctype_to_ucd = dict(**CTYPE_TO_UCD1, **new_ctype_to_ucd)
 
-    inv_map = _ucd1_to_ctype_name_mapping(
-        ctype_to_ucd=ctype_to_ucd, allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
-    )
-
-    assert caplog.record_tuples[-1][1] == logging.WARNING
-    assert caplog.record_tuples[-1][2].startswith(
-        "Found unsupported duplicate physical type"
-    )
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        inv_map = _ucd1_to_ctype_name_mapping(
+            ctype_to_ucd=ctype_to_ucd, allowed_ucd_duplicates=_ALLOWED_UCD_DUPLICATES
+        )
+        assert len(w) == 1
+        assert issubclass(w[0].category, UserWarning)
+        assert "Found unsupported duplicate physical type" in str(w[0].message)
 
     for k, v in _ALLOWED_UCD_DUPLICATES.items():
         assert inv_map.get(k, "") == v
