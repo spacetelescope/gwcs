@@ -328,7 +328,8 @@ def test_high_level_wrapper(wcsobj, request):
     pix_out1 = hlvl.world_to_pixel(*wc1)
     np.testing.assert_allclose(pix_out1, pixel_input)
     with pytest.raises(TypeError) as e:
-        pix_out2 = wcsobj.invert(*wc1)
+        _ = wcsobj.invert(*wc1)
+    assert "High Level objects are not supported with the native" in str(e)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
@@ -591,7 +592,7 @@ def test_coordinate_frame_api():
     assert isinstance(pixel, float)
 
     with pytest.raises(TypeError):
-        pixel2 = wcs.invert(world)
+        _ = wcs.invert(world)
 
 
 def test_world_axis_object_components_units(gwcs_3d_identity_units):
