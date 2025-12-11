@@ -11,8 +11,10 @@ wcs.numerical_inverse(ra, dec) - does not support units
 Rules:
 
 
-1. Neither transforms nor inputs support units -> the output is clearly numerical for all functions above
-2. Transforms support units but inputs do not -> return quantities assuming the units of the coordinate frame
+1. Neither transforms nor inputs support units -> the output is clearly numerical
+   for all functions above
+2. Transforms support units but inputs do not -> return quantities assuming the
+   units of the coordinate frame
   - This should work for the wcs methods (wcs(x,y) and wcs.invert
   - The methods using transforms should follow modeling rules and will require units
     on the input and raise an exception if not
@@ -41,7 +43,8 @@ yq = 2 * u.pix
 def is_numerical(args):
     if isinstance(args, numbers.Number):
         return True
-    return all([isinstance(arg, numbers.Number) or type(arg) == np.ndarray for arg in args])
+    #return all([isinstance(arg, numbers.Number) or type(arg) == np.ndarray for arg in args])
+    return all([isinstance(arg, numbers.Number) or arg is np.ndarray for arg in args])
 
 
 def is_quantity(args):
@@ -54,17 +57,20 @@ def wcsobj(request):
 
 wno_unit_1d = ["gwcs_1d_freq", "gwcs_1d_spectral",]
 
-wno_unit_nd = ["gwcs_2d_shift_scale", "gwcs_3d_spatial_wave", "gwcs_2d_spatial_shift", "gwcs_2d_spatial_reordered",
-    "gwcs_3d_spatial_wave", "gwcs_simple_imaging", "gwcs_3spectral_orders",
-    "gwcs_3d_galactic_spectral", "gwcs_spec_cel_time_4d", "gwcs_romanisim", ]
+wno_unit_nd = ["gwcs_2d_shift_scale", "gwcs_3d_spatial_wave", "gwcs_2d_spatial_shift",
+    "gwcs_2d_spatial_reordered", "gwcs_3d_spatial_wave", "gwcs_simple_imaging",
+    "gwcs_3spectral_orders", "gwcs_3d_galactic_spectral", "gwcs_spec_cel_time_4d",
+    "gwcs_romanisim", ]
 
 # "gwcs_7d_complex_mapping" errors in astropy - fix
-# "gwcs_2d_quantity_shift" errors when inputs are quantities. Need to confirm if Qs are HLO
+# "gwcs_2d_quantity_shift" errors when inputs are quantities.
+# Need to confirm if Qs are HLO
 
 w_unit_1d = ["gwcs_stokes_lookup", "gwcs_1d_freq_quantity"]
 
-w_unit_nd = ["gwcs_2d_shift_scale_quantity", "gwcs_3d_identity_units", "gwcs_3d_identity_units",
-    "gwcs_4d_identity_units", "gwcs_simple_imaging_units", "gwcs_with_pipeline_celestial", ]
+w_unit_nd = ["gwcs_2d_shift_scale_quantity", "gwcs_3d_identity_units",
+    "gwcs_3d_identity_units", "gwcs_4d_identity_units", "gwcs_simple_imaging_units",
+    "gwcs_with_pipeline_celestial", ]
 
 w_transform_test = ["gwcs_1d_freq_quantity", "gwcs_2d_quantity_shift"]
 
@@ -75,8 +81,8 @@ wcs_with_unit_nd = pytest.mark.parametrize(("wcsobj"), w_unit_nd, indirect=True)
 
 
 @wcs_no_unit_1d
-def test_trnou_inpnou_1d(wcsobj):
-    """ Transforms do not support units. Inputs are numbers."""
+def test_no_units_1d(wcsobj):
+    """ Transforms do not support units."""
     assert not wcsobj.forward_transform.uses_quantity
 
     # the case of a scalar input
@@ -112,14 +118,14 @@ def test_no_units_nd(wcsobj):
     if np.isscalar(result):
         result = [result]
     inp_new = wcsobj.invert(*result)
-    _ = [assert_allclose(i, j) for i, j in zip(inp_new, inp)]
+    _ = [assert_allclose(i, j) for i, j in zip(inp_new, inp, strict=True)]
 
     # Inputs are quantities; return quantities (except for pixels?)
-    inpq = [coo * un for coo, un in zip(inp, wcsobj.input_frame.unit)]
+    inpq = [coo * un for coo, un in zip(inp, wcsobj.input_frame.unit, strict=True)]
     result = wcsobj(*inpq)
     assert is_quantity(result)
     inp_new = wcsobj.invert(*result)
-    _ = [assert_allclose(i, j) for i, j in zip(inp_new, inpq)]
+    _ = [assert_allclose(i, j) for i, j in zip(inp_new, inpq, strict=True)]
 
     # input is HLO - raise an Error
     sky = wcsobj.pixel_to_world(*inp)
