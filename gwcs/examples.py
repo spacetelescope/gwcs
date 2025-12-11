@@ -285,7 +285,7 @@ def gwcs_3spectral_orders():
     detector_frame = cf.Frame2D(
         name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
     )
-    m = MODEL_2D_SHIFT & MODEL_1D_SCALE
+    m = models.Mapping((0, 1, 1)) | MODEL_2D_SHIFT & MODEL_1D_SCALE
 
     return wcs.WCS([(detector_frame, m), (comp1, None)])
 

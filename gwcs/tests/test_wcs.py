@@ -232,7 +232,7 @@ def test_backward_transform_has_inverse():
     poly.inverse = models.Polynomial1D(
         1, c0=-3
     )  # this is NOT the actual inverse of poly
-    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame=icrs)
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
@@ -516,13 +516,19 @@ def test_bounding_box_eval():
     pipeline = [
         (
             cf.CoordinateFrame(
-                naxes=1, axes_type=("PIXEL",), axes_order=(0,), name="detector"
+                naxes=3,
+                axes_type=("PIXEL", "PIXEL", "PIXEL"),
+                axes_order=(0, 1, 2),
+                name="detector",
             ),
             trans3,
         ),
         (
             cf.CoordinateFrame(
-                naxes=1, axes_type=("SPATIAL",), axes_order=(0,), name="sky"
+                naxes=3,
+                axes_type=("SPATIAL", "SPATIAL", "SPATIAL"),
+                axes_order=(0, 1, 2),
+                name="sky",
             ),
             None,
         ),

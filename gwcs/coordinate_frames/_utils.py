@@ -1,4 +1,4 @@
-import logging
+import warnings
 
 from astropy.wcs.wcsapi.fitswcs import CTYPE_TO_UCD1
 
@@ -17,7 +17,7 @@ def _ucd1_to_ctype_name_mapping(ctype_to_ucd, allowed_ucd_duplicates):
         inv_map[ucd] = allowed_ucd_duplicates.get(ucd, kwd)
 
     if new_ucd:
-        logging.warning(
+        warnings.warn(
             "Found unsupported duplicate physical type in 'astropy' mapping to CTYPE.\n"
             "Update 'gwcs' to the latest version or notify 'gwcs' developer.\n"
             "Duplicate physical types will be mapped to the following CTYPEs:\n"

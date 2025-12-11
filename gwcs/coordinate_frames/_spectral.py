@@ -1,4 +1,4 @@
-import logging
+import warnings
 
 import numpy as np
 from astropy import coordinates as coord
@@ -62,13 +62,13 @@ class SpectralFrame(CoordinateFrame):
         if unit[0].physical_type == "energy":
             return ("em.energy",)
         if unit[0].physical_type == "speed":
-            return ("spect.dopplerVeloc",)
-            logging.warning(
+            warnings.warn(
                 "Physical type may be ambiguous. Consider "
                 "setting the physical type explicitly as "
                 "either 'spect.dopplerVeloc.optical' or "
                 "'spect.dopplerVeloc.radio'."
             )
+            return ("spect.dopplerVeloc",)
         return (f"custom:{unit[0].physical_type}",)
 
     @property
