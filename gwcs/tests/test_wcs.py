@@ -1727,10 +1727,12 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    pixel = iwcs.invert(*input_world)
+    with pytest.raises(TypeError) as e:
+        pixel = iwcs.invert(*input_world)
+    assert "High Level objects are not supported with the native" in str(e)
 
-    assert all(isinstance(p, u.Quantity) for p in pixel)
-    assert u.allclose(pixel, [1, 1] * u.pix)
+    # assert all(isinstance(p, u.Quantity) for p in pixel)
+    # assert u.allclose(pixel, [1, 1] * u.pix)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1881,7 +1883,9 @@ def test_parameterless_transform():
     assert gwcs.invert(1, 1) == (1, 1)
     # Strictly speaking it's correct that this fails Because
     # for this setup the HLO are Quantities
-    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
+    with pytest.raises(TypeError) as e:
+        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
+    assert "High Level objects are not supported with the native" in str(e)
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

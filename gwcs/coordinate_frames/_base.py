@@ -144,8 +144,7 @@ class BaseCoordinateFrame(abc.ABC):
         if self.naxes == 1 and (np.isscalar(arrays) or isinstance(arrays, u.Quantity)):
             arrays = (arrays,)
 
-        result = tuple(
+        return tuple(
             array.to_value(unit) if isinstance(array, u.Quantity) else array
             for array, unit in zip(arrays, self.unit, strict=True)
         )
-        return result
