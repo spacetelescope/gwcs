@@ -32,7 +32,7 @@ from astropy import units as u
 from astropy.tests.helper import assert_quantity_allclose
 
 import pytest
-from .conftest import gwcs_with_pipeline_celestial
+from .conftest import gwcs_with_pipeline_celestial, gwcs_2d_spatial_shift_reverse
 
 x = 1
 y = 2
@@ -127,10 +127,11 @@ def test_no_units_nd(wcsobj):
     inp_new = wcsobj.invert(*result)
     _ = [assert_allclose(i, j) for i, j in zip(inp_new, inpq, strict=True)]
 
-    # input is HLO - raise an Error
     sky = wcsobj.pixel_to_world(*inp)
-    with pytest.raises(TypeError) as e:
-        wcsobj.invert(*sky)
+    if not np.iterable(sky):
+        sky=(sky,)
+    inv_sky = wcsobj.invert(*sky)
+    assert_quantity_allclose(inv_sky, inpq)
 
 
 @wcs_with_unit_1d
@@ -172,10 +173,11 @@ def test_transform_with_units(wcsobj):
     assert all([type(res)==u.Quantity for res in result])
     assert_allclose([r.value for r in result], result_num)
 
-    # input is HLO; raise an error
     sky = wcsobj.pixel_to_world(*xxq)
-    with pytest.raises(TypeError) as e:
-        wcsobj.invert(*sky)
+    if not np.iterable(sky):
+        sky=(sky,)
+    inv_sky = wcsobj.invert(*sky)
+    assert_quantity_allclose(inv_sky, xxq)
 
 
 @wcs_no_unit_1d
@@ -213,6 +215,7 @@ def test_remove_units(wcsobj):
 
 
 def test_transform_multistage_wcs(gwcs_with_pipeline_celestial):
+    """Tests that the input and output types match for intermediate frames/transforms."""
     wcsobj = gwcs_with_pipeline_celestial
     frames = wcsobj.available_frames
     result = wcsobj.transform(frames[0], frames[-1], 1*u.pix, 1*u.pix)
@@ -227,3 +230,12 @@ def test_transform_multistage_wcs(gwcs_with_pipeline_celestial):
     assert_quantity_allclose(interm_result, tr(1*u.pix, 1*u.pix))
     ninterm_result = wcsobj.transform(frames[0], frames[1], 1, 1)
     assert_allclose([r.value for r in interm_result], ninterm_result)
+
+
+def test_reverse_wcs_direction(gwcs_2d_spatial_shift_reverse):
+    """Test that input quantities are converted to the units of the input frame."""
+    wcsobj = gwcs_2d_spatial_shift_reverse
+    assert_quantity_allclose(
+        wcsobj(1*u.arcsec, 2*u.arcsec),
+        wcsobj(1*u.arcsec.to(u.deg)*u.deg, 2*u.arcsec.to(u.deg)*u.deg)
+        )

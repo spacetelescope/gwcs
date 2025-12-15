@@ -9,8 +9,10 @@ import numpy as np
 import pytest
 from astropy import coordinates as coord
 from astropy import time
+from astropy.tests.helper import assert_quantity_allclose
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
 from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
+# from gwcs.utils import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_array_equal
 
 import gwcs
@@ -326,10 +328,11 @@ def test_high_level_wrapper(wcsobj, request):
         wc1 = (wc1,)
 
     pix_out1 = hlvl.world_to_pixel(*wc1)
+
     np.testing.assert_allclose(pix_out1, pixel_input)
-    with pytest.raises(TypeError) as e:
-        _ = wcsobj.invert(*wc1)
-    assert "High Level objects are not supported with the native" in str(e)
+    result = wcsobj.invert(*wc1)
+    inpq = [pix * un for pix, un in zip(pixel_input, wcsobj.input_frame.unit)]
+    assert_quantity_allclose(result, inpq)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
@@ -591,8 +594,8 @@ def test_coordinate_frame_api():
     pixel = wcs.world_to_pixel(world)
     assert isinstance(pixel, float)
 
-    with pytest.raises(TypeError):
-        _ = wcs.invert(world)
+    result = wcs.invert(world)
+    assert_quantity_allclose(result, 0*u.pix)
 
 
 def test_world_axis_object_components_units(gwcs_3d_identity_units):

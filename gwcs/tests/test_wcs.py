@@ -12,9 +12,11 @@ from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models, projections
 from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy.time import Time
+from astropy.tests.helper import assert_quantity_allclose
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
+# from gwcs.utils import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
@@ -1728,12 +1730,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    with pytest.raises(TypeError) as e:
-        pixel = iwcs.invert(*input_world)
-    assert "High Level objects are not supported with the native" in str(e)
 
-    # assert all(isinstance(p, u.Quantity) for p in pixel)
-    # assert u.allclose(pixel, [1, 1] * u.pix)
+    pixel = iwcs.invert(*input_world)
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1] * u.pix)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1882,11 +1882,9 @@ def test_parameterless_transform():
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
     assert gwcs.invert(1, 1) == (1, 1)
-    # Strictly speaking it's correct that this fails Because
-    # for this setup the HLO are Quantities
-    with pytest.raises(TypeError) as e:
-        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
-    assert "High Level objects are not supported with the native" in str(e)
+
+    assert_quantity_allclose(gwcs.invert(1 * u.pix, 1 * u.pix), (1*u.pix, 1*u.pix))
+
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

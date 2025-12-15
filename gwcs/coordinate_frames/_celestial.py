@@ -106,3 +106,8 @@ class CelestialFrame(CoordinateFrame):
             ("celestial", 0, lambda sc: sc.spherical.lon.to_value(self._prop.unit[0])),
             ("celestial", 1, lambda sc: sc.spherical.lat.to_value(self._prop.unit[1])),
         ]
+        # result = [
+        #     ("celestial", 0, lambda sc: sc.spherical.lon.to_value(self._prop.unit[self.axes_order[0]])),
+        #     ("celestial", 1, lambda sc: sc.spherical.lat.to_value(self._prop.unit[self.axes_order[1]])),
+        # ]
+        # return result
