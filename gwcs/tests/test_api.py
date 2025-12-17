@@ -312,7 +312,12 @@ def test_high_level_wrapper(wcsobj, request):
     wc2 = wcsobj(*pixel_input)
     results = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
 
-    wc2 = values_to_high_level_objects(*results, low_level_wcs=wcsobj)
+    wc2 = values_to_high_level_objects(
+        *results,
+        low_level_wcs=wcsobj,
+        object_classes=wcsobj.world_axis_object_classes,
+        object_components=wcsobj.world_axis_object_components
+        )
     if len(wc2) == 1:
         wc2 = wc2[0]
     assert type(wc1) is type(wc2)

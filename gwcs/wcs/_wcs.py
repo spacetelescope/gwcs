@@ -160,13 +160,25 @@ class WCS(GWCSAPIMixin, Pipeline):
             msg = "Transform is not defined."
             raise NotImplementedError(msg)
 
-        input_is_high_level = is_high_level(*args, low_level_wcs=self, frame="input")
+        if self.input_frame is not None:
+            input_is_high_level = is_high_level(
+                *args,
+                low_level_wcs=self,
+                object_classes=self.input_axis_object_classes,
+                object_components=self.input_axis_object_components)
+        else:
+            input_is_high_level = False
             # message = "High Level objects are not supported with the native API. \
             #            Please use the `pixel_to_world` method."
             # raise TypeError(message)
         input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
         if input_is_high_level and not input_is_quantity:
-            args = high_level_objects_to_values(*args, low_level_wcs=self, frame="input")
+            args = high_level_objects_to_values(
+                *args,
+                low_level_wcs=self,
+                object_classes=self.input_axis_object_classes,
+                object_components=self.input_axis_object_components
+                )
 
         # input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
         args = self._make_input_units_consistent(
@@ -361,7 +373,16 @@ class WCS(GWCSAPIMixin, Pipeline):
         except NotImplementedError:
             transform = None
             # TODO raise error?
-        input_is_high_level = is_high_level(*args, low_level_wcs=self, frame="output")
+
+        if self.output_frame is not None:
+            input_is_high_level = is_high_level(
+                *args,
+                low_level_wcs=self,
+                object_classes=self.world_axis_object_classes,
+                object_components=self.world_axis_object_components
+                )
+        else:
+            input_is_high_level = False
             # args = high_level_objects_to_values(*args, low_level_wcs=self)
             # message = "High Level objects are not supported with the native API. \
             #            Please use the `world_to_pixel` method."
@@ -369,7 +390,12 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
         if input_is_high_level: # and not input_is_quantity:
-            args = high_level_objects_to_values(*args, low_level_wcs=self, frame="output")
+            args = high_level_objects_to_values(
+                *args,
+                low_level_wcs=self,
+                object_classes=self.world_axis_object_classes,
+                object_components=self.world_axis_object_components
+                )
 
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
@@ -381,6 +407,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             input_is_quantity=input_is_quantity,
             transform_uses_quantity=transform_uses_quantity,
         )
+        print(f"args {args}")
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **akwargs)
@@ -408,7 +435,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         )
         if input_is_high_level and not input_is_quantity:
             # values_to_hlo expects as input numbers or arrays
-            result = values_to_high_level_objects(*result, low_level_wcs=self, frame="input")
+            result = values_to_high_level_objects(
+                *result,
+                low_level_wcs=self,
+                object_classes=self.input_axis_object_classes,
+                object_components=self.input_axis_object_components
+                )
         if self.input_frame.naxes == 1:
             return result[0]
         return result
@@ -420,7 +452,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if is_high_level(world_arrays[0], low_level_wcs=self, frame="output"):
+        if is_high_level(
+            world_arrays[0],
+            low_level_wcs=self,
+            object_classes=self.world_axis_object_classes,
+            object_components=self.world_axis_object_components
+            ):
             not_numerical = True
             world_arrays = high_level_objects_to_values(
                 *world_arrays, low_level_wcs=self

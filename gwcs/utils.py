@@ -479,17 +479,17 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-def is_high_level(*args, low_level_wcs, frame="output"):
+def is_high_level(
+    *args,
+    low_level_wcs,
+    object_classes=None,
+    object_components=None
+    ):
     """
     Determine if args matches the high level classes as defined by
     ``low_level_wcs``.
     """
-    if frame == "output" and low_level_wcs.output_frame is not None:
-        object_classes = low_level_wcs.world_axis_object_classes
-    elif frame == "input" and low_level_wcs.input_frame is not None:
-        object_classes = low_level_wcs.input_axis_object_classes
-    else:
-        # raise ValueError(f"Unrecognized value for frame - {frame}")
+    if object_classes is None:
         return False
     if len(args) != len(object_classes):
         return False
