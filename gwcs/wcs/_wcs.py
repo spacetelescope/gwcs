@@ -407,7 +407,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             input_is_quantity=input_is_quantity,
             transform_uses_quantity=transform_uses_quantity,
         )
-        print(f"args {args}")
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **akwargs)
