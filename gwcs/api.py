@@ -250,14 +250,6 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         return self.output_frame.world_axis_object_components
 
     @property
-    def input_axis_object_classes(self):
-        return self.input_frame.world_axis_object_classes
-
-    @property
-    def input_axis_object_components(self):
-        return self.input_frame.world_axis_object_components
-
-    @property
     def pixel_axis_names(self):
         """
         An iterable of strings describing the name for each pixel axis.

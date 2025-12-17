@@ -164,23 +164,19 @@ class WCS(GWCSAPIMixin, Pipeline):
             input_is_high_level = is_high_level(
                 *args,
                 low_level_wcs=self,
-                object_classes=self.input_axis_object_classes,
-                object_components=self.input_axis_object_components)
+                object_classes=self.input_frame.world_axis_object_classes,
+                object_components=self.input_frame.world_axis_object_components)
         else:
             input_is_high_level = False
-            # message = "High Level objects are not supported with the native API. \
-            #            Please use the `pixel_to_world` method."
-            # raise TypeError(message)
         input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
         if input_is_high_level and not input_is_quantity:
             args = high_level_objects_to_values(
                 *args,
                 low_level_wcs=self,
-                object_classes=self.input_axis_object_classes,
-                object_components=self.input_axis_object_components
+                object_classes=self.input_frame.world_axis_object_classes,
+                object_components=self.input_frame.world_axis_object_components
                 )
 
-        # input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
         args = self._make_input_units_consistent(
             transform,
             *args,
@@ -372,7 +368,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform = self.backward_transform
         except NotImplementedError:
             transform = None
-            # TODO raise error?
 
         if self.output_frame is not None:
             input_is_high_level = is_high_level(
@@ -383,13 +378,9 @@ class WCS(GWCSAPIMixin, Pipeline):
                 )
         else:
             input_is_high_level = False
-            # args = high_level_objects_to_values(*args, low_level_wcs=self)
-            # message = "High Level objects are not supported with the native API. \
-            #            Please use the `world_to_pixel` method."
-            #raise TypeError(message)
 
         input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
-        if input_is_high_level: # and not input_is_quantity:
+        if input_is_high_level:
             args = high_level_objects_to_values(
                 *args,
                 low_level_wcs=self,
@@ -433,12 +424,11 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform_uses_quantity=transform_uses_quantity,
         )
         if input_is_high_level and not input_is_quantity:
-            # values_to_hlo expects as input numbers or arrays
             result = values_to_high_level_objects(
                 *result,
                 low_level_wcs=self,
-                object_classes=self.input_axis_object_classes,
-                object_components=self.input_axis_object_components
+                object_classes=self.input_frame.world_axis_object_classes,
+                object_components=self.input_frame.world_axis_object_components
                 )
         if self.input_frame.naxes == 1:
             return result[0]

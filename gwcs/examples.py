@@ -410,7 +410,7 @@ def gwcs_spec_cel_time_4d():
     wcslin = models.Mapping((1, 0)) | (offx & offy) | aff
     tan = models.Pix2Sky_TAN(name="tangent_projection")
     n2c = models.RotateNative2Celestial(*crval, 180, name="sky_rotation")
-    cel_model = wcslin | tan | n2c | models.Mapping((1,0))
+    cel_model = wcslin | tan | n2c | models.Mapping((1, 0))
     icrs = cf.CelestialFrame(
         reference_frame=coord.ICRS(), name="sky", axes_order=(2, 1)
     )
