@@ -9,8 +9,10 @@ import numpy as np
 import pytest
 from astropy import coordinates as coord
 from astropy import time
+from astropy.tests.helper import assert_quantity_allclose
 from astropy.wcs.wcsapi import HighLevelWCSWrapper
 from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
+# from gwcs.utils import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_array_equal
 
 import gwcs
@@ -309,7 +311,13 @@ def test_high_level_wrapper(wcsobj, request):
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input)
     results = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
-    wc2 = values_to_high_level_objects(*results, low_level_wcs=wcsobj)
+
+    wc2 = values_to_high_level_objects(
+        *results,
+        low_level_wcs=wcsobj,
+        object_classes=wcsobj.world_axis_object_classes,
+        object_components=wcsobj.world_axis_object_components
+        )
     if len(wc2) == 1:
         wc2 = wc2[0]
     assert type(wc1) is type(wc2)
@@ -325,19 +333,11 @@ def test_high_level_wrapper(wcsobj, request):
         wc1 = (wc1,)
 
     pix_out1 = hlvl.world_to_pixel(*wc1)
-    pix_out2 = wcsobj.invert(*wc1)
-
-    if not isinstance(pix_out2, list | tuple):
-        pix_out2 = (pix_out2,)
-
-    if wcsobj.forward_transform.uses_quantity:
-        pix_out2 = tuple(
-            p.to_value(unit)
-            for p, unit in zip(pix_out2, wcsobj.input_frame.unit, strict=False)
-        )
 
     np.testing.assert_allclose(pix_out1, pixel_input)
-    np.testing.assert_allclose(pix_out2, pixel_input)
+    result = wcsobj.invert(*wc1)
+    inpq = [pix * un for pix, un in zip(pixel_input, wcsobj.input_frame.unit)]
+    assert_quantity_allclose(result, inpq)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
@@ -407,7 +407,8 @@ def test_pixel_bounds(wcsobj):
 
     wcsobj.bounding_box = ((-0.5, 2039.5), (-0.5, 1019.5))
     assert_array_equal(wcsobj.pixel_bounds, wcsobj.bounding_box)
-
+    # Reset the bounding box or this will affect other tests
+    wcsobj.bounding_box = None
 
 @wcs_objs
 def test_axis_correlation_matrix(wcsobj):
@@ -598,8 +599,8 @@ def test_coordinate_frame_api():
     pixel = wcs.world_to_pixel(world)
     assert isinstance(pixel, float)
 
-    pixel2 = wcs.invert(world)
-    assert u.allclose(pixel2, 0 * u.pix)
+    result = wcs.invert(world)
+    assert_quantity_allclose(result, 0*u.pix)
 
 
 def test_world_axis_object_components_units(gwcs_3d_identity_units):
