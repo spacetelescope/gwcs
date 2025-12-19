@@ -174,3 +174,8 @@ def gwcs_romanisim():
 def fits_wcs_imaging_simple(request):
     params = request.param
     return examples.fits_wcs_imaging_simple(params)
+
+
+@pytest.fixture
+def gwcs_2d_spatial_shift_reverse():
+    return examples.gwcs_2d_spatial_shift_reverse()
