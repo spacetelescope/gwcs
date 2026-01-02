@@ -66,14 +66,13 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
     def _remove_quantity_output(self, result, frame):
-        if self.forward_transform.uses_quantity:
-            if frame.naxes == 1:
-                result = [result]
+        if frame.naxes == 1:
+            result = [result]
 
-            result = tuple(
-                r.to_value(unit) if isinstance(r, u.Quantity) else r
-                for r, unit in zip(result, frame.unit, strict=False)
-            )
+        result = tuple(
+            r.to_value(unit) if isinstance(r, u.Quantity) else r
+            for r, unit in zip(result, frame.unit, strict=False)
+        )
 
         # If we only have one output axes, we shouldn't return a tuple.
         if self.output_frame.naxes == 1 and isinstance(result, tuple):
@@ -94,7 +93,6 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         is the vertical coordinate.
         """
         result = self(*pixel_arrays)
-
         return self._remove_quantity_output(result, self.output_frame)
 
     def array_index_to_world_values(self, *index_arrays):
