@@ -2,26 +2,24 @@
 """
 Test the API is consistent with units and quantities and follows the rules below.
 
-WCS functions which considered for this work are part of the legacy API:
-wcs(x, y)
-wcs.invert(ra, dec)
-wcs.forward_transform(x,y), wcs.backward_transform() and wcs.get_transform(f1, f2)
-wcs.numerical_inverse(ra, dec) - does not support units
+WCS functions considered part of the legacy API:
+wcs()
+wcs.invert()
+wcs.transform()
 
 Rules:
 
 
 1. Neither transforms nor inputs support units -> the output is clearly numerical
    for all functions above
-2. Transforms support units but inputs do not -> return quantities assuming the
-   units of the coordinate frame
-  - This should work for the wcs methods (wcs(x,y) and wcs.invert
-  - The methods using transforms should follow modeling rules and will require units
-    on the input and raise an exception if not
+2. Transforms support units but inputs do not -> return numbers/arrays
+   Attach the units of the input coordinate frame to the inputs.
+   Evaluate the transforms and strip the output of units
 3. Both transforms and inputs support units -> return quantities
-  - Wcs methods return quantities
-  - Transforms work and return quantities
-4. Transforms do not support units but inputs are quantities -> raise an error
+4. Transforms do not support units but inputs are quantities -> return quantities
+   Strip the units from the inputs after converting to the units of the input frame.
+   Evaluate the transform and attach the units of the output frame.
+5. Inputs are High Level Objects - raise an error
 
 """
 
