@@ -1739,9 +1739,6 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         pixel = iwcs.invert(*input_world)
     assert "High Level objects are not supported with the native" in str(e)
 
-    # assert all(isinstance(p, u.Quantity) for p in pixel)
-    # assert u.allclose(pixel, [1, 1] * u.pix)
-
     intermediate_world = iwcs.transform(
         "output",
         "celestial",
