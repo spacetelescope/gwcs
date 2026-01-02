@@ -402,6 +402,7 @@ def test_pixel_bounds(wcsobj):
     # Reset the bounding box or this will affect other tests
     wcsobj.bounding_box = None
 
+
 @wcs_objs
 def test_axis_correlation_matrix(wcsobj):
     assert_array_equal(wcsobj.axis_correlation_matrix, np.identity(2))

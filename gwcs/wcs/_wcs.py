@@ -159,7 +159,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             msg = "Transform is not defined."
             raise NotImplementedError(msg)
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
         args = self._make_input_units_consistent(
             transform,
             *args,
@@ -168,7 +170,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform_uses_quantity=transform_uses_quantity,
         )
 
-        result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs)
+        result = transform(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
         if self.output_frame is not None:
             if self.output_frame.naxes == 1:
                 result = (result,)
@@ -205,7 +209,6 @@ class WCS(GWCSAPIMixin, Pipeline):
         transform_uses_quantity = not (transform is None or not transform.uses_quantity)
         return input_is_quantity, transform_uses_quantity
 
-
     def _make_input_units_consistent(
         self,
         transform,
@@ -222,17 +225,18 @@ class WCS(GWCSAPIMixin, Pipeline):
         # # Validate that the input type matches what the transform expects
         # input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
         # transform_uses_quantity = not (transform is None or not transform.uses_quantity)
-        if not input_is_quantity and not transform_uses_quantity:
+        if (not input_is_quantity and not transform_uses_quantity) or (
+            input_is_quantity and transform_uses_quantity
+        ):
             return args
-        elif input_is_quantity and transform_uses_quantity:
-            return args
-        elif (
+        if (
             not input_is_quantity
-            and (transform_uses_quantity
-            or transform.parameters.size) # possibly remove this, check is in _units_are_present
+            and (
+                transform_uses_quantity or transform.parameters.size
+            )  # possibly remove this, check is in _units_are_present
         ):
             return self._add_units_input(args, frame)
-        elif not transform_uses_quantity and input_is_quantity:
+        if not transform_uses_quantity and input_is_quantity:
             return self._remove_units_input(args, frame)
 
     def _make_output_units_consistent(
@@ -251,13 +255,11 @@ class WCS(GWCSAPIMixin, Pipeline):
         if not input_is_quantity and not transform_uses_quantity:
             return args
 
-        elif input_is_quantity and transform_uses_quantity:
+        if input_is_quantity and transform_uses_quantity:
             # make sure the output is returned in the units of the output frame
             return self._add_units_input(args, frame)
-        elif (
-            not input_is_quantity
-            and (transform_uses_quantity
-            or transform.parameters.size)
+        if not input_is_quantity and (
+            transform_uses_quantity or transform.parameters.size
         ):
             result = self._remove_units_input(args, frame)
         elif not transform_uses_quantity and input_is_quantity:
@@ -358,7 +360,9 @@ class WCS(GWCSAPIMixin, Pipeline):
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
 
         args = self._make_input_units_consistent(
             transform,
@@ -369,7 +373,12 @@ class WCS(GWCSAPIMixin, Pipeline):
         )
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **akwargs)
+            result = transform(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **akwargs,
+            )
         else:
             # Always strip units for numerical inverse
             args = self._remove_units_input(args, self.output_frame)
@@ -1114,7 +1123,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
-        **kwargs
+        **kwargs,
     ):
         """
         Transform positions between two frames.
@@ -1141,15 +1150,21 @@ class WCS(GWCSAPIMixin, Pipeline):
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
 
         # If frames are of type ``str``, set the object to ``None``.
-        from_frame_obj = getattr(self, from_frame) if isinstance(from_frame, str) else from_frame
+        from_frame_obj = (
+            getattr(self, from_frame) if isinstance(from_frame, str) else from_frame
+        )
         if isinstance(from_frame_obj, EmptyFrame):
             from_frame_obj = None
 
-        to_frame_obj = getattr(self, to_frame) if isinstance(to_frame, str) else to_frame
+        to_frame_obj = (
+            getattr(self, to_frame) if isinstance(to_frame, str) else to_frame
+        )
         if isinstance(to_frame_obj, EmptyFrame):
             to_frame_obj = None
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(args, transform)
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
         args = self._make_input_units_consistent(
             transform,
             *args,
@@ -1158,7 +1173,9 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform_uses_quantity=transform_uses_quantity,
         )
 
-        result = transform(*args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs)
+        result = transform(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
         if to_frame_obj is not None:
             if to_frame_obj.naxes == 1:
                 result = (result,)
