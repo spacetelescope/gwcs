@@ -42,7 +42,6 @@ yq = 2 * u.pix
 def is_numerical(args):
     if isinstance(args, numbers.Number):
         return True
-    # return all([isinstance(arg, numbers.Number) or type(arg) == np.ndarray for arg in args])
     return all([isinstance(arg, numbers.Number) or arg is np.ndarray for arg in args])
 
 
@@ -177,17 +176,17 @@ def test_transform_with_units(wcsobj):
     n_inputs = wcsobj.input_frame.naxes
     xx = [x] * n_inputs
 
-    # input is numerical; return numbers
+    # input is numerical, return numbers
     result_num = wcsobj(*xx)
     assert is_numerical(result_num)
 
     inp = wcsobj.invert(*result_num)
     assert is_numerical(inp)
 
-    # input is quantities; return quantities
+    # input is quantities, return quantities
     xxq = [1 * u.pix] * n_inputs
     result = wcsobj(*xxq)
-    assert all([type(res) == u.Quantity for res in result])
+    assert all([type(res) is u.Quantity for res in result])
     assert_allclose([r.value for r in result], result_num)
 
     sky = wcsobj.pixel_to_world(*xxq)
@@ -241,7 +240,10 @@ def test_remove_units(wcsobj):
 
 
 def test_transform_multistage_wcs(gwcs_with_pipeline_celestial):
-    """Tests that the input and output types match for intermediate frames/transforms."""
+    """
+    Tests that the input and output types match for
+    intermediate frames/transforms.
+    """
     wcsobj = gwcs_with_pipeline_celestial
     frames = wcsobj.available_frames
     result = wcsobj.transform(frames[0], frames[-1], 1 * u.pix, 1 * u.pix)

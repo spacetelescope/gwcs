@@ -222,22 +222,18 @@ class WCS(GWCSAPIMixin, Pipeline):
         Adds or removes units from the arguments as needed so that the transform
         can be successfully evaluated.
         """
-        # # Validate that the input type matches what the transform expects
-        # input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        # transform_uses_quantity = not (transform is None or not transform.uses_quantity)
+        # Validate that the input type matches what the transform expects
         if (not input_is_quantity and not transform_uses_quantity) or (
             input_is_quantity and transform_uses_quantity
         ):
             return args
-        if (
-            not input_is_quantity
-            and (
-                transform_uses_quantity or transform.parameters.size
-            )  # possibly remove this, check is in _units_are_present
+        if not input_is_quantity and (
+            transform_uses_quantity or transform.parameters.size
         ):
             return self._add_units_input(args, frame)
         if not transform_uses_quantity and input_is_quantity:
             return self._remove_units_input(args, frame)
+        return args
 
     def _make_output_units_consistent(
         self,
@@ -249,8 +245,8 @@ class WCS(GWCSAPIMixin, Pipeline):
         **kwargs,
     ):
         """
-        Adds or removes units from the arguments as needed so that the type of the output
-        matches the input.
+        Adds or removes units from the arguments as needed so that
+        the type of the output matches the input.
         """
         if not input_is_quantity and not transform_uses_quantity:
             return args
@@ -261,10 +257,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         if not input_is_quantity and (
             transform_uses_quantity or transform.parameters.size
         ):
-            result = self._remove_units_input(args, frame)
-        elif not transform_uses_quantity and input_is_quantity:
-            result = self._add_units_input(args, frame)
-        return result
+            return self._remove_units_input(args, frame)
+        if not transform_uses_quantity and input_is_quantity:
+            return self._add_units_input(args, frame)
+        return args
 
     def in_image(self, *args, **kwargs):
         """
@@ -352,7 +348,6 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform = None
 
         if is_high_level(*args, low_level_wcs=self):
-            # args = high_level_objects_to_values(*args, low_level_wcs=self)
             message = "High Level objects are not supported with the native API. \
                        Please use the `world_to_pixel` method."
             raise TypeError(message)
