@@ -348,7 +348,7 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform = self.backward_transform
         except NotImplementedError:
             transform = None
-            # TODO raise error?
+
         if is_high_level(*args, low_level_wcs=self):
             # args = high_level_objects_to_values(*args, low_level_wcs=self)
             message = "High Level objects are not supported with the native API. \
@@ -1112,7 +1112,9 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_frame: str | CoordinateFrame,
         to_frame: str | CoordinateFrame,
         *args,
-        **kwargs,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs
     ):
         """
         Transform positions between two frames.
@@ -1128,15 +1130,15 @@ class WCS(GWCSAPIMixin, Pipeline):
         with_bounding_box : bool, optional
              If True(default) values in the result which correspond to any of
              the inputs being outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
         """
         # Pull the steps and their indices from the pipeline
         # -> this also turns the frame name strings into frame objects
         from_step = self._get_step(from_frame)
         to_step = self._get_step(to_frame)
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
-
-        with_bounding_box = kwargs.get("with_bounding_box", None)
-        fill_value = kwargs.get("fill_value", np.nan)
 
         # If frames are of type ``str``, set the object to ``None``.
         from_frame_obj = getattr(self, from_frame) if isinstance(from_frame, str) else from_frame
