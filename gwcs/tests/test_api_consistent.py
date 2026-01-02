@@ -24,15 +24,14 @@ Rules:
 4. Transforms do not support units but inputs are quantities -> raise an error
 
 """
-import numbers
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
 
+import numbers
+
+import numpy as np
+import pytest
 from astropy import units as u
 from astropy.tests.helper import assert_quantity_allclose
-
-import pytest
-from .conftest import gwcs_with_pipeline_celestial, gwcs_2d_spatial_shift_reverse
+from numpy.testing import assert_allclose
 
 x = 1
 y = 2
@@ -43,7 +42,7 @@ yq = 2 * u.pix
 def is_numerical(args):
     if isinstance(args, numbers.Number):
         return True
-    #return all([isinstance(arg, numbers.Number) or type(arg) == np.ndarray for arg in args])
+    # return all([isinstance(arg, numbers.Number) or type(arg) == np.ndarray for arg in args])
     return all([isinstance(arg, numbers.Number) or arg is np.ndarray for arg in args])
 
 
@@ -55,12 +54,24 @@ def is_quantity(args):
 def wcsobj(request):
     return request.getfixturevalue(request.param)
 
-wno_unit_1d = ["gwcs_1d_freq", "gwcs_1d_spectral",]
 
-wno_unit_nd = ["gwcs_2d_shift_scale", "gwcs_3d_spatial_wave", "gwcs_2d_spatial_shift",
-    "gwcs_2d_spatial_reordered", "gwcs_3d_spatial_wave", "gwcs_simple_imaging",
-    "gwcs_3spectral_orders", "gwcs_3d_galactic_spectral", "gwcs_spec_cel_time_4d",
-    "gwcs_romanisim", ]
+wno_unit_1d = [
+    "gwcs_1d_freq",
+    "gwcs_1d_spectral",
+]
+
+wno_unit_nd = [
+    "gwcs_2d_shift_scale",
+    "gwcs_3d_spatial_wave",
+    "gwcs_2d_spatial_shift",
+    "gwcs_2d_spatial_reordered",
+    "gwcs_3d_spatial_wave",
+    "gwcs_simple_imaging",
+    "gwcs_3spectral_orders",
+    "gwcs_3d_galactic_spectral",
+    "gwcs_spec_cel_time_4d",
+    "gwcs_romanisim",
+]
 
 # "gwcs_7d_complex_mapping" errors in astropy - fix
 # "gwcs_2d_quantity_shift" errors when inputs are quantities.
@@ -68,9 +79,14 @@ wno_unit_nd = ["gwcs_2d_shift_scale", "gwcs_3d_spatial_wave", "gwcs_2d_spatial_s
 
 w_unit_1d = ["gwcs_stokes_lookup", "gwcs_1d_freq_quantity"]
 
-w_unit_nd = ["gwcs_2d_shift_scale_quantity", "gwcs_3d_identity_units",
-    "gwcs_3d_identity_units", "gwcs_4d_identity_units", "gwcs_simple_imaging_units",
-    "gwcs_with_pipeline_celestial", ]
+w_unit_nd = [
+    "gwcs_2d_shift_scale_quantity",
+    "gwcs_3d_identity_units",
+    "gwcs_3d_identity_units",
+    "gwcs_4d_identity_units",
+    "gwcs_simple_imaging_units",
+    "gwcs_with_pipeline_celestial",
+]
 
 w_transform_test = ["gwcs_1d_freq_quantity", "gwcs_2d_quantity_shift"]
 
@@ -82,7 +98,7 @@ wcs_with_unit_nd = pytest.mark.parametrize(("wcsobj"), w_unit_nd, indirect=True)
 
 @wcs_no_unit_1d
 def test_no_units_1d(wcsobj):
-    """ Transforms do not support units."""
+    """Transforms do not support units."""
     assert not wcsobj.forward_transform.uses_quantity
 
     # the case of a scalar input
@@ -121,7 +137,7 @@ def test_no_units_nd(wcsobj):
     _ = [assert_allclose(i, j) for i, j in zip(inp_new, inp, strict=True)]
 
     # Inputs are quantities; return quantities (except for pixels?)
-    inpq = [coo * un for coo, un in zip(inp, wcsobj.input_frame.unit, strict=True)]
+    inpq = [coup * un for coup, un in zip(inp, wcsobj.input_frame.unit, strict=True)]
     result = wcsobj(*inpq)
     assert is_quantity(result)
     inp_new = wcsobj.invert(*result)
@@ -129,7 +145,7 @@ def test_no_units_nd(wcsobj):
 
     sky = wcsobj.pixel_to_world(*inp)
     if not np.iterable(sky):
-        sky=(sky,)
+        sky = (sky,)
     with pytest.raises(TypeError) as e:
         inv_sky = wcsobj.invert(*sky)
     assert "High Level objects are not supported with the native" in str(e)
@@ -137,7 +153,7 @@ def test_no_units_nd(wcsobj):
 
 @wcs_with_unit_1d
 def test_with_units_1d(wcsobj):
-    """ Transform do not support units."""
+    """Transform do not support units."""
     assert wcsobj.forward_transform.uses_quantity
 
     # the case of a scalar input
@@ -155,7 +171,7 @@ def test_with_units_1d(wcsobj):
 
 @wcs_with_unit_nd
 def test_transform_with_units(wcsobj):
-    """ Transforms support units."""
+    """Transforms support units."""
     assert wcsobj.forward_transform.uses_quantity
 
     n_inputs = wcsobj.input_frame.naxes
@@ -171,13 +187,13 @@ def test_transform_with_units(wcsobj):
     # input is quantities; return quantities
     xxq = [1 * u.pix] * n_inputs
     result = wcsobj(*xxq)
-    assert all([type(res)==u.Quantity for res in result])
+    assert all([type(res) == u.Quantity for res in result])
     assert_allclose([r.value for r in result], result_num)
 
     sky = wcsobj.pixel_to_world(*xxq)
     if not np.iterable(sky):
-        sky=(sky,)
-    with pytest.raises(TypeError)as e:
+        sky = (sky,)
+    with pytest.raises(TypeError) as e:
         inv_sky = wcsobj.invert(*sky)
     assert "High Level objects are not supported with the native" in str(e)
 
@@ -185,17 +201,22 @@ def test_transform_with_units(wcsobj):
 @wcs_no_unit_1d
 def test_add_units(wcsobj):
     if wcsobj.input_frame.naxes == 1:
-        assert wcsobj._add_units_input((1,), wcsobj.input_frame) == 1 * wcsobj.input_frame.unit[0]
+        assert (
+            wcsobj._add_units_input((1,), wcsobj.input_frame)
+            == 1 * wcsobj.input_frame.unit[0]
+        )
         assert_allclose(
             wcsobj._add_units_input(([1, 1],), wcsobj.input_frame),
-            ([1, 1] * wcsobj.input_frame.unit[0],))
+            ([1, 1] * wcsobj.input_frame.unit[0],),
+        )
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._add_units_input((1, 1), wcsobj.input_frame),
-            (1*u.pix, 1*u.pix))
+            wcsobj._add_units_input((1, 1), wcsobj.input_frame), (1 * u.pix, 1 * u.pix)
+        )
         assert_quantity_allclose(
             wcsobj._add_units_input(([1, 1], [1, 1]), wcsobj.input_frame),
-            ([1, 1]*u.pix, [1, 1]*u.pix))
+            ([1, 1] * u.pix, [1, 1] * u.pix),
+        )
 
 
 @wcs_with_unit_1d
@@ -204,32 +225,35 @@ def test_remove_units(wcsobj):
         unit = wcsobj.input_frame.unit[0]
         assert wcsobj._remove_units_input(1 * unit, wcsobj.input_frame) == (1,)
         assert_allclose(
-            wcsobj._remove_units_input(([1, 1] * unit,), wcsobj.input_frame),
-            ([1, 1],))
+            wcsobj._remove_units_input(([1, 1] * unit,), wcsobj.input_frame), ([1, 1],)
+        )
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._remove_units_input((1*u.pix, 1*u.pix), wcsobj.input_frame),
-            (1, 1)
-            )
+            wcsobj._remove_units_input((1 * u.pix, 1 * u.pix), wcsobj.input_frame),
+            (1, 1),
+        )
         assert_quantity_allclose(
-            wcsobj._remove_units_input(([1, 1]*u.pix, [1, 1]*u.pix), wcsobj.input_frame),
-            ([1, 1], [1, 1]))
+            wcsobj._remove_units_input(
+                ([1, 1] * u.pix, [1, 1] * u.pix), wcsobj.input_frame
+            ),
+            ([1, 1], [1, 1]),
+        )
 
 
 def test_transform_multistage_wcs(gwcs_with_pipeline_celestial):
     """Tests that the input and output types match for intermediate frames/transforms."""
     wcsobj = gwcs_with_pipeline_celestial
     frames = wcsobj.available_frames
-    result = wcsobj.transform(frames[0], frames[-1], 1*u.pix, 1*u.pix)
+    result = wcsobj.transform(frames[0], frames[-1], 1 * u.pix, 1 * u.pix)
     assert is_quantity(result)
     assert_allclose([r.value for r in result], wcsobj(1, 1))
-    final_result = wcsobj.transform(frames[0], frames[-1], 1*u.pix, 1*u.pix)
+    final_result = wcsobj.transform(frames[0], frames[-1], 1 * u.pix, 1 * u.pix)
     assert is_quantity(final_result)
     assert_allclose([r.value for r in final_result], wcsobj(1, 1))
-    interm_result = wcsobj.transform(frames[0], frames[1], 1*u.pix, 1*u.pix)
+    interm_result = wcsobj.transform(frames[0], frames[1], 1 * u.pix, 1 * u.pix)
     assert is_quantity(interm_result)
     tr = wcsobj.get_transform(frames[0], frames[1])
-    assert_quantity_allclose(interm_result, tr(1*u.pix, 1*u.pix))
+    assert_quantity_allclose(interm_result, tr(1 * u.pix, 1 * u.pix))
     ninterm_result = wcsobj.transform(frames[0], frames[1], 1, 1)
     assert_allclose([r.value for r in interm_result], ninterm_result)
 
@@ -238,6 +262,6 @@ def test_reverse_wcs_direction(gwcs_2d_spatial_shift_reverse):
     """Test that input quantities are converted to the units of the input frame."""
     wcsobj = gwcs_2d_spatial_shift_reverse
     assert_quantity_allclose(
-        wcsobj(1*u.arcsec, 2*u.arcsec),
-        wcsobj(1*u.arcsec.to(u.deg)*u.deg, 2*u.arcsec.to(u.deg)*u.deg)
-        )
+        wcsobj(1 * u.arcsec, 2 * u.arcsec),
+        wcsobj(1 * u.arcsec.to(u.deg) * u.deg, 2 * u.arcsec.to(u.deg) * u.deg),
+    )
