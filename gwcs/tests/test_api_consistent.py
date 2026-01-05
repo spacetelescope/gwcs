@@ -38,13 +38,13 @@ yq = 2 * u.pix
 
 
 def is_numerical(args):
-    if isinstance(args, numbers.Number):
-        return True
-    return all([isinstance(arg, numbers.Number) or arg is np.ndarray for arg in args])
+    return isinstance(args, numbers.Number) or all(
+        isinstance(arg, numbers.Number) or arg is np.ndarray for arg in args
+    )
 
 
 def is_quantity(args):
-    return all([isinstance(arg, u.Quantity) for arg in args])
+    return all(isinstance(arg, u.Quantity) for arg in args)
 
 
 @pytest.fixture
@@ -143,9 +143,10 @@ def test_no_units_nd(wcsobj):
     sky = wcsobj.pixel_to_world(*inp)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(TypeError) as e:
-        inv_sky = wcsobj.invert(*sky)
-    assert "High Level objects are not supported with the native" in str(e)
+    with pytest.raises(
+        TypeError, match=r"High Level objects are not supported with the native"
+    ):
+        wcsobj.invert(*sky)
 
 
 @wcs_with_unit_1d
@@ -184,15 +185,16 @@ def test_transform_with_units(wcsobj):
     # input is quantities, return quantities
     xxq = [1 * u.pix] * n_inputs
     result = wcsobj(*xxq)
-    assert all([type(res) is u.Quantity for res in result])
+    assert all(type(res) is u.Quantity for res in result)
     assert_allclose([r.value for r in result], result_num)
 
     sky = wcsobj.pixel_to_world(*xxq)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(TypeError) as e:
-        inv_sky = wcsobj.invert(*sky)
-    assert "High Level objects are not supported with the native" in str(e)
+    with pytest.raises(
+        TypeError, match=r"High Level objects are not supported with the native"
+    ):
+        wcsobj.invert(*sky)
 
 
 @wcs_no_unit_1d

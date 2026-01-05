@@ -1735,9 +1735,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    with pytest.raises(TypeError) as e:
-        pixel = iwcs.invert(*input_world)
-    assert "High Level objects are not supported with the native" in str(e)
+    with pytest.raises(
+        TypeError, match=r"High Level objects are not supported with the native"
+    ):
+        iwcs.invert(*input_world)
 
     intermediate_world = iwcs.transform(
         "output",
