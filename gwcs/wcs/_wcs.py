@@ -189,7 +189,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
     def _units_are_present(self, args, transform):
         """
-        Determing if the inputs to a transform are quantities and the transform
+        Determining if the inputs to a transform are quantities and the transform
         supports units.
 
         Parameters
