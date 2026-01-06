@@ -19,7 +19,7 @@ ensure transparent use of ``GWCS`` and ``FITSWCS`` objects.
 The example below illustrates the capabilities of the ``Shared API``.
 The High Level interface provides methods for transforming coordinates between the input
 and the output frames, generating High Level Objects (HLO). HLOs are rich astropy objects,
-like ``SkyCoord``, ``SpectralCoord`` and ``StokesCoord`, which provide additional functionality.
+like ``SkyCoord``, ``SpectralCoord`` and ``StokesCoord``, which provide additional functionality.
 
 .. doctest-skip::
 
