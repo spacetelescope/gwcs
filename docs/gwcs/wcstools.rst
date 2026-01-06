@@ -28,3 +28,6 @@ Any additional transforms are prepended to the projection and sky rotation.
   >>> w = wcs_from_fiducial(fiducial, projection=tan, transform=trans)
   >>> w(2048, 1024)  # doctest: +FLOAT_CMP
       (5.46, -72.2)
+
+Generate a WCS object from matching (X, Y) and (RA, DEC) points.
+:ref:`wcs_from_points_example`

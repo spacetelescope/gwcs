@@ -58,6 +58,8 @@ Advanced User Topics
   :maxdepth: 2
 
   gwcs/wcs_ape.rst
+  gwcs/legacy_api.rst
+  gwcs/legacy_vs_shared.rst
   gwcs/using_wcs.rst
   gwcs/wcstools.rst
   gwcs/pure_asdf.rst
