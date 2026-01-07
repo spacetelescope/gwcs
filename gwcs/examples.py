@@ -757,5 +757,4 @@ def gwcs_multi_stage():
         name="interm", naxes=1, unit=("m",), axes_type="SPATIAL", axes_order=(0,)
     )
     cel = cf.CelestialFrame(name="sky", axes_names=("ra", "dec"))
-    w = wcs.WCS([(det, tr1), (interm, tr2), (cel, None)])
-    return w
+    return wcs.WCS([(det, tr1), (interm, tr2), (cel, None)])
