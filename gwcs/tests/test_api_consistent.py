@@ -267,3 +267,8 @@ def test_reverse_wcs_direction(gwcs_2d_spatial_shift_reverse):
         wcsobj(1 * u.arcsec, 2 * u.arcsec),
         wcsobj(1 * u.arcsec.to(u.deg) * u.deg, 2 * u.arcsec.to(u.deg) * u.deg),
     )
+
+
+def test_transfrom_intermediate_1d(gwcs_multi_stage):
+    wcsobj = gwcs_multi_stage
+    assert wcsobj.transform("detector", "interm", 1) == 11.0
