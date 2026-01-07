@@ -1118,6 +1118,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
+        hlo: bool = False,
         **kwargs,
     ):
         """
@@ -1132,11 +1133,13 @@ class WCS(GWCSAPIMixin, Pipeline):
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of
+             If True (default) values in the result which correspond to any of
              the inputs being outside the bounding_box are set to ``fill_value``.
         fill_value : float, optional
             Output value for inputs outside the bounding_box
             (default is np.nan).
+        hlo : bool, optional
+            If True, return a high level object.
         """
         # Pull the steps and their indices from the pipeline
         # -> this also turns the frame name strings into frame objects
@@ -1181,6 +1184,14 @@ class WCS(GWCSAPIMixin, Pipeline):
                 input_is_quantity=input_is_quantity,
                 transform_uses_quantity=transform_uses_quantity,
             )
+
+        if hlo and to_frame_obj is not None:
+            result = values_to_high_level_objects(
+                *result,
+                low_level_wcs=self,
+                object_classes=to_frame_obj.world_axis_object_classes,
+                object_components=to_frame_obj.world_axis_object_components)
+
         if to_frame_obj is not None and to_frame_obj.naxes == 1:
             return result[0]
         return result
