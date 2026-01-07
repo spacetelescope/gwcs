@@ -189,7 +189,7 @@ class WCS(GWCSAPIMixin, Pipeline):
 
     def _units_are_present(self, args, transform):
         """
-        Determining if the inputs to a transform are quantities and the transform
+        Determine if the inputs to a transform are quantities and the transform
         supports units.
 
         Parameters
@@ -1181,7 +1181,7 @@ class WCS(GWCSAPIMixin, Pipeline):
                 input_is_quantity=input_is_quantity,
                 transform_uses_quantity=transform_uses_quantity,
             )
-        if self.output_frame is not None and self.output_frame.naxes == 1:
+        if to_frame_obj is not None and to_frame_obj.naxes == 1:
             return result[0]
         return result
 

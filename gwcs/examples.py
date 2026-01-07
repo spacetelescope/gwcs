@@ -742,3 +742,18 @@ def gwcs_2d_spatial_shift_reverse():
     """
     pipe = [(ICRC_SKY_FRAME, MODEL_2D_SHIFT), (DETECTOR_2D_FRAME, None)]
     return wcs.WCS(pipe)
+
+
+def gwcs_multi_stage():
+    """
+    A 3-step pipeline where the intermediate step is 1D and the final is 2D.
+    """
+    tr1 = models.Shift(10)
+    tr2 = models.Mapping((0, 0)) | models.Scale(-2) & models.Scale(-1)
+    det=cf.CoordinateFrame(name='detector', naxes=1, unit=('pix',),
+        axes_type='SPATIAL', axes_order=(0,))
+    interm = cf.CoordinateFrame(name='interm', naxes=1, unit=('m',),
+        axes_type='SPATIAL', axes_order=(0,))
+    cel = cf.CelestialFrame(name='sky', axes_names=('ra', 'dec'))
+    w = wcs.WCS([(det, tr1), (interm, tr2),(cel, None)])
+    return w
