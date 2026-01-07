@@ -179,3 +179,8 @@ def fits_wcs_imaging_simple(request):
 @pytest.fixture
 def gwcs_2d_spatial_shift_reverse():
     return examples.gwcs_2d_spatial_shift_reverse()
+
+
+@pytest.fixture
+def gwcs_multi_stage():
+    return examples.gwcs_multi_stage()
