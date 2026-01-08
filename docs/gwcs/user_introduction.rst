@@ -99,7 +99,7 @@ to ra, dec of (30, 45) in degrees.
         -500.0   -500.0 2.777777777777778e-05 ...  45.0      180.0)>
   >>> wcs.output_frame
   <CelestialFrame(name="icrs", unit=(Unit("deg"), Unit("deg")), axes_names=('lon', 'lat'), axes_order=(0, 1), reference_frame=<ICRS Frame>)>
-  >>> wcs(500, 600) # Compute the world coordinates of pixel (500, 500),
+  >>> wcs(500, 500) # Compute the world coordinates of pixel (500, 500),
   >>>               # which is the reference pixel.
   (29.999999999999993, 45.00000000000001)
   >>> sky = wcs(700, 300) # (x, y) corresponding to python image index [300, 700]
