@@ -29,6 +29,7 @@ from gwcs.coordinate_frames import (
     CelestialFrame,
     CompositeFrame,
     CoordinateFrame,
+    EmptyFrame,
     get_ctype_from_ucd,
 )
 from gwcs.utils import _compute_lon_pole, is_high_level, to_index
@@ -157,23 +158,64 @@ class WCS(GWCSAPIMixin, Pipeline):
         if transform is None:
             msg = "Transform is not defined."
             raise NotImplementedError(msg)
+
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
         args = self._make_input_units_consistent(
+            transform,
             *args,
-            transform=transform,
-            from_frame=self.input_frame,
-            to_frame=self.output_frame,
+            frame=self.input_frame,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
         )
 
-        return self._call_forward(
+        result = transform(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
+        if self.output_frame is not None:
+            if self.output_frame.naxes == 1:
+                result = (result,)
+            result = self._make_output_units_consistent(
+                transform,
+                *result,
+                frame=self.output_frame,
+                input_is_quantity=input_is_quantity,
+                transform_uses_quantity=transform_uses_quantity,
+            )
+        if self.output_frame is not None and self.output_frame.naxes == 1:
+            return result[0]
+        return result
+
+    def _units_are_present(self, args, transform):
+        """
+        Determine if the inputs to a transform are quantities and the transform
+        supports units.
+
+        Parameters
+        ----------
+        args : a tuple of scalars or ndarray-like objects
+            Inputs to a transform.
+        transform : `~astropy.modeling.Model`
+            Transform to be evaluated.
+
+        Returns
+        -------
+        input_is_quantity, transform_uses_quantity : bool
+
+        """
+        # Validate that the input type matches what the transform expects
+        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
+        transform_uses_quantity = not (transform is None or not transform.uses_quantity)
+        return input_is_quantity, transform_uses_quantity
 
     def _make_input_units_consistent(
         self,
-        *args,
         transform,
-        from_frame: CoordinateFrame | None = None,
-        to_frame: CoordinateFrame | None = None,
+        *args,
+        frame: CoordinateFrame | None = None,
+        input_is_quantity=False,
+        transform_uses_quantity=False,
         **kwargs,
     ):
         """
@@ -181,120 +223,44 @@ class WCS(GWCSAPIMixin, Pipeline):
         can be successfully evaluated.
         """
         # Validate that the input type matches what the transform expects
-        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        transform_uses_quantity = not (transform is None or not transform.uses_quantity)
-        if (
-            not input_is_quantity
-            and transform_uses_quantity
-            and transform.parameters.size
+        if (not input_is_quantity and not transform_uses_quantity) or (
+            input_is_quantity and transform_uses_quantity
         ):
-            return self._add_units_input(args, from_frame)
+            return args
+        if not input_is_quantity and (
+            transform_uses_quantity or transform.parameters.size
+        ):
+            return self._add_units_input(args, frame)
         if not transform_uses_quantity and input_is_quantity:
-            return self._remove_units_input(args, from_frame)
+            return self._remove_units_input(args, frame)
         return args
 
-    def _evaluate_transform(
+    def _make_output_units_consistent(
         self,
         transform,
-        from_frame,
-        to_frame,
         *args,
-        with_bounding_box: bool = True,
-        fill_value: float | np.number = np.nan,
+        frame: CoordinateFrame | None = None,
+        input_is_quantity=False,
+        transform_uses_quantity=False,
         **kwargs,
     ):
         """
-        Introduces or removes units from the arguments as need so that the transform
-        can be successfully evaluated.
-
-        Notes
-        -----
-        Much of the logic in this method is due to the unfortunate fact that the
-        `uses_quantity` property for models is not reliable for determining if one
-        must pass quantities or not. It instead tells you:
-            1. If it has any parameter that is a quantity
-            2. It defaults to true for parameterless models.
-
-        This is problematic because its entirely possible to construct a model with
-        a parameter that is a quantity but the model itself either doesn't require
-        them or in fact cannot use them. This is a very rare case but it could happen.
-        Currently, this case is not handled, but it is worth noting in case it comes up
-
-        The more problematic case is for parameterless models. `uses_quantity` assumes
-        that if there are no parameters, then the model is agnostic to quantity inputs.
-        This is an incorrect assumption, even with in `astropy.modeling`'s built in
-        models.  The `Tabular1D` model for example has no "parameters" but it can
-        require quantities if its "points" construction input is a quantity. This
-        is the main case for the try/except block in this method.
-
-        Properly dealing with this will require upstream work in `astropy.modeling`
-        which is outside the scope of what GWCS can control.
-
-        to_frame is included as we really ought to be stripping the result of units
-        but we currently are not. API refactor should include addressing this.
+        Adds or removes units from the arguments as needed so that
+        the type of the output matches the input.
         """
+        if not input_is_quantity and not transform_uses_quantity:
+            return args
 
-        # Validate that the input type matches what the transform expects
-        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-
-        def _transform(*args):
-            """Wrap the transform evaluation"""
-
-            return transform(
-                *args,
-                with_bounding_box=with_bounding_box,
-                fill_value=fill_value,
-                **kwargs,
-            )
-
-        try:
-            return _transform(*args)
-        except u.UnitsError:
-            # In this case we are handling parameterless models that require units
-            # to function correctly.
-            if (
-                not input_is_quantity
-                and transform.uses_quantity
-                and not transform.parameters.size
-            ):
-                return _transform(*self._add_units_input(args, from_frame))
-
-            raise
-
-    def _call_forward(
-        self,
-        *args,
-        from_frame: CoordinateFrame | None = None,
-        to_frame: CoordinateFrame | None = None,
-        with_bounding_box: bool = True,
-        fill_value: float | np.number = np.nan,
-        **kwargs,
-    ):
-        """
-        Executes the forward transform, but values only.
-        """
-        if from_frame is None and to_frame is None:
-            transform = self.forward_transform
-        else:
-            transform = self.get_transform(from_frame, to_frame)
-        if from_frame is None:
-            from_frame = self.input_frame
-        if to_frame is None:
-            to_frame = self.output_frame
-
-        if transform is None:
-            msg = "WCS.forward_transform is not implemented."
-            raise NotImplementedError(msg)
-
-        return self._evaluate_transform(
-            transform,
-            from_frame,
-            to_frame,
-            *args,
-            with_bounding_box=with_bounding_box,
-            fill_value=fill_value,
-            **kwargs,
-        )
+        if input_is_quantity and transform_uses_quantity:
+            # make sure the output is returned in the units of the output frame
+            return self._add_units_input(args, frame)
+        if not input_is_quantity and (
+            transform_uses_quantity or transform.parameters.size
+        ):
+            return self._remove_units_input(args, frame)
+        if not transform_uses_quantity and input_is_quantity:
+            return self._add_units_input(args, frame)
+        return args
 
     def in_image(self, *args, **kwargs):
         """
@@ -380,41 +346,29 @@ class WCS(GWCSAPIMixin, Pipeline):
             transform = self.backward_transform
         except NotImplementedError:
             transform = None
+
         if is_high_level(*args, low_level_wcs=self):
-            args = high_level_objects_to_values(*args, low_level_wcs=self)
-        args = self._make_input_units_consistent(
-            *args,
-            transform=transform,
-            from_frame=self.output_frame,
-            to_frame=self.input_frame,
-        )
-
-        return self._call_backward(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
-        )
-
-    def _call_backward(
-        self,
-        *args,
-        with_bounding_box: bool = True,
-        fill_value: float | np.number = np.nan,
-        **kwargs,
-    ):
-        try:
-            transform = self.backward_transform
-        except NotImplementedError:
-            transform = None
+            message = "High Level objects are not supported with the native API. \
+                       Please use the `world_to_pixel` method."
+            raise TypeError(message)
 
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
 
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
+
+        args = self._make_input_units_consistent(
+            transform,
+            *args,
+            frame=self.output_frame,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
+        )
         if transform is not None:
-            # remove iterative inverse-specific keyword arguments:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
-            result = self._evaluate_transform(
-                transform,
-                self.output_frame,
-                self.input_frame,
+            result = transform(
                 *args,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
@@ -430,10 +384,20 @@ class WCS(GWCSAPIMixin, Pipeline):
                 **kwargs,
             )
 
-        # deal with values outside the bounding box
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
+        if self.input_frame.naxes == 1:
+            result = (result,)
+        result = self._make_output_units_consistent(
+            transform,
+            *result,
+            frame=self.input_frame,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
+        )
+        if self.input_frame.naxes == 1:
+            return result[0]
         return result
 
     def outside_footprint(self, world_arrays):
@@ -1152,6 +1116,9 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_frame: str | CoordinateFrame,
         to_frame: str | CoordinateFrame,
         *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        hlo: bool = False,
         **kwargs,
     ):
         """
@@ -1166,8 +1133,13 @@ class WCS(GWCSAPIMixin, Pipeline):
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of
+             If True (default) values in the result which correspond to any of
              the inputs being outside the bounding_box are set to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
+        hlo : bool, optional
+            If True, return a high level object.
         """
         # Pull the steps and their indices from the pipeline
         # -> this also turns the frame name strings into frame objects
@@ -1175,16 +1147,54 @@ class WCS(GWCSAPIMixin, Pipeline):
         to_step = self._get_step(to_frame)
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
 
-        if not transform.uses_quantity and is_high_level(
-            *args, low_level_wcs=from_step.step.frame
-        ):
-            args = high_level_objects_to_values(
-                *args, low_level_wcs=from_step.step.frame
+        # If frames are of type ``str``, set the object to ``None``.
+        from_frame_obj = (
+            getattr(self, from_frame) if isinstance(from_frame, str) else from_frame
+        )
+        if isinstance(from_frame_obj, EmptyFrame):
+            from_frame_obj = None
+
+        to_frame_obj = (
+            getattr(self, to_frame) if isinstance(to_frame, str) else to_frame
+        )
+        if isinstance(to_frame_obj, EmptyFrame):
+            to_frame_obj = None
+
+        input_is_quantity, transform_uses_quantity = self._units_are_present(
+            args, transform
+        )
+        args = self._make_input_units_consistent(
+            transform,
+            *args,
+            frame=from_frame_obj,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
+        )
+
+        result = transform(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
+        if to_frame_obj is not None:
+            if to_frame_obj.naxes == 1:
+                result = (result,)
+            result = self._make_output_units_consistent(
+                transform,
+                *result,
+                frame=to_frame_obj,
+                input_is_quantity=input_is_quantity,
+                transform_uses_quantity=transform_uses_quantity,
             )
 
-        return self._evaluate_transform(
-            transform, from_step.step.frame, to_step.step.frame, *args, **kwargs
-        )
+        if hlo and to_frame_obj is not None:
+            result = values_to_high_level_objects(
+                *result,
+                low_level_wcs=self,
+                object_classes=to_frame_obj.world_axis_object_classes,
+                object_components=to_frame_obj.world_axis_object_components)
+
+        if to_frame_obj is not None and to_frame_obj.naxes == 1:
+            return result[0]
+        return result
 
     @property
     def name(self) -> str:
