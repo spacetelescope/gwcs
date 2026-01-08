@@ -1,5 +1,7 @@
 0.26.2(unreleased)
 ------------------
+- Fixed some typos in documentation. [#671]
+
 - Raise an error when inserting a transform before the first coordinate frame. [#654]
 
 - Remove ``with_units`` argument from ``__call__`` and ``invert``. Use the Shared API
