@@ -44,7 +44,7 @@ docs = [
 ]
 test = [
     "ci-watson>=0.3.0",
-    "pytest>=8.0.0",
+    "pytest>=9.0",
     "pytest-astropy>=0.11.0",
 ]
 
@@ -75,10 +75,10 @@ all_files = "1"
 upload-dir = "docs/_build/html"
 show-response = 1
 
-[tool.pytest.ini_options]
-minversion = "8"
-doctest_plus = true
-doctest_rst = true
+[tool.pytest]
+minversion = "9.0"
+doctest_plus = "enabled"
+doctest_rst = "enabled"
 text_file_format = "rst"
 log_cli_level = "INFO"
 xfail_strict = true
