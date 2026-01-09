@@ -753,8 +753,8 @@ def gwcs_multi_stage():
     det = cf.CoordinateFrame(
         name="detector", naxes=1, unit=("pix",), axes_type="SPATIAL", axes_order=(0,)
     )
-    interm = cf.CoordinateFrame(
-        name="interm", naxes=1, unit=("m",), axes_type="SPATIAL", axes_order=(0,)
+    intermediate = cf.CoordinateFrame(
+        name="intermediate", naxes=1, unit=("m",), axes_type="SPATIAL", axes_order=(0,)
     )
     cel = cf.CelestialFrame(name="sky", axes_names=("ra", "dec"))
-    return wcs.WCS([(det, tr1), (interm, tr2), (cel, None)])
+    return wcs.WCS([(det, tr1), (intermediate, tr2), (cel, None)])
