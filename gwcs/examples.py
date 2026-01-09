@@ -410,7 +410,7 @@ def gwcs_spec_cel_time_4d():
     wcslin = models.Mapping((1, 0)) | (offx & offy) | aff
     tan = models.Pix2Sky_TAN(name="tangent_projection")
     n2c = models.RotateNative2Celestial(*crval, 180, name="sky_rotation")
-    cel_model = wcslin | tan | n2c
+    cel_model = wcslin | tan | n2c | models.Mapping((1, 0))
     icrs = cf.CelestialFrame(
         reference_frame=coord.ICRS(), name="sky", axes_order=(2, 1)
     )
@@ -734,3 +734,27 @@ def fits_wcs_imaging_simple(params):
         w.wcs.lonpole = 180
     w.wcs.set()
     return gw, w
+
+
+def gwcs_2d_spatial_shift_reverse():
+    """
+    A simple one step spatial WCS with forward from sky to detector.
+    """
+    pipe = [(ICRC_SKY_FRAME, MODEL_2D_SHIFT), (DETECTOR_2D_FRAME, None)]
+    return wcs.WCS(pipe)
+
+
+def gwcs_multi_stage():
+    """
+    A 3-step pipeline where the intermediate step is 1D and the final is 2D.
+    """
+    tr1 = models.Shift(10)
+    tr2 = models.Mapping((0, 0)) | models.Scale(-2) & models.Scale(-1)
+    det = cf.CoordinateFrame(
+        name="detector", naxes=1, unit=("pix",), axes_type="SPATIAL", axes_order=(0,)
+    )
+    intermediate = cf.CoordinateFrame(
+        name="intermediate", naxes=1, unit=("m",), axes_type="SPATIAL", axes_order=(0,)
+    )
+    cel = cf.CelestialFrame(name="sky", axes_names=("ra", "dec"))
+    return wcs.WCS([(det, tr1), (intermediate, tr2), (cel, None)])
