@@ -476,8 +476,7 @@ def test_wcs_from_points():
     assert_allclose(newra, ra)
     assert_allclose(newdec, dec)
 
-    n = rng.standard_normal(ra.size)
-    n.shape = ra.shape
+    n = rng.standard_normal(size=ra.shape)
     nra = n * 10**-2
     ndec = n * 10**-2
     w = wcs_from_points(

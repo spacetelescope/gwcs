@@ -403,8 +403,8 @@ class LabelMapperDict(_LabelMapper):
             ind = np.isclose(key, keys, atol=self._atol)
             inputs = [a[ind] for a in args]
             res[ind] = self.mapper[key](*inputs)
-        res.shape = shape
-        return res
+
+        return np.reshape(res, shape)
 
 
 class LabelMapperRange(_LabelMapper):
@@ -522,7 +522,7 @@ class LabelMapperRange(_LabelMapper):
                 res[ind] = self.mapper[tuple(val_range)](*inputs)
             else:
                 continue
-        res.shape = shape
+        res = np.reshape(res, shape)
         if len(np.nonzero(res)[0]) == 0:
             warnings.warn(
                 f"All data is outside the valid range - {self.name}.", stacklevel=2
