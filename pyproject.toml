@@ -33,7 +33,7 @@ gwcs = "gwcs.extension:get_extensions"
 
 [project.optional-dependencies]
 docs = [
-    "sphinx",
+    "sphinx < 9",
     "sphinx-automodapi",
     "sphinx-astropy",
     "sphinx-copybutton",
