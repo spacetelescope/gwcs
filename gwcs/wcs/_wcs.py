@@ -118,15 +118,16 @@ class WCS(GWCSAPIMixin, Pipeline):
         self._pixel_shape = None
 
     def _add_units_input(
-        self, arrays: np.ndarray | float, frame: CoordinateFrame | None
+        self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrame | None
     ) -> tuple[u.Quantity, ...]:
         if frame is not None:
             return frame.add_units(arrays)
 
-        return arrays
+        # This is a falllback that should be rarely used if ever
+        return arrays  # type: ignore[return-value]
 
     def _remove_units_input(
-        self, arrays: list[u.Quantity], frame: CoordinateFrame | None
+        self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrame | None
     ) -> tuple[np.ndarray, ...]:
         if frame is not None:
             return frame.remove_units(arrays)
@@ -386,6 +387,10 @@ class WCS(GWCSAPIMixin, Pipeline):
 
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
+
+        if self.input_frame is None:
+            msg = "Input frame is not defined."
+            return ValueError(msg)
 
         if self.input_frame.naxes == 1:
             result = (result,)
@@ -1132,8 +1137,8 @@ class WCS(GWCSAPIMixin, Pipeline):
         args : float or array-like
             Inputs in ``from_frame``, separate inputs for each dimension.
         with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to any of
-             the inputs being outside the bounding_box are set to ``fill_value``.
+            If True(default) values in the result which correspond to any of
+            the inputs being outside the bounding_box are set to ``fill_value``.
         fill_value : float, optional
             Output value for inputs outside the bounding_box
             (default is np.nan).
@@ -1143,6 +1148,10 @@ class WCS(GWCSAPIMixin, Pipeline):
         from_step = self._get_step(from_frame)
         to_step = self._get_step(to_frame)
         transform = self.get_transform(from_step.step.frame, to_step.step.frame)
+
+        if transform is None:
+            msg = f"No transformation found from {from_frame} to {to_frame}."
+            raise ValueError(msg)
 
         # If frames are of type ``str``, set the object to ``None``.
         from_frame_obj = (

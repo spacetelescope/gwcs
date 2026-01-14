@@ -170,8 +170,3 @@ python_version = "3.11"
 [[tool.mypy.overrides]]
 module = ["gwcs.tests.*", "docs.*"]
 ignore_errors = true
-
-# Temporary ignores to be removed later
-[[tool.mypy.overrides]]
-module = ["gwcs.wcs.*"]
-ignore_errors = true
