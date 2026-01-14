@@ -7,7 +7,7 @@
 
 - Adjust and fix tests. Replace ``logging`` with `warnings``. [#659]
 
-- Update the legacy API. [#660]
+- Update the Native API. [#660]
 
 - Update doc dependencies to remove ``sphinx-tabs`` in favor of ``sphinx-inline-tabs``. [#676]
 

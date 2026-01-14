@@ -1,6 +1,6 @@
-.. _legacy_api:
+.. _native_api:
 
-Legacy Interface
+Native Interface
 ================
 
 The Native Interface is the original GWCS interface that allows complete access to GWCS functionality.
@@ -30,7 +30,7 @@ GWCS keeps track of units defined in the transforms, the inputs (if quantities) 
 the coordinate frames. The type of the result matches the type of the inputs. If the input
 is Quantities the result is quantities, even if the transforms do not support units.
 In this case the units defined in the coordinate frames are used.
-The Legacy API does not work with High Level Objects. These are supported only by the
+The Native API does not work with High Level Objects. These are supported only by the
 High Level API.
 
 It is possible to evaluate any transform between two intermediate frames using the ``transform`` method.
