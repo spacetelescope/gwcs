@@ -173,5 +173,5 @@ ignore_errors = true
 
 # Temporary ignores to be removed later
 [[tool.mypy.overrides]]
-module = ["gwcs.coordinate_frames.*", "gwcs.wcs.*", "gwcs.extension.*"]
+module = ["gwcs.wcs.*", "gwcs.extension.*"]
 ignore_errors = true
