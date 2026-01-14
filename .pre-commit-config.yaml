@@ -32,19 +32,18 @@ repos:
       - id: text-unicode-replacement-char
   # lint and format
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.7
+    rev: v0.14.11
     hooks:
       - id: ruff-check
         args:
           - --fix
           - --show-fixes
       - id: ruff-format
-  # # type checking
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.19.0
-  #   hooks:
-  #     - id: mypy
-  #       exclude: 'tests/.*'
+  # type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.1
+    hooks:
+      - id: mypy
   # spell-checking
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -63,7 +62,7 @@ repos:
   #     - id: towncrier-check
   # format YAML and Markdown
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.6.2
+    rev: v3.7.4
     hooks:
       - id: prettier
         types_or:

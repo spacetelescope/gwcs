@@ -159,3 +159,19 @@ ignore = [
 "gwcs/converters/tests/*" = ["S101"]
 "docs/conf.py" = ["INP001", "ERA001"]
 "convert_schemas.py" = ["PTH"]
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+disable_error_code = "import-untyped" # do not check imports
+python_version = "3.11"
+
+# Always ignore tests and docs
+[[tool.mypy.overrides]]
+module = ["gwcs.tests.*", "docs.*"]
+ignore_errors = true
+
+# Temporary ignores to be removed later
+[[tool.mypy.overrides]]
+module = ["gwcs.coordinate_frames.*", "gwcs.wcs.*", "gwcs.extension.*"]
+ignore_errors = true
