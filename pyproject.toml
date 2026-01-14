@@ -2,21 +2,17 @@
 name = "gwcs"
 description = "Generalized World Coordinate System"
 requires-python = ">=3.11"
-authors = [
-    { name = "gwcs developers" },
-]
+authors = [{ name = "gwcs developers" }]
 dependencies = [
-    "asdf >= 3.3.0",
-    "astropy >= 6.0",
-    "numpy>=1.25",
-    "scipy>=1.14.1",
-    "asdf_wcs_schemas >= 0.5.0",
-    "asdf-astropy >= 0.8.0",
+  "asdf >= 3.3.0",
+  "astropy >= 6.0",
+  "numpy>=1.25",
+  "scipy>=1.14.1",
+  "asdf_wcs_schemas >= 0.5.0",
+  "asdf-astropy >= 0.8.0",
 ]
 license-files = ["licenses/LICENSE.rst"]
-dynamic = [
-    "version",
-]
+dynamic = ["version"]
 
 [project.readme]
 file = "README.rst"
@@ -33,35 +29,24 @@ gwcs = "gwcs.extension:get_extensions"
 
 [project.optional-dependencies]
 docs = [
-    "sphinx",
-    "sphinx-automodapi",
-    "sphinx-astropy",
-    "sphinx-copybutton",
-    "sphinx-asdf",
-    "furo",
-    "sphinx-inline-tabs",
-    "matplotlib",
+  "sphinx",
+  "sphinx-automodapi",
+  "sphinx-astropy",
+  "sphinx-copybutton",
+  "sphinx-asdf",
+  "furo",
+  "sphinx-inline-tabs",
+  "matplotlib",
 ]
-test = [
-    "ci-watson>=0.3.0",
-    "pytest>=9.0",
-    "pytest-astropy>=0.11.0",
-]
+test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
 
 [build-system]
-requires = [
-    "setuptools>=61.2",
-    "setuptools_scm[toml]>=3.4",
-]
+requires = ["setuptools>=61.2", "setuptools_scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-"gwcs.tests.data" = [
-    "*",
-]
-"docs.gwcs" = [
-    "*.asdf",
-]
+"gwcs.tests.data" = ["*"]
+"docs.gwcs" = ["*.asdf"]
 
 [tool.setuptools.packages.find]
 namespaces = false
@@ -82,44 +67,37 @@ doctest_rst = "enabled"
 text_file_format = "rst"
 log_cli_level = "INFO"
 xfail_strict = true
-testpaths = [
-    "gwcs",
-    "docs",
-]
+testpaths = ["gwcs", "docs"]
 addopts = [
-    "-ra",
-    "--color=yes",
-    "--doctest-rst",
-    "--strict-config",
-    "--strict-markers",
-    "-p no:legacypath",
+  "-ra",
+  "--color=yes",
+  "--doctest-rst",
+  "--strict-config",
+  "--strict-markers",
+  "-p no:legacypath",
 ]
-norecursedirs = [
-    "build",
-    "docs/_build",
-    ".tox",
-]
+norecursedirs = ["build", "docs/_build", ".tox"]
 filterwarnings = [
-    "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
-    "ignore:numpy.ndarray size changed:RuntimeWarning",
+  "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
+  "ignore:numpy.ndarray size changed:RuntimeWarning",
 ]
 
 [tool.coverage.run]
 omit = [
-    "gwcs/tests/test_*",
-    "gwcs/tags/tests/test_*",
-    "*/gwcs/tests/test_*",
-    "*/gwcs/tags/tests/test_*",
+  "gwcs/tests/test_*",
+  "gwcs/tags/tests/test_*",
+  "*/gwcs/tests/test_*",
+  "*/gwcs/tags/tests/test_*",
 ]
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
-    "except ImportError",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "def main\\(.*\\):",
-    "pragma: py{ignore_python_version}",
+  "pragma: no cover",
+  "except ImportError",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "def main\\(.*\\):",
+  "pragma: py{ignore_python_version}",
 ]
 
 [tool.setuptools_scm]
@@ -128,52 +106,52 @@ local_scheme = "dirty-tag"
 
 [tool.ruff.lint]
 select = [
-    "F",      # Pyflakes (part of default flake8)
-    "W", "E", # pycodestyle (part of default flake8)
-    "I",      # isort (import sorting)
-    "UP",     # pyupgrade (upgrade code to modern python)
-    "YTT",    # flake8-2020 (system version info)
-    #"ANN",    # flake8-annotations (best practices for type annotations)
-    "S",      # flake8-bandit (security checks)
-    "BLE",    # flake8-blind-except (prevent blind except statements)
-    "B",      # flake8-bugbear (prevent common gotcha bugs)
-    "A",      # flake8-builtins (prevent shadowing of builtins)
-    "C4",     # flake8-comprehensions (best practices for comprehensions)
-    "T10",    # flake8-debugger (prevent debugger statements in code)
-    "EM",     # flake8-errormessages (best practices for error messages)
-    "ISC",    # flake8-implicit-str-concat (prevent implicit string concat)
-    "ICN",    # flake8-import-conventions (enforce import conventions)
-    "INP",    # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
-    "PIE",    # flake8-pie (misc suggested improvement linting)
-    "T20",    # flake8-print (prevent print statements in code)
-    "PT",     # flake8-pytest-style (best practices for pytest)
-    "Q",      # flake8-quotes (best practices for quotes)
-    "RSE",    # flake8-raise (best practices for raising exceptions)
-    "RET",    # flake8-return (best practices for return statements)
-    "SIM",    # flake8-simplify (suggest simplifications to code where possible)
-    "TID",    # flake8-tidy-imports (prevent banned api and best import practices)
-    "INT",    # flake8-gettext (when to use printf style strings)
-    "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
-    "ERA",    # eradicate (remove commented out code)
-    "PGH",    # pygrep (simple grep checks)
-    "PL",     # pylint (general linting, flake8 alternative)
-    "TRY",    # tryceratops (linting for try/except blocks)
-    "FLY",    # flynt (f-string conversion where possible)
-    "NPY",    # NumPy-specific checks (recommendations from NumPy)
-    "PERF",   # Perflint (performance linting)
-    "RUF",    # ruff specific checks
+  "F",   # Pyflakes (part of default flake8)
+  "W",
+  "E",   # pycodestyle (part of default flake8)
+  "I",   # isort (import sorting)
+  "UP",  # pyupgrade (upgrade code to modern python)
+  "YTT", # flake8-2020 (system version info)
+  #"ANN",  # flake8-annotations (best practices for type annotations)
+  "S",    # flake8-bandit (security checks)
+  "BLE",  # flake8-blind-except (prevent blind except statements)
+  "B",    # flake8-bugbear (prevent common gotcha bugs)
+  "A",    # flake8-builtins (prevent shadowing of builtins)
+  "C4",   # flake8-comprehensions (best practices for comprehensions)
+  "T10",  # flake8-debugger (prevent debugger statements in code)
+  "EM",   # flake8-errormessages (best practices for error messages)
+  "ISC",  # flake8-implicit-str-concat (prevent implicit string concat)
+  "ICN",  # flake8-import-conventions (enforce import conventions)
+  "INP",  # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
+  "PIE",  # flake8-pie (misc suggested improvement linting)
+  "T20",  # flake8-print (prevent print statements in code)
+  "PT",   # flake8-pytest-style (best practices for pytest)
+  "Q",    # flake8-quotes (best practices for quotes)
+  "RSE",  # flake8-raise (best practices for raising exceptions)
+  "RET",  # flake8-return (best practices for return statements)
+  "SIM",  # flake8-simplify (suggest simplifications to code where possible)
+  "TID",  # flake8-tidy-imports (prevent banned api and best import practices)
+  "INT",  # flake8-gettext (when to use printf style strings)
+  "PTH",  # flake8-use-pathlib (prefer pathlib over os.path)
+  "ERA",  # eradicate (remove commented out code)
+  "PGH",  # pygrep (simple grep checks)
+  "PL",   # pylint (general linting, flake8 alternative)
+  "TRY",  # tryceratops (linting for try/except blocks)
+  "FLY",  # flynt (f-string conversion where possible)
+  "NPY",  # NumPy-specific checks (recommendations from NumPy)
+  "PERF", # Perflint (performance linting)
+  "RUF",  # ruff specific checks
 ]
 ignore = [
-    "ISC001",  # conflicts with formatter at times
-    "PLR2004", # magic values (this should be dealt with at some point)
-    "PLR0912", # Too many branches in function
-    "PLR0913", # Too many arguments in function
-    "PLR0915", # Too many statements in function
-    "PLC0415", # import outside toplevel, this creates issues with circular and
-               # delayed imports
-    "RUF059",  # Unpacked variable is never used
-    "B028",    # No explicit stacklevel found
-    "RUF043",  # pytest-raises-ambiguous-pattern
+  "ISC001",  # conflicts with formatter at times
+  "PLR2004", # magic values (this should be dealt with at some point)
+  "PLR0912", # Too many branches in function
+  "PLR0913", # Too many arguments in function
+  "PLR0915", # Too many statements in function
+  "PLC0415", # import outside toplevel, this creates issues with circular and delayed imports
+  "RUF059",  # Unpacked variable is never used
+  "B028",    # No explicit stacklevel found
+  "RUF043",  # pytest-raises-ambiguous-pattern
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
