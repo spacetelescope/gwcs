@@ -52,3 +52,18 @@ It is possible to evaluate any transform between two intermediate frames using t
 In this example ``from_frame`` comes after ``to_frame`` in the general WCS pipeline, essentially
 evaluating the inverse of the transform between ``input`` and ``celestial``. Also, typing the
 name of any frame in the pipeline shows some of the attributes of the frame.
+
+.. note::
+
+  The Native API methods do their best to function under a principle of "least surprise".
+  Thus one should expect the following input/output behavior:
+
+  +------------+--------------+
+  | Input Type | Output Type  |
+  +============+==============+
+  | Numerical  | Numerical    |
+  +------------+--------------+
+  | Quantity   | Quantity     |
+  +------------+--------------+
+  | High-Level | Return Error |
+  +------------+--------------+

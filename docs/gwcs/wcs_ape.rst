@@ -10,6 +10,26 @@ in Python. This API is described in the Astropy Proposal for Enhancements (APE) 
 `A shared Python interface for World Coordinate Systems
 <https://doi.org/10.5281/zenodo.1188874>`_.
 
+The shared interface makes a strong distinction betweek the low-level and high-level
+and high-level objects. In APE 14 terminology, a low level object is something that
+functions like an array such as a `~numpy.ndarray`. In contrast, a high level object
+is something that has rich metadata and methods associated with it, like an
+`~astropy.coordinates.SkyCoord`.
+
+.. note::
+  APE 14 does not address the concepts of the ``astropy`` `~astropy.units.Quantity`
+  objects, which are essentially arrays with unit metadata attached to them.
+  ``astropy`` does its best to make `~astropy.units.Quantity` act like
+  `~numpy.ndarray` objects; however, the ``FITSWCS`` implementation of the shared
+  API in ``astropy`` does not support `~astropy.units.Quantity` objects in the
+  low-level interface. Instead ``FITSWCS`` treats `~astropy.units.Quantity` objects
+  as high-level objects.
+
+  GWCS is slightly more flexible in this regard with respect to its low-level
+  interface in that it supports `~astropy.units.Quantity` objects as inputs in
+  the same way as `~numpy.ndarray` objects. This only works if the transforms
+  used within the ``GWCS`` object are defined in a way that supports units.
+
 The base classes that define the low- (`~astropy.wcs.wcsapi.BaseLowLevelWCS`) and high-
 (:class:`~astropy.wcs.wcsapi.BaseHighLevelWCS`) level APIs are in astropy.
 GWCS implements both APIs. Once a GWCS object is created the API methods will be available.
