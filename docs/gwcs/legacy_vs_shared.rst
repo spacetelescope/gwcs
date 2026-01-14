@@ -4,7 +4,7 @@ Differences in functionality between the Legacy and Shared interfaces
 =====================================================================
 
 The Shared API is meant to abstract out the details of the WCS implementation and
-provide a way to evaluate the transforms regardless of the underlying implementations.
+provide a uniform way to evaluate the transforms regardless of the underlying implementations in different WCS packages.
 As such it is the "lowest common denominator" of the existing WCS libraries that support it,
 currently ``astropy.wcs`` and ``gwcs``.
 

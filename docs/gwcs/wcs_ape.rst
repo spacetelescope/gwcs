@@ -12,7 +12,7 @@ in Python. This API is described in the Astropy Proposal for Enhancements (APE) 
 
 The base classes that define the low- (`~astropy.wcs.wcsapi.BaseLowLevelWCS`) and high-
 (:class:`~astropy.wcs.wcsapi.BaseHighLevelWCS`) level APIs are in astropy.
-GWCS implements both APIs. Once a gWCS object is created the API methods will be available.
+GWCS implements both APIs. Once a GWCS object is created the API methods will be available.
 It is recommended that applications use the ``Shared API`` to
 ensure transparent use of ``GWCS`` and ``FITSWCS`` objects.
 
@@ -60,7 +60,7 @@ We list some of them using the example WCS above:
 
 A WCS object may not have a data array attached to it, as it represents a coordinate transformation.
 However, it is usually read in from a data file and in this case there's a data array. The Low Level
-Interface can be used to find out the shape if the array. As discussed
+Interface can be used to find out the shape of the array. As discussed
 in :ref:`pixel-conventions-and-definitions` the WCS uses cartesian order of the coordinates, and hence
 there are two methods for the shape of the data array. Let's assume a data array of shape (4, 5) is
 in a file with the WCS object above. The two methods will return respectively:

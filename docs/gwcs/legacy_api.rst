@@ -3,12 +3,12 @@
 Legacy Interface
 ================
 
-The Legacy Interface is the original GWCS interface, before the Shared API was defined.
+The Native Interface is the original GWCS interface that allows complete access to GWCS functionality.
 
 There are three main methods performing transformations and additional ones to help
 with WCS introspection.
 
-To evaluate the ``forward`` transform the WCS object can be called as a function.
+``forward()`` method evaluates the WCS transformation from the input frame (first frame in the transform) to the output coordinate frame. For convenience, the same can be achieved by invoking the WCS object as a function.
 
 .. doctest-skip::
 
