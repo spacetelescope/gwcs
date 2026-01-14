@@ -33,13 +33,13 @@ gwcs = "gwcs.extension:get_extensions"
 
 [project.optional-dependencies]
 docs = [
-    "sphinx < 9",
+    "sphinx",
     "sphinx-automodapi",
     "sphinx-astropy",
     "sphinx-copybutton",
     "sphinx-asdf",
     "furo",
-    "sphinx-tabs",
+    "sphinx-inline-tabs",
     "matplotlib",
 ]
 test = [
