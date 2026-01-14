@@ -100,7 +100,7 @@ man_pages = [("index", project.lower(), project + " Documentation", [author], 1)
 
 # -- Add in additional sphinx extensions ----------------------------------------
 extensions += ["sphinx_asdf"]  # noqa: F405
-extensions += ["sphinx_tabs.tabs"]
+extensions += ["sphinx_inline_tabs"]
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True

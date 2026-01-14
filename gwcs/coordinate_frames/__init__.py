@@ -6,65 +6,63 @@ In the block diagram, the WCS pipeline has a two stage transformation (two
 astropy Model instances), with an input frame, an output frame and an
 intermediate frame.
 
-.. tabs::
+.. tab:: Diagram
 
-    .. tab:: Diagram
+    .. graphviz::
 
-        .. graphviz::
+        digraph wcs_pipeline {
+            rankdir=TB;
+            node [shape=box, style=filled, fillcolor=lightblue, fontname="Helvetica", margin="0.3,0.3"];
+            edge [fontname="Helvetica"];
 
-            digraph wcs_pipeline {
-                rankdir=TB;
-                node [shape=box, style=filled, fillcolor=lightblue, fontname="Helvetica", margin="0.3,0.3"];
-                edge [fontname="Helvetica"];
+            // Frame nodes
+            input_frame [label="Input\\nFrame"];
+            intermediate_frame [label="Intermediate\\nFrame", shape=diamond];
+            output_frame [label="Output\\nFrame"];
 
-                // Frame nodes
-                input_frame [label="Input\\nFrame"];
-                intermediate_frame [label="Intermediate\\nFrame", shape=diamond];
-                output_frame [label="Output\\nFrame"];
+            // Transform nodes
+            transform1 [label="Transform", shape=ellipse, fillcolor=lightgrey];
+            transform2 [label="Transform", shape=ellipse, fillcolor=lightgrey];
 
-                // Transform nodes
-                transform1 [label="Transform", shape=ellipse, fillcolor=lightgrey];
-                transform2 [label="Transform", shape=ellipse, fillcolor=lightgrey];
+            // Connections
+            input_frame -> transform1;
+            transform1 -> intermediate_frame;
+            intermediate_frame -> transform2;
+            transform2 -> output_frame;
+        }
 
-                // Connections
-                input_frame -> transform1;
-                transform1 -> intermediate_frame;
-                intermediate_frame -> transform2;
-                transform2 -> output_frame;
-            }
+.. tab:: ASCII
 
-    .. tab:: ASCII
+    .. code-block::
 
-        .. code-block::
-
-            ┌───────────────┐
-            │               │
-            │     Input     │
-            │     Frame     │
-            │               │
-            └───────┬───────┘
-                    │
-              ┌─────▼─────┐
-              │ Transform │
-              └─────┬─────┘
-                    │
-            ┌───────▼───────┐
-            │               │
-            │  Intermediate │
-            │     Frame     │
-            │               │
-            └───────┬───────┘
-                    │
-              ┌─────▼─────┐
-              │ Transform │
-              └─────┬─────┘
-                    │
-            ┌───────▼───────┐
-            │               │
-            │    Output     │
-            │     Frame     │
-            │               │
-            └───────────────┘
+        ┌───────────────┐
+        │               │
+        │     Input     │
+        │     Frame     │
+        │               │
+        └───────┬───────┘
+                │
+          ┌─────▼─────┐
+          │ Transform │
+          └─────┬─────┘
+                │
+        ┌───────▼───────┐
+        │               │
+        │  Intermediate │
+        │     Frame     │
+        │               │
+        └───────┬───────┘
+                │
+          ┌─────▼─────┐
+          │ Transform │
+          └─────┬─────┘
+                │
+        ┌───────▼───────┐
+        │               │
+        │    Output     │
+        │     Frame     │
+        │               │
+        └───────────────┘
 
 
 Each frame instance is both metadata for the inputs/outputs of a transform and
@@ -94,125 +92,121 @@ frames as
   [SpectralFrame(axes_order=(1,)), CelestialFrame(axes_order=(2, 0))]
 
 we would map the outputs of this transform into the correct positions in the frames.
- As shown below, this is also used when constructing the inputs to the inverse
- transform.
+As shown below, this is also used when constructing the inputs to the inverse
+transform.
 
 
 When taking the output from the forward transform the following transformation
 is performed by the coordinate frames:
 
-.. tabs::
+.. tab:: Diagram
 
-    .. tab:: Diagram
+    .. graphviz::
+        :align: center
 
-        .. graphviz::
-            :align: center
+        digraph forward_transform {
+            splines="ortho"
+            rankdir=TB;
+            node [style=filled, fontname="Helvetica", margin="0.3,0.3"];
+            edge [fontname="Helvetica"];
 
-            digraph forward_transform {
-                splines="ortho"
-                rankdir=TB;
-                node [style=filled, fontname="Helvetica", margin="0.3,0.3"];
-                edge [fontname="Helvetica"];
+            // Input coordinates
+            input_coords [label="lat, lambda, lon", shape=plaintext];
 
-                // Input coordinates
-                input_coords [label="lat, lambda, lon", shape=plaintext];
+            // Frame nodes with axes_order
+            spectral_frame [label="SpectralFrame\\n(1,)", fillcolor=lightblue];
+            celestial_frame [label="CelestialFrame\\n(2, 0)", fillcolor=lightblue];
 
-                // Frame nodes with axes_order
-                spectral_frame [label="SpectralFrame\\n(1,)", fillcolor=lightblue];
-                celestial_frame [label="CelestialFrame\\n(2, 0)", fillcolor=lightblue];
+            // Output coordinates
+            spectral_output [label="SpectralCoord(lambda)", shape=record, fillcolor=lightyellow];
+            celestial_output [label="SkyCoord((lon, lat))", shape=record, fillcolor=lightyellow];
 
-                // Output coordinates
-                spectral_output [label="SpectralCoord(lambda)", shape=record, fillcolor=lightyellow];
-                celestial_output [label="SkyCoord((lon, lat))", shape=record, fillcolor=lightyellow];
+            // Connections with routing
+            input_coords -> spectral_frame [xlabel="lambda"];
+            input_coords -> celestial_frame [xlabel="lon  "];
+            input_coords -> celestial_frame [xlabel="lat  "];
+            spectral_frame -> spectral_output;
+            celestial_frame -> celestial_output [xlabel="lon  "];
+            celestial_frame -> celestial_output [xlabel="lat  "]
+        }
 
-                // Connections with routing
-                input_coords -> spectral_frame [xlabel="lambda"];
-                input_coords -> celestial_frame [xlabel="lon  "];
-                input_coords -> celestial_frame [xlabel="lat  "];
-                spectral_frame -> spectral_output;
-                celestial_frame -> celestial_output [xlabel="lon  "];
-                celestial_frame -> celestial_output [xlabel="lat  "]
-            }
+.. tab:: ASCII
 
-    .. tab:: ASCII
+    .. code-block::
 
-        .. code-block::
-
-                            lat, lambda, lon
-                            │      │     │
-                            └──────┼─────┼────────┐
-                       ┌───────────┘     └──┐     │
-                       │                    │     │
-             ┌─────────▼────────┐    ┌──────▼─────▼─────┐
-             │                  │    │                  │
-             │  SpectralFrame   │    │  CelestialFrame  │
-             │                  │    │                  │
-             │       (1,)       │    │      (2, 0)      │
-             │                  │    │                  │
-             └─────────┬────────┘    └──────────┬────┬──┘
-                       │                        │    │
-                       │                        │    │
-                       ▼                        ▼    ▼
-            SpectralCoord(lambda)    SkyCoord((lon, lat))
+                        lat, lambda, lon
+                        │      │     │
+                        └──────┼─────┼────────┐
+                   ┌───────────┘     └──┐     │
+                   │                    │     │
+         ┌─────────▼────────┐    ┌──────▼─────▼─────┐
+         │                  │    │                  │
+         │  SpectralFrame   │    │  CelestialFrame  │
+         │                  │    │                  │
+         │       (1,)       │    │      (2, 0)      │
+         │                  │    │                  │
+         └─────────┬────────┘    └──────────┬────┬──┘
+                   │                        │    │
+                   │                        │    │
+                   ▼                        ▼    ▼
+        SpectralCoord(lambda)    SkyCoord((lon, lat))
 
 
 When considering the backward transform the following transformations take place
 in the coordinate frames before the transform is called:
 
-.. tabs::
+.. tab:: Diagram
 
-    .. tab:: Diagram
+    .. graphviz::
+        :align: center
 
-        .. graphviz::
-            :align: center
+        digraph backward_transform {
+            splines="ortho"
+            rankdir=TB;
+            node [style=filled, fontname="Helvetica", margin="0.3,0.3"];
+            edge [fontname="Helvetica"];
 
-            digraph backward_transform {
-                splines="ortho"
-                rankdir=TB;
-                node [style=filled, fontname="Helvetica", margin="0.3,0.3"];
-                edge [fontname="Helvetica"];
+            // Input high-level objects
+            spectral_input [label="SpectralCoord(lambda)", shape=record, fillcolor=lightyellow];
+            celestial_input [label="SkyCoord((lon, lat))", shape=record, fillcolor=lightyellow];
 
-                // Input high-level objects
-                spectral_input [label="SpectralCoord(lambda)", shape=record, fillcolor=lightyellow];
-                celestial_input [label="SkyCoord((lon, lat))", shape=record, fillcolor=lightyellow];
+            // Initial array from high-level objects
+            array_unsorted [label="[lambda, lon, lat]", shape=plaintext];
 
-                // Initial array from high-level objects
-                array_unsorted [label="[lambda, lon, lat]", shape=plaintext];
+            // Sorting operation
+            sort_axes [label="Sort by axes_order", fillcolor=lightgrey];
 
-                // Sorting operation
-                sort_axes [label="Sort by axes_order", fillcolor=lightgrey];
+            // Final sorted array for transform input
+            array_sorted [label="lat, lambda, lon", shape=plaintext];
 
-                // Final sorted array for transform input
-                array_sorted [label="lat, lambda, lon", shape=plaintext];
+            // Connections
+            spectral_input -> array_unsorted [xlabel="lambda "];
+            celestial_input -> array_unsorted [xlabel="lon  "];
+            celestial_input -> array_unsorted [xlabel="lat  "];
+            array_unsorted -> sort_axes;
+            sort_axes -> array_sorted;
+        }
 
-                // Connections
-                spectral_input -> array_unsorted [xlabel="lambda "];
-                celestial_input -> array_unsorted [xlabel="lon  "];
-                celestial_input -> array_unsorted [xlabel="lat  "];
-                array_unsorted -> sort_axes;
-                sort_axes -> array_sorted;
-            }
+.. tab:: ASCII
 
-    .. tab:: ASCII
+    .. code-block::
 
-        .. code-block::
-
-            SpectralCoord(lambda)    SkyCoord((lon, lat))
-                        │                        │    │
-                        └─────┐     ┌────────────┘    │
-                              │     │    ┌────────────┘
-                              ▼     ▼    ▼
-                          [lambda, lon, lat]
-                              │     │    │
-                              │     │    │
-                       ┌──────▼─────▼────▼────┐
-                       │                      │
-                       │  Sort by axes_order  │
-                       │                      │
-                       └────┬──────┬─────┬────┘
-                            │      │     │
-                            ▼      ▼     ▼
-                            lat, lambda, lon
+        SpectralCoord(lambda)    SkyCoord((lon, lat))
+                    │                        │    │
+                    └─────┐     ┌────────────┘    │
+                          │     │    ┌────────────┘
+                          ▼     ▼    ▼
+                      [lambda, lon, lat]
+                          │     │    │
+                          │     │    │
+                   ┌──────▼─────▼────▼────┐
+                   │                      │
+                   │  Sort by axes_order  │
+                   │                      │
+                   └────┬──────┬─────┬────┘
+                        │      │     │
+                        ▼      ▼     ▼
+                        lat, lambda, lon
 
 """  # noqa: E501
 
