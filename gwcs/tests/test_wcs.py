@@ -516,7 +516,11 @@ def test_bounding_box_eval():
         (
             cf.CoordinateFrame(
                 naxes=3,
-                axes_type=("PIXEL", "PIXEL", "PIXEL"),
+                axes_type=(
+                    "PIXEL",
+                    "PIXEL",
+                    "PIXEL",
+                ),
                 axes_order=(0, 1, 2),
                 name="detector",
             ),
@@ -1702,8 +1706,8 @@ def test_quantities_in_pipeline_forward(gwcs_with_pipeline_celestial):
 
     output_world = iwcs(*input_pixel)
 
-    assert output_world[0].unit == u.deg
-    assert output_world[1].unit == u.deg
+    assert output_world[0].unit == u.arcsec
+    assert output_world[1].unit == u.arcsec
     assert u.allclose(output_world[0], 20 * u.arcsec + 1 * u.deg)
     assert u.allclose(output_world[1], 15 * u.deg + 2 * u.deg)
 
@@ -1730,10 +1734,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    pixel = iwcs.invert(*input_world)
-
-    assert all(isinstance(p, u.Quantity) for p in pixel)
-    assert u.allclose(pixel, [1, 1] * u.pix)
+    with pytest.raises(
+        TypeError, match=r"High Level objects are not supported with the native"
+    ):
+        iwcs.invert(*input_world)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1882,7 +1886,11 @@ def test_parameterless_transform():
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
     assert gwcs.invert(1, 1) == (1, 1)
-    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
+    # Strictly speaking it's correct that this fails Because
+    # for this setup the HLO are Quantities
+    with pytest.raises(TypeError) as e:
+        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
+    assert "High Level objects are not supported with the native" in str(e)
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

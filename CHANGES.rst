@@ -7,6 +7,8 @@
 
 - Adjust and fix tests. Replace ``logging`` with `warnings``. [#659]
 
+- Update the legacy API. [#660]
+
 0.26.1 (2025-11-19)
 -------------------
 - Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
