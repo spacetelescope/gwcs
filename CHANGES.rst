@@ -9,6 +9,8 @@
 
 - Update the legacy API. [#660]
 
+- Update doc dependencies to remove ``sphinx-tabs`` in favor of ``sphinx-inline-tabs``. [#676]
+
 0.26.1 (2025-11-19)
 -------------------
 - Fix an indexing bug in ``spectroscopy.SellmeierZemax`` where the output ``n`` for array-type wavelength
