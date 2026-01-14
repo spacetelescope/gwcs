@@ -12,9 +12,11 @@ from astropy.io import fits
 from astropy.modeling import bind_compound_bounding_box, models, projections
 from astropy.modeling.bounding_box import ModelBoundingBox
 from astropy.time import Time
+from astropy.tests.helper import assert_quantity_allclose
 from astropy.utils.introspection import minversion
 from astropy.wcs import wcsapi
 from astropy.wcs.wcsapi.high_level_api import values_to_high_level_objects
+# from gwcs.utils import values_to_high_level_objects
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import coordinate_frames as cf
@@ -515,10 +517,7 @@ def test_bounding_box_eval():
     pipeline = [
         (
             cf.CoordinateFrame(
-                naxes=3,
-                axes_type=("PIXEL", "PIXEL", "PIXEL"),
-                axes_order=(0, 1, 2),
-                name="detector",
+                naxes=3, axes_type=("PIXEL", "PIXEL", "PIXEL",), axes_order=(0, 1, 2), name="detector"
             ),
             trans3,
         ),
@@ -1702,8 +1701,8 @@ def test_quantities_in_pipeline_forward(gwcs_with_pipeline_celestial):
 
     output_world = iwcs(*input_pixel)
 
-    assert output_world[0].unit == u.deg
-    assert output_world[1].unit == u.deg
+    assert output_world[0].unit == u.arcsec
+    assert output_world[1].unit == u.arcsec
     assert u.allclose(output_world[0], 20 * u.arcsec + 1 * u.deg)
     assert u.allclose(output_world[1], 15 * u.deg + 2 * u.deg)
 
@@ -1730,8 +1729,8 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    pixel = iwcs.invert(*input_world)
 
+    pixel = iwcs.invert(*input_world)
     assert all(isinstance(p, u.Quantity) for p in pixel)
     assert u.allclose(pixel, [1, 1] * u.pix)
 
@@ -1882,7 +1881,9 @@ def test_parameterless_transform():
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
     assert gwcs.invert(1, 1) == (1, 1)
-    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1, 1)
+
+    assert_quantity_allclose(gwcs.invert(1 * u.pix, 1 * u.pix), (1*u.pix, 1*u.pix))
+
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

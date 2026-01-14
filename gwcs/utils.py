@@ -479,19 +479,19 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-def is_high_level(*args, low_level_wcs):
+def is_high_level(*args, low_level_wcs, object_classes=None, object_components=None):
     """
     Determine if args matches the high level classes as defined by
     ``low_level_wcs``.
     """
-    if len(args) != len(low_level_wcs.world_axis_object_classes):
+    if object_classes is None:
+        return False
+    if len(args) != len(object_classes):
         return False
 
     type_match = [
         (type(arg), waoc[0])
-        for arg, waoc in zip(
-            args, low_level_wcs.world_axis_object_classes.values(), strict=False
-        )
+        for arg, waoc in zip(args, object_classes.values(), strict=False)
     ]
 
     types_are_high_level = [argt is t for argt, t in type_match]
