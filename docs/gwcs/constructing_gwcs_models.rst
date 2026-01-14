@@ -30,7 +30,7 @@ and the physical type of the axis (e.g., wavelength), as well as keeping
 track of the axis order.
 
 Since it is often useful to obtain coordinates in an intermediate frame of
-reference, GWCS allows to consist of multiple steps each with its own transformo,
+reference, GWCS allows to consist of multiple steps each with its own transform,
 which itself may be a compound transform consisting of multiple elemental
 transforms.
 For example, for spectrographs, it is useful to have access to coordinates
@@ -115,7 +115,7 @@ becomes:
 
   >>> det2sky = pixelshift | pixelscale | tangent_projection | celestial_rotation
 
-The remaining elements to defining the WCS are he input and output
+The remaining elements to defining the WCS are the input and output
 frames of reference. While the GWCS scheme allows intermediate frames
 of reference, this example doesn't have any. The output frame is
 expressed with no associated transform
