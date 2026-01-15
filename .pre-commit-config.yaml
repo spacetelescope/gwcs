@@ -55,14 +55,14 @@ repos:
         additional_dependencies:
           - tomli
         exclude: ".*.asdf"
-  # # validate change log and fragments in `changes/`
-  # - repo: https://github.com/twisted/towncrier
-  #   rev: 25.8.0
-  #   hooks:
-  #     - id: towncrier-check
+  # validate change log and fragments in `changes/`
+  - repo: https://github.com/twisted/towncrier
+    rev: 25.8.0
+    hooks:
+      - id: towncrier-check
   # format YAML and Markdown
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.7.4
+    rev: v3.8.0
     hooks:
       - id: prettier
         types_or:
