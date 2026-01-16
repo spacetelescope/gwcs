@@ -170,3 +170,26 @@ python_version = "3.11"
 [[tool.mypy.overrides]]
 module = ["gwcs.tests.*", "docs.*"]
 ignore_errors = true
+
+[tool.towncrier]
+filename = "CHANGES.rst"
+directory = "changes"
+package = "gwcs"
+title_format = "{version} ({project_date})"
+ignore = [".gitkeep"]
+wrap = true
+issue_format = "`#{issue} <https://github.com/spacetelescope/gwcs/issues/{issue}>`_"
+
+[tool.towncrier.fragment.feature]
+name = "New Features"
+
+[tool.towncrier.fragment.breaking]
+name = "Breaking Changes"
+
+[tool.towncrier.fragment.bugfix]
+name = "Bug Fixes"
+
+[tool.towncrier.fragment.doc]
+name = "Documentation"
+
+[tool.towncrier.fragment.misc]
