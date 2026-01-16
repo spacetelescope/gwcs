@@ -74,6 +74,7 @@ Reference
 .. toctree::
   :maxdepth: 3
 
+  changes.rst
   gwcs/api.rst
 
 

@@ -3,9 +3,9 @@
 - Raise an error when inserting a transform before the first coordinate frame. [#654]
 
 - Remove ``with_units`` argument from ``__call__`` and ``invert``. Use the Shared API
-  functions instead, ``pixel_to_world`` and `world_to_pixel``. [#635]
+  functions instead, ``pixel_to_world`` and ``world_to_pixel``. [#635]
 
-- Adjust and fix tests. Replace ``logging`` with `warnings``. [#659]
+- Adjust and fix tests. Replace ``logging`` with ``warnings``. [#659]
 
 - Update the Native API. [#660]
 
@@ -236,8 +236,8 @@ Bug Fixes
 Bug Fixes
 ^^^^^^^^^
 
-- `world_axis_object_components` and `world_axis_object_classes` now ensure
-  unique keys in `CompositeFrame` and `CoordinateFrame`. [#356]
+- ``world_axis_object_components`` and ``world_axis_object_classes`` now ensure
+  unique keys in ``CompositeFrame`` and ``CoordinateFrame``. [#356]
 
 - Fix issue where RuntimeWarning is raised when there are NaNs in coordinates
   in angle wrapping code [#367]
@@ -252,7 +252,7 @@ New Features
 - ``wcs_from_points`` now includes fitting for the inverse transform. [#349]
 
 - Generalized ``WCS.to_fits_sip`` to be able to create a 2D celestial FITS WCS
-  from celestial subspace of the ``WCS``. Also, now `WCS.to_fits_sip``
+  from celestial subspace of the ``WCS``. Also, now ``WCS.to_fits_sip``
   supports arbitrary order of output axes. [#357]
 
 
@@ -274,7 +274,7 @@ Bug Fixes
 New Features
 ^^^^^^^^^^^^
 
-- Added an option to `to_fits_sip()` to be able to specify the reference
+- Added an option to ``to_fits_sip()`` to be able to specify the reference
   point (``crpix``) of the FITS WCS. [#337]
 
 - Added support for providing custom range of degrees in ``to_fits_sip``. [#339]
@@ -327,7 +327,7 @@ Bug Fixes
 
 - Fix a bug in polygon fill for zero-width bounding boxes. [#293]
 
-- Add an optional parameter ``input_frame`` to ``wcstools.wcs_from_fiducial`. [#312]
+- Add an optional parameter ``input_frame`` to ``wcstools.wcs_from_fiducial``. [#312]
 
 0.13.0 (2020-03-26)
 -------------------
