@@ -388,21 +388,18 @@ class WCS(GWCSAPIMixin, Pipeline):
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
-        if self.input_frame is None:
-            msg = "Input frame is not defined."
-            return ValueError(msg)
-
-        if self.input_frame.naxes == 1:
-            result = (result,)
-        result = self._make_output_units_consistent(
-            transform,
-            *result,
-            frame=self.input_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
-        if self.input_frame.naxes == 1:
-            return result[0]
+        if self.input_frame is not None:
+            if self.input_frame.naxes == 1:
+                result = (result,)
+            result = self._make_output_units_consistent(
+                transform,
+                *result,
+                frame=self.input_frame,
+                input_is_quantity=input_is_quantity,
+                transform_uses_quantity=transform_uses_quantity,
+            )
+            if self.input_frame.naxes == 1:
+                return result[0]
         return result
 
     def outside_footprint(self, world_arrays):
