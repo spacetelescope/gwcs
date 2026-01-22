@@ -1,1 +1,0 @@
-Fix gwcs evaluation when the input or output frames are ``None`` or ``EmptyFrame``.
