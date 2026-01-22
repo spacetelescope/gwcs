@@ -4,6 +4,7 @@ import numpy as np
 from astropy import time
 from astropy import units as u
 
+from ._axis import AxisType
 from ._core import CoordinateFrame
 
 __all__ = ["TemporalFrame"]
@@ -49,7 +50,7 @@ class TemporalFrame(CoordinateFrame):
 
         super().__init__(
             naxes=1,
-            axes_type="TIME",
+            axes_type=AxisType.TIME,
             axes_order=axes_order,
             axes_names=axes_names,
             reference_frame=reference_frame,

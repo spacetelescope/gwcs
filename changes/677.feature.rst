@@ -1,0 +1,1 @@
+Add an enum to define the options for ``axis_type`` arguments in functions.
