@@ -66,16 +66,21 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
     def _remove_quantity_output(self, result, frame):
-        if frame.naxes == 1:
-            result = [result]
+        if frame is not None:
+            if frame.naxes == 1:
+                result = [result]
 
-        result = tuple(
-            r.to_value(unit) if isinstance(r, u.Quantity) else r
-            for r, unit in zip(result, frame.unit, strict=False)
-        )
+            result = tuple(
+                r.to_value(unit) if isinstance(r, u.Quantity) else r
+                for r, unit in zip(result, frame.unit, strict=False)
+            )
 
         # If we only have one output axes, we shouldn't return a tuple.
-        if self.output_frame.naxes == 1 and isinstance(result, tuple):
+        if (
+            self.output_frame is not None
+            and self.output_frame.naxes == 1
+            and isinstance(result, tuple)
+        ):
             return result[0]
         return result
 
@@ -243,6 +248,9 @@ class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
 
     @property
     def world_axis_object_classes(self):
+        if self.output_frame is None:
+            return None
+
         return self.output_frame.world_axis_object_classes
 
     @property
