@@ -484,7 +484,9 @@ def is_high_level(*args, low_level_wcs):
     Determine if args matches the high level classes as defined by
     ``low_level_wcs``.
     """
-    if len(args) != len(low_level_wcs.world_axis_object_classes):
+    if low_level_wcs.world_axis_object_classes is None or len(args) != len(
+        low_level_wcs.world_axis_object_classes
+    ):
         return False
 
     type_match = [

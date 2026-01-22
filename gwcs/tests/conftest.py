@@ -8,6 +8,16 @@ from gwcs import examples, geometry
 
 
 @pytest.fixture
+def gwcs_simple_2d():
+    return examples.gwcs_simple_2d()
+
+
+@pytest.fixture
+def gwcs_empty_output_2d():
+    return examples.gwcs_empty_output_2d()
+
+
+@pytest.fixture
 def gwcs_2d_quantity_shift():
     return examples.gwcs_2d_quantity_shift()
 
