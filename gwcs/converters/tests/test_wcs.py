@@ -111,6 +111,7 @@ def _frame_factory():
 
     return [
         cf.CelestialFrame(reference_frame=coord.ICRS()),
+        cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(1, 0)),
         cf.CelestialFrame(reference_frame=coord.FK5(equinox=time.Time("2010-01-01"))),
         cf.CelestialFrame(
             reference_frame=coord.FK4(
@@ -147,8 +148,27 @@ def _frame_factory():
                 obsgeovel=[2, 1, 8] * (u.m / u.s),
             )
         ),
+        cf.SpectralFrame(name="freq", unit=(u.Hz,), axes_order=(2,)),
+        cf.SpectralFrame(name="wave", unit=(u.m,), axes_order=(2,)),
         cf.StokesFrame(),
+        cf.StokesFrame(name="polarisation", axes_order=(3,)),
         cf.TemporalFrame(time.Time("2011-01-01")),
+        cf.TemporalFrame(time.Time("2011-01-01"), axes_order=(2,)),
+        cf.Frame2D(),
+        cf.Frame2D(name="pixels"),
+        cf.Frame2D(name="detector", axes_order=(1, 0)),
+        cf.Frame2D(name="world", axes_order=(0, 1), unit=(u.m, u.km)),
+        cf.Frame2D(
+            name="reverse_world",
+            axes_order=(1, 0),
+            unit=(u.m, u.km),
+            axes_names=("foo", "bar"),
+        ),
+        cf.CoordinateFrame(
+            naxes=7,
+            axes_type=((cf.AxisType.SPATIAL,) * 4) + ((cf.AxisType.PIXEL,) * 3),
+            axes_order=tuple(range(7)),
+        ),
     ]
 
 
