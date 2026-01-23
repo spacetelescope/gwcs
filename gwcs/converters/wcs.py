@@ -13,6 +13,7 @@ __all__ = [
     "CelestialFrameConverter",
     "CompositeFrameConverter",
     "FITSImagingWCSConverter",
+    "Frame2DConverter",
     "FrameConverter",
     "SpectralFrameConverter",
     "StepConverter",
