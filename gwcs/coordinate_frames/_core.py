@@ -173,6 +173,11 @@ class CoordinateFrame(BaseCoordinateFrame):
         """
         return False
 
+    @property
+    def raw_properties(self) -> FrameProperties:
+        """The raw FrameProperties object for this frame."""
+        return self._prop
+
     def to_high_level_coordinates(self, *values):
         """
         Convert "values" to high level coordinate objects described by this frame.

@@ -1,7 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import annotations
 
 import warnings
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from asdf.extension import Converter
 from asdf_astropy.converters.transform.core import (
@@ -9,10 +11,14 @@ from asdf_astropy.converters.transform.core import (
     parameter_to_value,
 )
 
+if TYPE_CHECKING:
+    from gwcs.coordinate_frames import CoordinateFrame
+
 __all__ = [
     "CelestialFrameConverter",
     "CompositeFrameConverter",
     "FITSImagingWCSConverter",
+    "Frame2DConverter",
     "FrameConverter",
     "SpectralFrameConverter",
     "StepConverter",
@@ -96,7 +102,7 @@ class FrameConverter(Converter):
 
         return kwargs
 
-    def _to_yaml_tree(self, frame, tag, ctx):
+    def _to_yaml_tree(self, frame: CoordinateFrame, tag, ctx):
         from gwcs.coordinate_frames import CoordinateFrame
 
         node = {}
@@ -105,23 +111,25 @@ class FrameConverter(Converter):
 
         # We want to check that it is exactly this type and not a subclass
         if type(frame) is CoordinateFrame:
-            node["axes_type"] = frame.axes_type
+            node["axes_type"] = [
+                str(axis_type) for axis_type in frame.raw_properties.axes_type
+            ]
             node["naxes"] = frame.naxes
 
         if frame.axes_order is not None:
             node["axes_order"] = list(frame.axes_order)
 
-        if frame.axes_names is not None:
-            node["axes_names"] = list(frame.axes_names)
+        if frame.raw_properties.axes_names is not None:
+            node["axes_names"] = list(frame.raw_properties.axes_names)
 
         if frame.reference_frame is not None:
             node["reference_frame"] = frame.reference_frame
 
-        if frame.unit is not None:
-            node["unit"] = list(frame.unit)
+        if frame.raw_properties.unit is not None:
+            node["unit"] = list(frame.raw_properties.unit)
 
-        if frame.axis_physical_types is not None:
-            node["axis_physical_types"] = list(frame.axis_physical_types)
+        if frame.raw_properties.axis_physical_types is not None:
+            node["axis_physical_types"] = list(frame.raw_properties.axis_physical_types)
 
         return node
 

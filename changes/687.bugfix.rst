@@ -1,0 +1,2 @@
+Fix bug with ``axes_order`` permuting the properties of a ``CoordinateFrame`` when
+it is serialized and deserialized from ASDF.
