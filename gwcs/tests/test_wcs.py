@@ -100,39 +100,6 @@ def test_create_wcs():
     assert_allclose(gw3(1, 2), res)
 
 
-def test_init_no_transform():
-    """
-    Test initializing a WCS object without a forward_transform.
-    """
-    gw = wcs.WCS(output_frame="icrs")
-    assert len(gw._pipeline) == 2
-    assert gw.pipeline[0].frame.name == "detector"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw.pipeline[0][0].name == "detector"
-    assert gw.pipeline[1].frame.name == "icrs"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw.pipeline[1][0].name == "icrs"
-    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
-    gw = wcs.WCS(output_frame=icrs, input_frame=detector)
-    assert gw._pipeline[0].frame.name == "detector"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw._pipeline[0][0].name == "detector"
-    assert gw._pipeline[1].frame.name == "icrs"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw._pipeline[1][0].name == "icrs"
-    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
-    with pytest.raises(NotImplementedError):
-        gw(1, 2)
-
-
 def test_init_no_output_frame():
     """
     Test initializing a WCS without an output_frame raises an error.
@@ -1520,8 +1487,33 @@ def test_spatial_spectral_stokes():
 
 
 def test_wcs_str():
-    w = wcs.WCS(output_frame="icrs")
-    assert "icrs" in str(w)
+    gw = wcs.WCS(forward_transform=m1, output_frame="icrs")
+    assert "icrs" in str(gw)
+    assert len(gw._pipeline) == 2
+    assert gw.pipeline[0].frame.name == "detector"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw.pipeline[0][0].name == "detector"
+    assert gw.pipeline[1].frame.name == "icrs"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw.pipeline[1][0].name == "icrs"
+    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
+
+    gw = wcs.WCS(forward_transform=m1, output_frame=icrs, input_frame=detector)
+    assert gw._pipeline[0].frame.name == "detector"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw._pipeline[0][0].name == "detector"
+    assert gw._pipeline[1].frame.name == "icrs"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw._pipeline[1][0].name == "icrs"
+    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
 
 
 def test_bounding_box_is_returned_F():

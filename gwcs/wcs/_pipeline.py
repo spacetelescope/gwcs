@@ -15,7 +15,7 @@ from ._step import IndexedStep, Step, StepTuple
 __all__ = ["ForwardTransform", "Pipeline"]
 
 # Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple], None]  # noqa: UP007
+ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple]]  # noqa: UP007
 Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 
 
@@ -30,7 +30,8 @@ class Pipeline:
 
     def __init__(
         self,
-        forward_transform: ForwardTransform = None,
+        forward_transform: ForwardTransform,
+        *,
         input_frame: str | CoordinateFrame | None = None,
         output_frame: str | CoordinateFrame | None = None,
     ) -> None:
@@ -64,18 +65,6 @@ class Pipeline:
         -------
         An initialized pipeline.
         """
-        if forward_transform is None:
-            # Initialize a WCS without a forward_transform - allows building a
-            # WCS programmatically.
-            if output_frame is None:
-                msg = "An output_frame must be specified if forward_transform is None."
-                raise CoordinateFrameError(msg)
-
-            forward_transform = [
-                Step(input_frame, None),
-                Step(output_frame, None),
-            ]
-
         if isinstance(forward_transform, Model):
             if output_frame is None:
                 msg = (
@@ -90,7 +79,7 @@ class Pipeline:
 
         if not isinstance(forward_transform, list):
             msg = (
-                "Expected forward_transform to be a None, model, or a "
+                "Expected forward_transform to be Model, or a "
                 f"(frame, transform) list, got {type(forward_transform)}"
             )
             raise TypeError(msg)

@@ -107,12 +107,16 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def __init__(
         self,
-        forward_transform: ForwardTransform = None,
+        forward_transform: ForwardTransform,
         input_frame: CoordinateFrame | None = None,
         output_frame: CoordinateFrame | None = None,
         name: str | None = None,
     ) -> None:
-        super().__init__(forward_transform, input_frame, output_frame)
+        super().__init__(
+            forward_transform=forward_transform,
+            input_frame=input_frame,
+            output_frame=output_frame,
+        )
 
         self._approx_inverse = None
         self._name = "" if name is None else name
