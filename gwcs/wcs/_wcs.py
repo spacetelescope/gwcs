@@ -24,7 +24,7 @@ from astropy.wcs.wcsapi.high_level_api import (
 )
 from scipy import optimize
 
-from gwcs.api import GWCSAPIMixin
+from gwcs.api import WCSAPIMixin
 from gwcs.coordinate_frames import (
     AxisType,
     CelestialFrame,
@@ -84,7 +84,7 @@ class _WorldAxisInfo:
         self.input_axes = input_axes
 
 
-class WCS(GWCSAPIMixin, Pipeline):
+class WCS(Pipeline, WCSAPIMixin):
     """
     Basic WCS class.
 
@@ -112,7 +112,7 @@ class WCS(GWCSAPIMixin, Pipeline):
         output_frame: CoordinateFrame | None = None,
         name: str | None = None,
     ) -> None:
-        super(GWCSAPIMixin, self).__init__(forward_transform, input_frame, output_frame)
+        super().__init__(forward_transform, input_frame, output_frame)
 
         self._approx_inverse = None
         self._name = "" if name is None else name
@@ -1291,7 +1291,7 @@ class WCS(GWCSAPIMixin, Pipeline):
                 [self._remove_units_input(b, self.input_frame) for b in bb]
             )
         else:
-            vertices = np.array(list(itertools.product(*bb))).T
+            vertices = np.array(list(itertools.product(*bb))).T  # type: ignore[assignment]
 
         # workaround an issue with bbox with quantity, interval needs to be a cquantity,
         # not a list of quantities strip units
