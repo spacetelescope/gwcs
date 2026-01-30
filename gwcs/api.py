@@ -15,6 +15,7 @@ from astropy.modeling import separable
 from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 
 from gwcs import utils
+from gwcs.coordinate_frames import EmptyFrame
 
 if TYPE_CHECKING:
     from astropy.modeling import Model
@@ -33,12 +34,12 @@ class NativeAPIMixin(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def input_frame(self) -> CoordinateFrame | None:
+    def input_frame(self) -> CoordinateFrame:
         """The input coordinate frame."""
 
     @property
     @abc.abstractmethod
-    def output_frame(self) -> CoordinateFrame | None:
+    def output_frame(self) -> CoordinateFrame:
         """The output coordinate frame."""
 
     @property
@@ -66,7 +67,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         The number of axes in the pixel coordinate system.
         """
-        if self.input_frame is None:
+        if isinstance(self.input_frame, EmptyFrame):
             # This is because astropy.modeling.Model does not type hint n_inputs
             return self.forward_transform.n_inputs  # type: ignore[no-any-return]
         return self.input_frame.naxes
@@ -76,7 +77,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         The number of axes in the world coordinate system.
         """
-        if self.output_frame is None:
+        if isinstance(self.output_frame, EmptyFrame):
             # This is because astropy.modeling.Model does not type hint n_inputs
             return self.forward_transform.n_outputs  # type: ignore[no-any-return]
         return self.output_frame.naxes
@@ -103,12 +104,12 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         specification document, units that do not follow this standard are still
         allowed, but just not recommended).
         """
-        if self.output_frame is None:
+        if isinstance(self.output_frame, EmptyFrame):
             return ()
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
-    def _remove_quantity_output(self, result, frame):
-        if frame is not None:
+    def _remove_quantity_output(self, result, frame: CoordinateFrame):
+        if not isinstance(frame, EmptyFrame):
             if frame.naxes == 1:
                 result = [result]
 
@@ -119,7 +120,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
         # If we only have one output axes, we shouldn't return a tuple.
         if (
-            self.output_frame is not None
+            not isinstance(self.output_frame, EmptyFrame)
             and self.output_frame.naxes == 1
             and isinstance(result, tuple)
         ):
@@ -257,7 +258,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         if value is None:
             self._pixel_shape = None
             return
-        wcs_naxes = self.input_frame.naxes
+        wcs_naxes = self.pixel_n_dim
         if len(value) != wcs_naxes:
             msg = (
                 "The number of data axes, "
@@ -290,7 +291,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
     @property
     def world_axis_object_classes(self):
-        if self.output_frame is None:
+        if isinstance(self.output_frame, EmptyFrame):
             return None
 
         return self.output_frame.world_axis_object_classes
@@ -304,7 +305,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         An iterable of strings describing the name for each pixel axis.
         """
-        if self.input_frame is not None:
+        if not isinstance(self.input_frame, EmptyFrame):
             return self.input_frame.axes_names
         return tuple([""] * self.pixel_n_dim)
 
@@ -313,6 +314,6 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         An iterable of strings describing the name for each world axis.
         """
-        if self.output_frame is not None:
+        if not isinstance(self.output_frame, EmptyFrame):
             return self.output_frame.axes_names
         return tuple([""] * self.world_n_dim)

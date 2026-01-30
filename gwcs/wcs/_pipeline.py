@@ -6,7 +6,7 @@ from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.units import Unit
 
-from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
+from gwcs.coordinate_frames import CoordinateFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
@@ -105,6 +105,22 @@ class Pipeline:
         """
         return [step.frame.name for step in self._pipeline]
 
+    def get_frame(self, frame: str | CoordinateFrame) -> CoordinateFrame:
+        """
+        Return the frame object corresponding to the given frame name.
+
+        Parameters
+        ----------
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            Name of the frame or the frame object.
+
+        Returns
+        -------
+        frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            The frame object corresponding to the given name.
+        """
+        return self._pipeline[self._frame_index(frame)].frame
+
     def _wrap_step(
         self, step: Step | StepTuple, *, replace_index: int | None = None
     ) -> Step:
@@ -167,30 +183,19 @@ class Pipeline:
 
         self._check_last_step()
 
-    @staticmethod
-    def _handle_empty_frame(frame: CoordinateFrame | None) -> CoordinateFrame | None:
-        """
-        Handle the case where the frame is an EmptyFrame.
-        """
-        return None if isinstance(frame, EmptyFrame) else frame
-
     @property
-    def input_frame(self) -> CoordinateFrame | None:
+    def input_frame(self) -> CoordinateFrame:
         """
         Return the input frame name of the pipeline.
         """
-        return self._handle_empty_frame(
-            self._pipeline[0].frame if self._pipeline else None
-        )
+        return self._pipeline[0].frame
 
     @property
-    def output_frame(self) -> CoordinateFrame | None:
+    def output_frame(self) -> CoordinateFrame:
         """
         Return the output frame name of the pipeline.
         """
-        return self._handle_empty_frame(
-            self._pipeline[-1].frame if self._pipeline else None
-        )
+        return self._pipeline[-1].frame
 
     @property
     def unit(self) -> Unit | None:

@@ -37,13 +37,13 @@ class Step:
         self.transform = transform
 
     @property
-    def frame(self):
+    def frame(self) -> CoordinateFrame:
         return self._frame
 
     @frame.setter
-    def frame(self, val):
-        if not isinstance(val, CoordinateFrame | str):
-            msg = '"frame" should be an instance of CoordinateFrame or a string.'
+    def frame(self, val: CoordinateFrame):
+        if not isinstance(val, CoordinateFrame):
+            msg = '"frame" should be an instance of CoordinateFrame.'
             raise TypeError(msg)
 
         self._frame = val
