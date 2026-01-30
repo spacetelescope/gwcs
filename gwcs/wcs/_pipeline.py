@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from functools import reduce
 from typing import TypeAlias, Union
@@ -10,13 +12,12 @@ from gwcs.coordinate_frames import CoordinateFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
-from ._step import IndexedStep, Step, StepTuple
+from ._step import IndexedStep, Mdl, Step, StepTuple
 
 __all__ = ["ForwardTransform", "Pipeline"]
 
 # Type aliases due to the use of the `|` for type hints not working with Model
 ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple]]  # noqa: UP007
-Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 
 
 class Pipeline:
@@ -69,6 +70,12 @@ class Pipeline:
             if output_frame is None:
                 msg = (
                     "An output_frame must be specified if forward_transform is a model."
+                )
+                raise CoordinateFrameError(msg)
+
+            if input_frame is None:
+                msg = (
+                    "An input_frame must be specified if forward_transform is a model."
                 )
                 raise CoordinateFrameError(msg)
 

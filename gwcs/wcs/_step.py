@@ -7,11 +7,13 @@ from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
 
 __all__ = [
     "IndexedStep",
+    "Mdl",
     "Step",
     "StepTuple",
 ]
 
 
+Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 StepTuple: TypeAlias = tuple[CoordinateFrame, Union[Model, None]]  # noqa: UP007
 
 
@@ -28,7 +30,7 @@ class Step:
         The transform of the last step should be `None`.
     """
 
-    def __init__(self, frame: str | CoordinateFrame | None, transform=None):
+    def __init__(self, frame: str | CoordinateFrame, transform: Mdl = None):
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         self.frame = (
