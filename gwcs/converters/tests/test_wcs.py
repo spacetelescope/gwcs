@@ -66,6 +66,8 @@ def assert_wcs_roundtrip(wcs, tmp_path, version=None):
     with asdf.open(path) as af:
         _assert_wcs_equal(wcs, af["wcs"])
 
+    return path
+
 
 def _wcs_factory():
     m1 = models.Shift(12.4) & models.Shift(-2)
@@ -81,6 +83,33 @@ def _wcs_factory():
 @pytest.mark.parametrize("gw", _wcs_factory())
 def test_create_wcs(tmp_path, gw):
     assert_wcs_roundtrip(gw, tmp_path)
+
+
+def test_wcs_with_empty_frame(tmp_path):
+    """Legacy test to support reading ASDF files that use strings as frames."""
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The use of strings in place of a proper CoordinateFrame.*",
+    ):
+        empty_frame = cf.EmptyFrame(name="empty_frame")
+
+    m1 = models.Shift(12.4) & models.Shift(-2)
+    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
+    # This will serialize to the empty frame name
+    gw = wcs.WCS(input_frame=empty_frame, output_frame=icrs, forward_transform=m1)
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"The use of strings in place of a proper CoordinateFrame.*",
+    ):
+        path = assert_wcs_roundtrip(gw, tmp_path)
+
+    # Check to make sure the ASDF file that was written uses a string for the first
+    # frame.
+    with asdf.open(path, _force_raw_types=True) as af:
+        assert af["wcs"]["steps"][0]["frame"] == "empty_frame"
+        # This was an actual frame so it should be a dict in the raw case
+        assert isinstance(af["wcs"]["steps"][1]["frame"], dict)
 
 
 def _composite_frame_factory():

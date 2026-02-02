@@ -60,9 +60,14 @@ class StepConverter(Converter):
     types = ("gwcs.wcs.Step",)
 
     def from_yaml_tree(self, node, tag, ctx):
+        from gwcs.coordinate_frames import EmptyFrame
         from gwcs.wcs import Step
 
-        return Step(frame=node["frame"], transform=node.get("transform", None))
+        frame: CoordinateFrame | str = node["frame"]
+        if isinstance(frame, str):
+            frame = EmptyFrame(name=frame)
+
+        return Step(frame=frame, transform=node.get("transform", None))
 
     def to_yaml_tree(self, step, tag, ctx):
         from gwcs.coordinate_frames import EmptyFrame
