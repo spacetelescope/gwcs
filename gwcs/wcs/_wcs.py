@@ -35,7 +35,6 @@ from gwcs.coordinate_frames import (
     CelestialFrame,
     CompositeFrame,
     CoordinateFrame,
-    EmptyFrame,
     get_ctype_from_ucd,
 )
 from gwcs.utils import _compute_lon_pole, is_high_level, to_index
@@ -102,10 +101,10 @@ class WCS(Pipeline, WCSAPIMixin):
         ``transform`` is the transform from this frame to the next one or
         ``output_frame``.  The last tuple is (transform, None), where None indicates
         the end of the pipeline.
-    input_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-        A coordinates object or a string name.
-    output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
-        A coordinates object or a string name.
+    input_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+        A coordinates object
+    output_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+        A coordinates object
     name : str
         a name for this WCS
 
@@ -115,8 +114,8 @@ class WCS(Pipeline, WCSAPIMixin):
     def __init__(
         self,
         forward_transform: Model,
-        input_frame: str | CoordinateFrame,
-        output_frame: str | CoordinateFrame,
+        input_frame: CoordinateFrame,
+        output_frame: CoordinateFrame,
         name: str | None = None,
     ) -> None: ...
 
@@ -132,8 +131,8 @@ class WCS(Pipeline, WCSAPIMixin):
     def __init__(
         self,
         forward_transform: ForwardTransform,
-        input_frame: str | CoordinateFrame | None = None,
-        output_frame: str | CoordinateFrame | None = None,
+        input_frame: CoordinateFrame | None = None,
+        output_frame: CoordinateFrame | None = None,
         name: str | None = None,
     ) -> None:
         super().__init__(
@@ -150,19 +149,12 @@ class WCS(Pipeline, WCSAPIMixin):
     def _add_units_input(
         self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrame
     ) -> tuple[u.Quantity, ...]:
-        if not isinstance(frame, EmptyFrame):
-            return frame.add_units(arrays)
-
-        # This is a falllback that should be rarely used if ever
-        return arrays  # type: ignore[return-value]
+        return frame.add_units(arrays)
 
     def _remove_units_input(
         self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrame
     ) -> tuple[np.ndarray, ...]:
-        if not isinstance(frame, EmptyFrame):
-            return frame.remove_units(arrays)
-
-        return arrays
+        return frame.remove_units(arrays)
 
     def __call__(
         self,
@@ -204,20 +196,19 @@ class WCS(Pipeline, WCSAPIMixin):
         result = transform(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-        if not isinstance(self.output_frame, EmptyFrame):
-            if self.output_frame.naxes == 1:
-                result = (result,)
+        if self.output_frame.naxes == 1:
+            result = (result,)
 
-            result = self._make_output_units_consistent(
-                transform,
-                *result,
-                frame=self.output_frame,
-                input_is_quantity=input_is_quantity,
-                transform_uses_quantity=transform_uses_quantity,
-            )
+        result = self._make_output_units_consistent(
+            transform,
+            *result,
+            frame=self.output_frame,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
+        )
 
-            if self.output_frame.naxes == 1:
-                return result[0]
+        if self.output_frame.naxes == 1:
+            return result[0]
         return result
 
     def _units_are_present(self, args, transform):
@@ -430,18 +421,17 @@ class WCS(Pipeline, WCSAPIMixin):
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
-        if not isinstance(self.input_frame, EmptyFrame):
-            if self.input_frame.naxes == 1:
-                result = (result,)
-            result = self._make_output_units_consistent(
-                transform,
-                *result,
-                frame=self.input_frame,
-                input_is_quantity=input_is_quantity,
-                transform_uses_quantity=transform_uses_quantity,
-            )
-            if self.input_frame.naxes == 1:
-                return result[0]
+        if self.input_frame.naxes == 1:
+            result = (result,)
+        result = self._make_output_units_consistent(
+            transform,
+            *result,
+            frame=self.input_frame,
+            input_is_quantity=input_is_quantity,
+            transform_uses_quantity=transform_uses_quantity,
+        )
+        if self.input_frame.naxes == 1:
+            return result[0]
         return result
 
     def outside_footprint(self, world_arrays):
