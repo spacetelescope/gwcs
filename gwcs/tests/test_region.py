@@ -243,8 +243,8 @@ def test_RegionsSelector():
 
     wcs = WCS(
         forward_transform=reg_selector,
-        input_frame="detector",
-        output_frame=cf.Frame2D(),
+        input_frame=cf.Frame2D(name="detector"),
+        output_frame=cf.Frame2D(name="world"),
     )
     out = wcs(1, 1)
     assert out == (-100, -100)
