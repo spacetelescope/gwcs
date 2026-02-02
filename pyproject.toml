@@ -78,6 +78,7 @@ addopts = [
 ]
 norecursedirs = ["build", "docs/_build", ".tox"]
 filterwarnings = [
+  "error",
   "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
   "ignore:numpy.ndarray size changed:RuntimeWarning",
 ]

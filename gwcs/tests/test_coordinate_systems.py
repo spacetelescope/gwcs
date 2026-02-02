@@ -64,13 +64,14 @@ spec4 = cf.SpectralFrame(
     ],
     axes_order=(2,),
 )
-spec5 = cf.SpectralFrame(
-    name="speed",
-    unit=[
-        u.m / u.s,
-    ],
-    axes_order=(2,),
-)
+with pytest.warns(UserWarning, match=r"Physical type may be ambiguous.*"):
+    spec5 = cf.SpectralFrame(
+        name="speed",
+        unit=[
+            u.m / u.s,
+        ],
+        axes_order=(2,),
+    )
 
 comp1 = cf.CompositeFrame([icrs, spec1])
 comp2 = cf.CompositeFrame([focal, spec2])
