@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from functools import reduce
-from typing import TypeAlias, Union
+from typing import TypeAlias, Union, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -28,6 +28,24 @@ class Pipeline:
     for things like duplicate frames. In addition, this handles all the logic
     for handling steps and their frames/transforms.
     """
+
+    @overload
+    def __init__(
+        self,
+        forward_transform: Model,
+        *,
+        input_frame: str | CoordinateFrame,
+        output_frame: str | CoordinateFrame,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        forward_transform: list[Step | StepTuple],
+        *,
+        input_frame: None = None,
+        output_frame: None = None,
+    ) -> None: ...
 
     def __init__(
         self,
@@ -66,32 +84,73 @@ class Pipeline:
         -------
         An initialized pipeline.
         """
-        if isinstance(forward_transform, Model):
-            if output_frame is None:
+        match forward_transform:
+            case Model():
+                if output_frame is None:
+                    msg = (
+                        "An output_frame must be specified if forward_transform "
+                        "is a model."
+                    )
+                    raise CoordinateFrameError(msg)
+
+                if input_frame is None:
+                    msg = (
+                        "An input_frame must be specified if forward_transform "
+                        "is a model."
+                    )
+                    raise CoordinateFrameError(msg)
+
+                forward_transform = [
+                    Step(input_frame, forward_transform.copy()),
+                    Step(output_frame, None),
+                ]
+            case list():
+                if input_frame is not None and (
+                    (
+                        isinstance(forward_transform[0], Step)
+                        and input_frame is not forward_transform[0].frame
+                    )
+                    or (
+                        not isinstance(forward_transform[0], Step)
+                        and input_frame is not forward_transform[0][0]
+                    )
+                ):
+                    msg = (
+                        "input_frame does not match the first frame in the "
+                        "forward_transform pipeline."
+                    )
+                    raise CoordinateFrameError(msg)
+
+                if output_frame is not None and (
+                    (
+                        isinstance(forward_transform[-1], Step)
+                        and output_frame is not forward_transform[-1].frame
+                    )
+                    or (
+                        not isinstance(forward_transform[-1], Step)
+                        and output_frame is not forward_transform[-1][0]
+                    )
+                ):
+                    msg = (
+                        "output_frame does not match the first frame in the "
+                        "forward_transform pipeline."
+                    )
+                    raise CoordinateFrameError(msg)
+            case _:
                 msg = (
-                    "An output_frame must be specified if forward_transform is a model."
+                    "Expected forward_transform to be a None, model, or a "
+                    f"(frame, transform) list, got {type(forward_transform)}"
                 )
-                raise CoordinateFrameError(msg)
-
-            if input_frame is None:
-                msg = (
-                    "An input_frame must be specified if forward_transform is a model."
-                )
-                raise CoordinateFrameError(msg)
-
-            forward_transform = [
-                Step(input_frame, forward_transform.copy()),
-                Step(output_frame, None),
-            ]
-
-        if not isinstance(forward_transform, list):
-            msg = (
-                "Expected forward_transform to be Model, or a "
-                f"(frame, transform) list, got {type(forward_transform)}"
-            )
-            raise TypeError(msg)
+                raise TypeError(msg)
 
         self._extend(forward_transform)
+
+        if len(self._pipeline) < 2:
+            msg = (
+                "A pipeline must have at least an input and output frame "
+                "with a transform between them."
+            )
+            raise ValueError(msg)
 
     @property
     def pipeline(self) -> list[Step]:

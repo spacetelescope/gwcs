@@ -819,11 +819,12 @@ def test_to_fits_sip_pc_normalization(gwcs_simple_imaging_units, matrix_type):
 
     wcs_forward = wcslin | tan | n2c
 
+    detector = cf.Frame2D(name="detector")
     sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name="sky")
-    pipeline = [("detector", wcs_forward), (sky_cs, None)]
+    pipeline = [(detector, wcs_forward), (sky_cs, None)]
 
     wcs_lin = wcs.WCS(
-        input_frame=cf.Frame2D(name="detector"),
+        input_frame=detector,
         output_frame=sky_cs,
         forward_transform=pipeline,
     )
