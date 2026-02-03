@@ -167,10 +167,8 @@ class WCS(Pipeline, WCSAPIMixin):
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
+        # Call into variable as this is a property computed each time it is called
         transform = self.forward_transform
-        if transform is None:
-            msg = "Transform is not defined."
-            raise NotImplementedError(msg)
 
         input_is_quantity, transform_uses_quantity = self._units_are_present(
             args, transform
@@ -201,7 +199,7 @@ class WCS(Pipeline, WCSAPIMixin):
             return result[0]
         return result
 
-    def _units_are_present(self, args, transform):
+    def _units_are_present(self, args, transform: Model) -> tuple[bool, bool]:
         """
         Determine if the inputs to a transform are quantities and the transform
         supports units.
@@ -235,12 +233,11 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _make_input_units_consistent(
         self,
-        transform,
+        transform: Model,
         *args,
         frame: CoordinateFrame,
-        input_is_quantity=False,
-        transform_uses_quantity=False,
-        **kwargs,
+        input_is_quantity: bool = False,
+        transform_uses_quantity: bool = False,
     ):
         """
         Adds or removes units from the arguments as needed so that the transform
@@ -261,12 +258,11 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _make_output_units_consistent(
         self,
-        transform,
+        transform: Model,
         *args,
         frame: CoordinateFrame,
-        input_is_quantity=False,
-        transform_uses_quantity=False,
-        **kwargs,
+        input_is_quantity: bool = False,
+        transform_uses_quantity: bool = False,
     ):
         """
         Adds or removes units from the arguments as needed so that
@@ -286,7 +282,13 @@ class WCS(Pipeline, WCSAPIMixin):
             return frame.add_units(args)
         return args
 
-    def in_image(self, *args, **kwargs):
+    def in_image(
+        self,
+        *args,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> bool | np.ndarray:
         """
         This method tests if one or more of the input world coordinates are
         contained within forward transformation's image and that it maps to
@@ -308,18 +310,20 @@ class WCS(Pipeline, WCSAPIMixin):
         Returns
         -------
         result : bool, numpy.ndarray
-           A single boolean value or an array of boolean values with `True`
-           indicating that the WCS footprint contains the coordinate
-           and `False` if input is outside the footprint.
+            A single boolean value or an array of boolean values with `True`
+            indicating that the WCS footprint contains the coordinate
+            and `False` if input is outside the footprint.
 
         """
-        coords = self.invert(*args, **kwargs)
+        coords = self.invert(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
         result = np.isfinite(coords)
         if self.input_frame.naxes > 1:
             result = np.all(result, axis=0)
 
-        return result
+        return result  # type: ignore[no-any-return]
 
     def invert(
         self,
@@ -344,9 +348,9 @@ class WCS(Pipeline, WCSAPIMixin):
             to the number of world coordinates given by ``world_n_dim``.
 
         with_bounding_box : bool, optional
-             If `True` (default) values in the result which correspond to any
-             of the inputs being outside the bounding_box are set to
-             ``fill_value``.
+            If `True` (default) values in the result which correspond to any
+            of the inputs being outside the bounding_box are set to
+            ``fill_value``.
 
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
@@ -484,20 +488,20 @@ class WCS(Pipeline, WCSAPIMixin):
             )
         return world_arrays
 
-    def out_of_bounds(self, pixel_arrays, fill_value=np.nan):
+    def out_of_bounds(self, pixel_arrays, fill_value: float | np.number = np.nan):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
             pixel_arrays = [pixel_arrays]
 
         pixel_arrays = list(pixel_arrays)
         bbox = self.bounding_box
         for idim, pix in enumerate(pixel_arrays):
-            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])
+            outside = (pix < bbox[idim][0]) | (pix > bbox[idim][1])  # type: ignore[index]
             if np.any(outside):
                 if np.isscalar(pix):
-                    pixel_arrays[idim] = np.nan
+                    pixel_arrays[idim] = fill_value
                 else:
                     pix_ = pixel_arrays[idim].astype(float, copy=True)
-                    pix_[outside] = np.nan
+                    pix_[outside] = fill_value
                     pixel_arrays[idim] = pix_
         if self.input_frame.naxes == 1:
             pixel_arrays = pixel_arrays[0]

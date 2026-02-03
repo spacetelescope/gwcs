@@ -273,6 +273,10 @@ class Pipeline:
         """
         Combine a list of transforms into a single transform.
         """
+        if any(t is None for t in transforms):
+            msg = "Can not combine transforms if any are None."
+            raise NotImplementedError(msg)
+
         return reduce(lambda x, y: x | y, transforms)
 
     @staticmethod
@@ -342,7 +346,7 @@ class Pipeline:
         # Moving backwards over the pipeline
         if to_index < from_index:
             transforms = [
-                step.transform.inverse
+                step.inverse_transform
                 for step in self._pipeline[to_index:from_index][::-1]
             ]
 
@@ -575,7 +579,7 @@ class Pipeline:
 
     def attach_compound_bounding_box(
         self, cbbox: dict[tuple[str], tuple], selector_args: tuple[str]
-    ):
+    ) -> None:
         """
         Attach a compound bounding box dictionary to the pipeline.
 
