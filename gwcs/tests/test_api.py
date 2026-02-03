@@ -308,7 +308,7 @@ def test_high_level_wrapper(wcsobj, request):
     # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input)
-    results = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
+    results = wcsobj.output_frame.remove_units(wc2)
 
     wc2 = values_to_high_level_objects(*results, low_level_wcs=wcsobj)
     if len(wc2) == 1:

@@ -146,16 +146,6 @@ class WCS(Pipeline, WCSAPIMixin):
         self._name = "" if name is None else name
         self._pixel_shape = None
 
-    def _add_units_input(
-        self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrame
-    ) -> tuple[u.Quantity, ...]:
-        return frame.add_units(arrays)
-
-    def _remove_units_input(
-        self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrame
-    ) -> tuple[np.ndarray, ...]:
-        return frame.remove_units(arrays)
-
     def __call__(
         self,
         *args,
@@ -264,9 +254,9 @@ class WCS(Pipeline, WCSAPIMixin):
         if not input_is_quantity and (
             transform_uses_quantity or transform.parameters.size
         ):
-            return self._add_units_input(args, frame)
+            return frame.add_units(args)
         if not transform_uses_quantity and input_is_quantity:
-            return self._remove_units_input(args, frame)
+            return frame.remove_units(args)
         return args
 
     def _make_output_units_consistent(
@@ -287,13 +277,13 @@ class WCS(Pipeline, WCSAPIMixin):
 
         if input_is_quantity and transform_uses_quantity:
             # make sure the output is returned in the units of the output frame
-            return self._add_units_input(args, frame)
+            return frame.add_units(args)
         if not input_is_quantity and (
             transform_uses_quantity or transform.parameters.size
         ):
-            return self._remove_units_input(args, frame)
+            return frame.remove_units(args)
         if not transform_uses_quantity and input_is_quantity:
-            return self._add_units_input(args, frame)
+            return frame.add_units(args)
         return args
 
     def in_image(self, *args, **kwargs):
@@ -410,7 +400,7 @@ class WCS(Pipeline, WCSAPIMixin):
             )
         else:
             # Always strip units for numerical inverse
-            args = self._remove_units_input(args, self.output_frame)
+            args = self.output_frame.remove_units(args)
             result = self._numerical_inverse(
                 *args,
                 with_bounding_box=with_bounding_box,
@@ -756,7 +746,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         """  # noqa: E501
         return self._numerical_inverse(
-            *self._remove_units_input(args, self.output_frame),
+            *self.output_frame.remove_units(args),
             tolerance=tolerance,
             maxiter=maxiter,
             adaptive=adaptive,
@@ -1315,9 +1305,7 @@ class WCS(Pipeline, WCSAPIMixin):
                 bb = np.asarray([b.value for b in bb]) * bb[0].unit
             vertices = (bb,)
         elif all_spatial:
-            vertices = _order_clockwise(
-                [self._remove_units_input(b, self.input_frame) for b in bb]
-            )
+            vertices = _order_clockwise([self.input_frame.remove_units(b) for b in bb])
         else:
             vertices = np.array(list(itertools.product(*bb))).T  # type: ignore[assignment]
 
@@ -1677,9 +1665,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         first_bound = bounding_box[0][0]
         if isinstance(first_bound, u.Quantity):
-            bounding_box = [
-                self._remove_units_input(bb, self.input_frame) for bb in bounding_box
-            ]
+            bounding_box = [self.input_frame.remove_units(bb) for bb in bounding_box]
         bb_center = np.mean(bounding_box, axis=1)
 
         fixi_dict = {
@@ -1732,7 +1718,7 @@ class WCS(Pipeline, WCSAPIMixin):
         # standard sampling:
         crpix_ = [crpix1, crpix2]
         if isinstance(crpix1, u.Quantity):
-            crpix_ = self._remove_units_input(crpix_, self.input_frame)
+            crpix_ = self.input_frame.remove_units(crpix_)
         u_grid, v_grid = make_sampling_grid(
             npoints, tuple(bounding_box[k] for k in input_axes), crpix=crpix_
         )
