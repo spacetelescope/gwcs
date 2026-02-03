@@ -12,6 +12,8 @@ from asdf_astropy.converters.transform.core import (
 )
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from gwcs.coordinate_frames import CoordinateFrame
 
 __all__ = [
@@ -63,7 +65,7 @@ class StepConverter(Converter):
         from gwcs.coordinate_frames import EmptyFrame
         from gwcs.wcs import Step
 
-        frame: CoordinateFrame | str = node["frame"]
+        frame = node["frame"]
         if isinstance(frame, str):
             frame = EmptyFrame(name=frame)
 
@@ -110,7 +112,7 @@ class FrameConverter(Converter):
     def _to_yaml_tree(self, frame: CoordinateFrame, tag, ctx):
         from gwcs.coordinate_frames import CoordinateFrame
 
-        node = {}
+        node: dict[str, Any] = {}
 
         node["name"] = frame.name
 
