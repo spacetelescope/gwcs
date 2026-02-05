@@ -8,11 +8,13 @@ This module defines the abstract APIs for the GWCS Package:
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias, cast, overload
 
 import astropy.units as u
+import numpy as np
 from astropy.modeling import separable
 from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
+from numpy import typing as npt
 
 from gwcs import utils
 
@@ -27,7 +29,10 @@ if TYPE_CHECKING:
         WorldAxisObjectComponent,
     )
 
-__all__ = ["NativeAPIMixin", "WCSAPIMixin"]
+__all__ = ["LowLevelArray", "NativeAPIMixin", "WCSAPIMixin"]
+
+
+LowLevelArray: TypeAlias = npt.NDArray[np.generic]
 
 
 class NativeAPIMixin(abc.ABC):
@@ -57,6 +62,135 @@ class NativeAPIMixin(abc.ABC):
     @abc.abstractmethod
     def bounding_box(self) -> ModelBoundingBox | CompoundBoundingBox | None:
         """The input_frame's bounding box"""
+
+    @overload
+    def evaluate(
+        self,
+        *args: LowLevelArray,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray: ...
+
+    # MyPy thinks that Quantity falls under the overload with LowLevelArray, but
+    #   we are trying to explicitly separate the case where the input is a Quantity,
+    #   vs when the input is not a Quantity.
+    # This could be done with a TypeVar bound to each, but that is less informative
+    #   for readers.
+    # This only applies when pre-commit MyPy is running because it cannot follow
+    #   the import of u.Quantity properly.
+    @overload
+    def evaluate(  # type: ignore[overload-cannot-match]
+        self,
+        *args: u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[u.Quantity, ...] | u.Quantity: ...
+
+    @abc.abstractmethod
+    def evaluate(
+        self,
+        *args: LowLevelArray | u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
+    ):
+        """
+        Executes the forward transform.
+
+        args : float or array-like
+            Inputs in the input coordinate system, separate inputs
+            for each dimension.
+        with_bounding_box : bool, optional
+             If True(default) values in the result which correspond to
+             any of the inputs being outside the bounding_box are set
+             to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
+
+        Other Parameters
+        ----------------
+        kwargs : dict
+            Keyword arguments to be passed to the ``forward_transform`` model.
+        """
+
+    @overload
+    def invert(
+        self,
+        *args: LowLevelArray,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray: ...
+
+    # MyPy thinks that Quantity falls under the overload with LowLevelArray, but
+    #   we are trying to explicitly separate the case where the input is a Quantity,
+    #   vs when the input is not a Quantity.
+    # This could be done with a TypeVar bound to each, but that is less informative
+    #   for readers.
+    # This only applies when pre-commit MyPy is running because it cannot follow
+    #   the import of u.Quantity properly.
+    @overload
+    def invert(  # type: ignore[overload-cannot-match]
+        self,
+        *args: u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[u.Quantity, ...] | u.Quantity: ...
+
+    @abc.abstractmethod
+    def invert(
+        self,
+        *args: LowLevelArray | u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
+    ):
+        """
+        Invert coordinates from output frame to input frame using analytical or
+        user-supplied inverse. When neither analytical nor user-supplied
+        inverses are defined, a numerical solution will be attempted using a
+        numerical inverse algorithm.
+
+        .. note::
+            Currently numerical inverse is implemented only for 2D imaging WCS.
+
+        Parameters
+        ----------
+        args : float, array like
+            Coordinates to be inverted. The number of arguments must be equal
+            to the number of world coordinates given by ``world_n_dim``.
+
+        with_bounding_box : bool, optional
+            If `True` (default) values in the result which correspond to any
+            of the inputs being outside the bounding_box are set to
+            ``fill_value``.
+
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box (default is ``np.nan``).
+
+        Other Parameters
+        ----------------
+        kwargs : dict
+            Keyword arguments to be passed to the ``backward_transform`` model
+            (when defined) or to the iterative invert method.
+
+        Returns
+        -------
+        result : tuple or value
+            Returns a tuple of scalar or array values for each axis. Unless
+            ``input_frame.naxes == 1`` when it shall return the value.
+            The return type will be `~astropy.units.Quantity` objects if the
+            transform returns ``Quantity`` objects, else values.
+
+        """
 
 
 class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
@@ -106,21 +240,29 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
-    def _remove_quantity_output(self, result, frame: CoordinateFrame):
+    @staticmethod
+    def _remove_quantity_frame(
+        result: tuple[LowLevelArray | u.Quantity, ...] | LowLevelArray | u.Quantity,
+        frame: CoordinateFrame,
+    ) -> LowLevelArray | tuple[LowLevelArray, ...]:
         if frame.naxes == 1:
-            result = [result]
+            result = (result,)
 
-        result = tuple(
-            r.to_value(unit) if isinstance(r, u.Quantity) else r
+        output: tuple[LowLevelArray, ...] = tuple(
+            # `cast` is used here for mypy as to_value isn't type hinted properly for
+            # Quantity. `cast` is a no-op at runtime, so there is no performance impact.
+            cast(LowLevelArray, r.to_value(unit)) if isinstance(r, u.Quantity) else r
             for r, unit in zip(result, frame.unit, strict=False)
         )
 
         # If we only have one output axes, we shouldn't return a tuple.
-        if self.output_frame.naxes == 1 and isinstance(result, tuple):
-            return result[0]
-        return result
+        if frame.naxes == 1 and isinstance(output, tuple):
+            return output[0]
+        return output
 
-    def pixel_to_world_values(self, *pixel_arrays):
+    def pixel_to_world_values(
+        self, *pixel_arrays: LowLevelArray
+    ) -> LowLevelArray | tuple[LowLevelArray, ...]:
         """
         Convert pixel coordinates to world coordinates.
 
@@ -133,10 +275,13 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         order, where for an image, ``x`` is the horizontal coordinate and ``y``
         is the vertical coordinate.
         """
-        result = self(*pixel_arrays)
-        return self._remove_quantity_output(result, self.output_frame)
+        return self._remove_quantity_frame(
+            self.evaluate(*pixel_arrays), self.output_frame
+        )
 
-    def array_index_to_world_values(self, *index_arrays):
+    def array_index_to_world_values(
+        self, *index_arrays: LowLevelArray
+    ) -> LowLevelArray | tuple[LowLevelArray, ...]:
         """
         Convert array indices to world coordinates.
         This is the same as `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_to_world_values`
@@ -144,10 +289,11 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         ``i`` is the row and ``j`` is the column (i.e. the opposite order to
         `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_to_world_values`).
         """
-        pixel_arrays = index_arrays[::-1]
-        return self.pixel_to_world_values(*pixel_arrays)
+        return self.pixel_to_world_values(*index_arrays[::-1])
 
-    def world_to_pixel_values(self, *world_arrays):
+    def world_to_pixel_values(
+        self, *world_arrays: LowLevelArray
+    ) -> LowLevelArray | tuple[LowLevelArray, ...]:
         """
         Convert world coordinates to pixel coordinates.
 
@@ -159,11 +305,11 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         be returned in the ``(x, y)`` order, where for an image, ``x`` is the
         horizontal coordinate and ``y`` is the vertical coordinate.
         """
-        result = self.invert(*world_arrays)
+        return self._remove_quantity_frame(self.invert(*world_arrays), self.input_frame)
 
-        return self._remove_quantity_output(result, self.input_frame)
-
-    def world_to_array_index_values(self, *world_arrays):
+    def world_to_array_index_values(
+        self, *world_arrays: LowLevelArray
+    ) -> LowLevelArray | tuple[LowLevelArray, ...]:
         """
         Convert world coordinates to array indices.
         This is the same as `~astropy.wcs.wcsapi.BaseLowLevelWCS.world_to_pixel_values`
@@ -173,7 +319,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         be returned as rounded integers.
         """
         results = self.world_to_pixel_values(*world_arrays)
-        results = (results,) if self.pixel_n_dim == 1 else results[::-1]
+        results = results[::-1] if isinstance(results, tuple) else (results,)
 
         results = tuple(utils.to_index(result) for result in results)
         return results[0] if self.pixel_n_dim == 1 else results
@@ -294,14 +440,14 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return self.output_frame.world_axis_object_components
 
     @property
-    def pixel_axis_names(self):
+    def pixel_axis_names(self) -> tuple[str, ...]:
         """
         An iterable of strings describing the name for each pixel axis.
         """
         return self.input_frame.axes_names
 
     @property
-    def world_axis_names(self):
+    def world_axis_names(self) -> tuple[str, ...]:
         """
         An iterable of strings describing the name for each world axis.
         """
