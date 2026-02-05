@@ -6,7 +6,7 @@ import itertools
 import sys
 import warnings
 from copy import copy
-from typing import overload
+from typing import Self, overload
 
 import astropy.units as u
 import numpy as np
@@ -29,7 +29,7 @@ from astropy.wcs.wcsapi.high_level_api import (
 )
 from scipy import optimize
 
-from gwcs.api import WCSAPIMixin
+from gwcs.api import LowLevelArray, WCSAPIMixin
 from gwcs.coordinate_frames import (
     AxisType,
     CelestialFrame,
@@ -146,27 +146,40 @@ class WCS(Pipeline, WCSAPIMixin):
         self._name = "" if name is None else name
         self._pixel_shape = None
 
-    def __call__(
+    @overload
+    def evaluate(
         self,
-        *args,
+        *args: LowLevelArray,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
-        """
-        Executes the forward transform.
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray: ...
 
-        args : float or array-like
-            Inputs in the input coordinate system, separate inputs
-            for each dimension.
-        with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to
-             any of the inputs being outside the bounding_box are set
-             to ``fill_value``.
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box
-            (default is np.nan).
-        """
+    # MyPy thinks that Quantity falls under the overload with LowLevelArray, but
+    #   we are trying to explicitly separate the case where the input is a Quantity,
+    #   vs when the input is not a Quantity.
+    # This could be done with a TypeVar bound to each, but that is less informative
+    #   for readers.
+    # This only applies when pre-commit MyPy is running because it cannot follow
+    #   the import of u.Quantity properly.
+    @overload
+    def evaluate(  # type: ignore[overload-cannot-match]
+        self,
+        *args: u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[u.Quantity, ...] | u.Quantity: ...
+
+    def evaluate(
+        self,
+        *args: LowLevelArray | u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
+    ):
         # Call into variable as this is a property computed each time it is called
         transform = self.forward_transform
 
@@ -198,6 +211,45 @@ class WCS(Pipeline, WCSAPIMixin):
         if self.output_frame.naxes == 1:
             return result[0]
         return result
+
+    @overload
+    def __call__(
+        self,
+        *args: LowLevelArray,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray: ...
+
+    # MyPy thinks that Quantity falls under the overload with LowLevelArray, but
+    #   we are trying to explicitly separate the case where the input is a Quantity,
+    #   vs when the input is not a Quantity.
+    # This could be done with a TypeVar bound to each, but that is less informative
+    #   for readers.
+    # This only applies when pre-commit MyPy is running because it cannot follow
+    #   the import of u.Quantity properly.
+    @overload
+    def __call__(  # type: ignore[overload-cannot-match]
+        self,
+        *args: u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[u.Quantity, ...] | u.Quantity: ...
+
+    def __call__(
+        self,
+        *args: LowLevelArray | u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
+    ):
+        """Call the :py:meth:`evaluate` method to perform the forward transformation."""
+        return self.evaluate(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
     def _units_are_present(self, args, transform: Model) -> tuple[bool, bool]:
         """
@@ -284,7 +336,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def in_image(
         self,
-        *args,
+        *args: LowLevelArray | u.Quantity,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
@@ -325,51 +377,40 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return result  # type: ignore[no-any-return]
 
+    @overload
     def invert(
         self,
-        *args,
+        *args: LowLevelArray,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray: ...
+
+    # MyPy thinks that Quantity falls under the overload with LowLevelArray, but
+    #   we are trying to explicitly separate the case where the input is a Quantity,
+    #   vs when the input is not a Quantity.
+    # This could be done with a TypeVar bound to each, but that is less informative
+    #   for readers.
+    # This only applies when pre-commit MyPy is running because it cannot follow
+    #   the import of u.Quantity properly.
+    @overload
+    def invert(  # type: ignore[overload-cannot-match]
+        self,
+        *args: u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[u.Quantity, ...] | u.Quantity: ...
+
+    def invert(
+        self,
+        *args: LowLevelArray | u.Quantity,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
     ):
-        """
-        Invert coordinates from output frame to input frame using analytical or
-        user-supplied inverse. When neither analytical nor user-supplied
-        inverses are defined, a numerical solution will be attempted using
-        :py:meth:`numerical_inverse`.
-
-        .. note::
-            Currently numerical inverse is implemented only for 2D imaging WCS.
-
-        Parameters
-        ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
-            Coordinates to be inverted. The number of arguments must be equal
-            to the number of world coordinates given by ``world_n_dim``.
-
-        with_bounding_box : bool, optional
-            If `True` (default) values in the result which correspond to any
-            of the inputs being outside the bounding_box are set to
-            ``fill_value``.
-
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box (default is ``np.nan``).
-
-        Other Parameters
-        ----------------
-        kwargs : dict
-            Keyword arguments to be passed to :py:meth:`numerical_inverse`
-            (when defined) or to the iterative invert method.
-
-        Returns
-        -------
-        result : tuple or value
-            Returns a tuple of scalar or array values for each axis. Unless
-            ``input_frame.naxes == 1`` when it shall return the value.
-            The return type will be `~astropy.units.Quantity` objects if the
-            transform returns ``Quantity`` objects, else values.
-
-        """  # noqa: E501
         try:
             transform = self.backward_transform
         except NotImplementedError:
@@ -428,7 +469,13 @@ class WCS(Pipeline, WCSAPIMixin):
             return result[0]
         return result
 
-    def outside_footprint(self, world_arrays):
+    def outside_footprint(
+        self,
+        world_arrays: LowLevelArray
+        | tuple[LowLevelArray, ...]
+        | u.Quantity
+        | tuple[u.Quantity, ...],
+    ) -> tuple[LowLevelArray, ...] | tuple[u.Quantity, ...]:
         world_arrays = [copy(array) for array in world_arrays]
 
         axes_types = set(self.output_frame.axes_type)
@@ -467,11 +514,11 @@ class WCS(Pipeline, WCSAPIMixin):
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
                     if len(world_arrays) == 1:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays[0], self.output_frame
                         )
                     else:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays, self.output_frame
                         )[idim]
 
@@ -486,9 +533,21 @@ class WCS(Pipeline, WCSAPIMixin):
             world_arrays = values_to_high_level_objects(
                 *world_arrays, low_level_wcs=self
             )
-        return world_arrays
+        #  Astropy does not have proper type annotations for
+        #      values_to_high_level_objects
+        #  so we ignore the return-value type check here.
+        return world_arrays  # type: ignore[return-value]
 
-    def out_of_bounds(self, pixel_arrays, fill_value: float | np.number = np.nan):
+    def out_of_bounds(
+        self,
+        pixel_arrays: LowLevelArray
+        | tuple[LowLevelArray, ...]
+        | u.Quantity
+        | tuple[u.Quantity, ...],
+        fill_value: float | np.number = np.nan,
+    ) -> (
+        tuple[LowLevelArray, ...] | tuple[u.Quantity, ...] | LowLevelArray | u.Quantity
+    ):
         if np.isscalar(pixel_arrays) or self.input_frame.naxes == 1:
             pixel_arrays = [pixel_arrays]
 
@@ -1149,11 +1208,11 @@ class WCS(Pipeline, WCSAPIMixin):
         self,
         from_frame: str | CoordinateFrame,
         to_frame: str | CoordinateFrame,
-        *args,
+        *args: LowLevelArray | u.Quantity,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelArray | u.Quantity, ...] | LowLevelArray | u.Quantity:
         """
         Transform positions between two frames.
 
@@ -1220,23 +1279,15 @@ class WCS(Pipeline, WCSAPIMixin):
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         """Set the name for the WCS."""
         self._name = value
 
-    def _get_axes_indices(self):
-        try:
-            axes_ind = np.argsort(self.input_frame.axes_order)
-        except AttributeError:
-            # the case of a frame being a string
-            axes_ind = np.arange(self.forward_transform.n_inputs)
-        return axes_ind
-
-    def __str__(self):
+    def __str__(self) -> str:
         from astropy.table import Table
 
         col1 = [step.frame for step in self._pipeline]
-        col2 = []
+        col2: list[str | None] = []
         for item in self._pipeline[:-1]:
             model = item.transform
             if model is None:
@@ -1249,15 +1300,20 @@ class WCS(Pipeline, WCSAPIMixin):
         t = Table([col1, col2], names=["From", "Transform"])
         return str(t)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame}, "
             f"forward_transform={self.forward_transform})>"
         )
 
     def footprint(
-        self, bounding_box=None, center=False, axis_type: AxisType | str | None = None
-    ):
+        self,
+        bounding_box: tuple[tuple[float, float], ...]
+        | tuple[float, float]
+        | None = None,
+        center: bool = False,
+        axis_type: AxisType | str | None = None,
+    ) -> LowLevelArray:
         """
         Return the footprint in world coordinates.
 
@@ -1345,7 +1401,9 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return result.T
 
-    def fix_inputs(self, fixed):
+    def fix_inputs(
+        self, fixed: dict[str | int, LowLevelArray | u.Quantity | float | np.number]
+    ) -> Self:
         """
         Return a new unique WCS by fixing inputs to constant values.
 
@@ -1367,12 +1425,12 @@ class WCS(Pipeline, WCSAPIMixin):
             ("x", "y")
 
         """
-        new_pipeline = []
-        step0 = self.pipeline[0]
-        new_transform = fix_inputs(step0[1], fixed)
-        new_pipeline.append((step0[0], new_transform))
-        new_pipeline.extend(self.pipeline[1:])
-        return self.__class__(new_pipeline)
+        return type(self)(
+            [
+                (self.pipeline[0].frame, fix_inputs(self.pipeline[0].transform, fixed)),
+                *self.pipeline[1:],
+            ]
+        )
 
     def to_fits_sip(
         self,
