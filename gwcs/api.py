@@ -20,7 +20,12 @@ if TYPE_CHECKING:
     from astropy.modeling import Model
     from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 
-    from gwcs.coordinate_frames import CoordinateFrame
+    from gwcs.coordinate_frames import (
+        CoordinateFrame,
+        WorldAxisObjectClass,
+        WorldAxisObjectClassConverter,
+        WorldAxisObjectComponent,
+    )
 
 __all__ = ["NativeAPIMixin", "WCSAPIMixin"]
 
@@ -30,6 +35,8 @@ class NativeAPIMixin(abc.ABC):
     A mix-in class that is intended to be inherited by the
     :class:`~gwcs.wcs.WCS` class and provides the native GWCS API.
     """
+
+    _pixel_shape: tuple[int, ...] | None
 
     @property
     @abc.abstractmethod
@@ -76,7 +83,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return self.output_frame.naxes
 
     @property
-    def world_axis_physical_types(self):
+    def world_axis_physical_types(self) -> tuple[str | None, ...]:
         """
         An iterable of strings describing the physical type for each world axis.
         These should be names from the VO UCD1+ controlled Vocabulary
@@ -172,7 +179,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return results[0] if self.pixel_n_dim == 1 else results
 
     @property
-    def array_shape(self):
+    def array_shape(self) -> tuple[int, ...] | None:
         """
         The shape of the data that the WCS applies to as a tuple of
         length `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_n_dim`.
@@ -189,14 +196,11 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return self._pixel_shape[::-1]
 
     @array_shape.setter
-    def array_shape(self, value):
-        if value is None:
-            self._pixel_shape = None
-        else:
-            self._pixel_shape = value[::-1]
+    def array_shape(self, value: tuple[int, ...] | None) -> None:
+        self.pixel_shape = None if value is None else value[::-1]
 
     @property
-    def pixel_bounds(self):
+    def pixel_bounds(self) -> tuple[tuple[float, float], ...] | None:
         """
         The bounds (in pixel coordinates) inside which the WCS is defined,
         as a list with `~astropy.wcs.wcsapi.BaseLowLevelWCS.pixel_n_dim`
@@ -209,7 +213,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         bounding_box = self.bounding_box
         if bounding_box is None:
-            return bounding_box
+            return None
 
         if self.pixel_n_dim == 1 and len(bounding_box) == 2:
             bounding_box = (bounding_box,)
@@ -224,7 +228,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return tuple(bounding_box)
 
     @property
-    def pixel_shape(self):
+    def pixel_shape(self) -> tuple[int, ...] | None:
         """
         The shape of the data that the WCS applies to as a tuple of length
         ``pixel_n_dim`` in ``(x, y)`` order (where for an image, ``x`` is
@@ -240,20 +244,20 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return self._pixel_shape
 
     @pixel_shape.setter
-    def pixel_shape(self, value):
+    def pixel_shape(self, value: tuple[int, ...] | None) -> None:
         if value is None:
             self._pixel_shape = None
-            return
-        wcs_naxes = self.pixel_n_dim
-        if len(value) != wcs_naxes:
-            msg = (
-                "The number of data axes, "
-                f"{wcs_naxes}, does not equal the "
-                f"shape {len(value)}."
-            )
-            raise ValueError(msg)
 
-        self._pixel_shape = tuple(value)
+        else:
+            if len(value) != self.pixel_n_dim:
+                msg = (
+                    "The number of data axes, "
+                    f"{self.pixel_n_dim}, does not equal the "
+                    f"shape {len(value)}."
+                )
+                raise ValueError(msg)
+
+            self._pixel_shape = tuple(value)
 
     @property
     def axis_correlation_matrix(self):
@@ -268,7 +272,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return separable.separability_matrix(self.forward_transform)
 
     @property
-    def serialized_classes(self):
+    def serialized_classes(self) -> bool:
         """
         Indicates whether Python objects are given in serialized form or as
         actual Python objects.
@@ -276,11 +280,17 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return False
 
     @property
-    def world_axis_object_classes(self):
+    def world_axis_object_classes(
+        self,
+    ) -> (
+        dict[str, WorldAxisObjectClass]
+        | dict[str, WorldAxisObjectClassConverter]
+        | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]
+    ):
         return self.output_frame.world_axis_object_classes
 
     @property
-    def world_axis_object_components(self):
+    def world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         return self.output_frame.world_axis_object_components
 
     @property
