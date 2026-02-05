@@ -5,6 +5,7 @@ from astropy import time
 from astropy import units as u
 
 from ._axis import AxisType
+from ._base import WorldAxisObjectClassConverter, WorldAxisObjectComponent
 from ._core import CoordinateFrame
 
 __all__ = ["TemporalFrame"]
@@ -33,20 +34,21 @@ class TemporalFrame(CoordinateFrame):
 
     def __init__(
         self,
-        reference_frame,
-        unit=u.s,
-        axes_order=(0,),
-        axes_names=None,
-        name=None,
-        axis_physical_types=None,
+        reference_frame: time.Time,
+        unit: u.Unit = u.s,
+        axes_order: tuple[int] = (0,),
+        axes_names: tuple[str] | None = None,
+        name: str | None = None,
+        axis_physical_types: tuple[str | None] | None = None,
     ):
         axes_names = (
-            axes_names
-            or f"{reference_frame.format}({reference_frame.scale}; "
-            f"{reference_frame.location}"
+            (
+                f"{reference_frame.format}({reference_frame.scale}; "
+                f"{reference_frame.location}",
+            )
+            if axes_names is None
+            else axes_names
         )
-
-        pht = axis_physical_types or self._default_axis_physical_types()
 
         super().__init__(
             naxes=1,
@@ -56,15 +58,21 @@ class TemporalFrame(CoordinateFrame):
             reference_frame=reference_frame,
             unit=unit,
             name=name,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types,
         )
         self._attrs = {}
         for a in self.reference_frame.info._represent_as_dict_extra_attrs:
             with contextlib.suppress(AttributeError):
                 self._attrs[a] = getattr(self.reference_frame, a)
 
-    def _default_axis_physical_types(self):
+    def _default_axis_physical_types(
+        self, axes_type: tuple[AxisType | str, ...]
+    ) -> tuple[str, ...]:
         return ("time",)
+
+    @property
+    def reference_frame(self) -> time.Time:
+        return self._reference_frame
 
     def _convert_to_time(self, dt, *, unit, **kwargs):
         if (
@@ -78,22 +86,22 @@ class TemporalFrame(CoordinateFrame):
         return self.reference_frame + dt
 
     @property
-    def world_axis_object_classes(self):
-        comp = (
-            time.Time,
-            (),
-            {"unit": self.unit[0], **self._attrs},
-            self._convert_to_time,
-        )
-
-        return {"temporal": comp}
+    def world_axis_object_classes(self) -> dict[str, WorldAxisObjectClassConverter]:
+        return {
+            "temporal": WorldAxisObjectClassConverter(
+                time.Time,
+                (),
+                {"unit": self.unit[0], **self._attrs},
+                self._convert_to_time,
+            )
+        }
 
     @property
-    def _native_world_axis_object_components(self):
+    def _native_world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         if isinstance(self.reference_frame.value, np.ndarray):
-            return [("temporal", 0, "value")]
+            return [WorldAxisObjectComponent("temporal", 0, "value")]
 
         def offset_from_time_and_reference(time):
             return (time - self.reference_frame).sec
 
-        return [("temporal", 0, offset_from_time_and_reference)]
+        return [WorldAxisObjectComponent("temporal", 0, offset_from_time_and_reference)]
