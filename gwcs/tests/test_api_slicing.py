@@ -4,6 +4,8 @@ from astropy.wcs.wcsapi import wcs_info_str
 from astropy.wcs.wcsapi.wrappers import SlicedLowLevelWCS
 from numpy.testing import assert_allclose, assert_equal
 
+from gwcs.coordinate_frames._properties import FrameProperties
+
 EXPECTED_ELLIPSIS_REPR = """
 SlicedLowLevelWCS Transformation
 
@@ -483,7 +485,12 @@ def test_ellipsis_none_types(gwcs_3d_galactic_spectral):
     pht = list(gwcs_3d_galactic_spectral.output_frame._axis_physical_types)
     # This index is in "axes_order" ordering
     pht[2] = None
-    gwcs_3d_galactic_spectral.output_frame._prop.axis_physical_types = tuple(pht)
+    gwcs_3d_galactic_spectral.output_frame._prop = FrameProperties(
+        axes_type=gwcs_3d_galactic_spectral.output_frame._prop.axes_type,
+        unit=gwcs_3d_galactic_spectral.output_frame._prop.unit,
+        axes_names=gwcs_3d_galactic_spectral.output_frame._prop.axes_names,
+        axis_physical_types=tuple(pht),
+    )
 
     wcs = SlicedLowLevelWCS(gwcs_3d_galactic_spectral, Ellipsis)
 

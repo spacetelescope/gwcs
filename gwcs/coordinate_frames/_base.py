@@ -1,13 +1,151 @@
+from __future__ import annotations
+
 import abc
+from collections.abc import Callable
 from itertools import zip_longest
+from typing import Any, NamedTuple, Self, TypeAlias
 
 import numpy as np
 from astropy import units as u
+from astropy.coordinates import builtin_frames
+from astropy.time import Time
 
 from ._axis import AxesType
 from ._properties import FrameProperties
 
-__all__ = ["BaseCoordinateFrame"]
+__all__ = [
+    "AstropyBuiltInFrame",
+    "BaseCoordinateFrame",
+    "WorldAxisObjectClass",
+    "WorldAxisObjectClassConverter",
+    "WorldAxisObjectComponent",
+]
+
+AstropyBuiltInFrame: TypeAlias = (
+    Time
+    | builtin_frames.ICRS
+    | builtin_frames.FK5
+    | builtin_frames.FK4
+    | builtin_frames.FK4NoETerms
+    | builtin_frames.Galactic
+    | builtin_frames.Galactocentric
+    | builtin_frames.Supergalactic
+    | builtin_frames.AltAz
+    | builtin_frames.HADec
+    | builtin_frames.GCRS
+    | builtin_frames.CIRS
+    | builtin_frames.ITRS
+    | builtin_frames.HCRS
+    | builtin_frames.TEME
+    | builtin_frames.TETE
+    | builtin_frames.PrecessedGeocentric
+    | builtin_frames.GeocentricMeanEcliptic
+    | builtin_frames.BarycentricMeanEcliptic
+    | builtin_frames.HeliocentricMeanEcliptic
+    | builtin_frames.GeocentricTrueEcliptic
+    | builtin_frames.BarycentricTrueEcliptic
+    | builtin_frames.HeliocentricTrueEcliptic
+    | builtin_frames.HeliocentricEclipticIAU76
+    | builtin_frames.CustomBarycentricEcliptic
+    | builtin_frames.LSR
+    | builtin_frames.LSRK
+    | builtin_frames.LSRD
+    | builtin_frames.GalacticLSR
+    | builtin_frames.SkyOffsetFrame
+    | builtin_frames.BaseEclipticFrame
+    | builtin_frames.BaseRADecFrame
+)
+
+
+class WorldAxisObjectClass(NamedTuple):
+    """
+    A tuple to document the individual elements of the ``world_axis_object_classes``
+    of the WCS API.
+
+    Notes
+    -----
+    - ``world_axis_object_classes`` will return a dictionary with the key being
+        the name from ``world_axis_object_components`` and the value being an
+        instance of this class.
+
+    - To stay consistent with the APE 14 API, users should not access the elements
+        of this tuple via their names, but instead should access them via their
+        position in the tuple.
+
+    Attributes
+    ----------
+    class_object : type | str
+        The High-Level Object class for the axis or a string that is the fully
+        qualified name of the class.
+    arguments : tuple
+        The positional arguments to be passed to the class when instantiating an
+        object of this class. Note if ``world_axis_object_components`` specifies that
+        the world coordinates should be passed as a positional argument, then this
+        tuple will include `None` as a place holder for each of the world coordinates.
+    keyword_arguments : dict
+        The keyword arguments to be passed to the class when instantiating an object of
+        this class.
+    """
+
+    class_object: type | str
+    arguments: tuple[Any, ...]
+    keyword_arguments: dict[str, Any]
+
+
+class WorldAxisObjectClassConverter(NamedTuple):
+    """
+    Same as the `WorldAxisObjectClass` but with an additional converter field.
+
+    Attributes
+    ----------
+    converter : Callable[..., Any]
+        A callable that will convert the input values into the desired output
+    """
+
+    class_object: type | str
+    arguments: tuple[Any, ...]
+    keyword_arguments: dict[str, Any]
+    converter: Callable[..., Any]
+
+
+class WorldAxisObjectComponent(NamedTuple):
+    """
+    A tuple to document the individual elements of the ``world_axis_object_components``
+    of the WCS API.
+
+    Notes
+    -----
+    - ``world_axis_object_components`` will return a list of tuples with each tuple
+        being an instance of this class.
+
+    - To stay consistent with the APE 14 API, users should not access the elements
+        of this tuple via their names, but instead should access them via their
+        position in the tuple.
+
+    Attributes
+    ----------
+    name : str
+        Name for the world object this world array corresponds to, which *must*
+        match the string names used in ``world_axis_object_classes``.  Note that
+        names might appear twice because two world arrays might correspond to a
+        single world object (e.g. a celestial coordinate might have both “ra”
+        and “dec” arrays, which correspond to a single sky coordinate object.
+    position : str | int
+        This is either a string keyword argument name or a positional index for
+        the corresponding class from ``world_axis_object_classes``.
+    property: str | Callable[[Any], str]
+        This is a string giving the name of the property to access on the
+        corresponding class from ``world_axis_object_classes`` in order to get
+        numerical values.
+    """
+
+    name: str
+    position: str | int
+    property: str | Callable[[Any], str]
+
+    @classmethod
+    def from_tuple(cls, tup: tuple[str, str | int, str]) -> Self:
+        return cls(*tup)
 
 
 class BaseCoordinateFrame(abc.ABC):
@@ -57,7 +195,7 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def reference_frame(self):
+    def reference_frame(self) -> AstropyBuiltInFrame | None:
         """
         The reference frame of the coordinates described by this frame.
 
@@ -76,14 +214,20 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def axis_physical_types(self):
+    def axis_physical_types(self) -> tuple[str | None, ...]:
         """
         The UCD 1+ physical types for the axes, in frame order.
         """
 
     @property
     @abc.abstractmethod
-    def world_axis_object_classes(self):
+    def world_axis_object_classes(
+        self,
+    ) -> (
+        dict[str, WorldAxisObjectClass]
+        | dict[str, WorldAxisObjectClassConverter]
+        | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]
+    ):
         """
         The APE 14 object classes for this frame.
 
@@ -93,7 +237,7 @@ class BaseCoordinateFrame(abc.ABC):
         """
 
     @property
-    def world_axis_object_components(self):
+    def world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         """
         The APE 14 object components for this frame.
 
@@ -109,11 +253,11 @@ class BaseCoordinateFrame(abc.ABC):
         ordered = np.array(self._native_world_axis_object_components, dtype=object)[
             np.argsort(self.axes_order)
         ]
-        return list(map(tuple, ordered))
+        return list(map(WorldAxisObjectComponent.from_tuple, ordered))
 
     @property
     @abc.abstractmethod
-    def _native_world_axis_object_components(self):
+    def _native_world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         """
         This property holds the "native" frame order of the components.
 
