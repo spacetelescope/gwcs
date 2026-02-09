@@ -64,6 +64,12 @@ class GwcsFrameExistsError(ValueError):
     """
 
 
+class GwcsTransformDoesNotExistError(ValueError):
+    """
+    An error used to report when a transform does not exist in a pipeline.
+    """
+
+
 class GwcsBoundingBoxWarning(UserWarning):
     """
     A warning class to report issues with bounding boxes in GWCS.

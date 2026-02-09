@@ -28,11 +28,16 @@ MODEL_1D_SCALE = models.Scale(2)
 
 def gwcs_simple_2d():
     output_frame = cf.Frame2D(name="world")
-    return wcs.WCS(MODEL_2D_SHIFT, output_frame=output_frame)
+    input_frame = cf.Frame2D(name="detector")
+    return wcs.WCS(MODEL_2D_SHIFT, input_frame=input_frame, output_frame=output_frame)
 
 
 def gwcs_empty_output_2d():
-    return wcs.WCS(MODEL_2D_SHIFT, output_frame=cf.EmptyFrame(name="world"))
+    return wcs.WCS(
+        MODEL_2D_SHIFT,
+        input_frame=cf.EmptyFrame(name="detector"),
+        output_frame=cf.EmptyFrame(name="world"),
+    )
 
 
 def gwcs_2d_quantity_shift():

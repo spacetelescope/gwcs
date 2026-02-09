@@ -1,22 +1,23 @@
+from __future__ import annotations
+
 import warnings
 from functools import reduce
-from typing import TypeAlias, Union
+from typing import TypeAlias, Union, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.units import Unit
 
-from gwcs.coordinate_frames import CoordinateFrame, EmptyFrame
+from gwcs.coordinate_frames import CoordinateFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
-from ._step import IndexedStep, Step, StepTuple
+from ._step import IndexedStep, Mdl, Step, StepTuple
 
 __all__ = ["ForwardTransform", "Pipeline"]
 
 # Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple], None]  # noqa: UP007
-Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
+ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple]]  # noqa: UP007
 
 
 class Pipeline:
@@ -28,9 +29,28 @@ class Pipeline:
     for handling steps and their frames/transforms.
     """
 
+    @overload
     def __init__(
         self,
-        forward_transform: ForwardTransform = None,
+        forward_transform: Model,
+        *,
+        input_frame: str | CoordinateFrame,
+        output_frame: str | CoordinateFrame,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        forward_transform: list[Step | StepTuple],
+        *,
+        input_frame: None = None,
+        output_frame: None = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        forward_transform: ForwardTransform,
+        *,
         input_frame: str | CoordinateFrame | None = None,
         output_frame: str | CoordinateFrame | None = None,
     ) -> None:
@@ -64,38 +84,73 @@ class Pipeline:
         -------
         An initialized pipeline.
         """
-        if forward_transform is None:
-            # Initialize a WCS without a forward_transform - allows building a
-            # WCS programmatically.
-            if output_frame is None:
-                msg = "An output_frame must be specified if forward_transform is None."
-                raise CoordinateFrameError(msg)
+        match forward_transform:
+            case Model():
+                if output_frame is None:
+                    msg = (
+                        "An output_frame must be specified if forward_transform "
+                        "is a model."
+                    )
+                    raise CoordinateFrameError(msg)
 
-            forward_transform = [
-                Step(input_frame, None),
-                Step(output_frame, None),
-            ]
+                if input_frame is None:
+                    msg = (
+                        "An input_frame must be specified if forward_transform "
+                        "is a model."
+                    )
+                    raise CoordinateFrameError(msg)
 
-        if isinstance(forward_transform, Model):
-            if output_frame is None:
+                forward_transform = [
+                    Step(input_frame, forward_transform.copy()),
+                    Step(output_frame, None),
+                ]
+            case list():
+                if input_frame is not None and (
+                    (
+                        isinstance(forward_transform[0], Step)
+                        and input_frame is not forward_transform[0].frame
+                    )
+                    or (
+                        not isinstance(forward_transform[0], Step)
+                        and input_frame is not forward_transform[0][0]
+                    )
+                ):
+                    msg = (
+                        "input_frame does not match the first frame in the "
+                        "forward_transform pipeline."
+                    )
+                    raise CoordinateFrameError(msg)
+
+                if output_frame is not None and (
+                    (
+                        isinstance(forward_transform[-1], Step)
+                        and output_frame is not forward_transform[-1].frame
+                    )
+                    or (
+                        not isinstance(forward_transform[-1], Step)
+                        and output_frame is not forward_transform[-1][0]
+                    )
+                ):
+                    msg = (
+                        "output_frame does not match the first frame in the "
+                        "forward_transform pipeline."
+                    )
+                    raise CoordinateFrameError(msg)
+            case _:
                 msg = (
-                    "An output_frame must be specified if forward_transform is a model."
+                    "Expected forward_transform to be a None, model, or a "
+                    f"(frame, transform) list, got {type(forward_transform)}"
                 )
-                raise CoordinateFrameError(msg)
-
-            forward_transform = [
-                Step(input_frame, forward_transform.copy()),
-                Step(output_frame, None),
-            ]
-
-        if not isinstance(forward_transform, list):
-            msg = (
-                "Expected forward_transform to be a None, model, or a "
-                f"(frame, transform) list, got {type(forward_transform)}"
-            )
-            raise TypeError(msg)
+                raise TypeError(msg)
 
         self._extend(forward_transform)
+
+        if len(self._pipeline) < 2:
+            msg = (
+                "A pipeline must have at least an input and output frame "
+                "with a transform between them."
+            )
+            raise ValueError(msg)
 
     @property
     def pipeline(self) -> list[Step]:
@@ -115,6 +170,22 @@ class Pipeline:
         List of all the frame names in this WCS in their order in the pipeline
         """
         return [step.frame.name for step in self._pipeline]
+
+    def get_frame(self, frame: str | CoordinateFrame) -> CoordinateFrame:
+        """
+        Return the frame object corresponding to the given frame name.
+
+        Parameters
+        ----------
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            Name of the frame or the frame object.
+
+        Returns
+        -------
+        frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            The frame object corresponding to the given name.
+        """
+        return self._pipeline[self._frame_index(frame)].frame
 
     def _wrap_step(
         self, step: Step | StepTuple, *, replace_index: int | None = None
@@ -178,30 +249,19 @@ class Pipeline:
 
         self._check_last_step()
 
-    @staticmethod
-    def _handle_empty_frame(frame: CoordinateFrame | None) -> CoordinateFrame | None:
-        """
-        Handle the case where the frame is an EmptyFrame.
-        """
-        return None if isinstance(frame, EmptyFrame) else frame
-
     @property
-    def input_frame(self) -> CoordinateFrame | None:
+    def input_frame(self) -> CoordinateFrame:
         """
         Return the input frame name of the pipeline.
         """
-        return self._handle_empty_frame(
-            self._pipeline[0].frame if self._pipeline else None
-        )
+        return self._pipeline[0].frame
 
     @property
-    def output_frame(self) -> CoordinateFrame | None:
+    def output_frame(self) -> CoordinateFrame:
         """
         Return the output frame name of the pipeline.
         """
-        return self._handle_empty_frame(
-            self._pipeline[-1].frame if self._pipeline else None
-        )
+        return self._pipeline[-1].frame
 
     @property
     def unit(self) -> Unit | None:

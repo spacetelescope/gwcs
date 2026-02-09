@@ -3,6 +3,9 @@
 API
 ===
 
+.. automodapi:: gwcs.api
+  :inherited-members:
+
 .. automodapi:: gwcs.wcs
   :inherited-members:
 
