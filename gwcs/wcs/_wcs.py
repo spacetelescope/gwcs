@@ -1297,38 +1297,23 @@ class WCS(Pipeline, WCSAPIMixin):
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
-        # Pull the steps and their indices from the pipeline
-        # -> this also turns the frame name strings into frame objects
-        from_step = self._get_step(from_frame)
-        to_step = self._get_step(to_frame)
-        transform = self.get_transform(from_step.step.frame, to_step.step.frame)
+        direction = self.pipeline_between(from_frame, to_frame)
 
-        if transform is None:
+        if direction is None:
             msg = f"No transformation found from {from_frame} to {to_frame}."
             raise ValueError(msg)
 
-        # Get the frame objects from the wcs pipeline
-        from_frame_obj = self.get_frame(from_frame)
-        to_frame_obj = self.get_frame(to_frame)
+        if direction.forward:
+            return direction.wcs.evaluate(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **kwargs,
+            )
 
-        unit_consistency = _UnitConsistency(
-            inputs=args,
-            frame=from_frame_obj,
-            transform=transform,
-            wcs=self,
+        return direction.wcs.invert(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-
-        result = transform(
-            *unit_consistency.args,
-            with_bounding_box=with_bounding_box,
-            fill_value=fill_value,
-            **kwargs,
-        )
-
-        if to_frame_obj is not None:
-            return unit_consistency.find_outputs(frame=to_frame_obj, outputs=result)
-
-        return result
 
     @property
     def name(self) -> str:
