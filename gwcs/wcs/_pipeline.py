@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Sequence
 from functools import reduce
-from typing import TypeAlias, Union, overload
+from typing import Generic, NamedTuple, Self, TypeAlias, TypeVar, Union, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -14,10 +15,21 @@ from gwcs.utils import CoordinateFrameError
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
 from ._step import IndexedStep, Mdl, Step, StepTuple
 
-__all__ = ["ForwardTransform", "Pipeline"]
+__all__ = ["DirectionalPipeline", "ForwardTransform", "Pipeline"]
 
 # Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, list[Step | StepTuple]]  # noqa: UP007
+ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple]]  # noqa: UP007
+
+_T = TypeVar("_T")
+
+
+class DirectionalPipeline(NamedTuple, Generic[_T]):
+    """
+    A named tuple to hold a pipeline and the direction it is going in.
+    """
+
+    wcs: _T
+    forward: bool
 
 
 class Pipeline:
@@ -41,7 +53,7 @@ class Pipeline:
     @overload
     def __init__(
         self,
-        forward_transform: list[Step | StepTuple],
+        forward_transform: Sequence[Step | StepTuple],
         *,
         input_frame: None = None,
         output_frame: None = None,
@@ -322,6 +334,90 @@ class Pipeline:
 
         return IndexedStep(index, self._pipeline[index])
 
+    @property
+    def forward_transform(self) -> Model:
+        """
+        Return the forward transform of the pipeline.
+        """
+        transform = self._combine_transforms(
+            [step.transform for step in self._pipeline[:-1]]
+        )
+
+        if self.bounding_box is not None:
+            # Currently compound models do not attempt to combine individual model
+            # bounding boxes. Get the forward transform and assign the bounding_box
+            # to it before evaluating it. The order Model.bounding_box is reversed.
+            transform.bounding_box = self.bounding_box
+
+        return transform
+
+    @property
+    def backward_transform(self) -> Model:
+        """
+        Return the total backward transform if available - from output to input
+        coordinate system.
+
+        Raises
+        ------
+        NotImplementedError :
+            An analytical inverse does not exist.
+
+        """
+        try:
+            backward = self.forward_transform.inverse
+        except NotImplementedError:
+            # Try to get the backward transform by combining the inverses of the
+            # individual steps. This will work even if the forward transform does
+            # not have an analytical inverse, as long as each step does.
+            backward = self._combine_transforms(
+                [step.inverse_transform for step in self._pipeline[:-1][::-1]]
+            )
+
+        try:
+            _ = backward.inverse
+        except NotImplementedError:  # means "hasattr" won't work
+            backward.inverse = self.forward_transform
+        return backward
+
+    def pipeline_between(
+        self, from_frame: str | CoordinateFrame, to_frame: str | CoordinateFrame
+    ) -> DirectionalPipeline[Self] | None:
+        """
+        Return a pipeline between the two given frames.
+
+        Parameters
+        ----------
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            Initial coordinate frame name of object.
+        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            End coordinate frame name or object.
+
+        Returns
+        -------
+        pipeline : `~gwcs.wcs.Pipeline`
+            A NamedTuple (pipeline, forward) where pipeline is a Pipeline object
+            the pipeline between the two frames and forward is a boolean indicating
+            if the pipeline is forward (from_frame to to_frame) or
+            backward (to_frame to from_frame).
+        """
+        from_index = self._frame_index(from_frame)
+        to_index = self._frame_index(to_frame)
+
+        # Moving backwards over the pipeline
+        if to_index < from_index:
+            pipeline = self._pipeline[to_index:from_index]
+            pipeline.append(Step(self._pipeline[from_index].frame, None))
+
+            return DirectionalPipeline(wcs=type(self)(pipeline), forward=False)
+
+        if from_index < to_index:
+            pipeline = self._pipeline[from_index:to_index]
+            pipeline.append(Step(self._pipeline[to_index].frame, None))
+
+            return DirectionalPipeline(wcs=type(self)(pipeline), forward=True)
+
+        return None  # from and to are the same frame, so no pipeline needed
+
     def get_transform(
         self, from_frame: str | CoordinateFrame, to_frame: str | CoordinateFrame
     ) -> Mdl:
@@ -340,27 +436,16 @@ class Pipeline:
         transform : `~astropy.modeling.Model`
             Transform between two frames.
         """
-        from_index = self._frame_index(from_frame)
-        to_index = self._frame_index(to_frame)
+        direction = self.pipeline_between(from_frame, to_frame)
 
-        # Moving backwards over the pipeline
-        if to_index < from_index:
-            transforms = [
-                step.inverse_transform
-                for step in self._pipeline[to_index:from_index][::-1]
-            ]
-
-        # from and to are the same
-        elif to_index == from_index:
+        # from and to are the same frame, so no transform needed
+        if direction is None:
             return None
 
-        # Moving forwards over the pipeline
-        else:
-            transforms = [
-                step.transform for step in self._pipeline[from_index:to_index]
-            ]
+        if direction.forward:
+            return direction.wcs.forward_transform
 
-        return self._combine_transforms(transforms)
+        return direction.wcs.backward_transform
 
     def set_transform(
         self,
@@ -504,8 +589,7 @@ class Pipeline:
         """
         # Pull the first transform of the pipeline which is what controls the
         # bounding_box
-        frames = self.available_frames
-        transform = self.get_transform(frames[0], frames[1])
+        transform = self.pipeline[0].transform
 
         if transform is None:
             return None
@@ -554,8 +638,7 @@ class Pipeline:
         value : tuple or None
             Tuple of tuples with ("low", high") values for the range.
         """
-        frames = self.available_frames
-        transform = self.get_transform(frames[0], frames[1])
+        transform = self.pipeline[0].transform
 
         if transform is None:
             msg = (
@@ -575,8 +658,6 @@ class Pipeline:
 
             transform.bounding_box = bbox
 
-        self.set_transform(frames[0], frames[1], transform)
-
     def attach_compound_bounding_box(
         self, cbbox: dict[tuple[str], tuple], selector_args: tuple[str]
     ) -> None:
@@ -592,49 +673,6 @@ class Pipeline:
         selector_args:
             Argument names to the model that are used to select the bounding box
         """
-        frames = self.available_frames
-        transform_0 = self.get_transform(frames[0], frames[1])
-
         self.bounding_box = CompoundBoundingBox.validate(
-            transform_0, cbbox, selector_args=selector_args, order="F"
+            self.pipeline[0].transform, cbbox, selector_args=selector_args, order="F"
         )
-
-    @property
-    def forward_transform(self) -> Model:
-        """
-        Return the forward transform of the pipeline.
-        """
-        transform = self._combine_transforms(
-            [step.transform for step in self._pipeline[:-1]]
-        )
-
-        if self.bounding_box is not None:
-            # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box
-            # to it before evaluating it. The order Model.bounding_box is reversed.
-            transform.bounding_box = self.bounding_box
-
-        return transform
-
-    @property
-    def backward_transform(self):
-        """
-        Return the total backward transform if available - from output to input
-        coordinate system.
-
-        Raises
-        ------
-        NotImplementedError :
-            An analytical inverse does not exist.
-
-        """
-        try:
-            backward = self.forward_transform.inverse
-        except NotImplementedError as err:
-            msg = f"Could not construct backward transform. \n{err}"
-            raise NotImplementedError(msg) from err
-        try:
-            _ = backward.inverse
-        except NotImplementedError:  # means "hasattr" won't work
-            backward.inverse = self.forward_transform
-        return backward
