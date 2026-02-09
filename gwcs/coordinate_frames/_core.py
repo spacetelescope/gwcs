@@ -201,6 +201,56 @@ class CoordinateFrame(BaseCoordinateFrame):
         """The raw FrameProperties object for this frame."""
         return self._prop
 
+    def is_high_level(self, *args) -> bool:
+        """
+        Return `True` if the input coordinates are already high level objects
+        described by this frame.
+
+        This is used by the low level WCS API in Astropy to determine whether
+        to call ``to_high_level_coordinates`` or not.
+        """
+
+        if (world_axis_object_classes := self.world_axis_object_classes) is None or len(
+            args
+        ) != len(world_axis_object_classes):
+            return False
+
+        type_match = []
+        for arg, world_axis_object_class in zip(
+            args, world_axis_object_classes.values(), strict=True
+        ):
+            if isinstance(class_object := world_axis_object_class.class_object, str):
+                type_match.append(
+                    type(arg).__name__ == class_object
+                    and class_object != u.Quantity.__name__
+                )
+            else:
+                type_match.append(
+                    isinstance(arg, class_object) and class_object is not u.Quantity
+                )
+
+        if all(type_match):
+            return True
+
+        if any(type_match):
+            types = [
+                (
+                    type(arg).__name__,
+                    c.class_object
+                    if isinstance(c.class_object, str)
+                    else c.class_object.__name__,
+                )
+                for arg, c in zip(args, world_axis_object_classes.values(), strict=True)
+            ]
+            msg = (
+                "Invalid types were passed, got "
+                f"({', '.join(t[0] for t in types)}), but expected "
+                f"({', '.join(t[1] for t in types)})."
+            )
+            raise TypeError(msg)
+
+        return False
+
     def to_high_level_coordinates(self, *values):
         """
         Convert "values" to high level coordinate objects described by this frame.

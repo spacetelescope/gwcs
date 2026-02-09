@@ -143,10 +143,7 @@ def test_no_units_nd(wcsobj):
     sky = wcsobj.pixel_to_world(*inp)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        wcsobj.invert(*sky)
+    assert u.allclose(inpq, wcsobj.invert(*sky))
 
 
 @wcs_with_unit_1d
@@ -191,10 +188,8 @@ def test_transform_with_units(wcsobj):
     sky = wcsobj.pixel_to_world(*xxq)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        wcsobj.invert(*sky)
+
+    assert u.allclose(xxq, wcsobj.invert(*sky))
 
 
 @wcs_no_unit_1d

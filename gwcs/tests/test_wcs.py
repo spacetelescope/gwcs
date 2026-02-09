@@ -1788,10 +1788,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        iwcs.invert(*input_world)
+    pixel = iwcs.invert(*input_world)
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1] * u.pix)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1928,23 +1928,13 @@ def test_parameterless_transform():
         ]
     )
 
-    # The expectation for this wcs is that:
-    # - gwcs(1, 1) has no units
-    # (__call__ apparently is supposed to pass units through?)
-    # - gwcs(1*u.pix, 1*u.pix) has units
-    # - gwcs.invert(1, 1) has no units
-    # - gwcs.invert(1*u.pix, 1*u.pix) has no units
-
     # No units introduced by the forward transform
     assert gwcs(1, 1) == (1, 1)
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
+    # No units introduced by the inverse transform
     assert gwcs.invert(1, 1) == (1, 1)
-    # Strictly speaking it's correct that this fails Because
-    # for this setup the HLO are Quantities
-    with pytest.raises(TypeError) as e:
-        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
-    assert "High Level objects are not supported with the native" in str(e)
+    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

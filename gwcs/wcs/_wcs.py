@@ -97,10 +97,16 @@ class _UnitConsistency:
 
     _transform: Mdl
     _args: tuple[LowLevelArray | u.Quantity, ...]
+    _input_is_high_level: bool
     _input_is_quantity: bool
     _transform_uses_quantity: bool
 
-    def _find_units_state(self, inputs: tuple[LowLevelArray | u.Quantity, ...]) -> None:
+    def _find_units_state(
+        self,
+        inputs: tuple[LowLevelArray | u.Quantity, ...],
+        frame: CoordinateFrame,
+        wcs: WCS,
+    ) -> tuple[LowLevelArray | u.Quantity, ...]:
         """
         Determine the state of the input and transform with respect to units.
 
@@ -120,9 +126,16 @@ class _UnitConsistency:
         Side Effects
         -------------
         Sets the following attributes:
+        - ``_input_is_high_level``: A boolean indicating if the input is a high level
+            object.
         - ``_input_is_quantity``: A boolean indicating if the input is a quantity.
         - ``_transform_uses_quantity``: A boolean indicating if the transform uses
         """
+        self._input_is_high_level = frame.is_high_level(*inputs)
+
+        if self._input_is_high_level:
+            inputs = high_level_objects_to_values(*inputs, low_level_wcs=wcs)
+
         self._input_is_quantity = any(isinstance(a, u.Quantity) for a in inputs)
 
         if isinstance(self._transform, (Tabular1D, Tabular2D)):
@@ -139,8 +152,12 @@ class _UnitConsistency:
                 self._transform is None or not self._transform.uses_quantity
             )
 
+        return inputs
+
     def _find_transform_arguments(
-        self, inputs: tuple[LowLevelArray | u.Quantity, ...], frame: CoordinateFrame
+        self,
+        inputs: tuple[LowLevelArray | u.Quantity, ...],
+        frame: CoordinateFrame,
     ) -> None:
         """
         Determine the arguments to pass to the transform based the unit states
@@ -182,11 +199,12 @@ class _UnitConsistency:
         inputs: tuple[LowLevelArray | u.Quantity, ...],
         frame: CoordinateFrame,
         transform: Mdl,
+        wcs: WCS,
     ) -> None:
         self._transform = transform
 
         # Initialize the internal variables
-        self._find_units_state(inputs)
+        inputs = self._find_units_state(inputs, frame, wcs)
         self._find_transform_arguments(inputs, frame)
 
     @property
@@ -203,6 +221,9 @@ class _UnitConsistency:
         Adds or removes units from the arguments as needed so that
         the type of the output matches the input.
         """
+        if self._input_is_high_level:
+            return frame.add_units(outputs)
+
         if not self._input_is_quantity and not self._transform_uses_quantity:
             return outputs
 
@@ -348,6 +369,7 @@ class WCS(Pipeline, WCSAPIMixin):
             inputs=args,
             frame=self.input_frame,
             transform=transform,
+            wcs=self,
         )
 
         result = transform(
@@ -480,31 +502,29 @@ class WCS(Pipeline, WCSAPIMixin):
         except NotImplementedError:
             transform = None
 
-        if is_high_level(*args, low_level_wcs=self):
-            message = "High Level objects are not supported with the native API. \
-                       Please use the `world_to_pixel` method."
-            raise TypeError(message)
-
-        if with_bounding_box and self.bounding_box is not None:
-            args = self.outside_footprint(args)
-
         unit_consistency = _UnitConsistency(
             inputs=args,
             frame=self.output_frame,
             transform=transform,
+            wcs=self,
         )
+
+        inputs = unit_consistency.args
+
+        if with_bounding_box and self.bounding_box is not None:
+            inputs = self.outside_footprint(inputs)
 
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = transform(
-                *unit_consistency.args,
+                *inputs,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **akwargs,
             )
         else:
             result = self.numerical_inverse(
-                *unit_consistency.args,
+                *inputs,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **kwargs,
@@ -1295,6 +1315,7 @@ class WCS(Pipeline, WCSAPIMixin):
             inputs=args,
             frame=from_frame_obj,
             transform=transform,
+            wcs=self,
         )
 
         result = transform(
