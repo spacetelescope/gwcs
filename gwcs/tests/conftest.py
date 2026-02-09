@@ -119,32 +119,23 @@ def gwcs_spec_cel_time_4d():
 
 @pytest.fixture(
     params=[
-        (2, 1, 0),
         (2, 0, 1),
-        pytest.param(
-            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
-        ),
+        (2, 1, 0),
+        (0, 2, 1),
+        (1, 0, 2),
     ],
 )
-def gwcs_cube_with_separable_spectral(request):
-    axes_order = request.param
+def axes_order(request):
+    return request.param
+
+
+@pytest.fixture
+def gwcs_cube_with_separable_spectral(axes_order):
     return examples.gwcs_cube_with_separable_spectral(axes_order)
 
 
-@pytest.fixture(
-    params=[
-        (2, 0, 1),
-        (2, 1, 0),
-        pytest.param(
-            (0, 2, 1), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 2")
-        ),
-        pytest.param(
-            (1, 0, 2), marks=pytest.mark.skip(reason="Fails round-trip for -TAB axis 3")
-        ),
-    ],
-)
-def gwcs_cube_with_separable_time(request):
-    axes_order = request.param
+@pytest.fixture
+def gwcs_cube_with_separable_time(axes_order):
     return examples.gwcs_cube_with_separable_time(axes_order)
 
 

@@ -516,7 +516,7 @@ def gwcs_cube_with_separable_spectral(axes_order):
     w.pixel_shape = cube_size
     w.array_shape = w.pixel_shape[::-1]
 
-    return w, axes_order
+    return w
 
 
 def gwcs_cube_with_separable_time(axes_order):
