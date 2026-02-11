@@ -40,11 +40,13 @@ class LabelMapperConverter(TransformConverterBase):
         atol = node.get("atol", 1e-8)
         no_label = node.get("no_label", np.nan)
 
-        if isinstance(mapper, NDArrayType):
+        if isinstance(mapper, (NDArrayType, np.ndarray)):
             if mapper.ndim != 2:
                 msg = "GWCS currently only supports 2D masks."
                 raise NotImplementedError(msg)
-            return LabelMapperArray(mapper, inputs_mapping)
+            if (inputs := node.get("inputs")) is None:
+                return LabelMapperArray(mapper, inputs_mapping)
+            return LabelMapperArray(mapper, inputs_mapping, inputs=tuple(inputs))
         if isinstance(mapper, Model):
             inputs = node.get("inputs")
             return LabelMapper(
