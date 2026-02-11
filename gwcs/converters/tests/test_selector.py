@@ -94,6 +94,14 @@ def test_labelMapperArray_int(tmp_path):
     assert_selector_roundtrip(mask, tmp_path)
 
 
+def test_labelMapperArray_non_default_inputs(tmp_path):
+    a = np.array([[1, 0, 2], [1, 0, 0], [1, 2, 2]])
+    mask = selector.LabelMapperArray(
+        a, inputs_mapping=Mapping((0, 1), n_inputs=3), inputs=("x", "y", "order")
+    )
+    assert_selector_roundtrip(mask, tmp_path)
+
+
 def test_LabelMapperDict(tmp_path):
     dmapper = create_scalar_mapper()
     sel = selector.LabelMapperDict(
