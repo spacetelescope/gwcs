@@ -1,0 +1,1 @@
+Bugfix for supporting non-coordinate inputs to transforms supporting quantities.
