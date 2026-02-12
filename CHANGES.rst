@@ -1,3 +1,13 @@
+1.0.3 (2026-02-12)
+==================
+
+Bug Fixes
+---------
+
+- Bugfix for supporting non-coordinate inputs to transforms supporting
+  quantities. (`#706 <https://github.com/spacetelescope/gwcs/issues/706>`_)
+
+
 1.0.2 (2026-02-11)
 ==================
 
