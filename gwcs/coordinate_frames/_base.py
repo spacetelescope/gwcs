@@ -1,4 +1,5 @@
 import abc
+from itertools import zip_longest
 
 import numpy as np
 from astropy import units as u
@@ -136,8 +137,11 @@ class BaseCoordinateFrame(abc.ABC):
             return u.Quantity(arrays, self.unit[0])
 
         return tuple(
-            u.Quantity(array, unit=unit)
-            for array, unit in zip(arrays, self.unit, strict=True)
+            array if unit is None else u.Quantity(array, unit=unit)
+            # zip_longest is used here to support "non-coordinate" inputs/outputs
+            #   This implicitly assumes that the "non-coordinate" inputs/outputs
+            #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
+            for array, unit in zip_longest(arrays, self.unit)
         )
 
     def remove_units(
@@ -151,5 +155,8 @@ class BaseCoordinateFrame(abc.ABC):
 
         return tuple(
             array.to_value(unit) if isinstance(array, u.Quantity) else array
-            for array, unit in zip(arrays, self.unit, strict=True)
+            # zip_longest is used here to support "non-coordinate" inputs/outputs
+            #   This implicitly assumes that the "non-coordinate" inputs/outputs
+            #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
+            for array, unit in zip_longest(arrays, self.unit)
         )
