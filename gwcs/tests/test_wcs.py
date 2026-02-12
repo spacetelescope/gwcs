@@ -1924,3 +1924,39 @@ def test_fitswcs_transform(lon, lat):
     assert_allclose(fwcs(0, 0), (lon, lat), atol=1e-14)
     assert_allclose(fwcs(0, lat)[0], lon + 180, atol=1e-14)
     assert_allclose(fwcs.inverse(lon, lat), (0, 0), atol=1e-14)
+
+
+def test_non_coordinate_input():
+    """Test that non-coordinate inputs are handled correctly."""
+    gw = wcs.WCS(
+        [
+            (
+                cf.Frame2D(
+                    name="detector",
+                    axes_names=("x", "y"),
+                    unit=(u.deg, u.deg),
+                    axes_order=(0, 1),
+                ),
+                models.Identity(3),
+            ),
+            (
+                cf.CompositeFrame(
+                    [
+                        cf.CelestialFrame(
+                            name="icrs", axes_order=(0, 1), reference_frame=coord.ICRS()
+                        ),
+                        cf.SpectralFrame(
+                            name="spectral",
+                            axes_order=(2,),
+                            unit=(u.micron,),
+                            axes_names=("wavelength",),
+                        ),
+                    ],
+                    name="world",
+                ),
+                None,
+            ),
+        ]
+    )
+    assert gw(1, 2, 3) == (1, 2, 3)
+    assert gw(1 * u.deg, 2 * u.deg, 3) == (1 * u.deg, 2 * u.deg, 3 * u.micron)
