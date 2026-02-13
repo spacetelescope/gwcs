@@ -18,6 +18,8 @@ from astropy.modeling.models import (
     RotateCelestial2Native,
     Shift,
     Sky2Pix_TAN,
+    Tabular1D,
+    Tabular2D,
 )
 from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
@@ -237,7 +239,14 @@ class WCS(Pipeline, WCSAPIMixin):
         """
         # Validate that the input type matches what the transform expects
         input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        transform_uses_quantity = not (transform is None or not transform.uses_quantity)
+        if isinstance(transform, (Tabular1D, Tabular2D)):
+            transform_uses_quantity = isinstance(transform.lookup_table, u.Quantity)
+        elif transform is not None and len(transform.parameters) == 0:
+            transform_uses_quantity = False
+        else:
+            transform_uses_quantity = not (
+                transform is None or not transform.uses_quantity
+            )
         return input_is_quantity, transform_uses_quantity
 
     def _make_input_units_consistent(

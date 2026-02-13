@@ -1961,3 +1961,45 @@ def test_non_coordinate_input():
     )
     assert gw(1, 2, 3) == (1, 2, 3)
     assert gw(1 * u.deg, 2 * u.deg, 3) == (1 * u.deg, 2 * u.deg, 3 * u.micron)
+
+
+def test_tabular_quantity_issues():
+    """
+    This checks that the uses_quantity lie of astropy models for Tabular1D and Tabular2D
+    is caught and handled correctly by the WCS machinery. This is a regression test for
+    #686
+    """
+
+    in_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type=["SPATIAL"],
+        name="pixels",
+        axes_names=("x",),
+        axes_order=(0,),
+        unit=(u.pix,),
+    )
+    out_frame = cf.SpectralFrame(name="wavelength", unit=(u.nm,))
+
+    m = models.Tabular1D(points=np.arange(10), lookup_table=np.arange(10) * 2)
+    gw = wcs.WCS([(in_frame, m), (out_frame, None)])
+
+    assert gw(2) == 4
+    assert gw(2 * u.pix) == 4 * u.nm
+
+
+def test_identity_quantity_issues():
+    in_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type=["SPATIAL"],
+        name="pixels",
+        axes_names=("x",),
+        axes_order=(0,),
+        unit=(u.pix,),
+    )
+    out_frame = cf.SpectralFrame(name="wavelength", unit=(u.nm,))
+    m = models.Identity(1)
+
+    gw = wcs.WCS([(in_frame, m), (out_frame, None)])
+
+    assert gw(2) == 2
+    assert gw(2 * u.pix) == 2 * u.nm
