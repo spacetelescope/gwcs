@@ -5,6 +5,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 
 from ._axis import AxisType
+from ._base import AstropyBuiltInFrame, WorldAxisObjectClass, WorldAxisObjectComponent
 from ._core import CoordinateFrame
 
 __all__ = ["SpectralFrame"]
@@ -32,16 +33,16 @@ class SpectralFrame(CoordinateFrame):
 
     def __init__(
         self,
-        axes_order=(0,),
-        reference_frame=None,
-        unit=None,
-        axes_names=None,
-        name=None,
-        axis_physical_types=None,
-    ):
-        if not np.iterable(unit):
+        axes_order: tuple[int] = (0,),
+        reference_frame: AstropyBuiltInFrame | None = None,
+        unit: tuple[u.Unit] | None = None,
+        axes_names: tuple[str] | None = None,
+        name: str | None = None,
+        axis_physical_types: tuple[str | None] | None = None,
+    ) -> None:
+        if unit is None or not np.iterable(unit):
             unit = (unit,)
-        unit = [u.Unit(un) for un in unit]
+        unit = tuple(u.Unit(un) for un in unit)
         pht = axis_physical_types or self._default_axis_physical_types(unit)
 
         super().__init__(
@@ -55,7 +56,7 @@ class SpectralFrame(CoordinateFrame):
             axis_physical_types=pht,
         )
 
-    def _default_axis_physical_types(self, unit):
+    def _default_axis_physical_types(self, unit: tuple[u.Unit, ...]) -> tuple[str, ...]:
         if unit[0].physical_type == "frequency":
             return ("em.freq",)
         if unit[0].physical_type == "length":
@@ -73,9 +74,17 @@ class SpectralFrame(CoordinateFrame):
         return (f"custom:{unit[0].physical_type}",)
 
     @property
-    def world_axis_object_classes(self):
-        return {"spectral": (coord.SpectralCoord, (), {"unit": self.unit[0]})}
+    def world_axis_object_classes(self) -> dict[str, WorldAxisObjectClass]:
+        return {
+            "spectral": WorldAxisObjectClass(
+                coord.SpectralCoord, (), {"unit": self.unit[0]}
+            )
+        }
 
     @property
-    def _native_world_axis_object_components(self):
-        return [("spectral", 0, lambda sc: sc.to_value(self.unit[0]))]
+    def _native_world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
+        return [
+            WorldAxisObjectComponent(
+                "spectral", 0, lambda sc: sc.to_value(self.unit[0])
+            )
+        ]
