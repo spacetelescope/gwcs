@@ -22,7 +22,7 @@ content-type = "text/x-rst"
 Homepage = "https://github.com/spacetelescope/gwcs"
 Tracker = "https://github.com/spacetelescope/gwcs/issues"
 Documentation = "https://gwcs.readthedocs.io/en/stable/"
-"Source Code" = "https://github.com/spacetelescope/jwst"
+"Source Code" = "https://github.com/spacetelescope/gwcs"
 
 [project.entry-points."asdf.extensions"]
 gwcs = "gwcs.extension:get_extensions"
