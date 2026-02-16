@@ -32,7 +32,7 @@ repos:
       - id: text-unicode-replacement-char
   # lint and format
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.1
     hooks:
       - id: ruff-check
         args:

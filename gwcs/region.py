@@ -376,7 +376,7 @@ class Edge:
     def next(self):
         return self._next
 
-    @next.setter
+    @next.setter  # noqa: A003
     def next(self, edge):
         if self._name is None:
             self._name = edge._name
