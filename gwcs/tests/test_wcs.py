@@ -80,7 +80,8 @@ def test_create_wcs():
     # use only frame names
     gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m)
     # omit input_frame
-    gw2 = wcs.WCS(output_frame="icrs", forward_transform=m)
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        gw2 = wcs.WCS(output_frame="icrs", forward_transform=m)
     # use CoordinateFrame objects
     gw3 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
     # use a pipeline to initialize
@@ -104,7 +105,12 @@ def test_init_no_transform():
     """
     Test initializing a WCS object without a forward_transform.
     """
-    gw = wcs.WCS(output_frame="icrs")
+    with (
+        pytest.warns(DeprecationWarning, match=r"No forward_transform specified.*"),
+        pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"),
+    ):
+        gw = wcs.WCS(output_frame="icrs")
+
     assert len(gw._pipeline) == 2
     assert gw.pipeline[0].frame.name == "detector"
     with pytest.warns(
@@ -117,7 +123,10 @@ def test_init_no_transform():
     ):
         assert gw.pipeline[1][0].name == "icrs"
     assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
-    gw = wcs.WCS(output_frame=icrs, input_frame=detector)
+
+    with pytest.warns(DeprecationWarning, match=r"No forward_transform specified.*"):
+        gw = wcs.WCS(output_frame=icrs, input_frame=detector)
+
     assert gw._pipeline[0].frame.name == "detector"
     with pytest.warns(
         DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
@@ -137,13 +146,18 @@ def test_init_no_output_frame():
     """
     Test initializing a WCS without an output_frame raises an error.
     """
-    with pytest.raises(CoordinateFrameError):
+    with (
+        pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"),
+        pytest.raises(CoordinateFrameError),
+    ):
         wcs.WCS(forward_transform=m1)
 
 
 def test_insert_transform():
     """Test inserting a transform."""
-    gw = wcs.WCS(output_frame="icrs", forward_transform=m1)
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        gw = wcs.WCS(output_frame="icrs", forward_transform=m1)
+
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame="icrs", transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
@@ -214,13 +228,16 @@ def test_backward_transform():
     """
     # Test that an error is raised when one of the models has not inverse.
     poly = models.Polynomial1D(1, c0=4)
-    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
+
     with pytest.raises(NotImplementedError):
         _ = w.backward_transform
 
     # test backward transform
     poly.inverse = models.Shift(-4)
-    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
     assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
@@ -232,7 +249,8 @@ def test_backward_transform_has_inverse():
     poly.inverse = models.Polynomial1D(
         1, c0=-3
     )  # this is NOT the actual inverse of poly
-    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame=icrs)
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
@@ -1541,7 +1559,12 @@ def test_spatial_spectral_stokes():
 
 
 def test_wcs_str():
-    w = wcs.WCS(output_frame="icrs")
+    with (
+        pytest.warns(DeprecationWarning, match=r"No forward_transform specified.*"),
+        pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"),
+    ):
+        w = wcs.WCS(output_frame="icrs")
+
     assert "icrs" in str(w)
 
 

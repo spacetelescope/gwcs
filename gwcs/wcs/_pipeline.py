@@ -65,6 +65,21 @@ class Pipeline:
         An initialized pipeline.
         """
         if forward_transform is None:
+            msg = (
+                "No forward_transform specified, this option has been deprecated "
+                " and will be removed in a future version. Please specify a"
+                " forward_transform of some kind."
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+            if input_frame is None:
+                msg = (
+                    "No input_frame specified, this option has been deprecated and "
+                    "will be removed in a future version. Please specify an "
+                    "input_frame."
+                )
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
             # Initialize a WCS without a forward_transform - allows building a
             # WCS programmatically.
             if output_frame is None:
@@ -77,6 +92,14 @@ class Pipeline:
             ]
 
         if isinstance(forward_transform, Model):
+            if input_frame is None:
+                msg = (
+                    "No input_frame specified, this option has been deprecated and "
+                    "will be removed in a future version. Please specify an "
+                    "input_frame."
+                )
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
             if output_frame is None:
                 msg = (
                     "An output_frame must be specified if forward_transform is a model."
@@ -96,6 +119,14 @@ class Pipeline:
             raise TypeError(msg)
 
         self._extend(forward_transform)
+
+        if len(self._pipeline) < 2:
+            msg = (
+                "Pipelines without at least two steps have been deprecated, and "
+                "support will be removed in a future version. Please specify at "
+                "least two steps, for the input and output frames."
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     @property
     def pipeline(self) -> list[Step]:

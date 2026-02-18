@@ -241,7 +241,9 @@ def test_RegionsSelector():
     reg_selector.undefined_transform_value = -100
     assert_equal(reg_selector(0, 0), [-100, -100])
 
-    wcs = WCS(forward_transform=reg_selector, output_frame=cf.Frame2D())
+    with pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"):
+        wcs = WCS(forward_transform=reg_selector, output_frame=cf.Frame2D())
+
     out = wcs(1, 1)
     assert out == (-100, -100)
 
