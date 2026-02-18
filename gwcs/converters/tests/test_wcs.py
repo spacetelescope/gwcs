@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from contextlib import nullcontext
 
 import asdf
 import pytest
@@ -71,7 +72,10 @@ def _wcs_factory():
     m1 = models.Shift(12.4) & models.Shift(-2)
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
-    gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+
     gw2 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
     gw3.pixel_shape = (100, 200)
@@ -81,7 +85,15 @@ def _wcs_factory():
 
 @pytest.mark.parametrize("gw", _wcs_factory())
 def test_create_wcs(tmp_path, gw):
-    assert_wcs_roundtrip(gw, tmp_path)
+    if isinstance(gw.input_frame, cf.EmptyFrame) or isinstance(
+        gw.output_frame, cf.EmptyFrame
+    ):
+        context = pytest.warns(DeprecationWarning, match=r"The use of strings.*")
+    else:
+        context = nullcontext()
+
+    with context:
+        assert_wcs_roundtrip(gw, tmp_path)
 
 
 def _composite_frame_factory():
