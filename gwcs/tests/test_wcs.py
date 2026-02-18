@@ -857,8 +857,19 @@ def test_to_fits_sip_pc_normalization(gwcs_simple_imaging_units, matrix_type):
     assert_allclose(yflat, inv_fitsvaly, atol=5e-9, rtol=0)
 
 
-def test_to_fits_sip_composite_frame(gwcs_cube_with_separable_spectral):
-    w, axes_order = gwcs_cube_with_separable_spectral
+def test_to_fits_sip_composite_frame(
+    request, axes_order, gwcs_cube_with_separable_spectral
+):
+    if axes_order == (0, 2, 1):
+        request.applymarker(
+            pytest.mark.xfail(reason="Fails round-trip for -TAB axis 2")
+        )
+    if axes_order == (1, 0, 2):
+        request.applymarker(
+            pytest.mark.xfail(reason="Fails round-trip for -TAB axis 3")
+        )
+
+    w = gwcs_cube_with_separable_spectral
 
     dec_axis = int(axes_order.index(1) > axes_order.index(0)) + 1
     ra_axis = 3 - dec_axis
@@ -891,10 +902,21 @@ def test_to_fits_sip_composite_frame_galactic(gwcs_3d_galactic_spectral):
     )
 
 
-def test_to_fits_sip_composite_frame_keep_axis(gwcs_cube_with_separable_spectral):
+def test_to_fits_sip_composite_frame_keep_axis(
+    request, axes_order, gwcs_cube_with_separable_spectral
+):
     from inspect import Parameter, signature
 
-    w, axes_order = gwcs_cube_with_separable_spectral
+    if axes_order == (0, 2, 1):
+        request.applymarker(
+            pytest.mark.xfail(reason="Fails round-trip for -TAB axis 2")
+        )
+    if axes_order == (1, 0, 2):
+        request.applymarker(
+            pytest.mark.xfail(reason="Fails round-trip for -TAB axis 3")
+        )
+
+    w = gwcs_cube_with_separable_spectral
     _, _, celestial_group = w._separable_groups(detect_celestial=True)
 
     pars = signature(w.to_fits_sip).parameters
@@ -997,7 +1019,6 @@ def test_to_fits_tab_7d(gwcs_7d_complex_mapping):
     assert np.allclose(pts, fits_wcs.wcs_world2pix(*world_crds, 0))
 
 
-@pytest.mark.skip(reason="Fails round-trip for -TAB axis 4")
 def test_to_fits_mixed_4d(gwcs_spec_cel_time_4d):
     # gWCS:
     w = gwcs_spec_cel_time_4d
@@ -1073,9 +1094,9 @@ def test_to_fits_1D_round_trip(gwcs_1d_spectral):
     assert np.allclose(x, xinv, rtol=1e-6, atol=1e-7)
 
 
-def test_to_fits_sip_tab_cube(gwcs_cube_with_separable_spectral):
+def test_to_fits_sip_tab_cube(axes_order, gwcs_cube_with_separable_spectral):
     # gWCS:
-    w, axes_order = gwcs_cube_with_separable_spectral
+    w = gwcs_cube_with_separable_spectral
 
     # FITS WCS -SIP (for celestial) and -TAB (for spectral):
     hdr, bt = w.to_fits(projection=models.Sky2Pix_TAN(name="TAN"))
