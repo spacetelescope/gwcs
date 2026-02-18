@@ -118,6 +118,46 @@ class Pipeline:
             )
             raise TypeError(msg)
 
+        if (
+            input_frame is not None
+            and not isinstance(input_frame, str)
+            and (
+                (
+                    isinstance(forward_transform[0], Step)
+                    and input_frame is not forward_transform[0].frame
+                )
+                or (
+                    not isinstance(forward_transform[0], Step)
+                    and input_frame is not forward_transform[0][0]
+                )
+            )
+        ):
+            msg = (
+                "input_frame not matching the last frame in the pipeline has been "
+                "deprecated and will be removed in a future version. "
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+        if (
+            output_frame is not None
+            and not isinstance(output_frame, str)
+            and (
+                (
+                    isinstance(forward_transform[-1], Step)
+                    and output_frame is not forward_transform[-1].frame
+                )
+                or (
+                    not isinstance(forward_transform[-1], Step)
+                    and output_frame is not forward_transform[-1][0]
+                )
+            )
+        ):
+            msg = (
+                "output_frame not matching the last frame in the pipeline has been "
+                "deprecated and will be removed in a future version. "
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
         self._extend(forward_transform)
 
         if len(self._pipeline) < 2:
