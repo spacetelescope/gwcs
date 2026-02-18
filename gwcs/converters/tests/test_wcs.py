@@ -72,11 +72,12 @@ def _wcs_factory():
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
     gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
-    gw2 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
+    gw2 = wcs.WCS(output_frame="icrs", forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
-    gw3.pixel_shape = (100, 200)
+    gw4 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
+    gw4.pixel_shape = (100, 200)
 
-    return [gw1, gw2, gw3]
+    return [gw1, gw2, gw3, gw4]
 
 
 @pytest.mark.parametrize("gw", _wcs_factory())

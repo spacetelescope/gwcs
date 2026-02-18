@@ -79,21 +79,58 @@ def test_create_wcs():
     """
     # use only frame names
     gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m)
+    # omit input_frame
+    gw2 = wcs.WCS(output_frame="icrs", forward_transform=m)
     # use CoordinateFrame objects
-    gw2 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
+    gw3 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
     # use a pipeline to initialize
-    pipe = [(detector, m), (icrs, None)]
-    gw3 = wcs.WCS(forward_transform=pipe)
+    pipe = [(detector, m1), (icrs, None)]
+    gw4 = wcs.WCS(forward_transform=pipe)
     assert (
         gw1.available_frames
         == gw2.available_frames
         == gw3.available_frames
+        == gw4.available_frames
         == ["detector", "icrs"]
     )
     res = m(1, 2)
     assert_allclose(gw1(1, 2), res)
     assert_allclose(gw2(1, 2), res)
     assert_allclose(gw3(1, 2), res)
+    assert_allclose(gw3(1, 2), res)
+
+
+def test_init_no_transform():
+    """
+    Test initializing a WCS object without a forward_transform.
+    """
+    gw = wcs.WCS(output_frame="icrs")
+    assert len(gw._pipeline) == 2
+    assert gw.pipeline[0].frame.name == "detector"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw.pipeline[0][0].name == "detector"
+    assert gw.pipeline[1].frame.name == "icrs"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw.pipeline[1][0].name == "icrs"
+    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
+    gw = wcs.WCS(output_frame=icrs, input_frame=detector)
+    assert gw._pipeline[0].frame.name == "detector"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw._pipeline[0][0].name == "detector"
+    assert gw._pipeline[1].frame.name == "icrs"
+    with pytest.warns(
+        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
+    ):
+        assert gw._pipeline[1][0].name == "icrs"
+    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
+    with pytest.raises(NotImplementedError):
+        gw(1, 2)
 
 
 def test_init_no_output_frame():
@@ -106,7 +143,7 @@ def test_init_no_output_frame():
 
 def test_insert_transform():
     """Test inserting a transform."""
-    gw = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+    gw = wcs.WCS(output_frame="icrs", forward_transform=m1)
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame="icrs", transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
@@ -177,21 +214,13 @@ def test_backward_transform():
     """
     # Test that an error is raised when one of the models has not inverse.
     poly = models.Polynomial1D(1, c0=4)
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
-    )
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
     with pytest.raises(NotImplementedError):
         _ = w.backward_transform
 
     # test backward transform
     poly.inverse = models.Shift(-4)
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
-    )
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame="sky")
     assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
@@ -203,11 +232,7 @@ def test_backward_transform_has_inverse():
     poly.inverse = models.Polynomial1D(
         1, c0=-3
     )  # this is NOT the actual inverse of poly
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame=icrs,
-    )
+    w = wcs.WCS(forward_transform=poly & models.Scale(2), output_frame=icrs)
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
@@ -819,12 +844,11 @@ def test_to_fits_sip_pc_normalization(gwcs_simple_imaging_units, matrix_type):
 
     wcs_forward = wcslin | tan | n2c
 
-    detector = cf.Frame2D(name="detector")
     sky_cs = cf.CelestialFrame(reference_frame=coord.ICRS(), name="sky")
-    pipeline = [(detector, wcs_forward), (sky_cs, None)]
+    pipeline = [("detector", wcs_forward), (sky_cs, None)]
 
     wcs_lin = wcs.WCS(
-        input_frame=detector,
+        input_frame=cf.Frame2D(name="detector"),
         output_frame=sky_cs,
         forward_transform=pipeline,
     )
@@ -1517,33 +1541,8 @@ def test_spatial_spectral_stokes():
 
 
 def test_wcs_str():
-    gw = wcs.WCS(forward_transform=m1, input_frame="detector", output_frame="icrs")
-    assert "icrs" in str(gw)
-    assert len(gw._pipeline) == 2
-    assert gw.pipeline[0].frame.name == "detector"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw.pipeline[0][0].name == "detector"
-    assert gw.pipeline[1].frame.name == "icrs"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw.pipeline[1][0].name == "icrs"
-    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
-
-    gw = wcs.WCS(forward_transform=m1, output_frame=icrs, input_frame=detector)
-    assert gw._pipeline[0].frame.name == "detector"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw._pipeline[0][0].name == "detector"
-    assert gw._pipeline[1].frame.name == "icrs"
-    with pytest.warns(
-        DeprecationWarning, match="Indexing a WCS.pipeline step is deprecated."
-    ):
-        assert gw._pipeline[1][0].name == "icrs"
-    assert np.isin(gw.available_frames, ["detector", "icrs"]).all()
+    w = wcs.WCS(output_frame="icrs")
+    assert "icrs" in str(w)
 
 
 def test_bounding_box_is_returned_F():

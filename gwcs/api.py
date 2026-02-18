@@ -1,59 +1,20 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-This module defines the abstract APIs for the GWCS Package:
+This module contains a mixin class which exposes the WCS API defined
+in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 
-- Native GWCS API defined by GWCS.
-- WCS API defined in astropy APE 14 (https://doi.org/10.5281/zenodo.1188875).
 """
-
-from __future__ import annotations
-
-import abc
-from typing import TYPE_CHECKING
 
 import astropy.units as u
 from astropy.modeling import separable
 from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 
 from gwcs import utils
-from gwcs.coordinate_frames import EmptyFrame
 
-if TYPE_CHECKING:
-    from astropy.modeling import Model
-    from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
-
-    from gwcs.coordinate_frames import CoordinateFrame
-
-__all__ = ["NativeAPIMixin", "WCSAPIMixin"]
+__all__ = ["GWCSAPIMixin"]
 
 
-class NativeAPIMixin(abc.ABC):
-    """
-    A mix-in class that is intended to be inherited by the
-    :class:`~gwcs.wcs.WCS` class and provides the native GWCS API.
-    """
-
-    @property
-    @abc.abstractmethod
-    def input_frame(self) -> CoordinateFrame:
-        """The input coordinate frame."""
-
-    @property
-    @abc.abstractmethod
-    def output_frame(self) -> CoordinateFrame:
-        """The output coordinate frame."""
-
-    @property
-    @abc.abstractmethod
-    def forward_transform(self) -> Model:
-        """The forward transformation model from the input_frame to the output_frame."""
-
-    @property
-    @abc.abstractmethod
-    def bounding_box(self) -> ModelBoundingBox | CompoundBoundingBox | None:
-        """The input_frame's bounding box"""
-
-
-class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
+class GWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
     """
     A mix-in class that is intended to be inherited by the
     :class:`~gwcs.wcs.WCS` class and provides the low- and high-level
@@ -63,23 +24,21 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
     # Low Level APE 14 API
     @property
-    def pixel_n_dim(self) -> int:
+    def pixel_n_dim(self):
         """
         The number of axes in the pixel coordinate system.
         """
-        if isinstance(self.input_frame, EmptyFrame):
-            # This is because astropy.modeling.Model does not type hint n_inputs
-            return self.forward_transform.n_inputs  # type: ignore[no-any-return]
+        if self.input_frame is None:
+            return self.forward_transform.n_inputs
         return self.input_frame.naxes
 
     @property
-    def world_n_dim(self) -> int:
+    def world_n_dim(self):
         """
         The number of axes in the world coordinate system.
         """
-        if isinstance(self.output_frame, EmptyFrame):
-            # This is because astropy.modeling.Model does not type hint n_inputs
-            return self.forward_transform.n_outputs  # type: ignore[no-any-return]
+        if self.output_frame is None:
+            return self.forward_transform.n_outputs
         return self.output_frame.naxes
 
     @property
@@ -95,7 +54,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         return self.output_frame.axis_physical_types
 
     @property
-    def world_axis_units(self) -> tuple[str, ...]:
+    def world_axis_units(self):
         """
         An iterable of strings given the units of the world coordinates for each
         axis.
@@ -104,12 +63,10 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         specification document, units that do not follow this standard are still
         allowed, but just not recommended).
         """
-        if isinstance(self.output_frame, EmptyFrame):
-            return ()
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
-    def _remove_quantity_output(self, result, frame: CoordinateFrame):
-        if not isinstance(frame, EmptyFrame):
+    def _remove_quantity_output(self, result, frame):
+        if frame is not None:
             if frame.naxes == 1:
                 result = [result]
 
@@ -120,7 +77,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
         # If we only have one output axes, we shouldn't return a tuple.
         if (
-            not isinstance(self.output_frame, EmptyFrame)
+            self.output_frame is not None
             and self.output_frame.naxes == 1
             and isinstance(result, tuple)
         ):
@@ -258,7 +215,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         if value is None:
             self._pixel_shape = None
             return
-        wcs_naxes = self.pixel_n_dim
+        wcs_naxes = self.input_frame.naxes
         if len(value) != wcs_naxes:
             msg = (
                 "The number of data axes, "
@@ -291,7 +248,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
     @property
     def world_axis_object_classes(self):
-        if isinstance(self.output_frame, EmptyFrame):
+        if self.output_frame is None:
             return None
 
         return self.output_frame.world_axis_object_classes
@@ -305,7 +262,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         An iterable of strings describing the name for each pixel axis.
         """
-        if not isinstance(self.input_frame, EmptyFrame):
+        if self.input_frame is not None:
             return self.input_frame.axes_names
         return tuple([""] * self.pixel_n_dim)
 
@@ -314,6 +271,6 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         An iterable of strings describing the name for each world axis.
         """
-        if not isinstance(self.output_frame, EmptyFrame):
+        if self.output_frame is not None:
             return self.output_frame.axes_names
         return tuple([""] * self.world_n_dim)

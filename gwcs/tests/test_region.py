@@ -241,11 +241,7 @@ def test_RegionsSelector():
     reg_selector.undefined_transform_value = -100
     assert_equal(reg_selector(0, 0), [-100, -100])
 
-    wcs = WCS(
-        forward_transform=reg_selector,
-        input_frame="detector",
-        output_frame=cf.Frame2D(),
-    )
+    wcs = WCS(forward_transform=reg_selector, output_frame=cf.Frame2D())
     out = wcs(1, 1)
     assert out == (-100, -100)
 

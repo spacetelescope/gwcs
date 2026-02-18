@@ -38,7 +38,7 @@ class CoordinateFrame(BaseCoordinateFrame):
 
     def __init__(
         self,
-        naxes: int,
+        naxes,
         axes_type,
         axes_order,
         reference_frame=None,
@@ -112,7 +112,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         self._name = val
 
     @property
-    def naxes(self) -> int:
+    def naxes(self):
         """The number of axes in this frame."""
         return self._naxes
 
