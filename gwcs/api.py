@@ -15,7 +15,6 @@ from astropy.modeling import separable
 from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 
 from gwcs import utils
-from gwcs.coordinate_frames import EmptyFrame
 
 if TYPE_CHECKING:
     from astropy.modeling import Model
@@ -67,9 +66,6 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         The number of axes in the pixel coordinate system.
         """
-        if isinstance(self.input_frame, EmptyFrame):
-            # This is because astropy.modeling.Model does not type hint n_inputs
-            return self.forward_transform.n_inputs  # type: ignore[no-any-return]
         return self.input_frame.naxes
 
     @property
@@ -77,9 +73,6 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         The number of axes in the world coordinate system.
         """
-        if isinstance(self.output_frame, EmptyFrame):
-            # This is because astropy.modeling.Model does not type hint n_inputs
-            return self.forward_transform.n_outputs  # type: ignore[no-any-return]
         return self.output_frame.naxes
 
     @property
@@ -104,26 +97,19 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         specification document, units that do not follow this standard are still
         allowed, but just not recommended).
         """
-        if isinstance(self.output_frame, EmptyFrame):
-            return ()
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
     def _remove_quantity_output(self, result, frame: CoordinateFrame):
-        if not isinstance(frame, EmptyFrame):
-            if frame.naxes == 1:
-                result = [result]
+        if frame.naxes == 1:
+            result = [result]
 
-            result = tuple(
-                r.to_value(unit) if isinstance(r, u.Quantity) else r
-                for r, unit in zip(result, frame.unit, strict=False)
-            )
+        result = tuple(
+            r.to_value(unit) if isinstance(r, u.Quantity) else r
+            for r, unit in zip(result, frame.unit, strict=False)
+        )
 
         # If we only have one output axes, we shouldn't return a tuple.
-        if (
-            not isinstance(self.output_frame, EmptyFrame)
-            and self.output_frame.naxes == 1
-            and isinstance(result, tuple)
-        ):
+        if self.output_frame.naxes == 1 and isinstance(result, tuple):
             return result[0]
         return result
 
@@ -291,9 +277,6 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
 
     @property
     def world_axis_object_classes(self):
-        if isinstance(self.output_frame, EmptyFrame):
-            return None
-
         return self.output_frame.world_axis_object_classes
 
     @property
@@ -305,15 +288,11 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         An iterable of strings describing the name for each pixel axis.
         """
-        if not isinstance(self.input_frame, EmptyFrame):
-            return self.input_frame.axes_names
-        return tuple([""] * self.pixel_n_dim)
+        return self.input_frame.axes_names
 
     @property
     def world_axis_names(self):
         """
         An iterable of strings describing the name for each world axis.
         """
-        if not isinstance(self.output_frame, EmptyFrame):
-            return self.output_frame.axes_names
-        return tuple([""] * self.world_n_dim)
+        return self.output_frame.axes_names
