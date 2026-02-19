@@ -9,12 +9,20 @@ from gwcs import examples, geometry
 
 @pytest.fixture
 def gwcs_simple_2d():
-    return examples.gwcs_simple_2d()
+    with (
+        pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"),
+        pytest.warns(DeprecationWarning, match=r"The use of strings.*"),
+    ):
+        return examples.gwcs_simple_2d()
 
 
 @pytest.fixture
 def gwcs_empty_output_2d():
-    return examples.gwcs_empty_output_2d()
+    with (
+        pytest.warns(DeprecationWarning, match=r"No input_frame specified.*"),
+        pytest.warns(DeprecationWarning, match=r"The use of strings.*"),
+    ):
+        return examples.gwcs_empty_output_2d()
 
 
 @pytest.fixture
@@ -89,7 +97,8 @@ def gwcs_3spectral_orders():
 
 @pytest.fixture
 def gwcs_with_frames_strings():
-    return examples.gwcs_with_frames_strings()
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        return examples.gwcs_with_frames_strings()
 
 
 @pytest.fixture

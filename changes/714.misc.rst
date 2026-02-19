@@ -1,0 +1,8 @@
+Add deprecation warnings for the
+
+- Initializing ``WCS`` with a `None` ``input_frame``.
+- Initializing ``WCS`` with a `None` ``forward_transform``.
+- Passing a string in place of a ``CoordinateFrame`` to the ``WCS``
+  initializer.
+
+These warnings will become errors in the next major release.
