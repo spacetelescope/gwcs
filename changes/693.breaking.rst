@@ -1,0 +1,11 @@
+Remove ability to use ``str`` as a frame when initializing a GWCS ``WCS``. This
+is theoretically a breaking change, but the only practical impacts should be felt
+on test code that was relying on this behavior for convenience.
+
+The rational for this change is to ensure that the metadata provided by frames
+is always available to the WCS. This makes the entire WCS a more robust object.
+
+Note that we still sort of support this but only when reading from an ASDF file.
+In that case, a clear warning is issued that will indicate that the WCS will not
+be fully functional until the frame is properly replaced with an actual coordinate
+frame object.

@@ -1,0 +1,1 @@
+Add more complete type hinting for the general GWCS API.
