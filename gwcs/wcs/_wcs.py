@@ -240,7 +240,10 @@ class WCS(Pipeline, WCSAPIMixin):
         # Validate that the input type matches what the transform expects
         input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
         if isinstance(transform, (Tabular1D, Tabular2D)):
-            transform_uses_quantity = isinstance(transform.lookup_table, u.Quantity)
+            transform_uses_quantity = (
+                isinstance(transform.lookup_table, u.Quantity)
+                or transform.input_units_equivalencies is not None
+            )
         elif transform is not None and len(transform.parameters) == 0:
             transform_uses_quantity = False
         else:
@@ -479,9 +482,15 @@ class WCS(Pipeline, WCSAPIMixin):
                     max_ax = axis_range[~m].min()
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
-                    coord_ = self._remove_quantity_output(
-                        world_arrays, self.output_frame
-                    )[idim]
+                    if len(world_arrays) == 1:
+                        coord_ = self._remove_quantity_output(
+                            world_arrays[0], self.output_frame
+                        )
+                    else:
+                        coord_ = self._remove_quantity_output(
+                            world_arrays, self.output_frame
+                        )[idim]
+
                     outside = (coord_ < min_ax) | (coord_ > max_ax)
                 if np.any(outside):
                     if np.isscalar(coord):

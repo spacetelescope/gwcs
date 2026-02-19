@@ -2007,6 +2007,42 @@ def test_tabular_quantity_issues():
     assert gw(2) == 4
     assert gw(2 * u.pix) == 4 * u.nm
 
+    assert gw.invert(4) == 2
+    assert gw.invert(4 * u.nm) == 2 * u.pix
+
+
+def test_tabular_quantity_issues_equivalencies():
+    """
+    This checks that the uses_quantity lie of astropy models for Tabular1D
+    and Tabular2, when equivalenceis are set
+    """
+
+    in_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type=["SPATIAL"],
+        name="pixels",
+        axes_names=("x",),
+        axes_order=(0,),
+        unit=(u.pix,),
+    )
+    out_frame = cf.SpectralFrame(name="wavelength", unit=(u.nm,))
+
+    Tabular = type(
+        "Tabular",
+        (models.Tabular1D,),
+        {"input_units_equivalencies": {"x0": u.spectral()}},
+    )
+
+    m = Tabular(points=np.arange(10) * u.pix, lookup_table=np.arange(10) * 2)
+
+    gw = wcs.WCS([(in_frame, m), (out_frame, None)])
+
+    assert gw(2) == 4
+    assert gw(2 * u.pix) == 4 * u.nm
+
+    assert gw.invert(4) == 2
+    assert gw.invert(4 * u.nm) == 2 * u.pix
+
 
 def test_identity_quantity_issues():
     in_frame = cf.CoordinateFrame(
