@@ -308,7 +308,7 @@ def test_high_level_wrapper(wcsobj, request):
     # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input)
-    results = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
+    results = wcsobj.output_frame.remove_units(wc2)
 
     wc2 = values_to_high_level_objects(*results, low_level_wcs=wcsobj)
     if len(wc2) == 1:
@@ -326,10 +326,15 @@ def test_high_level_wrapper(wcsobj, request):
         wc1 = (wc1,)
 
     pix_out1 = hlvl.world_to_pixel(*wc1)
+    pix_out2 = wcsobj.invert(*wc1)
+
+    pix_out2 = wcsobj._remove_quantity_frame(pix_out2, wcsobj.input_frame)
+
+    if not isinstance(pix_out2, list | tuple):
+        pix_out2 = (pix_out2,)
+
     np.testing.assert_allclose(pix_out1, pixel_input)
-    with pytest.raises(TypeError) as e:
-        _ = wcsobj.invert(*wc1)
-    assert "High Level objects are not supported with the native" in str(e)
+    np.testing.assert_allclose(pix_out2, pixel_input)
 
 
 def test_stokes_wrapper(gwcs_stokes_lookup):
@@ -548,12 +553,6 @@ def test_world_to_array_index_values(gwcs_simple_imaging, sky_ra_dec):
     )
 
 
-def test_ndim_str_frames(gwcs_with_frames_strings):
-    wcsobj = gwcs_with_frames_strings
-    assert wcsobj.pixel_n_dim == 4
-    assert wcsobj.world_n_dim == 3
-
-
 def test_composite_many_base_frame():
     q_frame_1 = cf.CoordinateFrame(
         name="distance", axes_order=(0,), naxes=1, axes_type="SPATIAL", unit=(u.m,)
@@ -592,8 +591,8 @@ def test_coordinate_frame_api():
     pixel = wcs.world_to_pixel(world)
     assert isinstance(pixel, float)
 
-    with pytest.raises(TypeError):
-        _ = wcs.invert(world)
+    pixel2 = wcs.invert(world)
+    assert u.allclose(pixel2, 0 * u.pix)
 
 
 def test_world_axis_object_components_units(gwcs_3d_identity_units):
@@ -642,14 +641,3 @@ def test_no_input_frame(gwcs_simple_2d):
     assert (np.array([4]), np.array([3])) == gwcs_simple_2d.pixel_to_world_values(
         np.array([3]), np.array([1])
     )
-
-
-def test_empty_output_frame(gwcs_empty_output_2d):
-    """Test running the API on the WCS with an empty output frame."""
-    assert (np.array([3]), np.array([1])) == gwcs_empty_output_2d.pixel_to_world_values(
-        np.array([2]), np.array([-1])
-    )
-    assert (
-        np.array([2]),
-        np.array([-1]),
-    ) == gwcs_empty_output_2d.world_to_pixel_values(np.array([3]), np.array([1]))

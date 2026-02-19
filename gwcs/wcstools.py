@@ -9,7 +9,14 @@ from astropy.modeling import fitting, models, projections
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.modeling.core import Model
 
-from .coordinate_frames import CelestialFrame, CompositeFrame, Frame2D, SpectralFrame
+from .coordinate_frames import (
+    AxisType,
+    CelestialFrame,
+    CompositeFrame,
+    CoordinateFrame,
+    Frame2D,
+    SpectralFrame,
+)
 from .utils import (
     UnsupportedProjectionError,
     UnsupportedTransformError,
@@ -112,8 +119,16 @@ def wcs_from_fiducial(
             )
             raise ValueError(msg)
         forward_transform.bounding_box = bounding_box[::-1]
+
     if input_frame is None:
-        input_frame = "detector"
+        input_frame = CoordinateFrame(
+            naxes=forward_transform.n_inputs,
+            axes_type=(AxisType.SPATIAL,) * forward_transform.n_inputs,
+            axes_order=tuple(range(forward_transform.n_inputs)),
+            name="detector",
+            unit=(None,) * forward_transform.n_inputs,
+        )
+
     return WCS(
         output_frame=coordinate_frame,
         input_frame=input_frame,

@@ -143,10 +143,7 @@ def test_no_units_nd(wcsobj):
     sky = wcsobj.pixel_to_world(*inp)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        wcsobj.invert(*sky)
+    assert u.allclose(inpq, wcsobj.invert(*sky))
 
 
 @wcs_with_unit_1d
@@ -191,29 +188,24 @@ def test_transform_with_units(wcsobj):
     sky = wcsobj.pixel_to_world(*xxq)
     if not np.iterable(sky):
         sky = (sky,)
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        wcsobj.invert(*sky)
+
+    assert u.allclose(xxq, wcsobj.invert(*sky))
 
 
 @wcs_no_unit_1d
 def test_add_units(wcsobj):
     if wcsobj.input_frame.naxes == 1:
-        assert (
-            wcsobj._add_units_input((1,), wcsobj.input_frame)
-            == 1 * wcsobj.input_frame.unit[0]
-        )
+        assert wcsobj.input_frame.add_units((1,)) == 1 * wcsobj.input_frame.unit[0]
         assert_allclose(
-            wcsobj._add_units_input(([1, 1],), wcsobj.input_frame),
+            wcsobj.input_frame.add_units(([1, 1],)),
             ([1, 1] * wcsobj.input_frame.unit[0],),
         )
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._add_units_input((1, 1), wcsobj.input_frame), (1 * u.pix, 1 * u.pix)
+            wcsobj.input_frame.add_units((1, 1)), (1 * u.pix, 1 * u.pix)
         )
         assert_quantity_allclose(
-            wcsobj._add_units_input(([1, 1], [1, 1]), wcsobj.input_frame),
+            wcsobj.input_frame.add_units(([1, 1], [1, 1])),
             ([1, 1] * u.pix, [1, 1] * u.pix),
         )
 
@@ -222,19 +214,15 @@ def test_add_units(wcsobj):
 def test_remove_units(wcsobj):
     if wcsobj.input_frame.naxes == 1:
         unit = wcsobj.input_frame.unit[0]
-        assert wcsobj._remove_units_input(1 * unit, wcsobj.input_frame) == (1,)
-        assert_allclose(
-            wcsobj._remove_units_input(([1, 1] * unit,), wcsobj.input_frame), ([1, 1],)
-        )
+        assert wcsobj.input_frame.remove_units((1 * unit,)) == (1,)
+        assert_allclose(wcsobj.input_frame.remove_units(([1, 1] * unit,)), ([1, 1],))
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._remove_units_input((1 * u.pix, 1 * u.pix), wcsobj.input_frame),
+            wcsobj.input_frame.remove_units((1 * u.pix, 1 * u.pix)),
             (1, 1),
         )
         assert_quantity_allclose(
-            wcsobj._remove_units_input(
-                ([1, 1] * u.pix, [1, 1] * u.pix), wcsobj.input_frame
-            ),
+            wcsobj.input_frame.remove_units(([1, 1] * u.pix, [1, 1] * u.pix)),
             ([1, 1], [1, 1]),
         )
 

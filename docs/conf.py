@@ -105,8 +105,6 @@ extensions += ["sphinx_inline_tabs"]
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True
 nitpick_ignore = [
-    ("py:class", "gwcs.api.GWCSAPIMixin"),
-    ("py:class", "gwcs.wcs._pipeline.Pipeline"),
     ("py:obj", "astropy.modeling.projections.projcodes"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),

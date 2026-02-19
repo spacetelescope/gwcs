@@ -13,11 +13,6 @@ def gwcs_simple_2d():
 
 
 @pytest.fixture
-def gwcs_empty_output_2d():
-    return examples.gwcs_empty_output_2d()
-
-
-@pytest.fixture
 def gwcs_2d_quantity_shift():
     return examples.gwcs_2d_quantity_shift()
 
@@ -85,11 +80,6 @@ def gwcs_stokes_lookup():
 @pytest.fixture
 def gwcs_3spectral_orders():
     return examples.gwcs_3spectral_orders()
-
-
-@pytest.fixture
-def gwcs_with_frames_strings():
-    return examples.gwcs_with_frames_strings()
 
 
 @pytest.fixture
