@@ -41,7 +41,7 @@ from gwcs.utils import _compute_lon_pole, is_high_level, to_index
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
-from ._step import Step, StepTuple
+from ._step import Mdl, Step, StepTuple
 from ._utils import (
     fit_2D_poly,
     fix_transform_inputs,
@@ -87,6 +87,167 @@ class _WorldAxisInfo:
         self.cunit = cunit
         self.ctype = ctype
         self.input_axes = input_axes
+
+
+class _UnitConsistency:
+    """
+    Helper class to manage the consistency of units between the inputs and outputs of
+    a transform.
+    """
+
+    _transform: Mdl
+    _args: tuple[LowLevelArray | u.Quantity, ...]
+    _input_is_quantity: bool
+    _transform_uses_quantity: bool
+
+    def _find_units_state(self, inputs: tuple[LowLevelArray | u.Quantity, ...]) -> None:
+        """
+        Determine the state of the input and transform with respect to units.
+
+        Note
+        ----
+        This is used to determine if we need to add or remove units from the
+        arguments before calling the transform, and to determine if we need to add
+        or remove units from the output of the transform to make it consistent with
+        the input.
+
+        Parameters
+        ----------
+        inputs : tuple of array-like or `~astropy.units.Quantity`
+            The input arguments to the transform. This is used to determine if the
+            input is a quantity or not.
+
+        Side Effects
+        -------------
+        Sets the following attributes:
+        - ``_input_is_quantity``: A boolean indicating if the input is a quantity.
+        - ``_transform_uses_quantity``: A boolean indicating if the transform uses
+        """
+        self._input_is_quantity = any(isinstance(a, u.Quantity) for a in inputs)
+
+        if isinstance(self._transform, (Tabular1D, Tabular2D)):
+            self._transform_uses_quantity = (
+                isinstance(self._transform.lookup_table, u.Quantity)
+                or self._transform.input_units_equivalencies is not None
+            )
+
+        elif self._transform is not None and len(self._transform.parameters) == 0:
+            self._transform_uses_quantity = False
+
+        else:
+            self._transform_uses_quantity = not (
+                self._transform is None or not self._transform.uses_quantity
+            )
+
+    def _find_transform_arguments(
+        self, inputs: tuple[LowLevelArray | u.Quantity, ...], frame: CoordinateFrame
+    ) -> None:
+        """
+        Determine the arguments to pass to the transform based the unit states
+        of the inputs and transform
+
+        Parameters
+        ----------
+        inputs : tuple of array-like or `~astropy.units.Quantity`
+            The input arguments to the transform. This is used to determine if the
+            input is a quantity or not.
+        frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            The frame of the input arguments. This is used to add or remove units
+            from the arguments as needed.
+
+        Side Effects
+        -------------
+        Sets the following attribute:
+        - ``_args``: A tuple of arguments to pass to the transform, with units
+        """
+        # Validate that the input type matches what the transform expects
+        if (not self._input_is_quantity and not self._transform_uses_quantity) or (
+            self._input_is_quantity and self._transform_uses_quantity
+        ):
+            self._args = inputs
+
+        elif not self._input_is_quantity and (
+            self._transform_uses_quantity
+            or (self._transform is not None and self._transform.parameters.size)
+        ):
+            self._args = frame.add_units(inputs)
+
+        # not self._transform_uses_quantity and self._input_is_quantity case
+        #   this is the only possible remaining case.
+        else:
+            self._args = frame.remove_units(inputs)
+
+    def __init__(
+        self,
+        inputs: tuple[LowLevelArray | u.Quantity, ...],
+        frame: CoordinateFrame,
+        transform: Mdl,
+    ) -> None:
+        self._transform = transform
+
+        # Initialize the internal variables
+        self._find_units_state(inputs)
+        self._find_transform_arguments(inputs, frame)
+
+    @property
+    def args(self) -> tuple[LowLevelArray | u.Quantity, ...]:
+        """The input arguments to pass to the transform"""
+        return self._args
+
+    def _handle_output_units(
+        self,
+        frame: CoordinateFrame,
+        *outputs: LowLevelArray | u.Quantity,
+    ) -> tuple[LowLevelArray | u.Quantity, ...]:
+        """
+        Adds or removes units from the arguments as needed so that
+        the type of the output matches the input.
+        """
+        if not self._input_is_quantity and not self._transform_uses_quantity:
+            return outputs
+
+        if self._input_is_quantity and self._transform_uses_quantity:
+            # make sure the output is returned in the units of the output frame
+            return frame.add_units(outputs)
+
+        if not self._input_is_quantity and (
+            self._transform_uses_quantity
+            or (self._transform is not None and self._transform.parameters.size)
+        ):
+            return frame.remove_units(outputs)
+
+        # not self._transform_uses_quantity and self._input_is_quantity case
+        #   this is the only possible remaining case.
+        return frame.add_units(outputs)
+
+    def find_outputs(
+        self,
+        frame: CoordinateFrame,
+        outputs: tuple[LowLevelArray | u.Quantity, ...] | LowLevelArray | u.Quantity,
+    ) -> tuple[LowLevelArray | u.Quantity, ...] | LowLevelArray | u.Quantity:
+        """Find the outputs relative to the unit state of the inputs and transform
+
+        Parameters
+        ----------
+        frame : `~gwcs.coordinate_frames.CoordinateFrame`
+            The frame of the output arguments. This is used to add or remove
+            units from the arguments as needed.
+        outputs
+            The results of the transform.
+
+        Returns
+        -------
+            The outputs with the units added or removed as needed to be consistent
+            with the inputs and transform.
+        """
+        if frame.naxes == 1:
+            outputs = (outputs,)
+
+        outputs = self._handle_output_units(frame, *outputs)
+
+        if frame.naxes == 1:
+            return outputs[0]
+        return outputs
 
 
 class WCS(Pipeline, WCSAPIMixin):
@@ -183,34 +344,20 @@ class WCS(Pipeline, WCSAPIMixin):
         # Call into variable as this is a property computed each time it is called
         transform = self.forward_transform
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
+        unit_consistency = _UnitConsistency(
+            inputs=args,
             frame=self.input_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
+            transform=transform,
         )
 
         result = transform(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
-        )
-        if self.output_frame.naxes == 1:
-            result = (result,)
-
-        result = self._make_output_units_consistent(
-            transform,
-            *result,
-            frame=self.output_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
+            *unit_consistency.args,
+            with_bounding_box=with_bounding_box,
+            fill_value=fill_value,
+            **kwargs,
         )
 
-        if self.output_frame.naxes == 1:
-            return result[0]
-        return result
+        return unit_consistency.find_outputs(frame=self.output_frame, outputs=result)
 
     @overload
     def __call__(
@@ -250,89 +397,6 @@ class WCS(Pipeline, WCSAPIMixin):
         return self.evaluate(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-
-    def _units_are_present(self, args, transform: Model) -> tuple[bool, bool]:
-        """
-        Determine if the inputs to a transform are quantities and the transform
-        supports units.
-
-        Parameters
-        ----------
-        args : a tuple of scalars or ndarray-like objects
-            Inputs to a transform.
-        transform : `~astropy.modeling.Model`
-            Transform to be evaluated.
-
-        Returns
-        -------
-        input_is_quantity, transform_uses_quantity : bool
-
-        """
-        # Validate that the input type matches what the transform expects
-        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        if isinstance(transform, (Tabular1D, Tabular2D)):
-            transform_uses_quantity = (
-                isinstance(transform.lookup_table, u.Quantity)
-                or transform.input_units_equivalencies is not None
-            )
-        elif transform is not None and len(transform.parameters) == 0:
-            transform_uses_quantity = False
-        else:
-            transform_uses_quantity = not (
-                transform is None or not transform.uses_quantity
-            )
-        return input_is_quantity, transform_uses_quantity
-
-    def _make_input_units_consistent(
-        self,
-        transform: Model,
-        *args,
-        frame: CoordinateFrame,
-        input_is_quantity: bool = False,
-        transform_uses_quantity: bool = False,
-    ):
-        """
-        Adds or removes units from the arguments as needed so that the transform
-        can be successfully evaluated.
-        """
-        # Validate that the input type matches what the transform expects
-        if (not input_is_quantity and not transform_uses_quantity) or (
-            input_is_quantity and transform_uses_quantity
-        ):
-            return args
-        if not input_is_quantity and (
-            transform_uses_quantity or transform.parameters.size
-        ):
-            return frame.add_units(args)
-        if not transform_uses_quantity and input_is_quantity:
-            return frame.remove_units(args)
-        return args
-
-    def _make_output_units_consistent(
-        self,
-        transform: Model,
-        *args,
-        frame: CoordinateFrame,
-        input_is_quantity: bool = False,
-        transform_uses_quantity: bool = False,
-    ):
-        """
-        Adds or removes units from the arguments as needed so that
-        the type of the output matches the input.
-        """
-        if not input_is_quantity and not transform_uses_quantity:
-            return args
-
-        if input_is_quantity and transform_uses_quantity:
-            # make sure the output is returned in the units of the output frame
-            return frame.add_units(args)
-        if not input_is_quantity and (
-            transform_uses_quantity or transform.parameters.size
-        ):
-            return frame.remove_units(args)
-        if not transform_uses_quantity and input_is_quantity:
-            return frame.add_units(args)
-        return args
 
     def in_image(
         self,
@@ -424,30 +488,23 @@ class WCS(Pipeline, WCSAPIMixin):
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
+        unit_consistency = _UnitConsistency(
+            inputs=args,
+            frame=self.output_frame,
+            transform=transform,
         )
 
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
-            frame=self.output_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = transform(
-                *args,
+                *unit_consistency.args,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **akwargs,
             )
         else:
-            # Always strip units for numerical inverse
-            args = self.output_frame.remove_units(args)
-            result = self._numerical_inverse(
-                *args,
+            result = self.numerical_inverse(
+                *unit_consistency.args,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **kwargs,
@@ -456,18 +513,7 @@ class WCS(Pipeline, WCSAPIMixin):
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
-        if self.input_frame.naxes == 1:
-            result = (result,)
-        result = self._make_output_units_consistent(
-            transform,
-            *result,
-            frame=self.input_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
-        if self.input_frame.naxes == 1:
-            return result[0]
-        return result
+        return unit_consistency.find_outputs(frame=self.input_frame, outputs=result)
 
     def outside_footprint(
         self,
@@ -1245,32 +1291,22 @@ class WCS(Pipeline, WCSAPIMixin):
         from_frame_obj = self.get_frame(from_frame)
         to_frame_obj = self.get_frame(to_frame)
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
+        unit_consistency = _UnitConsistency(
+            inputs=args,
             frame=from_frame_obj,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
+            transform=transform,
         )
 
         result = transform(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+            *unit_consistency.args,
+            with_bounding_box=with_bounding_box,
+            fill_value=fill_value,
+            **kwargs,
         )
+
         if to_frame_obj is not None:
-            if to_frame_obj.naxes == 1:
-                result = (result,)
-            result = self._make_output_units_consistent(
-                transform,
-                *result,
-                frame=to_frame_obj,
-                input_is_quantity=input_is_quantity,
-                transform_uses_quantity=transform_uses_quantity,
-            )
-        if to_frame_obj is not None and to_frame_obj.naxes == 1:
-            return result[0]
+            return unit_consistency.find_outputs(frame=to_frame_obj, outputs=result)
+
         return result
 
     @property
