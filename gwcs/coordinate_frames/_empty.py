@@ -5,6 +5,10 @@ from ._core import CoordinateFrame
 __all__ = ["EmptyFrame"]
 
 
+class EmptyFrameDeprecationWarning(DeprecationWarning):
+    pass
+
+
 class EmptyFrame(CoordinateFrame):
     """
     Represents a "default" detector frame. This is for use as the default value
@@ -17,7 +21,7 @@ class EmptyFrame(CoordinateFrame):
             "The use of strings in place of a proper CoordinateFrame has been "
             "deprecated."
         )
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        warnings.warn(msg, EmptyFrameDeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         return f'<{type(self).__name__}(name="{self.name}")>'

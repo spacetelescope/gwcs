@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from contextlib import nullcontext
 
 import asdf
 import pytest
@@ -91,13 +90,7 @@ def _wcs_factory():
 
 @pytest.mark.parametrize("gw", _wcs_factory())
 def test_create_wcs(tmp_path, gw):
-    if gw.input_frame is None or gw.output_frame is None:
-        context = pytest.warns(DeprecationWarning, match=r"The use of strings.*")
-    else:
-        context = nullcontext()
-
-    with context:
-        assert_wcs_roundtrip(gw, tmp_path)
+    assert_wcs_roundtrip(gw, tmp_path)
 
 
 def _composite_frame_factory():
