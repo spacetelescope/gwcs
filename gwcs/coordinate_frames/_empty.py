@@ -1,6 +1,12 @@
+import warnings
+
 from ._core import CoordinateFrame
 
 __all__ = ["EmptyFrame"]
+
+
+class EmptyFrameDeprecationWarning(DeprecationWarning):
+    pass
 
 
 class EmptyFrame(CoordinateFrame):
@@ -11,6 +17,11 @@ class EmptyFrame(CoordinateFrame):
 
     def __init__(self, name=None):
         self._name = "detector" if name is None else name
+        msg = (
+            "The use of strings in place of a proper CoordinateFrame has been "
+            "deprecated."
+        )
+        warnings.warn(msg, EmptyFrameDeprecationWarning, stacklevel=2)
 
     def __repr__(self):
         return f'<{type(self).__name__}(name="{self.name}")>'

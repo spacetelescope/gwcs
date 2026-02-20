@@ -30,7 +30,7 @@ class FrameProperties:
             if len(unit) != naxes:
                 msg = "Number of units does not match number of axes."
                 raise ValueError(msg)
-            self.unit = tuple(u.Unit(au) for au in unit)
+            self.unit = tuple(au if au is None else u.Unit(au) for au in unit)
         else:
             self.unit = tuple(u.dimensionless_unscaled for na in range(naxes))
 

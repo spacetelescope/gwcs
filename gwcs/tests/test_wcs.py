@@ -78,7 +78,8 @@ def test_create_wcs():
     Test initializing a WCS object.
     """
     # use only frame names
-    gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m)
     # use CoordinateFrame objects
     gw2 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
     # use a pipeline to initialize
@@ -106,7 +107,8 @@ def test_init_no_output_frame():
 
 def test_insert_transform():
     """Test inserting a transform."""
-    gw = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        gw = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame="icrs", transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
@@ -177,21 +179,25 @@ def test_backward_transform():
     """
     # Test that an error is raised when one of the models has not inverse.
     poly = models.Polynomial1D(1, c0=4)
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
-    )
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(
+            forward_transform=poly & models.Scale(2),
+            input_frame="detector",
+            output_frame="sky",
+        )
+
     with pytest.raises(NotImplementedError):
         _ = w.backward_transform
 
     # test backward transform
     poly.inverse = models.Shift(-4)
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
-    )
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(
+            forward_transform=poly & models.Scale(2),
+            input_frame="detector",
+            output_frame="sky",
+        )
+
     assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
 
@@ -203,11 +209,13 @@ def test_backward_transform_has_inverse():
     poly.inverse = models.Polynomial1D(
         1, c0=-3
     )  # this is NOT the actual inverse of poly
-    w = wcs.WCS(
-        forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame=icrs,
-    )
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(
+            forward_transform=poly & models.Scale(2),
+            input_frame="detector",
+            output_frame=icrs,
+        )
+
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
 
 
@@ -258,18 +266,24 @@ def test_from_fiducial_frame2d():
 def test_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
     pipeline = [("detector", trans3), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     bb = ((-1, 10), (6, 15))
     with pytest.raises(ValueError):  # noqa: PT011
         w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
     pipeline = [("detector", trans2), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     w.bounding_box = bb
     assert w.bounding_box == w.forward_transform.bounding_box
 
     pipeline = [("detector", models.Shift(2)), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     w.bounding_box = (1, 5)
     assert w.bounding_box == w.forward_transform.bounding_box
     with pytest.raises(ValueError):  # noqa: PT011
@@ -281,7 +295,9 @@ def test_bounding_box_units():
     bb = ((1 * u.pix, 5 * u.pix), (2 * u.pix, 6 * u.pix))
     trans = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
     pipeline = [("detector", trans), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     w.bounding_box = bb
     world = w(-1 * u.pix, -1 * u.pix)
     assert_allclose(world, (np.nan, np.nan))
@@ -290,7 +306,9 @@ def test_bounding_box_units():
 def test_compound_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
     pipeline = [("detector", trans3), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     cbb = {
         1: ((-1, 10), (6, 15)),
         2: ((-1, 5), (3, 17)),
@@ -319,7 +337,9 @@ def test_compound_bounding_box():
     # Test that bounding_box with quantities can be assigned and evaluates
     trans = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
     pipeline = [("detector", trans), ("sky", None)]
-    w = wcs.WCS(pipeline)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipeline)
+
     cbb = {1 * u.pix: (1 * u.pix, 5 * u.pix), 2 * u.pix: (2 * u.pix, 6 * u.pix)}
     w.attach_compound_bounding_box(cbb, [("x1",)])
 
@@ -535,7 +555,8 @@ def test_format_output():
     values = np.array([1.5, 3.4, 6.7, 7, 32])
     t = models.Tabular1D(points, values)
     pipe = [("detector", t), ("world", None)]
-    w = wcs.WCS(pipe)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipe)
     assert_allclose(w(1), 3.4)
     assert_allclose(w([1, 2]), [3.4, 6.7])
     assert np.isscalar(w(1))
@@ -560,7 +581,8 @@ def test_footprint():
     world = cf.CompositeFrame([icrs, spec])
     transform = (models.Shift(10) & models.Shift(-1)) & models.Scale(2)
     pipe = [("det", transform), (world, None)]
-    w = wcs.WCS(pipe)
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        w = wcs.WCS(pipe)
 
     with pytest.raises(TypeError):
         w.footprint()
@@ -1421,14 +1443,15 @@ def test_initialize_wcs_with_list():
     # make pipeline consisting of tuples and Steps
     shift1 = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
     shift2 = models.Shift(3 * u.pix)
-    pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
+
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
 
     end_step = ("end_step", None)
     pipeline.append(end_step)
 
     # make sure no warnings occur when creating wcs with this pipeline
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
         wcs.WCS(pipeline)
 
 
@@ -1517,7 +1540,9 @@ def test_spatial_spectral_stokes():
 
 
 def test_wcs_str():
-    gw = wcs.WCS(forward_transform=m1, input_frame="detector", output_frame="icrs")
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        gw = wcs.WCS(forward_transform=m1, input_frame="detector", output_frame="icrs")
+
     assert "icrs" in str(gw)
     assert len(gw._pipeline) == 2
     assert gw.pipeline[0].frame.name == "detector"
