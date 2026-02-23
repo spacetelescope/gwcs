@@ -81,8 +81,6 @@ filterwarnings = [
   "error",
   "ignore:Models in math_functions:astropy.utils.exceptions.AstropyUserWarning",
   "ignore:numpy.ndarray size changed:RuntimeWarning",
-  # Remove when https://github.com/astropy/astropy/issues/19216 is resolved
-  "ignore:The chararray class is deprecated and will be removed in a future release:DeprecationWarning",
 ]
 
 [tool.coverage.run]
