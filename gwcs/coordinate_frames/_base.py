@@ -133,16 +133,18 @@ class BaseCoordinateFrame(abc.ABC):
         """
         Add units to the arrays
         """
-        if self.naxes == 1 and np.isscalar(arrays):
-            return u.Quantity(arrays, self.unit[0])
-
-        return tuple(
+        output = tuple(
             array if unit is None else u.Quantity(array, unit=unit)
             # zip_longest is used here to support "non-coordinate" inputs/outputs
             #   This implicitly assumes that the "non-coordinate" inputs/outputs
             #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
             for array, unit in zip_longest(arrays, self.unit)
         )
+
+        if self.naxes == 1 and np.isscalar(arrays):
+            return output[0]
+
+        return output
 
     def remove_units(
         self, arrays: u.Quantity | np.ndarray | list[float]

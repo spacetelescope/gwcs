@@ -44,7 +44,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         reference_frame=None,
         unit=None,
         axes_names=None,
-        name=None,
+        name: str | None = None,
         axis_physical_types=None,
     ):
         self._naxes = naxes
@@ -102,12 +102,12 @@ class CoordinateFrame(BaseCoordinateFrame):
         return tuple([t[0] for t in sorted_prop])
 
     @property
-    def name(self):
+    def name(self) -> str:
         """A custom name of this frame."""
         return self._name
 
     @name.setter
-    def name(self, val):
+    def name(self, val: str):
         """A custom name of this frame."""
         self._name = val
 

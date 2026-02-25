@@ -34,8 +34,8 @@ class Pipeline:
         self,
         forward_transform: Model,
         *,
-        input_frame: str | CoordinateFrame,
-        output_frame: str | CoordinateFrame,
+        input_frame: CoordinateFrame,
+        output_frame: CoordinateFrame,
     ) -> None: ...
 
     @overload
@@ -51,8 +51,8 @@ class Pipeline:
         self,
         forward_transform: ForwardTransform,
         *,
-        input_frame: str | CoordinateFrame | None = None,
-        output_frame: str | CoordinateFrame | None = None,
+        input_frame: CoordinateFrame | None = None,
+        output_frame: CoordinateFrame | None = None,
     ) -> None:
         self._pipeline: list[Step] = []
         self._initialize_pipeline(forward_transform, input_frame, output_frame)
@@ -60,8 +60,8 @@ class Pipeline:
     def _initialize_pipeline(
         self,
         forward_transform: ForwardTransform,
-        input_frame: str | CoordinateFrame | None,
-        output_frame: str | CoordinateFrame | None,
+        input_frame: CoordinateFrame | None,
+        output_frame: CoordinateFrame | None,
     ) -> None:
         """
         Initialize a pipeline from a forward transform specification.
@@ -273,6 +273,10 @@ class Pipeline:
         """
         Combine a list of transforms into a single transform.
         """
+        if any(t is None for t in transforms):
+            msg = "Can not combine transforms if any are None."
+            raise NotImplementedError(msg)
+
         return reduce(lambda x, y: x | y, transforms)
 
     @staticmethod
@@ -342,7 +346,7 @@ class Pipeline:
         # Moving backwards over the pipeline
         if to_index < from_index:
             transforms = [
-                step.transform.inverse
+                step.inverse_transform
                 for step in self._pipeline[to_index:from_index][::-1]
             ]
 
@@ -431,9 +435,9 @@ class Pipeline:
 
     def insert_frame(
         self,
-        input_frame: str | CoordinateFrame,
+        input_frame: CoordinateFrame,
         transform: Model,
-        output_frame: str | CoordinateFrame,
+        output_frame: CoordinateFrame,
     ) -> None:
         """
         Insert a new frame into an existing pipeline. This frame must be
@@ -453,7 +457,7 @@ class Pipeline:
             Coordinate frame at end of new transform
         """
 
-        def get_index(frame: str | CoordinateFrame) -> int | None:
+        def get_index(frame: CoordinateFrame) -> int | None:
             try:
                 index = self._frame_index(frame)
             except CoordinateFrameError as err:
@@ -575,7 +579,7 @@ class Pipeline:
 
     def attach_compound_bounding_box(
         self, cbbox: dict[tuple[str], tuple], selector_args: tuple[str]
-    ):
+    ) -> None:
         """
         Attach a compound bounding box dictionary to the pipeline.
 

@@ -32,14 +32,6 @@ def gwcs_simple_2d():
     return wcs.WCS(MODEL_2D_SHIFT, input_frame=input_frame, output_frame=output_frame)
 
 
-def gwcs_empty_output_2d():
-    return wcs.WCS(
-        MODEL_2D_SHIFT,
-        input_frame=cf.EmptyFrame(name="detector"),
-        output_frame=cf.EmptyFrame(name="world"),
-    )
-
-
 def gwcs_2d_quantity_shift():
     frame = cf.CoordinateFrame(
         name="quantity",
@@ -302,12 +294,6 @@ def gwcs_3spectral_orders():
     m = models.Mapping((0, 1, 1)) | MODEL_2D_SHIFT & MODEL_1D_SCALE
 
     return wcs.WCS([(detector_frame, m), (comp1, None)])
-
-
-def gwcs_with_frames_strings():
-    transform = models.Shift(1) & models.Shift(1) & models.Polynomial2D(1)
-    pipe = [("detector", transform), ("world", None)]
-    return wcs.WCS(pipe)
 
 
 def sellmeier_glass():
