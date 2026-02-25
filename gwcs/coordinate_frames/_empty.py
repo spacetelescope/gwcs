@@ -15,8 +15,9 @@ class EmptyFrame(CoordinateFrame):
     for input frame by the WCS object.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, aliases=None):
         self._name = "detector" if name is None else name
+        self._aliases = () if aliases is None else tuple(aliases)
         msg = (
             "The use of strings in place of a proper CoordinateFrame has been "
             "deprecated."

@@ -28,6 +28,8 @@ class SpectralFrame(CoordinateFrame):
         Spectral axis name.
     name : str
         Name for this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
 
     """
 
@@ -38,6 +40,7 @@ class SpectralFrame(CoordinateFrame):
         unit: tuple[u.Unit] | None = None,
         axes_names: tuple[str] | None = None,
         name: str | None = None,
+        aliases: list[str] | None = None,
         axis_physical_types: tuple[str | None] | None = None,
     ) -> None:
         if unit is None or not np.iterable(unit):
@@ -53,6 +56,7 @@ class SpectralFrame(CoordinateFrame):
             reference_frame=reference_frame,
             unit=unit,
             name=name,
+            aliases=aliases,
             axis_physical_types=pht,
         )
 

@@ -103,6 +103,9 @@ class FrameConverter(Converter):
         if "axis_physical_types" in node:
             kwargs["axis_physical_types"] = tuple(node["axis_physical_types"])
 
+        if "aliases" in node:
+            kwargs["aliases"] = tuple(node["aliases"])
+
         return kwargs
 
     def _to_yaml_tree(self, frame: CoordinateFrame, tag, ctx):
@@ -133,6 +136,9 @@ class FrameConverter(Converter):
 
         if frame.raw_properties.axis_physical_types is not None:
             node["axis_physical_types"] = list(frame.raw_properties.axis_physical_types)
+
+        if frame.aliases:
+            node["aliases"] = list(frame.aliases)
 
         return node
 

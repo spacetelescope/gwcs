@@ -87,6 +87,14 @@ class Step:
         return self.frame.name
 
     @property
+    def alias_map(self) -> dict[str, str]:
+        """
+        A dictionary mapping aliaes to their corresponding frame names for this step's
+        frame.
+        """
+        return dict.fromkeys(self.frame.aliases, self.frame.name)
+
+    @property
     def inverse(self) -> Mdl:
         if self.transform is None:
             return None
