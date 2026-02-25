@@ -155,6 +155,13 @@ class CoordinateFrameProtocol(Protocol):
 
     @property
     @abstractmethod
+    def aliases(self) -> tuple[str, ...]:
+        """
+        Alternative names for the coordinate frame.
+        """
+
+    @property
+    @abstractmethod
     def unit(self) -> tuple[u.Unit, ...]:
         """
         The units of the axes in this frame.
