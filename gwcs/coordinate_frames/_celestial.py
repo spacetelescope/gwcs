@@ -2,6 +2,7 @@ from astropy import coordinates as coord
 from astropy import units as u
 
 from ._axis import AxisType
+from ._base import AstropyBuiltInFrame, WorldAxisObjectClass, WorldAxisObjectComponent
 from ._core import CoordinateFrame
 
 __all__ = ["CelestialFrame"]
@@ -36,23 +37,26 @@ class CelestialFrame(CoordinateFrame):
 
     def __init__(
         self,
-        axes_order=None,
-        reference_frame=None,
-        unit=None,
-        axes_names=None,
-        name=None,
-        axis_physical_types=None,
+        axes_order: tuple[int, ...] | None = None,
+        reference_frame: AstropyBuiltInFrame | None = None,
+        unit: tuple[u.Unit, ...] | None = None,
+        axes_names: tuple[str, ...] | None = None,
+        name: str | None = None,
+        axis_physical_types: tuple[str | None, ...] | None = None,
     ):
         if (
             reference_frame is not None
             and not isinstance(reference_frame, str)
             and reference_frame.name.upper() in STANDARD_REFERENCE_FRAMES
+            and axes_names is None
         ):
-            _axes_names = list(reference_frame.representation_component_names.values())
+            _axes_names: list[str] = list(
+                reference_frame.representation_component_names.values()
+            )
             if "distance" in _axes_names:
                 _axes_names.remove("distance")
-            if axes_names is None:
-                axes_names = _axes_names
+
+            axes_names = tuple(_axes_names)
 
         naxes = len(axes_names) if axes_names is not None else 2
 
@@ -63,7 +67,7 @@ class CelestialFrame(CoordinateFrame):
             unit = tuple([u.degree] * naxes)
         axes_type = (AxisType.SPATIAL,) * naxes
 
-        pht = axis_physical_types or self._default_axis_physical_types(
+        pht = axis_physical_types or self._default_axis_physical_types_reference_frame(
             reference_frame, axes_names
         )
         super().__init__(
@@ -77,24 +81,32 @@ class CelestialFrame(CoordinateFrame):
             axis_physical_types=pht,
         )
 
-    def _default_axis_physical_types(self, reference_frame, axes_names):
+    def _default_axis_physical_types_reference_frame(
+        self,
+        reference_frame: AstropyBuiltInFrame | None,
+        axes_names: tuple[str, ...] | None,
+    ) -> tuple[str, ...] | None:
         if isinstance(reference_frame, coord.Galactic):
             return "pos.galactic.lon", "pos.galactic.lat"
+
         if isinstance(
             reference_frame,
             coord.GeocentricTrueEcliptic | coord.GCRS | coord.PrecessedGeocentric,
         ):
             return "pos.bodyrc.lon", "pos.bodyrc.lat"
+
         if isinstance(reference_frame, coord.builtin_frames.BaseRADecFrame):
             return "pos.eq.ra", "pos.eq.dec"
+
         if isinstance(reference_frame, coord.builtin_frames.BaseEclipticFrame):
             return "pos.ecliptic.lon", "pos.ecliptic.lat"
-        return tuple(f"custom:{t}" for t in axes_names)
+
+        return axes_names
 
     @property
-    def world_axis_object_classes(self):
+    def world_axis_object_classes(self) -> dict[str, WorldAxisObjectClass]:
         return {
-            "celestial": (
+            "celestial": WorldAxisObjectClass(
                 coord.SkyCoord,
                 (),
                 {"frame": self.reference_frame, "unit": self._prop.unit},
@@ -102,8 +114,16 @@ class CelestialFrame(CoordinateFrame):
         }
 
     @property
-    def _native_world_axis_object_components(self):
+    def _native_world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         return [
-            ("celestial", 0, lambda sc: sc.spherical.lon.to_value(self._prop.unit[0])),
-            ("celestial", 1, lambda sc: sc.spherical.lat.to_value(self._prop.unit[1])),
+            WorldAxisObjectComponent(
+                "celestial",
+                0,
+                lambda sc: sc.spherical.lon.to_value(self._prop.unit[0]),
+            ),
+            WorldAxisObjectComponent(
+                "celestial",
+                1,
+                lambda sc: sc.spherical.lat.to_value(self._prop.unit[1]),
+            ),
         ]

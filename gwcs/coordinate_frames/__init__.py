@@ -211,7 +211,12 @@ in the coordinate frames before the transform is called:
 """  # noqa: E501
 
 from ._axis import AxisType
-from ._base import BaseCoordinateFrame
+from ._base import (
+    BaseCoordinateFrame,
+    WorldAxisObjectClass,
+    WorldAxisObjectClassConverter,
+    WorldAxisObjectComponent,
+)
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
 from ._core import CoordinateFrame
@@ -233,5 +238,8 @@ __all__ = [
     "SpectralFrame",
     "StokesFrame",
     "TemporalFrame",
+    "WorldAxisObjectClass",
+    "WorldAxisObjectClassConverter",
+    "WorldAxisObjectComponent",
     "get_ctype_from_ucd",
 ]
