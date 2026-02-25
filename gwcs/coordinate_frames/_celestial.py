@@ -30,6 +30,8 @@ class CelestialFrame(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
     axis_physical_types : list
         The UCD 1+ physical types for the axes, in frame order (lon, lat).
     """
@@ -41,6 +43,7 @@ class CelestialFrame(CoordinateFrame):
         unit=None,
         axes_names=None,
         name=None,
+        aliases=None,
         axis_physical_types=None,
     ):
         if (
@@ -74,6 +77,7 @@ class CelestialFrame(CoordinateFrame):
             unit=unit,
             axes_names=axes_names,
             name=name,
+            aliases=aliases,
             axis_physical_types=pht,
         )
 

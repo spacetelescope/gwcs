@@ -67,6 +67,14 @@ class Step:
             return self.frame
         return self.frame.name
 
+    @property
+    def alias_map(self) -> dict[str, str]:
+        """
+        A dictionary mapping aliaes to their corresponding frame names for this step's
+        frame.
+        """
+        return dict.fromkeys(self.frame.aliases, self.frame.name)
+
     def __getitem__(self, ind):
         warnings.warn(
             "Indexing a WCS.pipeline step is deprecated. "

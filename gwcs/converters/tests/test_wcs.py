@@ -26,6 +26,7 @@ def _assert_frame_equal(a, b):
         return a == b
 
     assert a.name == b.name  # nosec
+    assert a.aliases == b.aliases  # nosec
     if not isinstance(a, cf.EmptyFrame):
         assert a.axes_order == b.axes_order  # nosec
         assert a.axes_names == b.axes_names  # nosec
@@ -69,8 +70,10 @@ def assert_wcs_roundtrip(wcs, tmp_path, version=None):
 
 def _wcs_factory():
     m1 = models.Shift(12.4) & models.Shift(-2)
-    icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
-    det = cf.Frame2D(name="detector", axes_order=(0, 1))
+    icrs = cf.CelestialFrame(
+        name="icrs", reference_frame=coord.ICRS(), aliases=("output_frame",)
+    )
+    det = cf.Frame2D(name="detector", axes_order=(0, 1), aliases=("det",))
 
     with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
         gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)

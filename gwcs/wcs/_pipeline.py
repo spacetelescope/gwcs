@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from collections import ChainMap
 from functools import reduce
 from typing import TypeAlias, Union, overload
 
@@ -171,6 +172,14 @@ class Pipeline:
         """
         return [step.frame.name for step in self._pipeline]
 
+    @property
+    def alias_map(self) -> dict[str, str]:
+        """
+        A dictionary mapping aliaes to their corresponding frame names for all
+        frames in the pipeline.
+        """
+        return dict(ChainMap(*[step.alias_map for step in self._pipeline]))
+
     def get_frame(self, frame: str | CoordinateFrame) -> CoordinateFrame:
         """
         Return the frame object corresponding to the given frame name.
@@ -209,14 +218,29 @@ class Pipeline:
         value = step.copy() if isinstance(step, Step) else Step(*step)
 
         frames = self.available_frames
+        alias_map = self.alias_map
 
         # If we are replacing a step, remove it from the list of frames as we will
         # not be duplicating it in that case
         if replace_index is not None:
-            frames.pop(replace_index)
+            current_frame = frames.pop(replace_index)
+            alias_map = {
+                alias: frame_name
+                for alias, frame_name in alias_map.items()
+                if frame_name != current_frame
+            }
 
         if value.frame.name in frames:
             msg = f"Frame {value.frame.name} is already in the pipeline."
+            raise GwcsFrameExistsError(msg)
+
+        if any(alias in alias_map for alias in value.alias_map) or any(
+            alias in frames for alias in value.alias_map
+        ):
+            msg = (
+                f"One of the aliases {tuple(value.alias_map.keys())} for frame "
+                f"{value.frame.name} is already in use in the pipeline."
+            )
             raise GwcsFrameExistsError(msg)
 
         # Add the frame as an attribute of the pipeline
@@ -275,8 +299,7 @@ class Pipeline:
         """
         return reduce(lambda x, y: x | y, transforms)
 
-    @staticmethod
-    def _frame_name(frame: str | CoordinateFrame) -> str:
+    def _frame_name(self, frame: str | CoordinateFrame) -> str:
         """
         Return the name of the frame.
 
@@ -289,7 +312,11 @@ class Pipeline:
         -------
         Name of the frame.
         """
-        return frame.name if isinstance(frame, CoordinateFrame) else frame
+        return (
+            frame.name
+            if isinstance(frame, CoordinateFrame)
+            else self.alias_map.get(frame, frame)
+        )
 
     def _frame_index(self, frame: str | CoordinateFrame) -> int:
         """
