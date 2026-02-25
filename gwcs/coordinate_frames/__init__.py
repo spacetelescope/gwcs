@@ -215,7 +215,7 @@ from ._base import BaseCoordinateFrame
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
 from ._core import CoordinateFrame
-from ._empty import EmptyFrame
+from ._empty import EmptyFrame, EmptyFrameDeprecationWarning
 from ._frame import Frame2D
 from ._spectral import SpectralFrame
 from ._stokes import StokesFrame
@@ -229,6 +229,7 @@ __all__ = [
     "CompositeFrame",
     "CoordinateFrame",
     "EmptyFrame",
+    "EmptyFrameDeprecationWarning",
     "Frame2D",
     "SpectralFrame",
     "StokesFrame",

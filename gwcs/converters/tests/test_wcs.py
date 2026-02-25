@@ -71,7 +71,10 @@ def _wcs_factory():
     m1 = models.Shift(12.4) & models.Shift(-2)
     icrs = cf.CelestialFrame(name="icrs", reference_frame=coord.ICRS())
     det = cf.Frame2D(name="detector", axes_order=(0, 1))
-    gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+
+    with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
+        gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+
     gw2 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
     gw3 = wcs.WCS(output_frame=icrs, input_frame=det, forward_transform=m1)
     gw3.pixel_shape = (100, 200)

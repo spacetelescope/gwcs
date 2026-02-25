@@ -60,9 +60,12 @@ class StepConverter(Converter):
     types = ("gwcs.wcs.Step",)
 
     def from_yaml_tree(self, node, tag, ctx):
+        from gwcs.coordinate_frames import EmptyFrameDeprecationWarning
         from gwcs.wcs import Step
 
-        return Step(frame=node["frame"], transform=node.get("transform", None))
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=EmptyFrameDeprecationWarning)
+            return Step(frame=node["frame"], transform=node.get("transform", None))
 
     def to_yaml_tree(self, step, tag, ctx):
         from gwcs.coordinate_frames import EmptyFrame
