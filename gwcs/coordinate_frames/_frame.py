@@ -27,18 +27,15 @@ class Frame2D(CoordinateFrame):
 
     def __init__(
         self,
-        axes_order=(0, 1),
-        unit=(u.pix, u.pix),
-        axes_names=("x", "y"),
-        name=None,
-        axes_type=None,
-        axis_physical_types=None,
-    ):
+        axes_order: tuple[int, int] = (0, 1),
+        unit: tuple[u.Unit, u.Unit] = (u.pix, u.pix),
+        axes_names: tuple[str, str] = ("x", "y"),
+        name: str | None = None,
+        axes_type: tuple[AxisType | str, AxisType | str] | None = None,
+        axis_physical_types: tuple[str | None, str | None] | None = None,
+    ) -> None:
         if axes_type is None:
             axes_type = (AxisType.SPATIAL, AxisType.SPATIAL)
-        pht = axis_physical_types or self._default_axis_physical_types(
-            axes_names, axes_type
-        )
 
         super().__init__(
             naxes=2,
@@ -47,13 +44,10 @@ class Frame2D(CoordinateFrame):
             name=name,
             axes_names=axes_names,
             unit=unit,
-            axis_physical_types=pht,
+            axis_physical_types=axis_physical_types
+            or (
+                axes_names
+                if (axes_names is not None and all(axes_names))
+                else axes_type
+            ),
         )
-
-    def _default_axis_physical_types(self, axes_names, axes_type):
-        if axes_names is not None and all(axes_names):
-            ph_type = axes_names
-        else:
-            ph_type = axes_type
-
-        return tuple(f"custom:{t}" for t in ph_type)

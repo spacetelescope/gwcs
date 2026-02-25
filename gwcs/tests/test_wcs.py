@@ -78,7 +78,7 @@ def test_create_wcs():
     Test initializing a WCS object.
     """
     # use only frame names
-    gw1 = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m)
+    gw1 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
     # use CoordinateFrame objects
     gw2 = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m)
     # use a pipeline to initialize
@@ -106,7 +106,7 @@ def test_init_no_output_frame():
 
 def test_insert_transform():
     """Test inserting a transform."""
-    gw = wcs.WCS(output_frame="icrs", input_frame="detector", forward_transform=m1)
+    gw = wcs.WCS(output_frame=icrs, input_frame=detector, forward_transform=m1)
     assert_allclose(gw.forward_transform(1, 2), m1(1, 2))
     gw.insert_transform(frame="icrs", transform=m2)
     assert_allclose(gw.forward_transform(1, 2), (m1 | m2)(1, 2))
@@ -179,8 +179,8 @@ def test_backward_transform():
     poly = models.Polynomial1D(1, c0=4)
     w = wcs.WCS(
         forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
+        input_frame=cf.Frame2D(name="detector"),
+        output_frame=cf.Frame2D(name="sky"),
     )
     with pytest.raises(NotImplementedError):
         _ = w.backward_transform
@@ -189,8 +189,8 @@ def test_backward_transform():
     poly.inverse = models.Shift(-4)
     w = wcs.WCS(
         forward_transform=poly & models.Scale(2),
-        input_frame="detector",
-        output_frame="sky",
+        input_frame=cf.Frame2D(name="detector"),
+        output_frame=cf.Frame2D(name="sky"),
     )
     assert_allclose(w.backward_transform(1, 2), (-3, 1))
 
@@ -205,7 +205,7 @@ def test_backward_transform_has_inverse():
     )  # this is NOT the actual inverse of poly
     w = wcs.WCS(
         forward_transform=poly & models.Scale(2),
-        input_frame="detector",
+        input_frame=cf.Frame2D(name="detector"),
         output_frame=icrs,
     )
     assert_allclose(w.backward_transform.inverse(1, 2), w(1, 2))
@@ -257,18 +257,28 @@ def test_from_fiducial_frame2d():
 
 def test_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    pipeline = [("detector", trans3), ("sky", None)]
+    detector = cf.CompositeFrame([cf.Frame2D(), spec], name="detector")
+    sky = cf.CompositeFrame([icrs, spec], name="sky")
+    pipeline = [(detector, trans3), (sky, None)]
     w = wcs.WCS(pipeline)
     bb = ((-1, 10), (6, 15))
     with pytest.raises(ValueError):  # noqa: PT011
         w.bounding_box = bb
     trans2 = models.Shift(10) & models.Scale(2)
-    pipeline = [("detector", trans2), ("sky", None)]
+    detector = cf.Frame2D(name="detector")
+    sky = cf.Frame2D(name="sky")
+    pipeline = [(detector, trans2), (sky, None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
     assert w.bounding_box == w.forward_transform.bounding_box
 
-    pipeline = [("detector", models.Shift(2)), ("sky", None)]
+    detector = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="detector"
+    )
+    sky = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="sky"
+    )
+    pipeline = [(detector, models.Shift(2)), (sky, None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = (1, 5)
     assert w.bounding_box == w.forward_transform.bounding_box
@@ -280,7 +290,9 @@ def test_bounding_box_units():
     # Test that bounding_box with quantities can be assigned and evaluates
     bb = ((1 * u.pix, 5 * u.pix), (2 * u.pix, 6 * u.pix))
     trans = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
-    pipeline = [("detector", trans), ("sky", None)]
+    detector = cf.Frame2D(name="detector", unit=None)
+    sky = cf.Frame2D(name="sky", unit=None)
+    pipeline = [(detector, trans), (sky, None)]
     w = wcs.WCS(pipeline)
     w.bounding_box = bb
     world = w(-1 * u.pix, -1 * u.pix)
@@ -289,7 +301,9 @@ def test_bounding_box_units():
 
 def test_compound_bounding_box():
     trans3 = models.Shift(10) & models.Scale(2) & models.Shift(-1)
-    pipeline = [("detector", trans3), ("sky", None)]
+    detector = cf.CompositeFrame([cf.Frame2D(), spec], name="detector")
+    sky = cf.CompositeFrame([icrs, spec], name="sky")
+    pipeline = [(detector, trans3), (sky, None)]
     w = wcs.WCS(pipeline)
     cbb = {
         1: ((-1, 10), (6, 15)),
@@ -318,7 +332,9 @@ def test_compound_bounding_box():
 
     # Test that bounding_box with quantities can be assigned and evaluates
     trans = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
-    pipeline = [("detector", trans), ("sky", None)]
+    detector = cf.Frame2D(name="detector", unit=None)
+    sky = cf.Frame2D(name="sky", unit=None)
+    pipeline = [(detector, trans), (sky, None)]
     w = wcs.WCS(pipeline)
     cbb = {1 * u.pix: (1 * u.pix, 5 * u.pix), 2 * u.pix: (2 * u.pix, 6 * u.pix)}
     w.attach_compound_bounding_box(cbb, [("x1",)])
@@ -534,7 +550,13 @@ def test_format_output():
     points = np.arange(5)
     values = np.array([1.5, 3.4, 6.7, 7, 32])
     t = models.Tabular1D(points, values)
-    pipe = [("detector", t), ("world", None)]
+    detector = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="detector"
+    )
+    world = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="world"
+    )
+    pipe = [(detector, t), (world, None)]
     w = wcs.WCS(pipe)
     assert_allclose(w(1), 3.4)
     assert_allclose(w([1, 2]), [3.4, 6.7])
@@ -559,7 +581,8 @@ def test_footprint():
     )
     world = cf.CompositeFrame([icrs, spec])
     transform = (models.Shift(10) & models.Shift(-1)) & models.Scale(2)
-    pipe = [("det", transform), (world, None)]
+    detector = cf.CompositeFrame([cf.Frame2D(), spec], name="det")
+    pipe = [(detector, transform), (world, None)]
     w = wcs.WCS(pipe)
 
     with pytest.raises(TypeError):
@@ -1421,9 +1444,16 @@ def test_initialize_wcs_with_list():
     # make pipeline consisting of tuples and Steps
     shift1 = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
     shift2 = models.Shift(3 * u.pix)
-    pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
+    detector = cf.Frame2D(name="detector", axes_order=(0, 1))
+    extra_step = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="extra_step"
+    )
+    pipeline = [(detector, shift1), wcs.Step(extra_step, shift2)]
 
-    end_step = ("end_step", None)
+    end_step = cf.CoordinateFrame(
+        naxes=1, axes_type=(cf.AxisType.SPATIAL,), axes_order=(0,), name="end_step"
+    )
+    end_step = (end_step, None)
     pipeline.append(end_step)
 
     # make sure no warnings occur when creating wcs with this pipeline
@@ -1517,7 +1547,9 @@ def test_spatial_spectral_stokes():
 
 
 def test_wcs_str():
-    gw = wcs.WCS(forward_transform=m1, input_frame="detector", output_frame="icrs")
+    input_frame = cf.Frame2D(name="detector")
+    icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), name="icrs")
+    gw = wcs.WCS(forward_transform=m1, input_frame=input_frame, output_frame=icrs)
     assert "icrs" in str(gw)
     assert len(gw._pipeline) == 2
     assert gw.pipeline[0].frame.name == "detector"
@@ -1756,10 +1788,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        iwcs.invert(*input_world)
+    pixel = iwcs.invert(*input_world)
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1] * u.pix)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1896,23 +1928,13 @@ def test_parameterless_transform():
         ]
     )
 
-    # The expectation for this wcs is that:
-    # - gwcs(1, 1) has no units
-    # (__call__ apparently is supposed to pass units through?)
-    # - gwcs(1*u.pix, 1*u.pix) has units
-    # - gwcs.invert(1, 1) has no units
-    # - gwcs.invert(1*u.pix, 1*u.pix) has no units
-
     # No units introduced by the forward transform
     assert gwcs(1, 1) == (1, 1)
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
+    # No units introduced by the inverse transform
     assert gwcs.invert(1, 1) == (1, 1)
-    # Strictly speaking it's correct that this fails Because
-    # for this setup the HLO are Quantities
-    with pytest.raises(TypeError) as e:
-        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
-    assert "High Level objects are not supported with the native" in str(e)
+    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):

@@ -1,4 +1,5 @@
 import numbers
+from typing import TypeVar
 
 import numpy as np
 from astropy import units as u
@@ -7,10 +8,19 @@ from astropy.wcs.wcsapi.high_level_api import (
     values_to_high_level_objects,
 )
 
-from ._base import BaseCoordinateFrame
+from ._axis import AxesType, AxisType
+from ._base import (
+    AstropyBuiltInFrame,
+    BaseCoordinateFrame,
+    WorldAxisObjectClass,
+    WorldAxisObjectClassConverter,
+    WorldAxisObjectComponent,
+)
 from ._properties import FrameProperties
 
 __all__ = ["CoordinateFrame"]
+
+_PropertyItem = TypeVar("_PropertyItem")
 
 
 class CoordinateFrame(BaseCoordinateFrame):
@@ -39,14 +49,14 @@ class CoordinateFrame(BaseCoordinateFrame):
     def __init__(
         self,
         naxes: int,
-        axes_type,
-        axes_order,
-        reference_frame=None,
-        unit=None,
-        axes_names=None,
-        name=None,
-        axis_physical_types=None,
-    ):
+        axes_type: AxesType,
+        axes_order: tuple[int, ...],
+        reference_frame: AstropyBuiltInFrame | None = None,
+        unit: tuple[u.Unit, ...] | None = None,
+        axes_names: tuple[str, ...] | None = None,
+        name: str | None = None,
+        axis_physical_types: tuple[str | None, ...] | None = None,
+    ) -> None:
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
         self._reference_frame = reference_frame
@@ -63,7 +73,7 @@ class CoordinateFrame(BaseCoordinateFrame):
         if isinstance(axes_type, str):
             axes_type = (axes_type,)
 
-        self._prop = FrameProperties(
+        self._prop = FrameProperties.from_frame(
             naxes,
             axes_type,
             unit,
@@ -73,14 +83,16 @@ class CoordinateFrame(BaseCoordinateFrame):
 
         super().__init__()
 
-    def _default_axis_physical_types(self, axes_type):
+    def _default_axis_physical_types(
+        self, axes_type: tuple[AxisType | str, ...]
+    ) -> tuple[str, ...]:
         """
         The default physical types to use for this frame if none are specified
         by the user.
         """
         return tuple(f"custom:{t}" for t in axes_type)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         fmt = (
             f'<{self.__class__.__name__}(name="{self.name}", unit={self.unit}, '
             f"axes_names={self.axes_names}, axes_order={self.axes_order}"
@@ -90,24 +102,27 @@ class CoordinateFrame(BaseCoordinateFrame):
         fmt += ")>"
         return fmt
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self._name is not None:
             return self._name
         return self.__class__.__name__
 
-    def _sort_property(self, prop):
+    def _sort_property(
+        self, prop: tuple[_PropertyItem, ...]
+    ) -> tuple[_PropertyItem, ...]:
+        """Reorder the frame properties according to 'axes_order'."""
         sorted_prop = sorted(
             zip(prop, self.axes_order, strict=False), key=lambda x: x[1]
         )
         return tuple([t[0] for t in sorted_prop])
 
     @property
-    def name(self):
+    def name(self) -> str:
         """A custom name of this frame."""
         return self._name
 
     @name.setter
-    def name(self, val):
+    def name(self, val: str) -> None:
         """A custom name of this frame."""
         self._name = val
 
@@ -117,32 +132,32 @@ class CoordinateFrame(BaseCoordinateFrame):
         return self._naxes
 
     @property
-    def unit(self):
+    def unit(self) -> tuple[u.Unit, ...]:
         """The unit of this frame."""
         return self._sort_property(self._prop.unit)
 
     @property
-    def axes_names(self):
+    def axes_names(self) -> tuple[str, ...]:
         """Names of axes in the frame."""
         return self._sort_property(self._prop.axes_names)
 
     @property
-    def axes_order(self):
+    def axes_order(self) -> tuple[int, ...]:
         """A tuple of indices which map inputs to axes."""
         return self._axes_order
 
     @property
-    def reference_frame(self):
+    def reference_frame(self) -> AstropyBuiltInFrame | None:
         """Reference frame, used to convert to world coordinate objects."""
         return self._reference_frame
 
     @property
-    def axes_type(self):
+    def axes_type(self) -> tuple[AxisType | str, ...]:
         """Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'."""
         return self._sort_property(self._prop.axes_type)
 
     @property
-    def axis_physical_types(self):
+    def axis_physical_types(self) -> tuple[str | None, ...]:
         """
         The axis physical types for this frame.
 
@@ -151,21 +166,29 @@ class CoordinateFrame(BaseCoordinateFrame):
         return self._sort_property(self._prop.axis_physical_types)
 
     @property
-    def world_axis_object_classes(self):
+    def world_axis_object_classes(
+        self,
+    ) -> (
+        dict[str, WorldAxisObjectClass]
+        | dict[str, WorldAxisObjectClassConverter]
+        | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]
+    ):
         return {
-            f"{at}{i}" if i != 0 else at: (u.Quantity, (), {"unit": unit})
-            for i, (at, unit) in enumerate(zip(self.axes_type, self.unit, strict=False))
+            f"{at}{i}" if i != 0 else at: WorldAxisObjectClass(
+                u.Quantity, (), {"unit": unit}
+            )
+            for i, (at, unit) in enumerate(zip(self.axes_type, self.unit, strict=True))
         }
 
     @property
-    def _native_world_axis_object_components(self):
+    def _native_world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         return [
-            (f"{at}{i}" if i != 0 else at, 0, "value")
+            WorldAxisObjectComponent(f"{at}{i}" if i != 0 else at, 0, "value")
             for i, at in enumerate(self._prop.axes_type)
         ]
 
     @property
-    def serialized_classes(self):
+    def serialized_classes(self) -> bool:
         """
         This property is used by the low level WCS API in Astropy.
 
@@ -177,6 +200,56 @@ class CoordinateFrame(BaseCoordinateFrame):
     def raw_properties(self) -> FrameProperties:
         """The raw FrameProperties object for this frame."""
         return self._prop
+
+    def is_high_level(self, *args) -> bool:
+        """
+        Return `True` if the input coordinates are already high level objects
+        described by this frame.
+
+        This is used by the low level WCS API in Astropy to determine whether
+        to call ``to_high_level_coordinates`` or not.
+        """
+
+        if (world_axis_object_classes := self.world_axis_object_classes) is None or len(
+            args
+        ) != len(world_axis_object_classes):
+            return False
+
+        type_match = []
+        for arg, world_axis_object_class in zip(
+            args, world_axis_object_classes.values(), strict=True
+        ):
+            if isinstance(class_object := world_axis_object_class.class_object, str):
+                type_match.append(
+                    type(arg).__name__ == class_object
+                    and class_object != u.Quantity.__name__
+                )
+            else:
+                type_match.append(
+                    isinstance(arg, class_object) and class_object is not u.Quantity
+                )
+
+        if all(type_match):
+            return True
+
+        if any(type_match):
+            types = [
+                (
+                    type(arg).__name__,
+                    c.class_object
+                    if isinstance(c.class_object, str)
+                    else c.class_object.__name__,
+                )
+                for arg, c in zip(args, world_axis_object_classes.values(), strict=True)
+            ]
+            msg = (
+                "Invalid types were passed, got "
+                f"({', '.join(t[0] for t in types)}), but expected "
+                f"({', '.join(t[1] for t in types)})."
+            )
+            raise TypeError(msg)
+
+        return False
 
     def to_high_level_coordinates(self, *values):
         """
