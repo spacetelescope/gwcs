@@ -34,6 +34,8 @@ class CoordinateFrame(BaseCoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
     """
 
     def __init__(
@@ -45,16 +47,15 @@ class CoordinateFrame(BaseCoordinateFrame):
         unit=None,
         axes_names=None,
         name=None,
+        aliases=None,
         axis_physical_types=None,
     ):
         self._naxes = naxes
         self._axes_order = tuple(axes_order)
         self._reference_frame = reference_frame
 
-        if name is None:
-            self._name = self.__class__.__name__
-        else:
-            self._name = name
+        self._name = self.__class__.__name__ if name is None else name
+        self._aliases = () if aliases is None else tuple(aliases)
 
         if len(self._axes_order) != naxes:
             msg = "Length of axes_order does not match number of axes."
@@ -110,6 +111,11 @@ class CoordinateFrame(BaseCoordinateFrame):
     def name(self, val):
         """A custom name of this frame."""
         self._name = val
+
+    @property
+    def aliases(self):
+        """Alternative names for this frame."""
+        return self._aliases
 
     @property
     def naxes(self) -> int:

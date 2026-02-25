@@ -36,6 +36,13 @@ class BaseCoordinateFrame(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def aliases(self) -> tuple[str, ...]:
+        """
+        Alternative names for the coordinate frame.
+        """
+
+    @property
+    @abc.abstractmethod
     def unit(self) -> tuple[u.Unit, ...]:
         """
         The units of the axes in this frame.

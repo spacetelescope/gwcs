@@ -23,6 +23,8 @@ class Frame2D(CoordinateFrame):
         Names of the axes in this frame.
     name : str
         Name of this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
     """
 
     def __init__(
@@ -31,6 +33,7 @@ class Frame2D(CoordinateFrame):
         unit=(u.pix, u.pix),
         axes_names=("x", "y"),
         name=None,
+        aliases=None,
         axes_type=None,
         axis_physical_types=None,
     ):
@@ -47,6 +50,7 @@ class Frame2D(CoordinateFrame):
             name=name,
             axes_names=axes_names,
             unit=unit,
+            aliases=aliases,
             axis_physical_types=pht,
         )
 

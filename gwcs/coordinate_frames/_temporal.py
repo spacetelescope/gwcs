@@ -29,6 +29,8 @@ class TemporalFrame(CoordinateFrame):
         A dimension in the data that corresponds to this axis.
     name : str
         Name for this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
     """
 
     def __init__(
@@ -38,6 +40,7 @@ class TemporalFrame(CoordinateFrame):
         axes_order=(0,),
         axes_names=None,
         name=None,
+        aliases=None,
         axis_physical_types=None,
     ):
         axes_names = (
@@ -56,6 +59,7 @@ class TemporalFrame(CoordinateFrame):
             reference_frame=reference_frame,
             unit=unit,
             name=name,
+            aliases=aliases,
             axis_physical_types=pht,
         )
         self._attrs = {}

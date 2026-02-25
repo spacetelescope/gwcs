@@ -31,9 +31,13 @@ with contextlib.suppress(ValueError):
     coord_frames.remove("SkyOffsetFrame")
 
 
-icrs = cf.CelestialFrame(reference_frame=coord.ICRS(), axes_order=(0, 1))
-detector = cf.Frame2D(name="detector", axes_order=(0, 1))
-focal = cf.Frame2D(name="focal", axes_order=(0, 1), unit=(u.m, u.m))
+icrs = cf.CelestialFrame(
+    reference_frame=coord.ICRS(), axes_order=(0, 1), aliases=("test_alias",)
+)
+detector = cf.Frame2D(name="detector", axes_order=(0, 1), aliases=("test_alias",))
+focal = cf.Frame2D(
+    name="focal", axes_order=(0, 1), unit=(u.m, u.m), aliases=("test_alias",)
+)
 
 spec1 = cf.SpectralFrame(
     name="freq",
@@ -41,6 +45,7 @@ spec1 = cf.SpectralFrame(
         u.Hz,
     ],
     axes_order=(2,),
+    aliases=("test_alias",),
 )
 spec2 = cf.SpectralFrame(
     name="wave",
@@ -49,6 +54,7 @@ spec2 = cf.SpectralFrame(
     ],
     axes_order=(2,),
     axes_names=("lambda",),
+    aliases=("test_alias",),
 )
 spec3 = cf.SpectralFrame(
     name="energy",
@@ -56,6 +62,7 @@ spec3 = cf.SpectralFrame(
         u.J,
     ],
     axes_order=(2,),
+    aliases=("test_alias",),
 )
 spec4 = cf.SpectralFrame(
     name="pixel",
@@ -63,6 +70,7 @@ spec4 = cf.SpectralFrame(
         u.pix,
     ],
     axes_order=(2,),
+    aliases=("test_alias",),
 )
 with pytest.warns(UserWarning, match=r"Physical type may be ambiguous.*"):
     spec5 = cf.SpectralFrame(
@@ -71,14 +79,17 @@ with pytest.warns(UserWarning, match=r"Physical type may be ambiguous.*"):
             u.m / u.s,
         ],
         axes_order=(2,),
+        aliases=("test_alias",),
     )
 
-comp1 = cf.CompositeFrame([icrs, spec1])
-comp2 = cf.CompositeFrame([focal, spec2])
-comp3 = cf.CompositeFrame([icrs, spec3])
-comp4 = cf.CompositeFrame([icrs, spec4])
-comp5 = cf.CompositeFrame([icrs, spec5])
-comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
+comp1 = cf.CompositeFrame([icrs, spec1], aliases=("test_alias",))
+comp2 = cf.CompositeFrame([focal, spec2], aliases=("test_alias",))
+comp3 = cf.CompositeFrame([icrs, spec3], aliases=("test_alias",))
+comp4 = cf.CompositeFrame([icrs, spec4], aliases=("test_alias",))
+comp5 = cf.CompositeFrame([icrs, spec5], aliases=("test_alias",))
+comp = cf.CompositeFrame(
+    [comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))], aliases=("test_alias",)
+)
 
 xscalar = 1
 yscalar = 2
@@ -603,3 +614,26 @@ def test_composite_ordering():
     assert comp.axis_physical_types == ("custom:lat", "custom:lon", "em.wl")
     assert comp.unit == (u.arcsec, u.deg, u.AA)
     assert comp.axes_order == (1, 0, 2)
+
+
+@pytest.mark.parametrize(
+    "frame",
+    [
+        icrs,
+        detector,
+        focal,
+        spec1,
+        spec2,
+        spec3,
+        spec4,
+        spec5,
+        comp1,
+        comp2,
+        comp3,
+        comp4,
+        comp5,
+        comp,
+    ],
+)
+def test_frame_alias(frame):
+    assert frame.aliases == ("test_alias",)

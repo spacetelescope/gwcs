@@ -2085,3 +2085,63 @@ def test_identity_quantity_issues():
 
     assert gw(2) == 2
     assert gw(2 * u.pix) == 2 * u.nm
+
+
+def test_frame_aliases():
+    """Test that frame aliases work correctly"""
+    frame0 = cf.Frame2D(name="frame0", axes_order=(0, 1), aliases=("f0", "alias0"))
+    frame2 = cf.Frame2D(name="frame2", axes_order=(0, 1), aliases=("f2", "alias2"))
+    frame1 = cf.Frame2D(name="frame1", axes_order=(0, 1), aliases=("f1", "alias1"))
+
+    pipeline = [
+        (frame0, models.Identity(2)),
+        (frame1, models.Identity(2)),
+        (frame2, None),
+    ]
+    gw = wcs.WCS(pipeline)
+
+    assert gw.alias_map == {
+        "f0": "frame0",
+        "alias0": "frame0",
+        "f1": "frame1",
+        "alias1": "frame1",
+        "f2": "frame2",
+        "alias2": "frame2",
+    }
+
+    assert gw.get_frame("frame0") == frame0
+    assert gw.get_frame("f0") == frame0
+    assert gw.get_frame("alias0") == frame0
+
+    assert gw.get_frame("frame1") == frame1
+    assert gw.get_frame("f1") == frame1
+    assert gw.get_frame("alias1") == frame1
+
+    assert gw.get_frame("frame2") == frame2
+    assert gw.get_frame("f2") == frame2
+    assert gw.get_frame("alias2") == frame2
+
+    frame3 = cf.Frame2D(name="frame3", axes_order=(0, 1), aliases=("f3", "alias3"))
+    gw.insert_frame(input_frame=frame3, transform=models.Identity(2), output_frame="f0")
+
+    assert gw.get_frame("frame3") == frame3
+    assert gw.get_frame("f3") == frame3
+    assert gw.get_frame("alias3") == frame3
+
+    bad_frame = cf.Frame2D(
+        name="bad_frame", axes_order=(0, 1), aliases=("f0", "alias0")
+    )
+    with pytest.raises(
+        wcs._exception.GwcsFrameExistsError, match=r"One of the aliases.*"
+    ):
+        gw.insert_frame(
+            input_frame=bad_frame, transform=models.Identity(2), output_frame="f1"
+        )
+
+    bad_frame = cf.Frame2D(name="bad_frame", axes_order=(0, 1), aliases=("frame2",))
+    with pytest.raises(
+        wcs._exception.GwcsFrameExistsError, match=r"One of the aliases.*"
+    ):
+        gw.insert_frame(
+            input_frame=bad_frame, transform=models.Identity(2), output_frame="f1"
+        )
