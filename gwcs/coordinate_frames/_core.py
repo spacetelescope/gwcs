@@ -158,7 +158,38 @@ class CoordinateFrame(BaseCoordinateFrame):
         }
 
     @property
+    def world_axis_object_components(self):
+        """
+        The APE 14 object components for this frame.
+
+        See Also
+        --------
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components
+        """
+        if self.naxes == 1:
+            return self._native_world_axis_object_components
+
+        # If we have more than one axis then we should sort the native
+        # components by the axes_order.
+        ordered = np.array(self._native_world_axis_object_components, dtype=object)[
+            np.argsort(self.axes_order)
+        ]
+        return list(map(tuple, ordered))
+
+    @property
     def _native_world_axis_object_components(self):
+        """
+        This property holds the "native" frame order of the components.
+
+        The native order of the components is the order the frame assumes the
+        axes are in when creating the high level objects, for example
+        ``CelestialFrame`` creates ``SkyCoord`` objects which are in lon, lat
+        order (in their positional args).
+
+        This property is used both to construct the ordered
+        ``world_axis_object_components`` property as well as by `CompositeFrame`
+        to be able to get the components in their native order.
+        """
         return [
             (f"{at}{i}" if i != 0 else at, 0, "value")
             for i, at in enumerate(self._prop.axes_type)
