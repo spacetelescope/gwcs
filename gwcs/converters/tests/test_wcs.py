@@ -22,7 +22,7 @@ def _assert_frame_equal(a, b):
     if a is None:
         return None
 
-    if not isinstance(a, cf.CoordinateFrame):
+    if not isinstance(a, cf.BaseCoordinateFrame):
         return a == b
 
     assert a.name == b.name  # nosec

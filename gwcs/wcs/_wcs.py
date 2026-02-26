@@ -32,9 +32,9 @@ from scipy import optimize
 from gwcs.api import WCSAPIMixin
 from gwcs.coordinate_frames import (
     AxisType,
+    BaseCoordinateFrame,
     CelestialFrame,
     CompositeFrame,
-    CoordinateFrame,
     EmptyFrame,
     get_ctype_from_ucd,
 )
@@ -66,7 +66,7 @@ class _WorldAxisInfo:
         axis : int
             Output axis number [in the forward transformation].
 
-        frame : cf.CoordinateFrame
+        frame : cf.BaseCoordinateFrame
             Coordinate frame to which this axis belongs.
 
         world_axis_order : int
@@ -115,8 +115,8 @@ class WCS(Pipeline, WCSAPIMixin):
     def __init__(
         self,
         forward_transform: Model,
-        input_frame: str | CoordinateFrame,
-        output_frame: str | CoordinateFrame,
+        input_frame: str | BaseCoordinateFrame,
+        output_frame: str | BaseCoordinateFrame,
         name: str | None = None,
     ) -> None: ...
 
@@ -132,8 +132,8 @@ class WCS(Pipeline, WCSAPIMixin):
     def __init__(
         self,
         forward_transform: ForwardTransform,
-        input_frame: str | CoordinateFrame | None = None,
-        output_frame: str | CoordinateFrame | None = None,
+        input_frame: str | BaseCoordinateFrame | None = None,
+        output_frame: str | BaseCoordinateFrame | None = None,
         name: str | None = None,
     ) -> None:
         super().__init__(
@@ -148,7 +148,7 @@ class WCS(Pipeline, WCSAPIMixin):
         self._pixel_shape = None
 
     def _add_units_input(
-        self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrame
+        self, arrays: np.ndarray | tuple[float, ...], frame: BaseCoordinateFrame
     ) -> tuple[u.Quantity, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.add_units(arrays)
@@ -157,7 +157,7 @@ class WCS(Pipeline, WCSAPIMixin):
         return arrays  # type: ignore[return-value]
 
     def _remove_units_input(
-        self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrame
+        self, arrays: tuple[u.Quantity, ...], frame: BaseCoordinateFrame
     ) -> tuple[np.ndarray, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.remove_units(arrays)
@@ -256,7 +256,7 @@ class WCS(Pipeline, WCSAPIMixin):
         self,
         transform,
         *args,
-        frame: CoordinateFrame,
+        frame: BaseCoordinateFrame,
         input_is_quantity=False,
         transform_uses_quantity=False,
         **kwargs,
@@ -282,7 +282,7 @@ class WCS(Pipeline, WCSAPIMixin):
         self,
         transform,
         *args,
-        frame: CoordinateFrame,
+        frame: BaseCoordinateFrame,
         input_is_quantity=False,
         transform_uses_quantity=False,
         **kwargs,
@@ -1163,8 +1163,8 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def transform(
         self,
-        from_frame: str | CoordinateFrame,
-        to_frame: str | CoordinateFrame,
+        from_frame: str | BaseCoordinateFrame,
+        to_frame: str | BaseCoordinateFrame,
         *args,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,

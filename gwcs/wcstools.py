@@ -47,7 +47,7 @@ def wcs_from_fiducial(
             A location on the sky in some standard coordinate system.
             A Quantity with spectral units.
             A list of the above.
-    coordinate_frame : ~gwcs.coordinate_frames.CoordinateFrame`
+    coordinate_frame : ~gwcs.coordinate_frames.BaseCoordinateFrame`
         The output coordinate frame.
         If fiducial is not an instance of `~astropy.coordinates.SkyCoord`,
         ``coordinate_frame`` is required.
@@ -64,10 +64,10 @@ def wcs_from_fiducial(
         The bounding box over which the WCS is valid.
         It is a tuple of tuples of size 2 where each tuple
         represents a range of (low, high) values. The ``bounding_box`` is in the
-        order of the axes, `~gwcs.coordinate_frames.CoordinateFrame.axes_order`.
+        order of the axes, `~gwcs.coordinate_frames.BaseCoordinateFrame.axes_order`.
         For two inputs and axes_order(0, 1) the bounding box is
         ((xlow, xhigh), (ylow, yhigh)).
-    input_frame : ~gwcs.coordinate_frames.CoordinateFrame`
+    input_frame : ~gwcs.coordinate_frames.BaseCoordinateFrame`
         The input coordinate frame.
     """
     from .wcs import WCS
