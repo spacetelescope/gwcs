@@ -648,3 +648,15 @@ def test_CoordinateFrameProtocol():
 
     frame = MyFrame()
     assert isinstance(frame, cf.CoordinateFrameProtocol)
+
+
+def test_BaseCoordinateFrame():
+    with pytest.raises(TypeError, match=r"Can't instantiate abstract class.*"):
+        cf.BaseCoordinateFrame()
+
+    with pytest.warns(
+        DeprecationWarning, match=r"BaseCoordinateFrame has been deprecated.*"
+    ):
+
+        class MyFrame(cf.BaseCoordinateFrame):
+            pass
