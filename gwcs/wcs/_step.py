@@ -1,9 +1,15 @@
+import sys
 import warnings
 from typing import NamedTuple, TypeAlias, Union
 
 from astropy.modeling.core import Model
 
-from gwcs.coordinate_frames import CoordinateFrameProtocol, EmptyFrame
+from gwcs.coordinate_frames import (
+    BaseCoordinateFrame,
+    CoordinateFrame,
+    CoordinateFrameProtocol,
+    EmptyFrame,
+)
 
 __all__ = [
     "IndexedStep",
@@ -15,6 +21,20 @@ __all__ = [
 
 Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 StepTuple: TypeAlias = tuple[CoordinateFrameProtocol, Union[Model, None]]  # noqa: UP007
+
+
+# Runtime checkable isinstance check evaluates the actual properties of the object
+#    in Python 3.11, so EmptyFrame causes an error to be raised if we attempt to
+#    check if it is a CoordinateFrameProtocol. In Python 3.12+, the check does not
+#    evaluate the properties of the object, so it does not cause an error.
+if sys.version_info >= (3, 12):
+
+    def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
+        return isinstance(frame, CoordinateFrameProtocol)
+else:
+
+    def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
+        return isinstance(frame, BaseCoordinateFrame | CoordinateFrame)
 
 
 class Step:
@@ -33,11 +53,8 @@ class Step:
     def __init__(self, frame: str | CoordinateFrameProtocol, transform: Mdl = None):
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
-        self.frame = (
-            frame
-            if isinstance(frame, CoordinateFrameProtocol)
-            else EmptyFrame(name=frame)
-        )
+        # This is correct type-wise, but the Python 3.11 bugfix causes a MyPy error
+        self.frame = frame if _is_coordinate_frame(frame) else EmptyFrame(frame)  # type: ignore[assignment]
         self.transform = transform
 
     @property
@@ -46,7 +63,7 @@ class Step:
 
     @frame.setter
     def frame(self, val: CoordinateFrameProtocol):
-        if not isinstance(val, CoordinateFrameProtocol):
+        if not _is_coordinate_frame(val):
             msg = '"frame" should be an instance of CoordinateFrameProtocol.'
             raise TypeError(msg)
 

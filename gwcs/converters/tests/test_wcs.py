@@ -12,6 +12,7 @@ from astropy.modeling import models
 
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
+from gwcs.wcs._step import _is_coordinate_frame
 
 
 def _assert_frame_equal(a, b):
@@ -22,7 +23,7 @@ def _assert_frame_equal(a, b):
     if a is None:
         return None
 
-    if not isinstance(a, cf.CoordinateFrameProtocol):
+    if not _is_coordinate_frame(a):
         return a == b
 
     assert a.name == b.name  # nosec
