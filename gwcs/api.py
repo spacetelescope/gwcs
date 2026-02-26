@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from astropy.modeling import Model
     from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 
-    from gwcs.coordinate_frames import BaseCoordinateFrame
+    from gwcs.coordinate_frames import CoordinateFrameProtocol
 
 __all__ = ["NativeAPIMixin", "WCSAPIMixin"]
 
@@ -34,12 +34,12 @@ class NativeAPIMixin(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def input_frame(self) -> BaseCoordinateFrame:
+    def input_frame(self) -> CoordinateFrameProtocol:
         """The input coordinate frame."""
 
     @property
     @abc.abstractmethod
-    def output_frame(self) -> BaseCoordinateFrame:
+    def output_frame(self) -> CoordinateFrameProtocol:
         """The output coordinate frame."""
 
     @property
@@ -108,7 +108,7 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
             return ()
         return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
 
-    def _remove_quantity_output(self, result, frame: BaseCoordinateFrame):
+    def _remove_quantity_output(self, result, frame: CoordinateFrameProtocol):
         if not isinstance(frame, EmptyFrame):
             if frame.naxes == 1:
                 result = [result]

@@ -7,13 +7,13 @@ from astropy.wcs.wcsapi.high_level_api import (
     values_to_high_level_objects,
 )
 
-from ._base import BaseCoordinateFrame
+from ._base import CoordinateFrameProtocol
 from ._properties import FrameProperties
 
 __all__ = ["CoordinateFrame"]
 
 
-class CoordinateFrame(BaseCoordinateFrame):
+class CoordinateFrame(CoordinateFrameProtocol):
     """
     Base class for Coordinate Frames.
 

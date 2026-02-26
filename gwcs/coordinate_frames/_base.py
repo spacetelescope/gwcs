@@ -8,11 +8,11 @@ from astropy import units as u
 
 from ._axis import AxesType
 
-__all__ = ["BaseCoordinateFrame"]
+__all__ = ["CoordinateFrameProtocol"]
 
 
 @runtime_checkable
-class BaseCoordinateFrame(Protocol):
+class CoordinateFrameProtocol(Protocol):
     """
     API Definition for a Coordinate frame
     """

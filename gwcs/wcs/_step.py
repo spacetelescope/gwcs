@@ -3,7 +3,7 @@ from typing import NamedTuple, TypeAlias, Union
 
 from astropy.modeling.core import Model
 
-from gwcs.coordinate_frames import BaseCoordinateFrame, EmptyFrame
+from gwcs.coordinate_frames import CoordinateFrameProtocol, EmptyFrame
 
 __all__ = [
     "IndexedStep",
@@ -14,7 +14,7 @@ __all__ = [
 
 
 Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
-StepTuple: TypeAlias = tuple[BaseCoordinateFrame, Union[Model, None]]  # noqa: UP007
+StepTuple: TypeAlias = tuple[CoordinateFrameProtocol, Union[Model, None]]  # noqa: UP007
 
 
 class Step:
@@ -23,29 +23,31 @@ class Step:
 
     Parameters
     ----------
-    frame : `~gwcs.coordinate_frames.BaseCoordinateFrame`
+    frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol` or str
         A gwcs coordinate frame object.
     transform : `~astropy.modeling.Model` or None
         A transform from this step's frame to next step's frame.
         The transform of the last step should be `None`.
     """
 
-    def __init__(self, frame: str | BaseCoordinateFrame, transform: Mdl = None):
+    def __init__(self, frame: str | CoordinateFrameProtocol, transform: Mdl = None):
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         self.frame = (
-            frame if isinstance(frame, BaseCoordinateFrame) else EmptyFrame(name=frame)
+            frame
+            if isinstance(frame, CoordinateFrameProtocol)
+            else EmptyFrame(name=frame)
         )
         self.transform = transform
 
     @property
-    def frame(self) -> BaseCoordinateFrame:
+    def frame(self) -> CoordinateFrameProtocol:
         return self._frame
 
     @frame.setter
-    def frame(self, val: BaseCoordinateFrame):
-        if not isinstance(val, BaseCoordinateFrame):
-            msg = '"frame" should be an instance of BaseCoordinateFrame.'
+    def frame(self, val: CoordinateFrameProtocol):
+        if not isinstance(val, CoordinateFrameProtocol):
+            msg = '"frame" should be an instance of CoordinateFrameProtocol.'
             raise TypeError(msg)
 
         self._frame = val

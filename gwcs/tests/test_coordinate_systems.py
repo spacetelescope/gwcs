@@ -131,7 +131,7 @@ def coordinate_to_quantity(*inputs, frame):
 
 @pytest.mark.parametrize("frame", _FRAMES)
 def test_frame_protocol(frame):
-    assert isinstance(frame, cf.BaseCoordinateFrame)
+    assert isinstance(frame, cf.CoordinateFrameProtocol)
 
 
 @pytest.mark.parametrize("inputs", inputs2)
@@ -627,7 +627,7 @@ def test_composite_ordering():
     assert comp.axes_order == (1, 0, 2)
 
 
-def test_BaseCoordinateFrame_protocol():
+def test_CoordinateFrameProtocol():
     class MyFrame:
         naxes = 1
         name = "myframe"
@@ -647,4 +647,4 @@ def test_BaseCoordinateFrame_protocol():
             return arrays
 
     frame = MyFrame()
-    assert isinstance(frame, cf.BaseCoordinateFrame)
+    assert isinstance(frame, cf.CoordinateFrameProtocol)
