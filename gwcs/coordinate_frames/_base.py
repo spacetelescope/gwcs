@@ -8,7 +8,7 @@ from typing import Any, NamedTuple, Protocol, Self, TypeAlias, runtime_checkable
 
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import builtin_frames
+from astropy.coordinates import BaseCoordinateFrame as _AstropyBaseCoordinateFrame
 from astropy.time import Time
 
 from ._axis import AxesType
@@ -22,40 +22,7 @@ __all__ = [
     "WorldAxisObjectComponent",
 ]
 
-AstropyBuiltInFrame: TypeAlias = (
-    Time
-    | builtin_frames.ICRS
-    | builtin_frames.FK5
-    | builtin_frames.FK4
-    | builtin_frames.FK4NoETerms
-    | builtin_frames.Galactic
-    | builtin_frames.Galactocentric
-    | builtin_frames.Supergalactic
-    | builtin_frames.AltAz
-    | builtin_frames.HADec
-    | builtin_frames.GCRS
-    | builtin_frames.CIRS
-    | builtin_frames.ITRS
-    | builtin_frames.HCRS
-    | builtin_frames.TEME
-    | builtin_frames.TETE
-    | builtin_frames.PrecessedGeocentric
-    | builtin_frames.GeocentricMeanEcliptic
-    | builtin_frames.BarycentricMeanEcliptic
-    | builtin_frames.HeliocentricMeanEcliptic
-    | builtin_frames.GeocentricTrueEcliptic
-    | builtin_frames.BarycentricTrueEcliptic
-    | builtin_frames.HeliocentricTrueEcliptic
-    | builtin_frames.HeliocentricEclipticIAU76
-    | builtin_frames.CustomBarycentricEcliptic
-    | builtin_frames.LSR
-    | builtin_frames.LSRK
-    | builtin_frames.LSRD
-    | builtin_frames.GalacticLSR
-    | builtin_frames.SkyOffsetFrame
-    | builtin_frames.BaseEclipticFrame
-    | builtin_frames.BaseRADecFrame
-)
+AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
 
 
 class WorldAxisObjectClass(NamedTuple):
