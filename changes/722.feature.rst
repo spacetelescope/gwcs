@@ -1,0 +1,1 @@
+Deprecate the ``BaseCoordinateFrame`` and replace it with the ``CoordinateFrameProtocol`` protocol.
