@@ -1,6 +1,6 @@
 import sys
 import warnings
-from typing import NamedTuple, TypeAlias, Union
+from typing import NamedTuple, Self, TypeAlias, Union
 
 from astropy.modeling.core import Model
 
@@ -50,7 +50,9 @@ class Step:
         The transform of the last step should be `None`.
     """
 
-    def __init__(self, frame: str | CoordinateFrameProtocol, transform: Mdl = None):
+    def __init__(
+        self, frame: str | CoordinateFrameProtocol, transform: Mdl = None
+    ) -> None:
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         # This is correct type-wise, but the Python 3.11 bugfix causes a MyPy error
@@ -62,7 +64,7 @@ class Step:
         return self._frame
 
     @frame.setter
-    def frame(self, val: CoordinateFrameProtocol):
+    def frame(self, val: CoordinateFrameProtocol) -> None:
         if not _is_coordinate_frame(val):
             msg = '"frame" should be an instance of CoordinateFrameProtocol.'
             raise TypeError(msg)
@@ -70,21 +72,44 @@ class Step:
         self._frame = val
 
     @property
-    def transform(self):
+    def transform(self) -> Mdl:
         return self._transform
 
     @transform.setter
-    def transform(self, val):
-        if val is not None and not isinstance(val, (Model)):
+    def transform(self, val: Mdl) -> None:
+        if val is not None and not isinstance(val, Model):
             msg = '"transform" should be an instance of astropy.modeling.Model.'
             raise TypeError(msg)
         self._transform = val
 
     @property
-    def frame_name(self):
-        if isinstance(self.frame, str):
-            return self.frame
+    def frame_name(self) -> str:
         return self.frame.name
+
+    @property
+    def inverse(self) -> Mdl:
+        if self.transform is None:
+            return None
+
+        try:
+            return self.transform.inverse
+        except NotImplementedError:
+            return None
+
+    def __str__(self) -> str:
+        return (
+            f"{self.frame_name}\t "
+            f"{getattr(self.transform, 'name', 'None') or type(self.transform).__name__}"  # noqa: E501
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"Step(frame={self.frame_name}, "
+            f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
+        )
+
+    def copy(self) -> Self:
+        return type(self)(self.frame, self.transform)
 
     def __getitem__(self, ind):
         warnings.warn(
@@ -99,21 +124,6 @@ class Step:
         if ind == 0:
             return self.frame
         return self.transform
-
-    def __str__(self):
-        return (
-            f"{self.frame_name}\t "
-            f"{getattr(self.transform, 'name', 'None') or type(self.transform).__name__}"  # noqa: E501
-        )
-
-    def __repr__(self):
-        return (
-            f"Step(frame={self.frame_name}, "
-            f"transform={getattr(self.transform, 'name', 'None') or type(self.transform).__name__})"  # noqa: E501
-        )
-
-    def copy(self):
-        return Step(self.frame, self.transform)
 
 
 class IndexedStep(NamedTuple):
