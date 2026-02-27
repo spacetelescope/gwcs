@@ -27,7 +27,7 @@ Any additional transforms are prepended to the projection and sky rotation.
   >>> trans = models.Shift(-2048) & models.Shift(-1024) | models.Scale(1.38*10**-5) & models.Scale(1.38*10**-5)
   >>> w = wcs_from_fiducial(fiducial, projection=tan, transform=trans)
   >>> w(2048, 1024)  # doctest: +FLOAT_CMP
-      (5.46, -72.2)
+      (np.float64(5.46), np.float64(-72.2))
 
 Generate a WCS object from matching (X, Y) and (RA, DEC) points.
 :ref:`wcs_from_points_example`

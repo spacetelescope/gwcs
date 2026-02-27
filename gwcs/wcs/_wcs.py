@@ -29,13 +29,15 @@ from astropy.wcs.wcsapi.high_level_api import (
 )
 from scipy import optimize
 
-from gwcs.api import LowLevelInput, WCSAPIMixin
+from gwcs.api import WCSAPIMixin
 from gwcs.coordinate_frames import (
     AxisType,
     CelestialFrame,
     CompositeFrame,
     CoordinateFrameProtocol,
     EmptyFrame,
+    LowLevelArray,
+    LowLevelInput,
     get_ctype_from_ucd,
 )
 from gwcs.utils import _compute_lon_pole, is_high_level, to_index
@@ -149,7 +151,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _add_units_input(
         self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrameProtocol
-    ) -> tuple[u.Quantity, ...]:
+    ) -> tuple[LowLevelInput, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.add_units(arrays)
 
@@ -158,7 +160,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _remove_units_input(
         self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrameProtocol
-    ) -> tuple[np.ndarray, ...]:
+    ) -> tuple[LowLevelArray, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.remove_units(arrays)
 

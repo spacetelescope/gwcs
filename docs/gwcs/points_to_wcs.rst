@@ -78,7 +78,7 @@ can be used to convert coordinates from pixel to world.
 
 Or using the common WCS API
   >>> gwcs_obj.pixel_to_world_values(36.235,642.215)  # doctest: +FLOAT_CMP
-  (246.72158004206716, 43.46075091731673)
+  (np.float64(246.72158004206716), np.float64(43.46075091731673))
 
   >>> gwcs_obj.pixel_to_world(36.235,642.215)  # doctest: +FLOAT_CMP
   <SkyCoord (ICRS): (ra, dec) in deg

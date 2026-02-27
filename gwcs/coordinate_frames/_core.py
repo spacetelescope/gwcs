@@ -1,12 +1,7 @@
-import numbers
 from typing import TypeVar
 
 import numpy as np
 from astropy import units as u
-from astropy.wcs.wcsapi.high_level_api import (
-    high_level_objects_to_values,
-    values_to_high_level_objects,
-)
 
 from ._axis import AxesType, AxisType
 from ._base import (
@@ -219,62 +214,3 @@ class CoordinateFrame(CoordinateFrameProtocol):
     def raw_properties(self) -> FrameProperties:
         """The raw FrameProperties object for this frame."""
         return self._prop
-
-    def to_high_level_coordinates(self, *values):
-        """
-        Convert "values" to high level coordinate objects described by this frame.
-
-        "values" are the coordinates in array or scalar form, and high level
-        objects are things such as ``SkyCoord`` or ``Quantity``. See
-        :ref:`wcsapi` for details.
-
-        Parameters
-        ----------
-        values : `numbers.Number`, `numpy.ndarray`, or `~astropy.units.Quantity`
-            ``naxis`` number of coordinates as scalars or arrays.
-
-        Returns
-        -------
-        high_level_coordinates
-            One (or more) high level object describing the coordinate.
-        """
-        # We allow Quantity-like objects here which values_to_high_level_objects
-        # does not.
-        values = [
-            v.to_value(unit) if hasattr(v, "to_value") else v
-            for v, unit in zip(values, self.unit, strict=False)
-        ]
-
-        if not all(
-            isinstance(v, numbers.Number) or type(v) is np.ndarray for v in values
-        ):
-            msg = "All values should be a scalar number or a numpy array."
-            raise TypeError(msg)
-
-        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
-        if len(high_level) == 1:
-            high_level = high_level[0]
-        return high_level
-
-    def from_high_level_coordinates(self, *high_level_coords):
-        """
-        Convert high level coordinate objects to "values" as described by this frame.
-
-        "values" are the coordinates in array or scalar form, and high level
-        objects are things such as ``SkyCoord`` or ``Quantity``. See
-        :ref:`wcsapi` for details.
-
-        Parameters
-        ----------
-        high_level_coordinates
-            One (or more) high level object describing the coordinate.
-
-        Returns
-        -------
-        values : `numbers.Number` or `numpy.ndarray`
-           ``naxis`` number of coordinates as scalars or arrays.
-        """
-        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
-        if len(values) == 1:
-            values = values[0]
-        return values

@@ -214,6 +214,8 @@ from ._axis import AxisType
 from ._base import (
     BaseCoordinateFrame,
     CoordinateFrameProtocol,
+    LowLevelArray,
+    LowLevelInput,
     WorldAxisObjectClasses,
     WorldAxisObjectComponent,
 )
@@ -237,6 +239,8 @@ __all__ = [
     "EmptyFrame",
     "EmptyFrameDeprecationWarning",
     "Frame2D",
+    "LowLevelArray",
+    "LowLevelInput",
     "SpectralFrame",
     "StokesFrame",
     "TemporalFrame",
