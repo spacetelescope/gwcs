@@ -29,7 +29,7 @@ from astropy.wcs.wcsapi.high_level_api import (
 )
 from scipy import optimize
 
-from gwcs.api import WCSAPIMixin
+from gwcs.api import LowLevelInput, WCSAPIMixin
 from gwcs.coordinate_frames import (
     AxisType,
     CelestialFrame,
@@ -164,27 +164,13 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return arrays
 
-    def __call__(
+    def evaluate(
         self,
-        *args,
+        *args: LowLevelInput,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
-        """
-        Executes the forward transform.
-
-        args : float or array-like
-            Inputs in the input coordinate system, separate inputs
-            for each dimension.
-        with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to
-             any of the inputs being outside the bounding_box are set
-             to ``fill_value``.
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box
-            (default is np.nan).
-        """
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
         transform = self.forward_transform
         if transform is None:
             msg = "Transform is not defined."
@@ -219,6 +205,31 @@ class WCS(Pipeline, WCSAPIMixin):
             if self.output_frame.naxes == 1:
                 return result[0]
         return result
+
+    def __call__(
+        self,
+        *args: LowLevelInput,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
+        """
+        Executes the forward transform.
+
+        args : float or array-like
+            Inputs in the input coordinate system, separate inputs
+            for each dimension.
+        with_bounding_box : bool, optional
+            If True(default) values in the result which correspond to
+            any of the inputs being outside the bounding_box are set
+            to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
+        """
+        return self.evaluate(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
     def _units_are_present(self, args, transform):
         """
@@ -327,9 +338,9 @@ class WCS(Pipeline, WCSAPIMixin):
         Returns
         -------
         result : bool, numpy.ndarray
-           A single boolean value or an array of boolean values with `True`
-           indicating that the WCS footprint contains the coordinate
-           and `False` if input is outside the footprint.
+            A single boolean value or an array of boolean values with `True`
+            indicating that the WCS footprint contains the coordinate
+            and `False` if input is outside the footprint.
 
         """
         coords = self.invert(*args, **kwargs)
@@ -342,11 +353,11 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def invert(
         self,
-        *args,
+        *args: LowLevelInput,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
         """
         Invert coordinates from output frame to input frame using analytical or
         user-supplied inverse. When neither analytical nor user-supplied
@@ -363,9 +374,9 @@ class WCS(Pipeline, WCSAPIMixin):
             to the number of world coordinates given by ``world_n_dim``.
 
         with_bounding_box : bool, optional
-             If `True` (default) values in the result which correspond to any
-             of the inputs being outside the bounding_box are set to
-             ``fill_value``.
+            If `True` (default) values in the result which correspond to any
+            of the inputs being outside the bounding_box are set to
+            ``fill_value``.
 
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
@@ -391,9 +402,11 @@ class WCS(Pipeline, WCSAPIMixin):
             transform = None
 
         if is_high_level(*args, low_level_wcs=self):
-            message = "High Level objects are not supported with the native API. \
-                       Please use the `world_to_pixel` method."
-            raise TypeError(message)
+            msg = (
+                "High Level objects are not supported with the native API. "
+                "Please use the `world_to_pixel` method."
+            )
+            raise TypeError(msg)
 
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
@@ -483,11 +496,11 @@ class WCS(Pipeline, WCSAPIMixin):
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
                     if len(world_arrays) == 1:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays[0], self.output_frame
                         )
                     else:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays, self.output_frame
                         )[idim]
 
