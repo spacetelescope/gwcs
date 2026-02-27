@@ -3,22 +3,28 @@ from __future__ import annotations
 import warnings
 from typing import Self, TypeAlias, Union
 
+from astropy import units as u
 from astropy.modeling import Model
 
 from ._axis import AxesType, AxisType
 from ._base import (
     CoordinateFrameProtocol,
+    LowLevelInput,
     WorldAxisObjectClass,
     WorldAxisObjectClasses,
     WorldAxisObjectComponent,
 )
 
-__all__ = ["EmptyFrame"]
+__all__ = ["EmptyFrame", "EmptyFrameDeprecationWarning", "EmptyFrameUnitsWarning"]
 
 _Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 
 
 class EmptyFrameDeprecationWarning(DeprecationWarning):
+    pass
+
+
+class EmptyFrameUnitsWarning(UserWarning):
     pass
 
 
@@ -143,3 +149,33 @@ class EmptyFrame(CoordinateFrameProtocol):
 
     def from_high_level_coordinates(self, *high_level_coords):
         self._raise_error()
+
+    def add_units(
+        self, arrays: tuple[LowLevelInput, ...] | LowLevelInput
+    ) -> tuple[LowLevelInput, ...]:
+        msg = (
+            "EmptyFrame (string frame) does not have any unit information. "
+            "Therefore, GWCS cannot ensure that units are being properly handled. "
+            "If an error occurs due to units, please provide a proper CoordinateFrame "
+            "and/or ensure that the input values you are providing have the correct "
+            "units attached (or removed) in order to be compatible with the transform."
+        )
+        warnings.warn(msg, EmptyFrameUnitsWarning, stacklevel=2)
+
+        return super().add_units(arrays)
+
+    def remove_units(
+        self, arrays: tuple[LowLevelInput, ...] | LowLevelInput
+    ) -> tuple[LowLevelInput, ...]:
+        with warnings.catch_warnings():
+            # Filter unit warning if there is no unit information to remove. This
+            #   is because there is nothing for GWCS to be concerned about in this
+            #   case and the only reason it is being triggered is that we attempt
+            #   to add the unit information in order to force a unit conversion if
+            #   needed.
+            if (self.naxes == 1 and not isinstance(arrays, u.Quantity)) or not any(
+                isinstance(arr, u.Quantity) for arr in arrays
+            ):
+                warnings.filterwarnings("ignore", category=EmptyFrameUnitsWarning)
+
+            return super().remove_units(arrays)
