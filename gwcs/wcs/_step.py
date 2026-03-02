@@ -56,7 +56,7 @@ class Step:
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         # This is correct type-wise, but the Python 3.11 bugfix causes a MyPy error
-        self.frame = frame if _is_coordinate_frame(frame) else EmptyFrame(frame)  # type: ignore[assignment]
+        self.frame = frame if _is_coordinate_frame(frame) else EmptyFrame(frame)  # type: ignore[assignment, arg-type]
         self.transform = transform
 
     @property
