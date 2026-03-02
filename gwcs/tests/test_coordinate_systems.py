@@ -646,6 +646,9 @@ def test_CoordinateFrameProtocol():
         def remove_units(self, arrays):
             return arrays
 
+        def is_high_level(self, *inputs):
+            return False
+
         def to_high_level_coordinates(self, *inputs):
             return inputs
 
