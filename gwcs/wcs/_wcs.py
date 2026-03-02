@@ -1268,7 +1268,7 @@ class WCS(Pipeline, WCSAPIMixin):
     def __str__(self) -> str:
         from astropy.table import Table
 
-        col1 = [step.frame for step in self._pipeline]
+        col1 = [str(step.frame) for step in self._pipeline]
         col2: list[str | None] = []
         for item in self._pipeline[:-1]:
             model = item.transform

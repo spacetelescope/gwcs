@@ -16,6 +16,7 @@ class AxisType(StrEnum):
     TIME = "TIME"
     STOKES = "STOKES"
     PIXEL = "PIXEL"
+    UNKNOWN = "UNKNOWN"
 
     def __str__(self) -> str:
         return self.value

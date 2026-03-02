@@ -187,7 +187,10 @@ class WCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin, NativeAPIMixin):
         """
         if isinstance(self.output_frame, EmptyFrame):
             return ()
-        return tuple(unit.to_string(format="vounit") for unit in self.output_frame.unit)
+        return tuple(
+            "None" if unit is None else unit.to_string(format="vounit")
+            for unit in self.output_frame.unit
+        )
 
     @staticmethod
     def _remove_quantity_frame(
