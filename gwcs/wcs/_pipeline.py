@@ -8,7 +8,7 @@ from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.units import Unit
 
-from gwcs.coordinate_frames import CoordinateFrameProtocol
+from gwcs.coordinate_frames import CoordinateFrameProtocol, EmptyFrame
 from gwcs.utils import CoordinateFrameError
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
@@ -151,6 +151,13 @@ class Pipeline:
                 "with a transform between them."
             )
             raise ValueError(msg)
+
+        # Fix the naxes of the last frame if it is an EmptyFrame as it must
+        #   guess the number of axes based on the number of outputs of the
+        #   forward transform. This means that non-coordinate inputs are not
+        #   supported if the last frame is an EmptyFrame.
+        if isinstance(self._pipeline[-1].frame, EmptyFrame):
+            self._pipeline[-1].frame.naxes = self.forward_transform.n_outputs
 
     @property
     def pipeline(self) -> list[Step]:

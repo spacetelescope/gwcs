@@ -200,20 +200,17 @@ def test_transform_with_units(wcsobj):
 @wcs_no_unit_1d
 def test_add_units(wcsobj):
     if wcsobj.input_frame.naxes == 1:
-        assert (
-            wcsobj._add_units_input((1,), wcsobj.input_frame)
-            == 1 * wcsobj.input_frame.unit[0]
-        )
+        assert wcsobj.input_frame.add_units((1,)) == 1 * wcsobj.input_frame.unit[0]
         assert_allclose(
-            wcsobj._add_units_input(([1, 1],), wcsobj.input_frame),
+            wcsobj.input_frame.add_units(([1, 1],)),
             ([1, 1] * wcsobj.input_frame.unit[0],),
         )
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._add_units_input((1, 1), wcsobj.input_frame), (1 * u.pix, 1 * u.pix)
+            wcsobj.input_frame.add_units((1, 1)), (1 * u.pix, 1 * u.pix)
         )
         assert_quantity_allclose(
-            wcsobj._add_units_input(([1, 1], [1, 1]), wcsobj.input_frame),
+            wcsobj.input_frame.add_units(([1, 1], [1, 1])),
             ([1, 1] * u.pix, [1, 1] * u.pix),
         )
 
@@ -222,19 +219,14 @@ def test_add_units(wcsobj):
 def test_remove_units(wcsobj):
     if wcsobj.input_frame.naxes == 1:
         unit = wcsobj.input_frame.unit[0]
-        assert wcsobj._remove_units_input(1 * unit, wcsobj.input_frame) == (1,)
-        assert_allclose(
-            wcsobj._remove_units_input(([1, 1] * unit,), wcsobj.input_frame), ([1, 1],)
-        )
+        assert wcsobj.input_frame.remove_units(1 * unit) == (1,)
+        assert_allclose(wcsobj.input_frame.remove_units(([1, 1] * unit,)), ([1, 1],))
     elif wcsobj.input_frame.naxes == 2:
         assert_quantity_allclose(
-            wcsobj._remove_units_input((1 * u.pix, 1 * u.pix), wcsobj.input_frame),
-            (1, 1),
+            wcsobj.input_frame.remove_units((1 * u.pix, 1 * u.pix)), (1, 1)
         )
         assert_quantity_allclose(
-            wcsobj._remove_units_input(
-                ([1, 1] * u.pix, [1, 1] * u.pix), wcsobj.input_frame
-            ),
+            wcsobj.input_frame.remove_units(([1, 1] * u.pix, [1, 1] * u.pix)),
             ([1, 1], [1, 1]),
         )
 

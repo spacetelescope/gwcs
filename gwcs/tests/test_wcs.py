@@ -1442,7 +1442,7 @@ def test_initialize_wcs_with_list():
 
     # make pipeline consisting of tuples and Steps
     shift1 = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
-    shift2 = models.Shift(3 * u.pix)
+    shift2 = models.Shift(3 * u.pix) & models.Shift(27 * u.pix)
 
     with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
         pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]

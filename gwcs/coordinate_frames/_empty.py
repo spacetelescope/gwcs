@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 import warnings
+from typing import Self, TypeAlias, Union
+
+from astropy.modeling import Model
 
 from ._axis import AxesType, AxisType
 from ._base import (
@@ -9,6 +14,8 @@ from ._base import (
 )
 
 __all__ = ["EmptyFrame"]
+
+_Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
 
 
 class EmptyFrameDeprecationWarning(DeprecationWarning):
@@ -29,6 +36,33 @@ class EmptyFrame(CoordinateFrameProtocol):
             "deprecated."
         )
         warnings.warn(msg, EmptyFrameDeprecationWarning, stacklevel=2)
+
+    @classmethod
+    def from_transform(cls, name: str | None = None, transform: _Mdl = None) -> Self:
+        """
+        Class method constructor to allow for an EmptyFrame to be created using data
+        from a transform.
+
+        Notes
+        -----
+        - This assumes that the number of inputs to the transform corresponds to the
+            number of axes in the frame. Therefore, this assumes that there are NO
+            non-coordinate inputs present.
+
+        Parameters
+        ----------
+        name : str or None
+            Name of the frame. If None, defaults to "detector".
+        transform : astropy.modeling.Model or None
+            A transform from this step's frame to next step's frame. The transform of
+            the last step should be None.
+
+        Returns
+        -------
+        EmptyFrame
+            An EmptyFrame object with the number of axes set based on the transform.
+        """
+        return cls(name=name, naxes=None if transform is None else transform.n_inputs)
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(name="{self.name}")>'
@@ -60,13 +94,17 @@ class EmptyFrame(CoordinateFrameProtocol):
 
         return self._naxes
 
+    @naxes.setter
+    def naxes(self, val: int | None) -> None:
+        self._naxes = val
+
     @property
     def unit(self) -> tuple[None, ...]:
         return (None,) * self.naxes
 
     @property
     def axes_names(self) -> tuple[str, ...]:
-        return ("None",) * self.naxes
+        return ("",) * self.naxes
 
     @property
     def axes_order(self) -> tuple[int, ...]:
