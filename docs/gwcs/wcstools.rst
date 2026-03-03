@@ -24,6 +24,8 @@ To create a WCS from a pointing on the sky, as a minimum pass a sky coordinate a
 
 Any additional transforms are prepended to the projection and sky rotation.
 
+.. doctest-requires:: numpy>=2.0
+
   >>> trans = models.Shift(-2048) & models.Shift(-1024) | models.Scale(1.38*10**-5) & models.Scale(1.38*10**-5)
   >>> w = wcs_from_fiducial(fiducial, projection=tan, transform=trans)
   >>> w(2048, 1024)  # doctest: +FLOAT_CMP

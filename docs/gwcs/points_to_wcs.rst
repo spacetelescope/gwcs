@@ -77,6 +77,9 @@ can be used to convert coordinates from pixel to world.
   (246.72158004206716, 43.46075091731673)
 
 Or using the common WCS API
+
+.. doctest-requires:: numpy>=2.0
+
   >>> gwcs_obj.pixel_to_world_values(36.235,642.215)  # doctest: +FLOAT_CMP
   (np.float64(246.72158004206716), np.float64(43.46075091731673))
 
