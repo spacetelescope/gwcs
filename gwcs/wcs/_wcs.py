@@ -23,10 +23,6 @@ from astropy.modeling.models import (
 )
 from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
-from astropy.wcs.wcsapi.high_level_api import (
-    high_level_objects_to_values,
-    values_to_high_level_objects,
-)
 from numpy import typing as npt
 from scipy import optimize
 
@@ -40,7 +36,7 @@ from gwcs.coordinate_frames import (
     LowLevelInput,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _compute_lon_pole, is_high_level, to_index
+from gwcs.utils import _compute_lon_pole, to_index
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -472,11 +468,12 @@ class WCS(Pipeline, WCSAPIMixin):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if is_high_level(world_arrays[0], low_level_wcs=self):
+        if self.output_frame.is_high_level(*world_arrays):
             not_numerical = True
-            world_arrays = high_level_objects_to_values(
-                *world_arrays, low_level_wcs=self
+            world_arrays = self.output_frame.from_high_level_coordinates(
+                *world_arrays, correct_1d=False
             )
+
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
 
@@ -520,8 +517,8 @@ class WCS(Pipeline, WCSAPIMixin):
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
         if not_numerical:
-            world_arrays = values_to_high_level_objects(
-                *world_arrays, low_level_wcs=self
+            world_arrays = self.output_frame.to_high_level_coordinates(
+                *world_arrays, correct_1d=False
             )
         return world_arrays
 
