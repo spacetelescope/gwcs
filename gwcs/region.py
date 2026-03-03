@@ -26,7 +26,7 @@ class Region:
     ----------
     rid : int or str
         region ID
-    coordinate_frame : `~gwcs.coordinate_frames.CoordinateFrame`
+    coordinate_frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         Coordinate frame in which the region is defined.
     """
 
@@ -84,7 +84,7 @@ class Polygon(Region):
          counterclockwise direction, the enclosed area is the polygon.
          The last vertex must coincide with the first vertex, minimum
          4 vertices are needed to define a triangle
-    coord_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+    coord_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         Coordinate frame in which the polygon is defined.
 
     """

@@ -1,75 +1,85 @@
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 from astropy import units as u
 from astropy.wcs.wcsapi.low_level_api import VALID_UCDS, validate_physical_types
 
+from ._axis import AxesType, AxisType
+
 __all__ = ["FrameProperties"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class FrameProperties:
-    naxes: InitVar[int]
-    axes_type: tuple[str, ...]
-    unit: tuple[u.Unit, ...] | None = None
-    axes_names: tuple[str, ...] | None = None
-    axis_physical_types: tuple[str, ...] | None = None
+    axes_type: tuple[AxisType | str, ...]
+    unit: tuple[u.Unit, ...]
+    axes_names: tuple[str, ...]
+    axis_physical_types: tuple[str | None, ...]
 
-    def __post_init__(self, naxes: int):
-        if isinstance(self.axes_type, str):
-            self.axes_type = (self.axes_type,)
-        else:
-            self.axes_type = tuple(self.axes_type)
+    @classmethod
+    def from_frame(
+        cls,
+        naxes: int,
+        axes_type: AxesType,
+        unit: tuple[u.Unit, ...] | None,
+        axes_names: tuple[str, ...] | None,
+        axis_physical_types: tuple[str | None, ...] | str,
+    ) -> Self:
+        """Class method constructor to allow FrameProperties to be Frozen."""
+        axes_type = (axes_type,) if isinstance(axes_type, str) else tuple(axes_type)
 
-        if len(self.axes_type) != naxes:
+        if len(axes_type) != naxes:
             msg = "Length of axes_type does not match number of axes."
             raise ValueError(msg)
 
-        if self.unit is not None:
-            unit = tuple(self.unit) if np.iterable(self.unit) else (self.unit,)
+        if unit is None:
+            unit = tuple(u.dimensionless_unscaled for _ in range(naxes))
+        else:
+            unit = tuple(unit) if np.iterable(unit) else (unit,)
             if len(unit) != naxes:
                 msg = "Number of units does not match number of axes."
                 raise ValueError(msg)
-            self.unit = tuple(au if au is None else u.Unit(au) for au in unit)
-        else:
-            self.unit = tuple(u.dimensionless_unscaled for na in range(naxes))
+            unit = tuple(au if au is None else u.Unit(au) for au in unit)
 
-        if self.axes_names is not None:
-            if isinstance(self.axes_names, str):
-                self.axes_names = (self.axes_names,)
-            else:
-                self.axes_names = tuple(self.axes_names)
-            if len(self.axes_names) != naxes:
+        if axes_names is None:
+            axes_names = ("",) * naxes
+        else:
+            axes_names = (
+                (axes_names,) if isinstance(axes_names, str) else tuple(axes_names)
+            )
+            if len(axes_names) != naxes:
                 msg = "Number of axes names does not match number of axes."
                 raise ValueError(msg)
-        else:
-            self.axes_names = tuple([""] * naxes)
 
-        if self.axis_physical_types is not None:
-            if isinstance(self.axis_physical_types, str):
-                self.axis_physical_types = (self.axis_physical_types,)
-            elif not np.iterable(self.axis_physical_types):
-                msg = (
-                    "axis_physical_types must be of type string or iterable of strings"
-                )
-                raise TypeError(msg)
-            if len(self.axis_physical_types) != naxes:
-                msg = f'"axis_physical_types" must be of length {naxes}'
-                raise ValueError(msg)
-            ph_type = []
-            for axt in self.axis_physical_types:
-                if axt not in VALID_UCDS and not axt.startswith("custom:"):
-                    ph_type.append(f"custom:{axt}")
-                else:
-                    ph_type.append(axt)
+        if isinstance(axis_physical_types, str):
+            axis_physical_types = (axis_physical_types,)
 
-            validate_physical_types(ph_type)
-            self.axis_physical_types = tuple(ph_type)
+        elif not np.iterable(axis_physical_types):
+            msg = "axis_physical_types must be of type string or iterable of strings"
+            raise TypeError(msg)
 
-    @property
-    def _default_axis_physical_types(self):
-        """
-        The default physical types to use for this frame if none are specified
-        by the user.
-        """
-        return tuple(f"custom:{t}" for t in self.axes_type)
+        if len(axis_physical_types) != naxes:
+            msg = f'"axis_physical_types" must be of length {naxes}'
+            raise ValueError(msg)
+
+        ph_type: list[str | None] = []
+        for axt in axis_physical_types:
+            if (
+                axt is not None
+                and axt not in VALID_UCDS
+                and not axt.startswith("custom:")
+            ):
+                ph_type.append(f"custom:{axt}")
+            else:
+                ph_type.append(axt)
+
+        validate_physical_types(ph_type)
+        axis_physical_types = tuple(ph_type)
+
+        return cls(
+            axes_type=axes_type,
+            unit=unit,
+            axes_names=axes_names,
+            axis_physical_types=axis_physical_types,
+        )

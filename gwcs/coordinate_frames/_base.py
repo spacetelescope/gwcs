@@ -1,63 +1,172 @@
-import abc
+from __future__ import annotations
+
+import warnings
+from abc import abstractmethod
+from collections.abc import Callable
 from itertools import zip_longest
+from typing import Any, NamedTuple, Protocol, Self, TypeAlias, runtime_checkable
 
 import numpy as np
 from astropy import units as u
+from astropy.coordinates import BaseCoordinateFrame as _AstropyBaseCoordinateFrame
+from astropy.time import Time
 
 from ._axis import AxesType
-from ._properties import FrameProperties
 
-__all__ = ["BaseCoordinateFrame"]
+__all__ = [
+    "AstropyBuiltInFrame",
+    "BaseCoordinateFrame",
+    "CoordinateFrameProtocol",
+    "WorldAxisObjectClass",
+    "WorldAxisObjectClassConverter",
+    "WorldAxisObjectComponent",
+]
+
+AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
 
 
-class BaseCoordinateFrame(abc.ABC):
+class WorldAxisObjectClass(NamedTuple):
+    """
+    A tuple to document the individual elements of the ``world_axis_object_classes``
+    of the WCS API.
+
+    Notes
+    -----
+    - ``world_axis_object_classes`` will return a dictionary with the key being
+        the name from ``world_axis_object_components`` and the value being an
+        instance of this class.
+
+    - To stay consistent with the APE 14 API, users should not access the elements
+        of this tuple via their names, but instead should access them via their
+        position in the tuple.
+
+    Attributes
+    ----------
+    class_object : type | str
+        The High-Level Object class for the axis or a string that is the fully
+        qualified name of the class.
+    arguments : tuple
+        The positional arguments to be passed to the class when instantiating an
+        object of this class. Note if ``world_axis_object_components`` specifies that
+        the world coordinates should be passed as a positional argument, then this
+        tuple will include `None` as a place holder for each of the world coordinates.
+    keyword_arguments : dict
+        The keyword arguments to be passed to the class when instantiating an object of
+        this class.
+    """
+
+    class_object: type | str
+    arguments: tuple[Any, ...]
+    keyword_arguments: dict[str, Any]
+
+
+class WorldAxisObjectClassConverter(NamedTuple):
+    """
+    Same as the `WorldAxisObjectClass` but with an additional converter field.
+
+    Attributes
+    ----------
+    converter : Callable[..., Any]
+        A callable that will convert the input values into the desired output
+    """
+
+    class_object: type | str
+    arguments: tuple[Any, ...]
+    keyword_arguments: dict[str, Any]
+    converter: Callable[..., Any]
+
+
+WorldAxisObjectClasses: TypeAlias = (
+    dict[str, WorldAxisObjectClass]
+    | dict[str, WorldAxisObjectClassConverter]
+    | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]
+)
+
+
+class WorldAxisObjectComponent(NamedTuple):
+    """
+    A tuple to document the individual elements of the ``world_axis_object_components``
+    of the WCS API.
+
+    Notes
+    -----
+    - ``world_axis_object_components`` will return a list of tuples with each tuple
+        being an instance of this class.
+
+    - To stay consistent with the APE 14 API, users should not access the elements
+        of this tuple via their names, but instead should access them via their
+        position in the tuple.
+
+    Attributes
+    ----------
+    name : str
+        Name for the world object this world array corresponds to, which *must*
+        match the string names used in ``world_axis_object_classes``.  Note that
+        names might appear twice because two world arrays might correspond to a
+        single world object (e.g. a celestial coordinate might have both “ra”
+        and “dec” arrays, which correspond to a single sky coordinate object.
+    position : str | int
+        This is either a string keyword argument name or a positional index for
+        the corresponding class from ``world_axis_object_classes``.
+    property: str | Callable[[Any], str]
+        This is a string giving the name of the property to access on the
+        corresponding class from ``world_axis_object_classes`` in order to get
+        numerical values.
+    """
+
+    name: str
+    position: str | int
+    property: str | Callable[[Any], str]
+
+    @classmethod
+    def from_tuple(cls, tup: tuple[str, str | int, str]) -> Self:
+        return cls(*tup)
+
+
+@runtime_checkable
+class CoordinateFrameProtocol(Protocol):
     """
     API Definition for a Coordinate frame
     """
 
-    _prop: FrameProperties
-    """
-    The FrameProperties object holding properties in native frame order.
-    """
-
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def naxes(self) -> int:
         """
         The number of axes described by this frame.
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def name(self) -> str:
         """
         The name of the coordinate frame.
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def unit(self) -> tuple[u.Unit, ...]:
         """
         The units of the axes in this frame.
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def axes_names(self) -> tuple[str, ...]:
         """
         Names describing the axes of the frame.
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def axes_order(self) -> tuple[int, ...]:
         """
         The position of the axes in the frame in the transform.
         """
 
     @property
-    @abc.abstractmethod
-    def reference_frame(self):
+    @abstractmethod
+    def reference_frame(self) -> AstropyBuiltInFrame | None:
         """
         The reference frame of the coordinates described by this frame.
 
@@ -65,7 +174,7 @@ class BaseCoordinateFrame(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def axes_type(self) -> AxesType:
         """
         An upcase string (or tuple of strings) describing the type of the axis.
@@ -75,15 +184,15 @@ class BaseCoordinateFrame(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
-    def axis_physical_types(self):
+    @abstractmethod
+    def axis_physical_types(self) -> tuple[str | None, ...]:
         """
         The UCD 1+ physical types for the axes, in frame order.
         """
 
     @property
-    @abc.abstractmethod
-    def world_axis_object_classes(self):
+    @abstractmethod
+    def world_axis_object_classes(self) -> WorldAxisObjectClasses:
         """
         The APE 14 object classes for this frame.
 
@@ -93,38 +202,14 @@ class BaseCoordinateFrame(abc.ABC):
         """
 
     @property
-    def world_axis_object_components(self):
+    @abstractmethod
+    def world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
         """
         The APE 14 object components for this frame.
 
         See Also
         --------
         astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components
-        """
-        if self.naxes == 1:
-            return self._native_world_axis_object_components
-
-        # If we have more than one axis then we should sort the native
-        # components by the axes_order.
-        ordered = np.array(self._native_world_axis_object_components, dtype=object)[
-            np.argsort(self.axes_order)
-        ]
-        return list(map(tuple, ordered))
-
-    @property
-    @abc.abstractmethod
-    def _native_world_axis_object_components(self):
-        """
-        This property holds the "native" frame order of the components.
-
-        The native order of the components is the order the frame assumes the
-        axes are in when creating the high level objects, for example
-        ``CelestialFrame`` creates ``SkyCoord`` objects which are in lon, lat
-        order (in their positional args).
-
-        This property is used both to construct the ordered
-        ``world_axis_object_components`` property as well as by `CompositeFrame`
-        to be able to get the components in their native order.
         """
 
     def add_units(
@@ -160,3 +245,49 @@ class BaseCoordinateFrame(abc.ABC):
             #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
             for array, unit in zip_longest(arrays, self.unit)
         )
+
+
+class BaseCoordinateFrame(CoordinateFrameProtocol):
+    """
+    Legacy base class for coordinate frames.
+    """
+
+    def __init_subclass__(cls, *args, **kwargs):
+        msg = (
+            "BaseCoordinateFrame has been deprecated and will be removed in a"
+            "future release. Please implement or inherit from CoordinateFrameProtocol "
+            "instead."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+        super().__init_subclass__(*args, **kwargs)
+
+    @property
+    def world_axis_object_components(self):
+        """
+        The APE 14 object components for this frame.
+
+        See Also
+        --------
+        astropy.wcs.wcsapi.BaseLowLevelWCS.world_axis_object_components
+        """
+        if self.naxes == 1:
+            return self._native_world_axis_object_components
+
+        # If we have more than one axis then we should sort the native
+        # components by the axes_order.
+        ordered = np.array(self._native_world_axis_object_components, dtype=object)[
+            np.argsort(self.axes_order)
+        ]
+        return list(map(tuple, ordered))
+
+    @property
+    @abstractmethod
+    def _native_world_axis_object_components(self):
+        """
+        This property holds the "native" frame order of the components.
+
+        The native order of the components is the order the frame assumes the
+        input arrays are in. This is not necessarily the same as the order of
+        the axes in the frame, which is given by axes_order.
+        """

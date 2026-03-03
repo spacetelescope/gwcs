@@ -1,7 +1,15 @@
-from collections import defaultdict
+from collections.abc import Generator
 
 import numpy as np
+from astropy import units as u
 
+from ._axis import AxisType
+from ._base import (
+    WorldAxisObjectClass,
+    WorldAxisObjectClassConverter,
+    WorldAxisObjectClasses,
+    WorldAxisObjectComponent,
+)
 from ._core import CoordinateFrame
 
 __all__ = ["CompositeFrame"]
@@ -19,15 +27,15 @@ class CompositeFrame(CoordinateFrame):
         Name for this frame.
     """
 
-    def __init__(self, frames, name=None):
+    def __init__(self, frames: list[CoordinateFrame], name: str | None = None) -> None:
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
 
-        axes_order = []
-        axes_type = []
-        axes_names = []
-        unit = []
-        ph_type = []
+        axes_order: list[int] = []
+        axes_type: list[AxisType | str] = []
+        axes_names: list[str] = []
+        unit: list[u.Unit] = []
+        ph_type: list[str | None] = []
 
         for frame in frames:
             axes_order.extend(frame.axes_order)
@@ -50,31 +58,33 @@ class CompositeFrame(CoordinateFrame):
         super().__init__(
             naxes,
             axes_type=tuple(axes_type),
-            axes_order=axes_order,
-            unit=unit,
-            axes_names=axes_names,
+            axes_order=tuple(axes_order),
+            unit=tuple(unit),
+            axes_names=tuple(axes_names),
             axis_physical_types=tuple(ph_type),
             name=name,
         )
+        # Reset after the super init which may have messed this up
         self._axis_physical_types = tuple(ph_type)
 
     @property
-    def frames(self):
+    def frames(self) -> list[CoordinateFrame]:
         """
         The constituient frames that comprise this `CompositeFrame`.
         """
         return self._frames
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.frames)
 
     @property
-    def _wao_classes_rename_map(self):
-        mapper = defaultdict(dict)
-        seen_names = []
+    def _wao_classes_rename_map(self) -> dict[CoordinateFrame, dict[str, str]]:
+        mapper: dict[CoordinateFrame, dict[str, str]] = {}
+        seen_names: list[str] = []
         for frame in self.frames:
-            # ensure the frame is in the mapper
-            mapper[frame]
+            if frame not in mapper:
+                mapper[frame] = {}
+
             for key in frame.world_axis_object_classes:
                 if key in seen_names:
                     new_key = f"{key}{seen_names.count(key)}"
@@ -83,40 +93,48 @@ class CompositeFrame(CoordinateFrame):
         return mapper
 
     @property
-    def _wao_renamed_components_iter(self):
+    def _wao_renamed_components_iter(
+        self,
+    ) -> Generator[tuple[CoordinateFrame, list[WorldAxisObjectComponent]], None, None]:
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
-            renamed_components = []
-            for component in frame._native_world_axis_object_components:
-                comp = list(component)
-                rename = mapper[frame].get(comp[0])
-                if rename:
-                    comp[0] = rename
-                renamed_components.append(tuple(comp))
-            yield frame, renamed_components
+            yield (
+                frame,
+                [
+                    WorldAxisObjectComponent(
+                        mapper[frame].get(component[0], component[0]),
+                        component[1],
+                        component[2],
+                    )
+                    for component in frame._native_world_axis_object_components
+                ],
+            )
 
     @property
-    def _wao_renamed_classes_iter(self):
+    def _wao_renamed_classes_iter(
+        self,
+    ) -> Generator[
+        tuple[str, WorldAxisObjectClass | WorldAxisObjectClassConverter], None, None
+    ]:
         mapper = self._wao_classes_rename_map
         for frame in self.frames:
             for key, value in frame.world_axis_object_classes.items():
-                rename = mapper[frame].get(key)
-                yield rename if rename else key, value
+                yield mapper[frame].get(key, key), value
 
     @property
-    def world_axis_object_components(self):
-        out = [None] * self.naxes
+    def world_axis_object_components(self) -> list[WorldAxisObjectComponent]:
+        out_dict: dict[int, WorldAxisObjectComponent] = {}
 
         for frame, components in self._wao_renamed_components_iter:
             for i, ao in enumerate(frame.axes_order):
-                out[ao] = components[i]
+                out_dict[ao] = components[i]
 
-        if any(o is None for o in out):
+        if len(out_dict) != self.naxes:
             msg = "axes_order leads to incomplete world_axis_object_components"
             raise ValueError(msg)
 
-        return out
+        return [out_dict[i] for i in range(self.naxes)]
 
     @property
-    def world_axis_object_classes(self):
+    def world_axis_object_classes(self) -> WorldAxisObjectClasses:
         return dict(self._wao_renamed_classes_iter)

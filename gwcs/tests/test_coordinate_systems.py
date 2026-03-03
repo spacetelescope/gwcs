@@ -80,6 +80,23 @@ comp4 = cf.CompositeFrame([icrs, spec4])
 comp5 = cf.CompositeFrame([icrs, spec5])
 comp = cf.CompositeFrame([comp1, cf.SpectralFrame(axes_order=(3,), unit=(u.m,))])
 
+_FRAMES = (
+    icrs,
+    detector,
+    focal,
+    spec1,
+    spec2,
+    spec3,
+    spec4,
+    spec5,
+    comp1,
+    comp2,
+    comp3,
+    comp4,
+    comp5,
+    comp,
+)
+
 xscalar = 1
 yscalar = 2
 xarr = np.arange(5)
@@ -110,6 +127,11 @@ def coordinate_to_quantity(*inputs, frame):
     if not isinstance(results, list):
         results = [results]
     return [r << unit for r, unit in zip(results, frame.unit, strict=False)]
+
+
+@pytest.mark.parametrize("frame", _FRAMES)
+def test_frame_protocol(frame):
+    assert isinstance(frame, cf.CoordinateFrameProtocol)
 
 
 @pytest.mark.parametrize("inputs", inputs2)
@@ -603,3 +625,38 @@ def test_composite_ordering():
     assert comp.axis_physical_types == ("custom:lat", "custom:lon", "em.wl")
     assert comp.unit == (u.arcsec, u.deg, u.AA)
     assert comp.axes_order == (1, 0, 2)
+
+
+def test_CoordinateFrameProtocol():
+    class MyFrame:
+        naxes = 1
+        name = "myframe"
+        unit = (u.m,)
+        axes_names = ("x",)
+        axes_order = (0,)
+        reference_frame = None
+        axes_type = ("SPATIAL",)
+        axis_physical_types = ("custom:x",)
+        world_axis_object_classes = (u.Quantity,)
+        world_axis_object_components = ("custom:x",)
+
+        def add_units(self, arrays):
+            return arrays
+
+        def remove_units(self, arrays):
+            return arrays
+
+    frame = MyFrame()
+    assert isinstance(frame, cf.CoordinateFrameProtocol)
+
+
+def test_BaseCoordinateFrame():
+    with pytest.raises(TypeError, match=r"Can't instantiate abstract class.*"):
+        cf.BaseCoordinateFrame()
+
+    with pytest.warns(
+        DeprecationWarning, match=r"BaseCoordinateFrame has been deprecated.*"
+    ):
+
+        class MyFrame(cf.BaseCoordinateFrame):
+            pass

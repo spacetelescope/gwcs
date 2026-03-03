@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import warnings
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from asdf.extension import Converter
 from asdf_astropy.converters.transform.core import (
@@ -108,7 +108,7 @@ class FrameConverter(Converter):
     def _to_yaml_tree(self, frame: CoordinateFrame, tag, ctx):
         from gwcs.coordinate_frames import CoordinateFrame
 
-        node = {}
+        node: dict[str, Any] = {}
 
         node["name"] = frame.name
 
