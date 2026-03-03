@@ -1294,47 +1294,23 @@ class WCS(Pipeline, WCSAPIMixin):
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
-        # Pull the steps and their indices from the pipeline
-        # -> this also turns the frame name strings into frame objects
-        from_step = self._get_step(from_frame)
-        to_step = self._get_step(to_frame)
-        transform = self.get_transform(from_step.step.frame, to_step.step.frame)
+        direction = self.pipeline_between(from_frame, to_frame)
 
-        if transform is None:
+        if direction is None:
             msg = f"No transformation found from {from_frame} to {to_frame}."
             raise ValueError(msg)
 
-        # Get the frame objects from the wcs pipeline
-        from_frame_obj = self.get_frame(from_frame)
-        to_frame_obj = self.get_frame(to_frame)
+        if direction.forward:
+            return direction.wcs.evaluate(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **kwargs,
+            )
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
-            frame=from_frame_obj,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
-
-        result = transform(
+        return direction.wcs.invert(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-        if to_frame_obj is not None:
-            if to_frame_obj.naxes == 1:
-                result = (result,)
-            result = self._make_output_units_consistent(
-                transform,
-                *result,
-                frame=to_frame_obj,
-                input_is_quantity=input_is_quantity,
-                transform_uses_quantity=transform_uses_quantity,
-            )
-        if to_frame_obj is not None and to_frame_obj.naxes == 1:
-            return result[0]
-        return result
 
     @property
     def name(self) -> str:
