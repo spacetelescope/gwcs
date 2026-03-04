@@ -4,12 +4,18 @@ import warnings
 from abc import abstractmethod
 from collections.abc import Callable
 from itertools import zip_longest
+from numbers import Number
 from typing import Any, NamedTuple, Protocol, Self, TypeAlias, runtime_checkable
 
 import numpy as np
 from astropy import units as u
 from astropy.coordinates import BaseCoordinateFrame as _AstropyBaseCoordinateFrame
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
+from astropy.wcs.wcsapi.high_level_api import (
+    high_level_objects_to_values,
+    values_to_high_level_objects,
+)
+from numpy import typing as npt
 
 from ._axis import AxesType
 
@@ -17,12 +23,16 @@ __all__ = [
     "AstropyBuiltInFrame",
     "BaseCoordinateFrame",
     "CoordinateFrameProtocol",
+    "LowLevelArray",
+    "LowLevelInput",
     "WorldAxisObjectClass",
     "WorldAxisObjectClassConverter",
     "WorldAxisObjectComponent",
 ]
 
 AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
+LowLevelArray: TypeAlias = npt.NDArray[np.generic]
+LowLevelInput: TypeAlias = LowLevelArray | u.Quantity
 
 
 class WorldAxisObjectClass(NamedTuple):
@@ -213,16 +223,28 @@ class CoordinateFrameProtocol(Protocol):
         """
 
     def add_units(
-        self, arrays: u.Quantity | np.ndarray | list[float]
-    ) -> tuple[u.Quantity, ...] | u.Quantity:
+        self, arrays: tuple[LowLevelInput, ...] | LowLevelInput
+    ) -> tuple[LowLevelInput, ...]:
         """
         Add units to the arrays
         """
-        if self.naxes == 1 and np.isscalar(arrays):
-            return u.Quantity(arrays, self.unit[0])
+        # Handle the case where we have a single axis input which maybe passed as a
+        #    scalar rather than a tuple of length 1.
+        if self.naxes == 1 and (np.isscalar(arrays) or isinstance(arrays, u.Quantity)):
+            return (
+                arrays if self.unit[0] is None else u.Quantity(arrays, self.unit[0]),
+            )
 
         return tuple(
-            array if unit is None else u.Quantity(array, unit=unit)
+            # Add units to the array if there is a unit for the axis, otherwise
+            #    just pass it through.
+            array
+            if unit is None or array is None
+            else (
+                array.to(unit)
+                if isinstance(array, TimeDelta)
+                else u.Quantity(array, unit=unit)
+            )
             # zip_longest is used here to support "non-coordinate" inputs/outputs
             #   This implicitly assumes that the "non-coordinate" inputs/outputs
             #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
@@ -230,21 +252,81 @@ class CoordinateFrameProtocol(Protocol):
         )
 
     def remove_units(
-        self, arrays: u.Quantity | np.ndarray | list[float]
-    ) -> tuple[np.ndarray, ...]:
+        self, arrays: tuple[LowLevelInput, ...] | LowLevelInput
+    ) -> tuple[LowLevelArray, ...]:
         """
         Remove units from the input arrays
         """
-        if self.naxes == 1 and (np.isscalar(arrays) or isinstance(arrays, u.Quantity)):
-            arrays = (arrays,)
-
         return tuple(
-            array.to_value(unit) if isinstance(array, u.Quantity) else array
-            # zip_longest is used here to support "non-coordinate" inputs/outputs
-            #   This implicitly assumes that the "non-coordinate" inputs/outputs
-            #   are tacked onto the end of the tuple of "coordinate" inputs/outputs.
-            for array, unit in zip_longest(arrays, self.unit)
+            # Strip the unit off an axis if the axis is a quantity,
+            #     otherwise just pass it through.
+            array.value if isinstance(array, u.Quantity) else array
+            # self.add_units is used first because:
+            # 1. If something is a Quantity, then it will be converted to the
+            #    unit of the frame.
+            # 2. If something is not a Quantity, but the frame has a unit for that
+            #    axis, then we treat that as the correct magnitude but just missing
+            #    the unit, so we get a Quantity with the correct unit.
+            # 3. If there is no unit for the axis, then we just pass whatever it is
+            #    through and hope for the best.
+            # Now we have an array with the correct units, so we can safely strip
+            #    the units off by accessing the .value (magnitude) of the attribute.
+            for array in self.add_units(arrays)
         )
+
+    def to_high_level_coordinates(self, *values):
+        """
+        Convert "values" to high level coordinate objects described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        values : `numbers.Number`, `numpy.ndarray`, or `~astropy.units.Quantity`
+            ``naxis`` number of coordinates as scalars or arrays.
+
+        Returns
+        -------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+        """
+        # We allow Quantity-like objects here which values_to_high_level_objects
+        # does not.
+        values = self.remove_units(values)
+
+        if not all(isinstance(v, Number) or type(v) is np.ndarray for v in values):
+            msg = "All values should be a scalar number or a numpy array."
+            raise TypeError(msg)
+
+        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
+        if len(high_level) == 1:
+            high_level = high_level[0]
+        return high_level
+
+    def from_high_level_coordinates(self, *high_level_coords):
+        """
+        Convert high level coordinate objects to "values" as described by this frame.
+
+        "values" are the coordinates in array or scalar form, and high level
+        objects are things such as ``SkyCoord`` or ``Quantity``. See
+        :ref:`wcsapi` for details.
+
+        Parameters
+        ----------
+        high_level_coordinates
+            One (or more) high level object describing the coordinate.
+
+        Returns
+        -------
+        values : `numbers.Number` or `numpy.ndarray`
+            ``naxis`` number of coordinates as scalars or arrays.
+        """
+        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
+        if len(values) == 1:
+            values = values[0]
+        return values
 
 
 class BaseCoordinateFrame(CoordinateFrameProtocol):

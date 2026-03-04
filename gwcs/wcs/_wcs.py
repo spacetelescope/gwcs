@@ -6,7 +6,7 @@ import itertools
 import sys
 import warnings
 from copy import copy
-from typing import overload
+from typing import Self, overload
 
 import astropy.units as u
 import numpy as np
@@ -27,6 +27,7 @@ from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
 )
+from numpy import typing as npt
 from scipy import optimize
 
 from gwcs.api import WCSAPIMixin
@@ -36,6 +37,8 @@ from gwcs.coordinate_frames import (
     CompositeFrame,
     CoordinateFrameProtocol,
     EmptyFrame,
+    LowLevelArray,
+    LowLevelInput,
     get_ctype_from_ucd,
 )
 from gwcs.utils import _compute_lon_pole, is_high_level, to_index
@@ -148,8 +151,8 @@ class WCS(Pipeline, WCSAPIMixin):
         self._pixel_shape = None
 
     def _add_units_input(
-        self, arrays: np.ndarray | tuple[float, ...], frame: CoordinateFrameProtocol
-    ) -> tuple[u.Quantity, ...]:
+        self, arrays: tuple[LowLevelInput, ...], frame: CoordinateFrameProtocol
+    ) -> tuple[LowLevelInput, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.add_units(arrays)
 
@@ -157,38 +160,23 @@ class WCS(Pipeline, WCSAPIMixin):
         return arrays  # type: ignore[return-value]
 
     def _remove_units_input(
-        self, arrays: tuple[u.Quantity, ...], frame: CoordinateFrameProtocol
-    ) -> tuple[np.ndarray, ...]:
+        self, arrays: tuple[LowLevelInput, ...], frame: CoordinateFrameProtocol
+    ) -> tuple[LowLevelArray, ...]:
         if not isinstance(frame, EmptyFrame):
             return frame.remove_units(arrays)
 
         return arrays
 
-    def __call__(
+    def evaluate(
         self,
-        *args,
+        *args: LowLevelInput,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
-        """
-        Executes the forward transform.
-
-        args : float or array-like
-            Inputs in the input coordinate system, separate inputs
-            for each dimension.
-        with_bounding_box : bool, optional
-             If True(default) values in the result which correspond to
-             any of the inputs being outside the bounding_box are set
-             to ``fill_value``.
-        fill_value : float, optional
-            Output value for inputs outside the bounding_box
-            (default is np.nan).
-        """
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
+        # Call into variable as this involves computing the forward transform
+        #   after each call to it.
         transform = self.forward_transform
-        if transform is None:
-            msg = "Transform is not defined."
-            raise NotImplementedError(msg)
 
         input_is_quantity, transform_uses_quantity = self._units_are_present(
             args, transform
@@ -220,7 +208,34 @@ class WCS(Pipeline, WCSAPIMixin):
                 return result[0]
         return result
 
-    def _units_are_present(self, args, transform):
+    def __call__(
+        self,
+        *args: LowLevelInput,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
+        """
+        Executes the forward transform.
+
+        args : float or array-like
+            Inputs in the input coordinate system, separate inputs
+            for each dimension.
+        with_bounding_box : bool, optional
+            If True(default) values in the result which correspond to
+            any of the inputs being outside the bounding_box are set
+            to ``fill_value``.
+        fill_value : float, optional
+            Output value for inputs outside the bounding_box
+            (default is np.nan).
+        """
+        return self.evaluate(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
+
+    def _units_are_present(
+        self, args: tuple[LowLevelInput, ...], transform: Model
+    ) -> tuple[bool, bool]:
         """
         Determine if the inputs to a transform are quantities and the transform
         supports units.
@@ -254,13 +269,13 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _make_input_units_consistent(
         self,
-        transform,
-        *args,
+        transform: Model,
+        *args: LowLevelInput,
         frame: CoordinateFrameProtocol,
-        input_is_quantity=False,
-        transform_uses_quantity=False,
+        input_is_quantity: bool = False,
+        transform_uses_quantity: bool = False,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelInput, ...]:
         """
         Adds or removes units from the arguments as needed so that the transform
         can be successfully evaluated.
@@ -280,13 +295,13 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def _make_output_units_consistent(
         self,
-        transform,
-        *args,
+        transform: Model,
+        *args: LowLevelInput,
         frame: CoordinateFrameProtocol,
         input_is_quantity=False,
         transform_uses_quantity=False,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelInput, ...]:
         """
         Adds or removes units from the arguments as needed so that
         the type of the output matches the input.
@@ -305,7 +320,13 @@ class WCS(Pipeline, WCSAPIMixin):
             return self._add_units_input(args, frame)
         return args
 
-    def in_image(self, *args, **kwargs):
+    def in_image(
+        self,
+        *args: LowLevelInput,
+        with_bounding_box: bool = True,
+        fill_value: float | np.number = np.nan,
+        **kwargs,
+    ) -> bool | npt.NDArray[np.bool_]:
         """
         This method tests if one or more of the input world coordinates are
         contained within forward transformation's image and that it maps to
@@ -327,14 +348,16 @@ class WCS(Pipeline, WCSAPIMixin):
         Returns
         -------
         result : bool, numpy.ndarray
-           A single boolean value or an array of boolean values with `True`
-           indicating that the WCS footprint contains the coordinate
-           and `False` if input is outside the footprint.
+            A single boolean value or an array of boolean values with `True`
+            indicating that the WCS footprint contains the coordinate
+            and `False` if input is outside the footprint.
 
         """
-        coords = self.invert(*args, **kwargs)
+        coords = self.invert(
+            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
+        )
 
-        result = np.isfinite(coords)
+        result: npt.NDArray[np.bool_] = np.isfinite(coords)
         if self.input_frame.naxes > 1:
             result = np.all(result, axis=0)
 
@@ -342,11 +365,11 @@ class WCS(Pipeline, WCSAPIMixin):
 
     def invert(
         self,
-        *args,
+        *args: LowLevelInput,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
         """
         Invert coordinates from output frame to input frame using analytical or
         user-supplied inverse. When neither analytical nor user-supplied
@@ -363,9 +386,9 @@ class WCS(Pipeline, WCSAPIMixin):
             to the number of world coordinates given by ``world_n_dim``.
 
         with_bounding_box : bool, optional
-             If `True` (default) values in the result which correspond to any
-             of the inputs being outside the bounding_box are set to
-             ``fill_value``.
+            If `True` (default) values in the result which correspond to any
+            of the inputs being outside the bounding_box are set to
+            ``fill_value``.
 
         fill_value : float, optional
             Output value for inputs outside the bounding_box (default is ``np.nan``).
@@ -391,9 +414,11 @@ class WCS(Pipeline, WCSAPIMixin):
             transform = None
 
         if is_high_level(*args, low_level_wcs=self):
-            message = "High Level objects are not supported with the native API. \
-                       Please use the `world_to_pixel` method."
-            raise TypeError(message)
+            msg = (
+                "High Level objects are not supported with the native API. "
+                "Please use the `world_to_pixel` method."
+            )
+            raise TypeError(msg)
 
         if with_bounding_box and self.bounding_box is not None:
             args = self.outside_footprint(args)
@@ -483,11 +508,11 @@ class WCS(Pipeline, WCSAPIMixin):
                     outside = (coord > min_ax) & (coord < max_ax)
                 else:
                     if len(world_arrays) == 1:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays[0], self.output_frame
                         )
                     else:
-                        coord_ = self._remove_quantity_output(
+                        coord_ = self._remove_quantity_frame(
                             world_arrays, self.output_frame
                         )[idim]
 
@@ -1165,11 +1190,11 @@ class WCS(Pipeline, WCSAPIMixin):
         self,
         from_frame: str | CoordinateFrameProtocol,
         to_frame: str | CoordinateFrameProtocol,
-        *args,
+        *args: float | np.ndarray,
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ):
+    ) -> tuple[LowLevelArray, ...] | LowLevelArray:
         """
         Transform positions between two frames.
 
@@ -1236,23 +1261,15 @@ class WCS(Pipeline, WCSAPIMixin):
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str) -> None:
         """Set the name for the WCS."""
         self._name = value
 
-    def _get_axes_indices(self):
-        try:
-            axes_ind = np.argsort(self.input_frame.axes_order)
-        except AttributeError:
-            # the case of a frame being a string
-            axes_ind = np.arange(self.forward_transform.n_inputs)
-        return axes_ind
-
-    def __str__(self):
+    def __str__(self) -> str:
         from astropy.table import Table
 
         col1 = [step.frame for step in self._pipeline]
-        col2 = []
+        col2: list[str | None] = []
         for item in self._pipeline[:-1]:
             model = item.transform
             if model is None:
@@ -1265,7 +1282,7 @@ class WCS(Pipeline, WCSAPIMixin):
         t = Table([col1, col2], names=["From", "Transform"])
         return str(t)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<WCS(output_frame={self.output_frame}, input_frame={self.input_frame}, "
             f"forward_transform={self.forward_transform})>"
@@ -1363,7 +1380,9 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return result.T
 
-    def fix_inputs(self, fixed):
+    def fix_inputs(
+        self, fixed: dict[str | int, LowLevelArray | u.Quantity | float | np.number]
+    ) -> Self:
         """
         Return a new unique WCS by fixing inputs to constant values.
 
@@ -1385,12 +1404,12 @@ class WCS(Pipeline, WCSAPIMixin):
             ("x", "y")
 
         """
-        new_pipeline = []
-        step0 = self.pipeline[0]
-        new_transform = fix_inputs(step0[1], fixed)
-        new_pipeline.append((step0[0], new_transform))
-        new_pipeline.extend(self.pipeline[1:])
-        return self.__class__(new_pipeline)
+        return type(self)(
+            [
+                (self.pipeline[0].frame, fix_inputs(self.pipeline[0].transform, fixed)),
+                *self.pipeline[1:],
+            ]
+        )
 
     def to_fits_sip(
         self,
