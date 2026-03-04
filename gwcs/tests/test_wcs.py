@@ -299,7 +299,11 @@ def test_bounding_box_units():
         w = wcs.WCS(pipeline)
 
     w.bounding_box = bb
-    world = w(-1 * u.pix, -1 * u.pix)
+    with pytest.warns(
+        cf.EmptyFrameUnitsWarning, match=r"EmptyFrame.*does not have any unit.*"
+    ):
+        world = w(-1 * u.pix, -1 * u.pix)
+
     assert_allclose(world, (np.nan, np.nan))
 
 
@@ -349,8 +353,11 @@ def test_compound_bounding_box():
     assert w.bounding_box == cbb
     assert w.bounding_box is trans.bounding_box
 
-    assert_allclose(w(-1 * u.pix, 1 * u.pix), (np.nan, np.nan))
-    assert_allclose(w(7 * u.pix, 2 * u.pix), (np.nan, np.nan))
+    with pytest.warns(UserWarning, match=r"EmptyFrame.*does not have any unit.*"):
+        assert_allclose(w(-1 * u.pix, 1 * u.pix), (np.nan, np.nan))
+
+    with pytest.warns(UserWarning, match=r"EmptyFrame.*does not have any unit.*"):
+        assert_allclose(w(7 * u.pix, 2 * u.pix), (np.nan, np.nan))
 
 
 def test_grid_from_bounding_box():
@@ -1442,7 +1449,7 @@ def test_initialize_wcs_with_list():
 
     # make pipeline consisting of tuples and Steps
     shift1 = models.Shift(10 * u.pix) & models.Shift(2 * u.pix)
-    shift2 = models.Shift(3 * u.pix)
+    shift2 = models.Shift(3 * u.pix) & models.Shift(27 * u.pix)
 
     with pytest.warns(DeprecationWarning, match=r"The use of strings.*"):
         pipeline = [("detector", shift1), wcs.Step("extra_step", shift2)]
