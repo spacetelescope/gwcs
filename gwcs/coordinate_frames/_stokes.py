@@ -18,6 +18,8 @@ class StokesFrame(CoordinateFrame):
         Name of this frame.
     axes_order : tuple
         A dimension in the data that corresponds to this axis.
+    aliases : iterable of str
+        Alternative names for this frame.
     """
 
     def __init__(
@@ -25,6 +27,7 @@ class StokesFrame(CoordinateFrame):
         axes_order: tuple[int] = (0,),
         axes_names: tuple[str] = ("stokes",),
         name: str | None = None,
+        aliases: list[str] | None = None,
         axis_physical_types: tuple[str | None] | None = None,
     ) -> None:
         super().__init__(
@@ -32,6 +35,7 @@ class StokesFrame(CoordinateFrame):
             axes_type=(AxisType.STOKES,),
             axes_order=axes_order,
             name=name,
+            aliases=aliases,
             axes_names=axes_names,
             unit=(u.one,),
             axis_physical_types=axis_physical_types,
