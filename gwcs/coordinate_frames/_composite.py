@@ -25,9 +25,16 @@ class CompositeFrame(CoordinateFrame):
         List of constituient frames.
     name : str
         Name for this frame.
+    aliases : iterable of str
+        Alternative names for this frame.
     """
 
-    def __init__(self, frames: list[CoordinateFrame], name: str | None = None) -> None:
+    def __init__(
+        self,
+        frames: list[CoordinateFrame],
+        name: str | None = None,
+        aliases: list[str] | None = None,
+    ) -> None:
         self._frames = frames[:]
         naxes = sum([frame._naxes for frame in self._frames])
 
@@ -63,6 +70,7 @@ class CompositeFrame(CoordinateFrame):
             axes_names=tuple(axes_names),
             axis_physical_types=tuple(ph_type),
             name=name,
+            aliases=aliases,
         )
         # Reset after the super init which may have messed this up
         self._axis_physical_types = tuple(ph_type)
