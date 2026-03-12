@@ -2787,14 +2787,14 @@ class WCS(Pipeline, WCSAPIMixin):
             if isinstance(transform, projections.Projection):
                 sky2pix_proj = transform
                 break
-        if sky2pix_proj.__name__.startswith("Pix2Sky"):
+        if sky2pix_proj.__class__.__name__.startswith("pix2sky"):
             sky2pix_proj = sky2pix_proj.inverse
         lon_pole = _compute_lon_pole((crval1, crval2), sky2pix_proj)
         ntransform = (
             (Shift(crpix[0]) & Shift(crpix[1]))
             | self.forward_transform
             | RotateCelestial2Native(crval1, crval2, lon_pole)
-            | sky2pix_proj()
+            | sky2pix_proj
         )
 
         # standard sampling:
