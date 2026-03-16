@@ -122,7 +122,7 @@ class EmptyFrame(CoordinateFrameProtocol):
 
     @property
     def axes_type(self) -> AxesType:
-        return (AxisType.UNKNOWN,) * self.naxes
+        return (AxisType.UNDEFINED,) * self.naxes
 
     @property
     def axis_physical_types(self):
