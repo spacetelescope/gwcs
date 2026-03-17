@@ -222,7 +222,7 @@ from ._base import (
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
 from ._core import CoordinateFrame
-from ._empty import EmptyFrame, EmptyFrameDeprecationWarning
+from ._empty import EmptyFrame, EmptyFrameDeprecationWarning, EmptyFrameUnitsWarning
 from ._frame import Frame2D
 from ._spectral import SpectralFrame
 from ._stokes import StokesFrame
@@ -238,6 +238,7 @@ __all__ = [
     "CoordinateFrameProtocol",
     "EmptyFrame",
     "EmptyFrameDeprecationWarning",
+    "EmptyFrameUnitsWarning",
     "Frame2D",
     "LowLevelArray",
     "LowLevelInput",

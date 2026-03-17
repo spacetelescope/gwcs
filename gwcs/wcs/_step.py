@@ -34,7 +34,7 @@ if sys.version_info >= (3, 12):
 else:
 
     def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
-        return isinstance(frame, BaseCoordinateFrame | CoordinateFrame)
+        return isinstance(frame, BaseCoordinateFrame | CoordinateFrame | EmptyFrame)
 
 
 class Step:
@@ -56,7 +56,11 @@ class Step:
         # Allow for a string to be passed in for the frame but be turned into a
         # frame object
         # This is correct type-wise, but the Python 3.11 bugfix causes a MyPy error
-        self.frame = frame if _is_coordinate_frame(frame) else EmptyFrame(frame)  # type: ignore[assignment]
+        self.frame = (
+            frame
+            if _is_coordinate_frame(frame)
+            else EmptyFrame.from_transform(frame, transform)  # type: ignore[assignment, arg-type]
+        )
         self.transform = transform
 
     @property
