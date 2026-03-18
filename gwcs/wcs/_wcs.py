@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.modeling import Model, fix_inputs, projections
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
 from astropy.modeling.models import (
+    Identity,
     Mapping,
     RotateCelestial2Native,
     Shift,
@@ -132,7 +133,7 @@ class _UnitHandler:
                 or transform.input_units_equivalencies is not None
             )
 
-        elif transform is not None and len(transform.parameters) == 0:
+        elif isinstance(transform, Identity):
             transform_uses_quantity = False
 
         else:
