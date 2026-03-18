@@ -308,7 +308,7 @@ def test_high_level_wrapper(wcsobj, request):
     # uses the mixin class and __call__ calls values_to_high_level_objects
     wc1 = hlvl.pixel_to_world(*pixel_input)
     wc2 = wcsobj(*pixel_input)
-    results = wcsobj._remove_units_input(wc2, wcsobj.output_frame)
+    results = wcsobj.output_frame.remove_units(wc2)
 
     wc2 = values_to_high_level_objects(*results, low_level_wcs=wcsobj)
     if len(wc2) == 1:
@@ -646,10 +646,35 @@ def test_no_input_frame(gwcs_simple_2d):
 
 def test_empty_output_frame(gwcs_empty_output_2d):
     """Test running the API on the WCS with an empty output frame."""
-    assert (np.array([3]), np.array([1])) == gwcs_empty_output_2d.pixel_to_world_values(
-        np.array([2]), np.array([-1])
-    )
+    assert (
+        np.array([3]),
+        np.array([1]),
+    ) == gwcs_empty_output_2d.pixel_to_world_values(np.array([2]), np.array([-1]))
     assert (
         np.array([2]),
         np.array([-1]),
     ) == gwcs_empty_output_2d.world_to_pixel_values(np.array([3]), np.array([1]))
+
+
+def test_empty_frame_units_warning(gwcs_empty_output_2d):
+    """
+    Test that a warning is raised when a unit conversion is attempted on an empty frame.
+    """
+    # > 1d case
+    with pytest.warns(
+        cf.EmptyFrameUnitsWarning, match=r"EmptyFrame.*does not have any unit.*"
+    ):
+        assert (
+            np.array([3]),
+            np.array([4]),
+        ) == gwcs_empty_output_2d.pixel_to_world_values(2 * u.m, 2 * u.m)
+
+    # 1d case
+    with pytest.warns(cf.EmptyFrameDeprecationWarning, match=r"The use of strings.*"):
+        wcs = gwcs.WCS(
+            forward_transform=m.Shift(7), input_frame="detector", output_frame="world"
+        )
+    with pytest.warns(
+        cf.EmptyFrameUnitsWarning, match=r"EmptyFrame.*does not have any unit.*"
+    ):
+        assert np.array([8]) == wcs(1 * u.pix)

@@ -27,7 +27,9 @@ def _assert_frame_equal(a, b):
         return a == b
 
     assert a.name == b.name  # nosec
-    if not isinstance(a, cf.EmptyFrame):
+    if not isinstance(a, cf.EmptyFrame) or (
+        isinstance(a, cf.EmptyFrame) and a._naxes is not None
+    ):
         assert a.axes_order == b.axes_order  # nosec
         assert a.axes_names == b.axes_names  # nosec
         assert a.unit == b.unit  # nosec

@@ -35,8 +35,8 @@ def gwcs_simple_2d():
 def gwcs_empty_output_2d():
     return wcs.WCS(
         MODEL_2D_SHIFT,
-        input_frame=cf.EmptyFrame(name="detector"),
-        output_frame=cf.EmptyFrame(name="world"),
+        input_frame="detector",
+        output_frame="world",
     )
 
 

@@ -1,0 +1,3 @@
+Improve the implementation of the ``EmptyFrame`` so that it can be used within GWCS
+and other code without special handling. Note that now the code will raise an error whenever the user tries to use ``EmptyFrame`` with units as this violates the
+expectations of the normal GWCS API.
