@@ -15,7 +15,7 @@ from gwcs.utils import CoordinateFrameError
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
 from ._step import IndexedStep, Mdl, Step, StepTuple
 
-__all__ = ["ForwardTransform", "Pipeline"]
+__all__ = ["DirectionalPipeline", "ForwardTransform", "Pipeline"]
 
 # Type aliases due to the use of the `|` for type hints not working with Model
 ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple]]  # noqa: UP007
