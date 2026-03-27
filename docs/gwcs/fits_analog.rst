@@ -3,6 +3,10 @@
 FITS Equivalent WCS Example
 ===========================
 
+.. note::
+    For a simpler and more direct way of constructing a GWCS object equivalent
+    to a FITS WCS **without distortions**, see the next section.
+
 The following example shows how to construct a GWCS object equivalent to
 a FITS imaging WCS without distortion, defined in this FITS imaging header::
 
@@ -99,3 +103,60 @@ if available, otherwise it applies an iterative method to calculate the pixel co
 
   >>> wcsobj.invert(*sky)
   (<Quantity 1. pix>, <Quantity 2. pix>)
+
+
+Simple FITS WCS equivalent for non-distorted WCS
+================================================
+
+A simpler way to construct the same transform as in the previous section when
+there are no distortions is to use the `~gwcs.fitswcs.FITSImagingWCSTransform`
+class:
+
+    >>> from astropy import coordinates as coord
+    >>> from astropy import units as u
+    >>> from gwcs import wcs
+    >>> from gwcs import coordinate_frames as cf
+    >>> from gwcs.fitswcs import FITSImagingWCSTransform
+    >>> from astropy.modeling.models import Pix2Sky_Gnomonic
+
+Construct transform:
+
+    >>> tan = Pix2Sky_Gnomonic()
+    >>> det2sky = FITSImagingWCSTransform(tan, crpix=[2048 - 1, 1024 - 1],
+    ...     crval=[5.63056810618, -72.05457184279],
+    ...     pc=[[1.290551569736E-05, 5.9525007864732E-06],
+    ...         [5.0226382102765E-06 , -1.2644844123757E-05]])
+    >>> print(det2sky)
+    Model: FITSImagingWCSTransform
+    Inputs: ('x', 'y')
+    Outputs: ('lon', 'lat')
+    Model set size: 1
+    Parameters:
+            crpix                    crval                 cdelt                        pc
+        ---------------- -------------------------------- ---------- ------------------------------------------
+        2047.0 .. 1023.0 5.63056810618 .. -72.05457184279 1.0 .. 1.0 1.290551569736e-05 .. -1.2644844123757e-05
+
+Define ``detector`` and ``celestial`` coordinate frames:
+
+    >>> detector_frame = cf.Frame2D(name="detector", axes_names=("x", "y"),
+    ...                             unit=(u.pix, u.pix))
+    >>> sky_frame = cf.CelestialFrame(reference_frame=coord.ICRS(), name='icrs',
+    ...                               unit=(u.deg, u.deg))
+
+Finally, create the WCS pipeline and the WCS object:
+
+    >>> pipeline = [(detector_frame, det2sky),
+    ...             (sky_frame, None)
+    ...            ]
+    >>> wcsobj = wcs.WCS(pipeline)
+    >>> print(wcsobj)
+      From          Transform
+    -------- -----------------------
+    detector FITSImagingWCSTransform
+        icrs                    None
+
+As before:
+
+    >>> sky = wcsobj(1*u.pix, 2*u.pix)
+    >>> print(sky)
+    (<Quantity 5.52515954 deg>, <Quantity -72.05190935 deg>)
