@@ -23,3 +23,6 @@ API
 
 .. automodapi:: gwcs.geometry
   :inherited-members:
+
+.. automodapi:: gwcs.fitswcs
+  :inherited-members:
