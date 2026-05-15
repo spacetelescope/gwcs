@@ -45,7 +45,8 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
 
     nterms = len(powers)
 
-    flt_type = np.longdouble
+    # lu_factor and _lu_solve deprecated float128 support in scipy 1.18.0
+    flt_type = np.float64
 
     # allocate array for the coefficients of the system of equations (a*x=b):
     a = np.empty((nterms, nterms), dtype=flt_type)
