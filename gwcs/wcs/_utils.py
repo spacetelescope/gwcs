@@ -96,7 +96,7 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
     with warnings.catch_warnings(record=True):
         warnings.simplefilter("error", category=linalg.LinAlgWarning)
         try:
-            lu_piv = linalg.lu_factor(a.astype(np.complex128))
+            lu_piv = linalg.lu_factor(a.astype(np.float128))
             poly_coeff_x = linalg.lu_solve(lu_piv, bx).astype(float)
             poly_coeff_y = linalg.lu_solve(lu_piv, by).astype(float)
         except (ValueError, linalg.LinAlgWarning, np.linalg.LinAlgError) as e:
