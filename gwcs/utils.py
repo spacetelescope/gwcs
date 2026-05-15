@@ -479,34 +479,10 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
+# ToDo: Should this be deprecated?
 def is_high_level(*args, low_level_wcs):
     """
     Determine if args matches the high level classes as defined by
     ``low_level_wcs``.
     """
-    if low_level_wcs.world_axis_object_classes is None or len(args) != len(
-        low_level_wcs.world_axis_object_classes
-    ):
-        return False
-
-    type_match = [
-        (type(arg), waoc[0])
-        for arg, waoc in zip(
-            args, low_level_wcs.world_axis_object_classes.values(), strict=False
-        )
-    ]
-
-    types_are_high_level = [argt is t for argt, t in type_match]
-
-    if all(types_are_high_level):
-        return True
-
-    if any(types_are_high_level):
-        msg = (
-            "Invalid types were passed, got "
-            f"({', '.join(tm[0].__name__ for tm in type_match)}) expected "
-            f"({', '.join(tm[1].__name__ for tm in type_match)})."
-        )
-        raise TypeError(msg)
-
-    return False
+    return low_level_wcs.output_frame.is_high_level(*args)

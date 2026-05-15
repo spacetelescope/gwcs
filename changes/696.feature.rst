@@ -1,0 +1,8 @@
+Clean up internal code flow so that the entire GWCS Native API follows common code
+paths. This enables the Native API to properly handle various forms of inputs in
+a consistent manner so that evaluation and inverse have the same input handling
+behavior. This means HLO and quantities should function properly as they are passed
+into these portions of the Native API.
+
+Also allows for quantities to be passed into the "low-level APE 14 API" without
+raising errors.
