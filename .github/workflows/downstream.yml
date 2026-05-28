@@ -34,7 +34,16 @@ jobs:
       data_path: ${{ steps.data_path.outputs.path }}
 
   crds_contexts:
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - id: context
+        uses: spacetelescope/crds/.github/actions/contexts@598b076b15ea9c381307d51688db2abb953c4f5e
+        with:
+          require_jwst: true
+          require_roman: true
+    outputs:
+      jwst: ${{ steps.context.outputs.jwst }}
+      roman: ${{ steps.context.outputs.roman }}
 
   jwst:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e97344095b099e1d729fe97429078c9975921d8a # v2.6.2
