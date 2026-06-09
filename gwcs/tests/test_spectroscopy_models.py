@@ -1,6 +1,8 @@
 import astropy.units as u
 import numpy as np
 import pytest
+from astropy.modeling import CompoundModel
+from astropy.wcs import WCS
 from astropy.modeling.models import Identity
 from numpy.testing import assert_allclose
 
@@ -53,6 +55,113 @@ def test_wavelength_grating_equation_units():
 
     result = model(-u.Quantity(alpha_in), -u.Quantity(alpha_in))
     assert_allclose(result, wave)
+
+
+def test_refracted_angle_sine_model_reference_pixel():
+    params = {
+        "reference_pixel": 217.0,
+        "reference_wavelength": 854.1738582455826 * u.nm,
+        "dispersion": 0.0022975580183395555 * u.nm / u.pix,
+        "grating_density": 23000.0 / u.m,
+        "spectral_order": 90 * u.one,
+        "incident_angle": 65.696 * u.deg,
+        "refractive_index": 1.25 * u.one,
+        "refractive_index_derivative": 1000.0 / u.m,
+        "out_of_plane_angle": 1.5 * u.deg,
+        "camera_angle": 0.8 * u.deg,
+    }
+    model = sp.WavelengthFromGratingEquation.refracted_angle_sine_model(**params)
+
+    grism_constant = (params["grating_density"] * params["spectral_order"]) / np.cos(
+        params["out_of_plane_angle"]
+    )
+    reference_refracted_angle = np.arcsin(
+        (grism_constant * params["reference_wavelength"])
+        - params["refractive_index"] * np.sin(params["incident_angle"])
+    )
+
+    result = model(params["reference_pixel"])
+    expected = np.sin(reference_refracted_angle)
+
+    assert u.allclose(result, expected)
+
+
+def test_refracted_angle_sine_model_matches_closed_form_for_pixel_array():
+    params = {
+        "reference_pixel": 217.0,
+        "reference_wavelength": 854.1738582455826 * u.nm,
+        "dispersion": 0.0022975580183395555 * u.nm / u.pix,
+        "grating_density": 23000.0 / u.m,
+        "spectral_order": 90 * u.one,
+        "incident_angle": 65.696 * u.deg,
+        "refractive_index": 1.25 * u.one,
+        "refractive_index_derivative": 1000.0 / u.m,
+        "out_of_plane_angle": 1.5 * u.deg,
+        "camera_angle": 0.8 * u.deg,
+    }
+    model = sp.WavelengthFromGratingEquation.refracted_angle_sine_model(**params)
+
+    grism_constant = (params["grating_density"] * params["spectral_order"]) / np.cos(
+        params["out_of_plane_angle"]
+    )
+    reference_refracted_angle = np.arcsin(
+        (grism_constant * params["reference_wavelength"])
+        - params["refractive_index"] * np.sin(params["incident_angle"])
+    )
+    grism_parameter_per_wavelength = (
+        grism_constant
+        - params["refractive_index_derivative"] * np.sin(params["incident_angle"])
+    ) / (np.cos(reference_refracted_angle) * np.cos(params["camera_angle"]) ** 2)
+
+    pixels = np.array([0.0, 100.0, 217.0, 300.0, 511.0])
+    wavelength_offset = ((pixels - params["reference_pixel"]) * u.pix) * params["dispersion"]
+    expected = np.sin(
+        np.arctan(
+            -np.tan(params["camera_angle"]) + wavelength_offset * grism_parameter_per_wavelength
+        )
+        + reference_refracted_angle
+        + params["camera_angle"]
+    )
+
+    result = model(pixels)
+
+    assert_allclose(result, expected, rtol=1e-12, atol=1e-12)
+
+
+def test_generate_grating_spectral_transform():
+    header = {
+        "CTYPE1": "AWAV-GRA",
+        "CUNIT1": "nm",
+        "CRPIX1": 218,
+        "CRVAL1": 854.1738582455826,
+        "CDELT1": 0.0022975580183395555,
+        "PV1_0": 23000.0,
+        "PV1_1": 90,
+        "PV1_2": 65.696,
+        "PV1_3": 1.25,
+        "PV1_4": 1000.0,
+        "PV1_5": 1.5,
+        "PV1_6": 0.8,
+    }
+    transform = sp.WavelengthFromGratingEquation.generate_grating_spectral_transform(
+        reference_pixel=header["CRPIX1"] - 1,
+        reference_wavelength=header["CRVAL1"] * u.nm,
+        dispersion=header["CDELT1"] * u.nm / u.pix,
+        grating_density=header["PV1_0"] / u.m,
+        spectral_order=header["PV1_1"] * u.one,
+        incident_angle=header["PV1_2"] * u.deg,
+        refractive_index=header["PV1_3"] * u.one,
+        refractive_index_derivative=header["PV1_4"] / u.m,
+        out_of_plane_angle=header["PV1_5"] * u.deg,
+        camera_angle=header["PV1_6"] * u.deg,
+    )
+
+    pixels = np.array([0, 100, 217, 300, 511], dtype=float)
+    expected = WCS(header).spectral.pixel_to_world(pixels)
+    result = transform(pixels)
+
+    assert isinstance(transform, CompoundModel)
+    assert_allclose(result.to_value(u.nm), expected.to_value(u.nm), rtol=1e-10, atol=1e-10)
 
 
 @pytest.mark.parametrize(
