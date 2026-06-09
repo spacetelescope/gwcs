@@ -141,7 +141,7 @@ select = [
   "Q",   # flake8-quotes (best practices for quotes)
   "RSE", # flake8-raise (best practices for raising exceptions)
   "RET", # flake8-return (best practices for return statements)
-  # "SLF",   # flake8-self
+  "SLF", # flake8-self
   "SIM", # flake8-simplify (suggest simplifications to code where possible)
   # "SLOT",  # flake8-slots
   "TID", # flake8-tidy-imports (prevent banned api and best import practices)
@@ -181,8 +181,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
-"gwcs/tests/*" = ["S101"]
-"gwcs/converters/tests/*" = ["S101"]
+"gwcs/tests/*" = ["S101", "SLF001"]
+"gwcs/converters/tests/*" = ["S101", "SLF001"]
 "docs/conf.py" = ["INP001", "ERA001"]
 "convert_schemas.py" = ["PTH"]
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from functools import reduce
 from typing import TypeAlias, Union, overload
 
 from astropy.modeling import Model
@@ -9,7 +8,7 @@ from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
 from astropy.units import Unit
 
 from gwcs.coordinate_frames import CoordinateFrameProtocol, EmptyFrame
-from gwcs.utils import CoordinateFrameError
+from gwcs.utils import CoordinateFrameError, combine_transforms
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
 from ._step import IndexedStep, Mdl, Step, StepTuple
@@ -278,17 +277,6 @@ class Pipeline:
         return self._pipeline[-1].frame.unit if self._pipeline else None
 
     @staticmethod
-    def _combine_transforms(transforms: list[Model]) -> Model:
-        """
-        Combine a list of transforms into a single transform.
-        """
-        if any(t is None for t in transforms):
-            msg = "Can not combine transforms if any are None."
-            raise NotImplementedError(msg)
-
-        return reduce(lambda x, y: x | y, transforms)
-
-    @staticmethod
     def _frame_name(frame: str | CoordinateFrameProtocol) -> str:
         """
         Return the name of the frame.
@@ -370,7 +358,7 @@ class Pipeline:
                 step.transform for step in self._pipeline[from_index:to_index]
             ]
 
-        return self._combine_transforms(transforms)
+        return combine_transforms(transforms)
 
     def set_transform(
         self,
@@ -530,7 +518,7 @@ class Pipeline:
 
         if (
             # Check that the bounding_box was set on the instance (not a default)
-            transform._user_bounding_box is not None
+            transform._user_bounding_box is not None  # noqa: SLF001
             # Check the order of that bounding_box is C
             and bounding_box.order == "C"
             # Check that the bounding_box is not a single value
@@ -618,9 +606,7 @@ class Pipeline:
         """
         Return the forward transform of the pipeline.
         """
-        transform = self._combine_transforms(
-            [step.transform for step in self._pipeline[:-1]]
-        )
+        transform = combine_transforms([step.transform for step in self._pipeline[:-1]])
 
         if self.bounding_box is not None:
             # Currently compound models do not attempt to combine individual model

@@ -29,7 +29,7 @@ class CompositeFrame(CoordinateFrame):
 
     def __init__(self, frames: list[CoordinateFrame], name: str | None = None) -> None:
         self._frames = frames[:]
-        naxes = sum([frame._naxes for frame in self._frames])
+        naxes = sum([frame.naxes for frame in self._frames])
 
         axes_order: list[int] = []
         axes_type: list[AxisType | str] = []
@@ -42,10 +42,10 @@ class CompositeFrame(CoordinateFrame):
 
         # Stack the raw (not-native) ordered properties
         for frame in frames:
-            axes_type += list(frame._prop.axes_type)
-            axes_names += list(frame._prop.axes_names)
-            unit += list(frame._prop.unit)
-            ph_type += list(frame._prop.axis_physical_types)
+            axes_type += list(frame.raw_properties.axes_type)
+            axes_names += list(frame.raw_properties.axes_names)
+            unit += list(frame.raw_properties.unit)
+            ph_type += list(frame.raw_properties.axis_physical_types)
 
         if len(np.unique(axes_order)) != len(axes_order):
             msg = (
@@ -106,7 +106,7 @@ class CompositeFrame(CoordinateFrame):
                         component[1],
                         component[2],
                     )
-                    for component in frame._native_world_axis_object_components
+                    for component in frame._native_world_axis_object_components  # noqa: SLF001
                 ],
             )
 
