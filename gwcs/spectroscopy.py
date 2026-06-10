@@ -219,8 +219,7 @@ class WavelengthFromGratingEquation(Model):
             - refractive_index * np.sin(incident_angle)
         )
         grism_parameter_per_wavelength = (
-            grism_constant
-            - refractive_index_derivative * np.sin(incident_angle)
+            grism_constant - refractive_index_derivative * np.sin(incident_angle)
         ) / (np.cos(reference_refracted_angle) * np.cos(camera_angle) ** 2)
         wavelength_offset = ((alpha_in - reference_pixel) * u.pix) * dispersion
 
@@ -229,7 +228,8 @@ class WavelengthFromGratingEquation(Model):
         else:
             refracted_angle_sine = np.sin(
                 np.arctan(
-                    -np.tan(camera_angle) + wavelength_offset * grism_parameter_per_wavelength
+                    -np.tan(camera_angle)
+                    + wavelength_offset * grism_parameter_per_wavelength
                 )
                 + reference_refracted_angle
                 + camera_angle
