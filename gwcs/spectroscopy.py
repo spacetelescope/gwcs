@@ -40,6 +40,15 @@ class WavelengthFromGratingEquation(Model):
     parameters are left at their default values, the original two-input
     grating-equation behavior is preserved.
 
+    In addition to evaluating wavelength from grating-equation inputs, this
+    class also provides helper methods for constructing FITS ``-GRA``/``-GRI``
+    spectral transforms:
+
+    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.refracted_angle_sine_model`
+      builds the pixel-dependent refracted-angle sine custom model
+    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.generate_grating_spectral_transform`
+      assembles the corresponding one-dimensional compound spectral transform
+
     Parameters
     ----------
     groove_density : int
