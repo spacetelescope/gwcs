@@ -5,8 +5,6 @@ Spectroscopy related models.
 
 import astropy.units as u
 import numpy as np
-from astropy.modeling import CompoundModel, custom_model
-from astropy.modeling import models as m
 from astropy.modeling.core import Model
 from astropy.modeling.parameters import Parameter
 
@@ -32,15 +30,10 @@ class WavelengthFromGratingEquation(Model):
       With oblique angles the inputs are the direction cosines
       of the angles.
 
-    In addition to evaluating wavelength from grating-equation inputs, this
-    class also provides helper methods for constructing FITS ``-GRA``/``-GRI``
-    spectral transforms:
-
-    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.refracted_angle_sine_model`
-      builds the pixel-dependent refracted-angle sine custom model
-    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.generate_grating_spectral_transform`
-      assembles the corresponding one-dimensional compound spectral transform
-
+    This model also supports the FITS ``-GRA``/``-GRI`` spectral-coordinate
+    formalism when the optional grating configuration parameters are supplied.
+    When those parameters are left at their default values, the original
+    two-input grating-equation behavior is preserved.
 
     Parameters
     ----------
@@ -48,6 +41,29 @@ class WavelengthFromGratingEquation(Model):
         Grating ruling density in units of 1/length.
     spectral_order : int
         Spectral order.
+    reference_pixel : float, optional
+        Reference pixel coordinate for FITS ``-GRA``/``-GRI`` mode. Defaults
+        to ``0``.
+    reference_wavelength : float or `~astropy.units.Quantity`, optional
+        Wavelength at the reference pixel for FITS ``-GRA``/``-GRI`` mode.
+        Defaults to ``0``.
+    dispersion : float or `~astropy.units.Quantity`, optional
+        Spectral dispersion per pixel for FITS ``-GRA``/``-GRI`` mode.
+        Defaults to ``0``.
+    incident_angle : float or `~astropy.units.Quantity`, optional
+        Incident grating angle for FITS ``-GRA``/``-GRI`` mode. Defaults to
+        ``0``.
+    refractive_index : float or `~astropy.units.Quantity`, optional
+        Refractive index at the reference wavelength for FITS
+        ``-GRA``/``-GRI`` mode. Defaults to ``0``.
+    refractive_index_derivative : float or `~astropy.units.Quantity`, optional
+        Derivative of refractive index with respect to wavelength for FITS
+        ``-GRA``/``-GRI`` mode. Defaults to ``0``.
+    out_of_plane_angle : float or `~astropy.units.Quantity`, optional
+        Out-of-plane grating angle for FITS ``-GRA``/``-GRI`` mode. Defaults
+        to ``0``.
+    camera_angle : float or `~astropy.units.Quantity`, optional
+        Camera angle for FITS ``-GRA``/``-GRI`` mode. Defaults to ``0``.
 
     Examples
     --------
@@ -58,6 +74,23 @@ class WavelengthFromGratingEquation(Model):
     >>> lam = model(alpha_in, alpha_out)
     >>> print(lam)
     -1.7453292519934437e-10 m
+
+    >>> model = WavelengthFromGratingEquation(
+    ...     groove_density=23000 * 1/u.m,
+    ...     spectral_order=-1,
+    ...     reference_pixel=217,
+    ...     reference_wavelength=854.1738582455826 * u.nm,
+    ...     dispersion=0.0022975580183395555 * u.nm / u.pix,
+    ...     incident_angle=65.696 * u.deg,
+    ...     refractive_index=1.2,
+    ...     refractive_index_derivative=1000 * 1/u.m,
+    ...     out_of_plane_angle=1.5 * u.deg,
+    ...     camera_angle=0.8 * u.deg,
+    ... )
+    >>> alpha_in =
+    >>> alpha_out =
+    >>> lam = model(alpha_in, alpha_out)
+    >>> print(lam)
 
     """  # noqa: E501
 
@@ -72,36 +105,115 @@ class WavelengthFromGratingEquation(Model):
     """ Grating ruling density in units of 1/m."""
     spectral_order = Parameter(default=1)
     """ Spectral order."""
+    reference_pixel = Parameter(default=0)
+    """ Reference pixel coordinate for FITS ``-GRA``/``-GRI`` mode."""
+    reference_wavelength = Parameter(default=0)
+    """ Reference wavelength for FITS ``-GRA``/``-GRI`` mode."""
+    dispersion = Parameter(default=0)
+    """ Spectral dispersion per pixel for FITS ``-GRA``/``-GRI`` mode."""
+    incident_angle = Parameter(default=0)
+    """ Incident grating angle for FITS ``-GRA``/``-GRI`` mode."""
+    refractive_index = Parameter(default=0)
+    """ Refractive index at the reference wavelength for FITS mode."""
+    refractive_index_derivative = Parameter(default=0)
+    """ Derivative of refractive index with respect to wavelength."""
+    out_of_plane_angle = Parameter(default=0)
+    """ Out-of-plane grating angle for FITS ``-GRA``/``-GRI`` mode."""
+    camera_angle = Parameter(default=0)
+    """ Camera angle for FITS ``-GRA``/``-GRI`` mode."""
 
-    def __init__(self, groove_density, spectral_order, **kwargs):
+    def __init__(
+        self,
+        groove_density,
+        spectral_order,
+        reference_pixel=0,
+        reference_wavelength=0,
+        dispersion=0,
+        incident_angle=0,
+        refractive_index=0,
+        refractive_index_derivative=0,
+        out_of_plane_angle=0,
+        camera_angle=0,
+        **kwargs,
+    ):
         super().__init__(
-            groove_density=groove_density, spectral_order=spectral_order, **kwargs
+            groove_density=groove_density,
+            spectral_order=spectral_order,
+            reference_pixel=reference_pixel,
+            reference_wavelength=reference_wavelength,
+            dispersion=dispersion,
+            incident_angle=incident_angle,
+            refractive_index=refractive_index,
+            refractive_index_derivative=refractive_index_derivative,
+            out_of_plane_angle=out_of_plane_angle,
+            camera_angle=camera_angle,
+            **kwargs,
         )
         self.inputs = ("alpha_in", "alpha_out")
         """ Sine function of the angles or the direction cosines."""
         self.outputs = ("wavelength",)
         """ Wavelength."""
 
-    def evaluate(self, alpha_in, alpha_out, groove_density, spectral_order):
-        return (alpha_in + alpha_out) / (groove_density * spectral_order)
-
-    @staticmethod
-    def refracted_angle_sine_model(
+    def evaluate(
+        self,
+        alpha_in: float | np.ndarray | u.Quantity,
+        alpha_out: float | np.ndarray | u.Quantity,
+        groove_density: float | u.Quantity,
+        spectral_order: float,
         reference_pixel: float,
-        reference_wavelength: u.Quantity,
-        dispersion: u.Quantity,
-        grating_density: u.Quantity,
-        spectral_order: u.Quantity,
-        incident_angle: u.Quantity,
-        refractive_index: u.Quantity,
-        refractive_index_derivative: u.Quantity,
-        out_of_plane_angle: u.Quantity,
-        camera_angle: u.Quantity,
-    ) -> Model:
+        reference_wavelength: float | u.Quantity,
+        dispersion: float | u.Quantity,
+        incident_angle: float | u.Quantity,
+        refractive_index: float,
+        refractive_index_derivative: float | u.Quantity,
+        out_of_plane_angle: float | u.Quantity,
+        camera_angle: float | u.Quantity,
+    ) -> np.ndarray | u.Quantity:
         """
-        Build the pixel-dependent refracted-angle sine model for FITS grating WCS.
+        Evaluate the grating equation in legacy or FITS grating-transform mode.
+
+        When the optional grating-configuration parameters are left at their
+        defaults, this reduces to the original two-input form using ``alpha_in``
+        and ``alpha_out`` directly. When the optional parameters are populated,
+        the method interprets ``alpha_in`` as the pixel coordinate used to
+        construct the refracted-angle term for FITS ``-GRA``/``-GRI`` spectral
+        coordinates.
+
+        Parameters
+        ----------
+        alpha_in
+            Incident-angle sine input, or the pixel coordinate in FITS
+            grating-transform mode.
+        alpha_out
+            Refracted-angle sine input. In FITS grating-transform mode
+            this is used when ``camera_angle`` is zero.
+        groove_density
+            Grating ruling density in units of 1/length.
+        spectral_order
+            Spectral order.
+        reference_pixel
+            Reference pixel coordinate for FITS grating-transform mode.
+        reference_wavelength
+            Wavelength at the reference pixel.
+        dispersion
+            Spectral dispersion per pixel.
+        incident_angle
+            Incident grating angle.
+        refractive_index
+            Refractive index at the reference wavelength.
+        refractive_index_derivative
+            Derivative of refractive index with respect to wavelength.
+        out_of_plane_angle
+            Out-of-plane grating angle.
+        camera_angle
+            Camera angle.
+
+        Returns
+        -------
+        numpy.ndarray or astropy.units.Quantity
+            Evaluated wavelength values.
         """
-        grism_constant = (grating_density * spectral_order) / np.cos(out_of_plane_angle)
+        grism_constant = (groove_density * spectral_order) / np.cos(out_of_plane_angle)
         reference_refracted_angle = np.arcsin(
             (grism_constant * reference_wavelength)
             - refractive_index * np.sin(incident_angle)
@@ -110,71 +222,32 @@ class WavelengthFromGratingEquation(Model):
             grism_constant
             - refractive_index_derivative * np.sin(incident_angle)
         ) / (np.cos(reference_refracted_angle) * np.cos(camera_angle) ** 2)
+        wavelength_offset = ((alpha_in - reference_pixel) * u.pix) * dispersion
 
-        @custom_model
-        def refracted_angle_sine(pixel):
-            wavelength_offset = ((pixel - reference_pixel) * u.pix) * dispersion
-            output_angle = (
+        if camera_angle == 0:
+            refracted_angle_sine = alpha_out
+        else:
+            refracted_angle_sine = np.sin(
                 np.arctan(
-                    -np.tan(camera_angle)
-                    + wavelength_offset * grism_parameter_per_wavelength
+                    -np.tan(camera_angle) + wavelength_offset * grism_parameter_per_wavelength
                 )
                 + reference_refracted_angle
                 + camera_angle
             )
-            return np.sin(output_angle)
-
-        return refracted_angle_sine()
-
-    @staticmethod
-    def generate_grating_spectral_transform(
-        reference_pixel: float,
-        reference_wavelength: u.Quantity,
-        dispersion: u.Quantity,
-        grating_density: u.Quantity,
-        spectral_order: u.Quantity,
-        incident_angle: u.Quantity,
-        refractive_index: u.Quantity = 1 * u.one,
-        refractive_index_derivative: u.Quantity = 0 / u.m,
-        out_of_plane_angle: u.Quantity = 0 * u.deg,
-        camera_angle: u.Quantity = 0 * u.deg,
-    ) -> CompoundModel:
-        """
-        Build a one-dimensional FITS ``-GRA``/``-GRI`` spectral transform.
-
-        This assembles the compound spectral model by combining a constant model
-        for the adjusted incident-angle sine, a pixel-dependent refracted-angle
-        sine model, and `WavelengthFromGratingEquation` to compute wavelength
-        from the grating equation.
-        """
-        adjusted_incident_angle_sine = (
-            refractive_index - refractive_index_derivative * reference_wavelength
-        ) * np.sin(incident_angle)
+        if refractive_index == 0:
+            adjusted_incident_angle_sine = alpha_in
+        else:
+            adjusted_incident_angle_sine = (
+                refractive_index - refractive_index_derivative * reference_wavelength
+            ) * np.sin(incident_angle)
         adjusted_groove_density = (
-            (grating_density * spectral_order) / np.cos(out_of_plane_angle)
+            (groove_density * spectral_order) / np.cos(out_of_plane_angle)
             - refractive_index_derivative * np.sin(incident_angle)
         ) / spectral_order
 
-        refracted_angle = WavelengthFromGratingEquation.refracted_angle_sine_model(
-            reference_pixel=reference_pixel,
-            reference_wavelength=reference_wavelength,
-            dispersion=dispersion,
-            grating_density=grating_density,
-            spectral_order=spectral_order,
-            incident_angle=incident_angle,
-            refractive_index=refractive_index,
-            refractive_index_derivative=refractive_index_derivative,
-            out_of_plane_angle=out_of_plane_angle,
-            camera_angle=camera_angle,
+        return (adjusted_incident_angle_sine + refracted_angle_sine) / (
+            adjusted_groove_density * spectral_order
         )
-        incident_angle = m.Const1D(amplitude=adjusted_incident_angle_sine)
-        wavelength_from_grating = WavelengthFromGratingEquation(
-            groove_density=adjusted_groove_density,
-            spectral_order=spectral_order,
-            name="Spectral",
-        )
-
-        return m.Mapping((0, 0)) | (incident_angle & refracted_angle) | wavelength_from_grating
 
     @property
     def return_units(self):

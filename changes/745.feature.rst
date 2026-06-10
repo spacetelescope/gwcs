@@ -1,1 +1,1 @@
-Added grating spectral transform helper methods to `gwcs.spectroscopy.WavelengthFromGratingEquation` for constructing FITS ``-GRA``/``-GRI`` spectral transforms.
+Expanded `gwcs.spectroscopy.WavelengthFromGratingEquation` with optional FITS ``-GRA``/``-GRI`` grating-configuration parameters while preserving its original two-input grating-equation behavior.
