@@ -32,6 +32,15 @@ class WavelengthFromGratingEquation(Model):
       With oblique angles the inputs are the direction cosines
       of the angles.
 
+    In addition to evaluating wavelength from grating-equation inputs, this
+    class also provides helper methods for constructing FITS ``-GRA``/``-GRI``
+    spectral transforms:
+
+    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.refracted_angle_sine_model`
+      builds the pixel-dependent refracted-angle sine custom model
+    - `~gwcs.spectroscopy.WavelengthFromGratingEquation.generate_grating_spectral_transform`
+      assembles the corresponding one-dimensional compound spectral transform
+
 
     Parameters
     ----------
