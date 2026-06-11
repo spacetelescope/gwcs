@@ -57,7 +57,7 @@ def test_wavelength_grating_equation_units():
 
 
 def test_wavelength_grating_equation_defaults():
-    model = sp.WavelengthFromGratingEquation(20000, -1)
+    model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
     assert model.incident_angle.value == 0
     assert model.refractive_index_derivative.value == 0
     assert model.out_of_plane_angle.value == 0
@@ -69,9 +69,9 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
         "reference_wavelength": 854.1738582455826 * u.nm,
         "dispersion": 0.0022975580183395555 * u.nm / u.pix,
         "grating_density": 23000.0 / u.m,
-        "spectral_order": 90 * u.one,
+        "spectral_order": 90,
         "incident_angle": 65.696 * u.deg,
-        "refractive_index": 1.25 * u.one,
+        "refractive_index": 1.25,
         "refractive_index_derivative": 1000.0 / u.m,
         "out_of_plane_angle": 1.5 * u.deg,
         "camera_angle": 0.8 * u.deg,
@@ -117,9 +117,9 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         "reference_wavelength": 854.1738582455826 * u.nm,
         "dispersion": 0.0022975580183395555 * u.nm / u.pix,
         "grating_density": 23000.0 / u.m,
-        "spectral_order": 90 * u.one,
+        "spectral_order": 90,
         "incident_angle": 65.696 * u.deg,
-        "refractive_index": 1.25 * u.one,
+        "refractive_index": 1.25,
         "refractive_index_derivative": 1000.0 / u.m,
         "out_of_plane_angle": 1.5 * u.deg,
         "camera_angle": 0.8 * u.deg,
@@ -195,7 +195,7 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
     }
     model = sp.WavelengthFromGratingEquation(
         groove_density=header["PV1_0"] / u.m,
-        spectral_order=header["PV1_1"] * u.one,
+        spectral_order=header["PV1_1"],
         incident_angle=header["PV1_2"] * u.deg,
         refractive_index_derivative=header["PV1_4"] / u.m,
         out_of_plane_angle=header["PV1_5"] * u.deg,
@@ -205,13 +205,13 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
     reference_pixel = header["CRPIX1"] - 1
     reference_wavelength = header["CRVAL1"] * u.nm
     dispersion = header["CDELT1"] * u.nm / u.pix
-    refractive_index = header["PV1_3"] * u.one
+    refractive_index = header["PV1_3"]
     camera_angle = header["PV1_6"] * u.deg
 
     adjusted_incident_angle_sine = (
         refractive_index - header["PV1_4"] / u.m * reference_wavelength
     ) * np.sin(header["PV1_2"] * u.deg)
-    grism_constant = ((header["PV1_0"] / u.m) * (header["PV1_1"] * u.one)) / np.cos(
+    grism_constant = ((header["PV1_0"] / u.m) * (header["PV1_1"])) / np.cos(
         header["PV1_5"] * u.deg
     )
     reference_refracted_angle = np.arcsin(
