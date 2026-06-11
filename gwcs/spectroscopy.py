@@ -52,8 +52,6 @@ class WavelengthFromGratingEquation(Model):
     out_of_plane_angle : float or `~astropy.units.Quantity`, optional
         Out-of-plane grating angle for FITS ``-GRA``/``-GRI`` mode. Defaults
         to ``0``.
-    camera_angle : float or `~astropy.units.Quantity`, optional
-        Camera angle for FITS ``-GRA``/``-GRI`` mode. Defaults to ``0``.
 
     Examples
     --------
@@ -65,16 +63,17 @@ class WavelengthFromGratingEquation(Model):
     >>> print(lam)
     -1.7453292519934437e-10 m
 
-    # FITS ``-GRA``/``-GRI`` mode
+    # FITS ``-GRA``/``-GRI`` mode with externally computed alpha terms
     >>> groove_density = 23000 * 1 / u.m
-    >>> spectral_order = -1
+    >>> spectral_order = 90 * u.one
     >>> incident_angle = 65.696 * u.deg
     >>> reference_pixel = 217
     >>> reference_wavelength = 854.1738582455826 * u.nm
     >>> dispersion = 0.0022975580183395555 * u.nm / u.pix
-    >>> refractive_index = 1.2
+    >>> refractive_index = 1.25 * u.one
     >>> refractive_index_derivative = 1000 * 1 / u.m
     >>> out_of_plane_angle = 1.5 * u.deg
+    >>> camera_angle = 0.8 * u.deg
     >>> model = WavelengthFromGratingEquation(
     ...     groove_density=groove_density,
     ...     spectral_order=spectral_order,
@@ -82,7 +81,7 @@ class WavelengthFromGratingEquation(Model):
     ...     refractive_index_derivative=refractive_index_derivative,
     ...     out_of_plane_angle=out_of_plane_angle,
     ... )
-    >>> pixel = 217
+    >>> pixels = np.array([0.0, 100.0, 217.0, 300.0, 511.0])
     >>> alpha_in = (
     ...     refractive_index - refractive_index_derivative * reference_wavelength
     ... ) * np.sin(incident_angle)
@@ -91,12 +90,11 @@ class WavelengthFromGratingEquation(Model):
     ...     (grism_constant * reference_wavelength)
     ...     - refractive_index * np.sin(incident_angle)
     ... )
-    >>> camera_angle = 0.8 * u.deg
     >>> grism_parameter_per_wavelength = (
     ...     grism_constant
     ...     - refractive_index_derivative * np.sin(incident_angle)
     ... ) / (np.cos(reference_refracted_angle) * np.cos(camera_angle) ** 2)
-    >>> wavelength_offset = ((pixel - reference_pixel) * u.pix) * dispersion
+    >>> wavelength_offset = ((pixels - reference_pixel) * u.pix) * dispersion
     >>> output_angle = (
     ...     np.arctan(
     ...         -np.tan(camera_angle)
@@ -108,7 +106,7 @@ class WavelengthFromGratingEquation(Model):
     >>> alpha_out = np.sin(output_angle)
     >>> lam = model(alpha_in, alpha_out)
     >>> print(lam)
-    854.1738582455826 nm
+    [853.6750296  853.90496873 854.17385825 854.36451764 854.84886375] nm
 
     """  # noqa: E501
 
