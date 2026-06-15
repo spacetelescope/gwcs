@@ -46,12 +46,17 @@ class WavelengthFromGratingEquation(Model):
     incident_angle : float or `~astropy.units.Quantity`, optional
         Incident grating angle used when computing FITS ``-GRA``/``-GRI``
         spectral coordinates. Defaults to ``0``.
+    refractive_index : float or `~astropy.units.Quantity`, optional
+        Refractive index at the reference wavelength for FITS
+        ``-GRA``/``-GRI`` mode. Defaults to ``1``.
     refractive_index_derivative : float or `~astropy.units.Quantity`, optional
         Derivative of refractive index with respect to wavelength for FITS
         ``-GRA``/``-GRI`` mode. Defaults to ``0``.
     out_of_plane_angle : float or `~astropy.units.Quantity`, optional
         Out-of-plane grating angle for FITS ``-GRA``/``-GRI`` mode. Defaults
         to ``0``.
+    camera_angle : float or `~astropy.units.Quantity`, optional
+        Camera angle for FITS ``-GRA``/``-GRI`` mode. Defaults to ``0``.
 
     Examples
     --------
@@ -78,8 +83,10 @@ class WavelengthFromGratingEquation(Model):
     ...     groove_density=groove_density,
     ...     spectral_order=spectral_order,
     ...     incident_angle=incident_angle,
+    ...     refractive_index=refractive_index,
     ...     refractive_index_derivative=refractive_index_derivative,
     ...     out_of_plane_angle=out_of_plane_angle,
+    ...     camera_angle=camera_angle,
     ... )
     >>> pixels = np.array([0.0, 100.0, 217.0, 300.0, 511.0])
     >>> alpha_in = (
@@ -123,26 +130,34 @@ class WavelengthFromGratingEquation(Model):
     """ Spectral order."""
     incident_angle = Parameter(default=0)
     """ Incident grating angle for FITS ``-GRA``/``-GRI`` mode."""
+    refractive_index = Parameter(default=1)
+    """ Refractive index at the reference wavelength."""
     refractive_index_derivative = Parameter(default=0)
     """ Derivative of refractive index with respect to wavelength."""
     out_of_plane_angle = Parameter(default=0)
     """ Out-of-plane grating angle for FITS ``-GRA``/``-GRI`` mode."""
+    camera_angle = Parameter(default=0)
+    """ Camera angle for FITS ``-GRA``/``-GRI`` mode."""
 
     def __init__(
         self,
         groove_density,
         spectral_order,
         incident_angle=0,
+        refractive_index=1,
         refractive_index_derivative=0,
         out_of_plane_angle=0,
+        camera_angle=0,
         **kwargs,
     ):
         super().__init__(
             groove_density=groove_density,
             spectral_order=spectral_order,
             incident_angle=incident_angle,
+            refractive_index=refractive_index,
             refractive_index_derivative=refractive_index_derivative,
             out_of_plane_angle=out_of_plane_angle,
+            camera_angle=camera_angle,
             **kwargs,
         )
         self.inputs = ("alpha_in", "alpha_out")
@@ -157,8 +172,10 @@ class WavelengthFromGratingEquation(Model):
         groove_density,
         spectral_order,
         incident_angle,
+        refractive_index,
         refractive_index_derivative,
         out_of_plane_angle,
+        camera_angle,
     ):
         """
         Evaluate the grating equation or FITS grating-transform mode.
@@ -181,10 +198,14 @@ class WavelengthFromGratingEquation(Model):
             Spectral order.
         incident_angle
             Incident grating angle.
+        refractive_index
+            Refractive index at the reference wavelength.
         refractive_index_derivative
             Derivative of refractive index with respect to wavelength.
         out_of_plane_angle
             Out-of-plane grating angle.
+        camera_angle
+            Camera angle.
 
         Returns
         -------

@@ -59,8 +59,10 @@ def test_wavelength_grating_equation_units():
 def test_wavelength_grating_equation_defaults():
     model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
     assert model.incident_angle.value == 0
+    assert model.refractive_index.value == 1
     assert model.refractive_index_derivative.value == 0
     assert model.out_of_plane_angle.value == 0
+    assert model.camera_angle.value == 0
 
 
 def test_wavelength_grating_equation_grating_mode_reference_pixel():
@@ -80,8 +82,10 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
         incident_angle=params["incident_angle"],
+        refractive_index=params["refractive_index"],
         refractive_index_derivative=params["refractive_index_derivative"],
         out_of_plane_angle=params["out_of_plane_angle"],
+        camera_angle=params["camera_angle"],
     )
 
     grism_constant = (params["grating_density"] * params["spectral_order"]) / np.cos(
@@ -128,8 +132,10 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
         incident_angle=params["incident_angle"],
+        refractive_index=params["refractive_index"],
         refractive_index_derivative=params["refractive_index_derivative"],
         out_of_plane_angle=params["out_of_plane_angle"],
+        camera_angle=params["camera_angle"],
     )
 
     grism_constant = (params["grating_density"] * params["spectral_order"]) / np.cos(
@@ -197,8 +203,10 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
         groove_density=header["PV1_0"] / u.m,
         spectral_order=header["PV1_1"],
         incident_angle=header["PV1_2"] * u.deg,
+        refractive_index=header["PV1_3"] * u.one,
         refractive_index_derivative=header["PV1_4"] / u.m,
         out_of_plane_angle=header["PV1_5"] * u.deg,
+        camera_angle=header["PV1_6"] * u.deg,
     )
 
     pixels = np.array([0, 100, 217, 300, 511], dtype=float)
