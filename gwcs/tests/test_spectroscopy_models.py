@@ -58,6 +58,9 @@ def test_wavelength_grating_equation_units():
 
 def test_wavelength_grating_equation_defaults():
     model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
+    assert model.reference_pixel.value == 0
+    assert model.reference_wavelength.value == 0
+    assert model.dispersion.value == 0
     assert model.incident_angle.value == 0
     assert model.refractive_index.value == 1
     assert model.refractive_index_derivative.value == 0
@@ -81,6 +84,9 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
     model = sp.WavelengthFromGratingEquation(
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
+        reference_pixel=params["reference_pixel"],
+        reference_wavelength=params["reference_wavelength"],
+        dispersion=params["dispersion"],
         incident_angle=params["incident_angle"],
         refractive_index=params["refractive_index"],
         refractive_index_derivative=params["refractive_index_derivative"],
@@ -106,8 +112,8 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
     ) / params["spectral_order"]
 
     alpha_in = adjusted_incident_angle_sine
-    alpha_out = np.sin(reference_refracted_angle)
-    result = model(alpha_in, alpha_out)
+    pixel = params["reference_pixel"]
+    result = model(alpha_in, pixel)
     expected = (adjusted_incident_angle_sine + np.sin(reference_refracted_angle)) / (
         adjusted_groove_density * params["spectral_order"]
     )
@@ -131,6 +137,9 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
     model = sp.WavelengthFromGratingEquation(
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
+        reference_pixel=params["reference_pixel"],
+        reference_wavelength=params["reference_wavelength"],
+        dispersion=params["dispersion"],
         incident_angle=params["incident_angle"],
         refractive_index=params["refractive_index"],
         refractive_index_derivative=params["refractive_index_derivative"],
@@ -174,12 +183,8 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         adjusted_groove_density * params["spectral_order"]
     )
 
-    alpha_in = (
-        np.full_like(pixels, adjusted_incident_angle_sine.value)
-        * adjusted_incident_angle_sine.unit
-    )
-    alpha_out = refracted_angle_sine
-    result = model(alpha_in, alpha_out)
+    alpha_in = adjusted_incident_angle_sine
+    result = model(alpha_in, pixels)
 
     assert_allclose(result, expected, rtol=1e-12, atol=1e-12)
 
@@ -202,6 +207,9 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
     model = sp.WavelengthFromGratingEquation(
         groove_density=header["PV1_0"] / u.m,
         spectral_order=header["PV1_1"],
+        reference_pixel=header["CRPIX1"] - 1,
+        reference_wavelength=header["CRVAL1"] * u.nm,
+        dispersion=header["CDELT1"] * u.nm / u.pix,
         incident_angle=header["PV1_2"] * u.deg,
         refractive_index=header["PV1_3"] * u.one,
         refractive_index_derivative=header["PV1_4"] / u.m,
@@ -210,40 +218,16 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
     )
 
     pixels = np.array([0, 100, 217, 300, 511], dtype=float)
-    reference_pixel = header["CRPIX1"] - 1
     reference_wavelength = header["CRVAL1"] * u.nm
-    dispersion = header["CDELT1"] * u.nm / u.pix
     refractive_index = header["PV1_3"]
-    camera_angle = header["PV1_6"] * u.deg
 
     adjusted_incident_angle_sine = (
         refractive_index - header["PV1_4"] / u.m * reference_wavelength
     ) * np.sin(header["PV1_2"] * u.deg)
-    grism_constant = ((header["PV1_0"] / u.m) * (header["PV1_1"])) / np.cos(
-        header["PV1_5"] * u.deg
-    )
-    reference_refracted_angle = np.arcsin(
-        (grism_constant * reference_wavelength)
-        - refractive_index * np.sin(header["PV1_2"] * u.deg)
-    )
-    grism_parameter_per_wavelength = (
-        grism_constant - (header["PV1_4"] / u.m) * np.sin(header["PV1_2"] * u.deg)
-    ) / (np.cos(reference_refracted_angle) * np.cos(camera_angle) ** 2)
-    wavelength_offset = ((pixels - reference_pixel) * u.pix) * dispersion
-    alpha_out = np.sin(
-        np.arctan(
-            -np.tan(camera_angle) + wavelength_offset * grism_parameter_per_wavelength
-        )
-        + reference_refracted_angle
-        + camera_angle
-    )
-    alpha_in = (
-        np.full_like(pixels, adjusted_incident_angle_sine.value)
-        * adjusted_incident_angle_sine.unit
-    )
+    alpha_in = adjusted_incident_angle_sine
 
     expected = WCS(header).spectral.pixel_to_world(pixels)
-    result = model(alpha_in, alpha_out)
+    result = model(alpha_in, pixels)
 
     assert_allclose(
         result.to_value(u.nm), expected.to_value(u.nm), rtol=1e-10, atol=1e-10
