@@ -1,1 +1,1 @@
-Expanded `gwcs.spectroscopy.WavelengthFromGratingEquation` with optional FITS ``-GRA``/``-GRI`` grating-configuration parameters while preserving its original two-input grating-equation behavior.
+Expanded `gwcs.spectroscopy.WavelengthFromGratingEquation` to support FITS ``-GRA``/``-GRI`` grating coordinates from a constant incident-angle term and a spectral pixel input while preserving its original two-input grating-equation behavior.
