@@ -51,14 +51,10 @@ transforms = [
     sp.WavelengthFromGratingEquation(
         groove_density=23000 * 1 / u.m,
         spectral_order=90,
-        reference_pixel=217,
         reference_wavelength=854.1738582455826 * u.nm,
-        dispersion=0.0022975580183395555 * u.nm / u.pix,
-        incident_angle=65.696 * u.deg,
         refractive_index=1.25 * u.one,
         refractive_index_derivative=1000 * 1 / u.m,
         out_of_plane_angle=1.5 * u.deg,
-        camera_angle=0.8 * u.deg,
     ),
     fwcs,
 ]
