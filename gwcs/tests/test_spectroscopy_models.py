@@ -56,7 +56,7 @@ def test_wavelength_grating_equation_units() -> None:
     assert_allclose(result, wave)
 
 
-def test_wavelength_grating_equation_defaults() -> None:
+def test_wavelength_grating_equation_defaults():
     model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
     assert model.reference_wavelength.value == 0
     assert model.refractive_index.value == 1
@@ -64,7 +64,7 @@ def test_wavelength_grating_equation_defaults() -> None:
     assert model.out_of_plane_angle.value == 0
 
 
-def test_wavelength_grating_equation_grating_mode_reference_pixel() -> None:
+def test_wavelength_grating_equation_grating_mode_reference_pixel():
     params = {
         "reference_pixel": 217.0,
         "reference_wavelength": 854.1738582455826 * u.nm,
@@ -182,7 +182,7 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
     assert_allclose(result, expected, rtol=1e-12, atol=1e-12)
 
 
-def test_wavelength_grating_equation_grating_mode_matches_astropy() -> None:
+def test_wavelength_grating_equation_grating_mode_matches_astropy():
     header = {
         "CTYPE1": "AWAV-GRA",
         "CUNIT1": "nm",

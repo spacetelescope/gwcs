@@ -237,7 +237,7 @@ class WavelengthFromGratingEquation(Model):
         )
 
     @property
-    def return_units(self) -> dict[str, u.Unit] | None:
+    def return_units(self):
         if self.groove_density.unit is None:
             return None
         return {"wavelength": u.Unit(1 / self.groove_density.unit)}
