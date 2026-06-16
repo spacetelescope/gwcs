@@ -97,14 +97,10 @@ class GratingEquationConverter(TransformConverterBase):
             model = WavelengthFromGratingEquation(
                 groove_density=groove_density,
                 spectral_order=order,
-                reference_pixel=node.get("reference_pixel", 0),
                 reference_wavelength=node.get("reference_wavelength", 0),
-                dispersion=node.get("dispersion", 0),
-                incident_angle=node.get("incident_angle", 0),
                 refractive_index=node.get("refractive_index", 1),
                 refractive_index_derivative=node.get("refractive_index_derivative", 0),
                 out_of_plane_angle=node.get("out_of_plane_angle", 0),
-                camera_angle=node.get("camera_angle", 0),
             )
         elif output == "angle":
             model = AnglesFromGratingEquation3D(
@@ -132,8 +128,6 @@ class GratingEquationConverter(TransformConverterBase):
             node["output"] = "angle"
         elif isinstance(model, WavelengthFromGratingEquation):
             node["output"] = "wavelength"
-            if model.reference_pixel.value != 0:
-                node["reference_pixel"] = model.reference_pixel.value
             if model.reference_wavelength.value != 0:
                 if model.reference_wavelength.unit is not None:
                     node["reference_wavelength"] = u.Quantity(
@@ -142,22 +136,6 @@ class GratingEquationConverter(TransformConverterBase):
                     )
                 else:
                     node["reference_wavelength"] = model.reference_wavelength.value
-            if model.dispersion.value != 0:
-                if model.dispersion.unit is not None:
-                    node["dispersion"] = u.Quantity(
-                        model.dispersion.value,
-                        unit=model.dispersion.unit,
-                    )
-                else:
-                    node["dispersion"] = model.dispersion.value
-            if model.incident_angle.value != 0:
-                if model.incident_angle.unit is not None:
-                    node["incident_angle"] = u.Quantity(
-                        model.incident_angle.value,
-                        unit=model.incident_angle.unit,
-                    )
-                else:
-                    node["incident_angle"] = model.incident_angle.value
             if model.refractive_index.value != 1:
                 if model.refractive_index.unit is not None:
                     node["refractive_index"] = u.Quantity(
@@ -184,14 +162,6 @@ class GratingEquationConverter(TransformConverterBase):
                     )
                 else:
                     node["out_of_plane_angle"] = model.out_of_plane_angle.value
-            if model.camera_angle.value != 0:
-                if model.camera_angle.unit is not None:
-                    node["camera_angle"] = u.Quantity(
-                        model.camera_angle.value,
-                        unit=model.camera_angle.unit,
-                    )
-                else:
-                    node["camera_angle"] = model.camera_angle.value
         else:
             msg = f"Can't serialize an instance of {model.__class__.__name__}"
             raise TypeError(msg)
