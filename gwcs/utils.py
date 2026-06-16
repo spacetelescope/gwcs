@@ -7,6 +7,7 @@ Utility function for WCS
 import functools
 import re
 import warnings
+from typing import Union
 
 import astropy.units as u
 import numpy as np
@@ -77,6 +78,21 @@ def _toindex(value):
     warnings.warn(DeprecationWarning(msg), stacklevel=2)
 
     return to_index(value)
+
+
+def combine_transforms(transforms: list[Union[core.Model, None]]) -> core.Model:  # noqa: UP007
+    """
+    Combine a list of transforms into a single transform.
+    """
+
+    _transforms: list[core.Model] = []
+    for transform in transforms:
+        if transform is None:
+            msg = "Can not combine transforms if any are None."
+            raise NotImplementedError(msg)
+        _transforms.append(transform)
+
+    return functools.reduce(lambda x, y: x | y, _transforms)
 
 
 def get_values(units, *args):
@@ -349,7 +365,7 @@ def make_fitswcs_transform(header):
     wcs_nonlinear = fitswcs_nonlinear(wcs_info)
     if wcs_nonlinear is not None:
         transforms.append(wcs_nonlinear)
-    return functools.reduce(core._model_oper("|"), transforms)
+    return combine_transforms(transforms)
 
 
 def fitswcs_linear(header):
@@ -450,7 +466,7 @@ def fitswcs_nonlinear(header):
         n2c = astmodels.RotateNative2Celestial(phip, lonp, thetap, name="crval")
         transforms.append(n2c)
     if transforms:
-        return functools.reduce(core._model_oper("|"), transforms)
+        return combine_transforms(transforms)
     return None
 
 
