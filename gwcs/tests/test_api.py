@@ -134,13 +134,13 @@ def test_world_axis_units(wcs_ndim_types_units):
     assert wcsobj.world_axis_units == world_units
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
+@pytest.mark.parametrize(("x", "y"), tuple(zip((x, xarr), (y, yarr), strict=False)))
 def test_pixel_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
     assert_allclose(wcsobj.pixel_to_world_values(x, y), wcsobj(x, y))
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
+@pytest.mark.parametrize(("x", "y"), tuple(zip((x, xarr), (y, yarr), strict=False)))
 def test_pixel_to_world_values_units_2d(gwcs_2d_shift_scale_quantity, x, y):
     wcsobj = gwcs_2d_shift_scale_quantity
 
@@ -188,7 +188,7 @@ def test_pixel_to_world_values_units_1d(gwcs_1d_freq_quantity, x):
     assert_allclose(new_api_pixel, api_pixel)
 
 
-@pytest.mark.parametrize(("x", "y"), zip((x, xarr), (y, yarr), strict=False))
+@pytest.mark.parametrize(("x", "y"), tuple(zip((x, xarr), (y, yarr), strict=False)))
 def test_array_index_to_world_values(gwcs_2d_spatial_shift, x, y):
     wcsobj = gwcs_2d_spatial_shift
     assert_allclose(wcsobj.array_index_to_world_values(x, y), wcsobj(y, x))

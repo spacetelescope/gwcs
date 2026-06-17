@@ -61,7 +61,7 @@ class TemporalFrame(CoordinateFrame):
             axis_physical_types=axis_physical_types,
         )
         self._attrs = {}
-        for a in self.reference_frame.info._represent_as_dict_extra_attrs:
+        for a in self.reference_frame.info._represent_as_dict_extra_attrs:  # noqa: SLF001
             with contextlib.suppress(AttributeError):
                 self._attrs[a] = getattr(self.reference_frame, a)
 

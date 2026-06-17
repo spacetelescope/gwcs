@@ -7,6 +7,7 @@ Polygon filling algorithm.
 # NOTE: Algorithm description can be found, e.g., here:
 #    http://www.cs.rit.edu/~icss571/filling/how_to.html
 #    http://www.cs.uic.edu/~jbell/CourseNotes/ComputerGraphics/PolygonFilling.html
+from __future__ import annotations
 
 import abc
 from collections import OrderedDict
@@ -147,7 +148,7 @@ class Polygon(Region):
         # with these vertices
         edges = self.get_edges()
         GET = OrderedDict.fromkeys(self._scan_line_range)
-        ymin = np.asarray([e._ymin for e in edges])
+        ymin = np.asarray([e.ymin for e in edges])
         for i in self._scan_line_range:
             ymin_ind = (ymin == i).nonzero()[0]
             # a hack for incomplete filling .any() fails if 0 is in ymin_ind
@@ -257,10 +258,10 @@ class Polygon(Region):
         edge_cont = self._GET[y]
         if edge_cont is not None:
             for edge in edge_cont:
-                if edge._start[1] != edge._stop[1] and edge._ymin == y:
+                if edge.start[1] != edge.stop[1] and edge.ymin == y:
                     AET.append(edge)
         for edge in AET[::-1]:
-            if edge is not None and edge._ymax == y:
+            if edge is not None and edge.ymax == y:
                 AET.remove(edge)
         return AET
 
@@ -329,6 +330,10 @@ class Edge:
     def ymax(self):
         return self._ymax
 
+    @property
+    def name(self):
+        return self._name
+
     def compute_GET_entry(self):
         """
         Compute the entry in the Global Edge Table
@@ -367,7 +372,7 @@ class Edge:
             next_edge = self.next
             while next_edge is not None:
                 fmt += "-->"
-                fmt += next_edge._name
+                fmt += next_edge.name
                 next_edge = next_edge.next
 
         return fmt
@@ -377,7 +382,7 @@ class Edge:
         return self._next
 
     @next.setter  # noqa: A003
-    def next(self, edge):
+    def next(self, edge: Edge):
         if self._name is None:
             self._name = edge._name
             self._stop = edge._stop
@@ -386,10 +391,10 @@ class Edge:
         else:
             self._next = edge
 
-    def intersection(self, edge):
-        u = self._stop - self._start
-        v = edge._stop - edge._start
-        w = self._start - edge._start
+    def intersection(self, edge: Edge):
+        u = self.stop - self.start
+        v = edge.stop - edge.start
+        w = self.start - edge.start
 
         D = _det(u, v)
 
@@ -398,9 +403,9 @@ class Edge:
 
         return _det(v, w) / D * u + self._start
 
-    def is_parallel(self, edge):
-        u = self._stop - self._start
-        v = edge._stop - edge._start
+    def is_parallel(self, edge: Edge):
+        u = self.stop - self.start
+        v = edge.stop - edge.start
         return np.allclose(_det(u, v), 0, rtol=0, atol=_INTERSECT_ATOL)
 
 

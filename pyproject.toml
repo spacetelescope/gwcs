@@ -107,41 +107,66 @@ local_scheme = "dirty-tag"
 
 [tool.ruff.lint]
 select = [
-  "F",   # Pyflakes (part of default flake8)
-  "W",
-  "E",   # pycodestyle (part of default flake8)
-  "I",   # isort (import sorting)
-  "UP",  # pyupgrade (upgrade code to modern python)
+  # "AIR",   # Airflow
+  "ERA", # eradicate (remove commented out code)
+  # "FAST",  # FastAPI
   "YTT", # flake8-2020 (system version info)
-  #"ANN",  # flake8-annotations (best practices for type annotations)
-  "S",    # flake8-bandit (security checks)
-  "BLE",  # flake8-blind-except (prevent blind except statements)
-  "B",    # flake8-bugbear (prevent common gotcha bugs)
-  "A",    # flake8-builtins (prevent shadowing of builtins)
-  "C4",   # flake8-comprehensions (best practices for comprehensions)
-  "T10",  # flake8-debugger (prevent debugger statements in code)
-  "EM",   # flake8-errormessages (best practices for error messages)
-  "ISC",  # flake8-implicit-str-concat (prevent implicit string concat)
-  "ICN",  # flake8-import-conventions (enforce import conventions)
-  "INP",  # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
-  "PIE",  # flake8-pie (misc suggested improvement linting)
-  "T20",  # flake8-print (prevent print statements in code)
-  "PT",   # flake8-pytest-style (best practices for pytest)
-  "Q",    # flake8-quotes (best practices for quotes)
-  "RSE",  # flake8-raise (best practices for raising exceptions)
-  "RET",  # flake8-return (best practices for return statements)
-  "SIM",  # flake8-simplify (suggest simplifications to code where possible)
-  "TID",  # flake8-tidy-imports (prevent banned api and best import practices)
-  "INT",  # flake8-gettext (when to use printf style strings)
-  "PTH",  # flake8-use-pathlib (prefer pathlib over os.path)
-  "ERA",  # eradicate (remove commented out code)
-  "PGH",  # pygrep (simple grep checks)
-  "PL",   # pylint (general linting, flake8 alternative)
-  "TRY",  # tryceratops (linting for try/except blocks)
-  "FLY",  # flynt (f-string conversion where possible)
-  "NPY",  # NumPy-specific checks (recommendations from NumPy)
+  # "ANN",   # flake8-annotations
+  # "ASYNC", # flake8-async
+  "S",   # flake8-bandit (security checks)
+  "BLE", # flake8-blind-except (prevent blind except statements)
+  # "FBT",   # flake8-boolean-trap
+  "B", # flake8-bugbear (prevent common gotcha bugs)
+  "A", # flake8-builtins (prevent shadowing of builtins)
+  # "COM",   # flake8-commas
+  "C4", # flake8-comprehensions (best practices for comprehensions)
+  # "CPY",   # flake8-copyright
+  # "DTZ",   # flake8-datetimez
+  "T10", # flake8-debugger (prevent debugger statements in code)
+  # "DJ",    # flake8-django
+  "EM", # flake8-errormessages (best practices for error messages)
+  # "EXE",   # flake8-executable
+  # "FIX",   # flake8-fixme
+  # "FA",    # flake8-future-annotations
+  "INT", # flake8-gettext (when to use printf style strings)
+  "ISC", # flake8-implicit-str-concat (prevent implicit string concat)
+  "ICN", # flake8-import-conventions (enforce import conventions)
+  # "LOG",   # flake8-logging
+  # "G",     # flake8-logging-format
+  "INP", # flake8-no-pep420 (prevent use of PEP420, i.e. implicit name spaces)
+  "PIE", # flake8-pie (misc suggested improvement linting)
+  "T20", # flake8-print (prevent print statements in code)
+  # "PYI",   # flake8-pyi
+  "PT",  # flake8-pytest-style (best practices for pytest)
+  "Q",   # flake8-quotes (best practices for quotes)
+  "RSE", # flake8-raise (best practices for raising exceptions)
+  "RET", # flake8-return (best practices for return statements)
+  "SLF", # flake8-self
+  "SIM", # flake8-simplify (suggest simplifications to code where possible)
+  # "SLOT",  # flake8-slots
+  "TID", # flake8-tidy-imports (prevent banned api and best import practices)
+  # "TD",    # flake8-todos
+  # "TC",    # flake8-type-checking
+  # "ARG",   # flake8-unused-arguments
+  "PTH", # flake8-use-pathlib (prefer pathlib over os.path)
+  "FLY", # flynt (f-string conversion where possible)
+  "I",   # isort (import sorting)
+  # "C90",   # mccabe
+  "NPY", # NumPy-specific checks (recommendations from NumPy)
+  # "PD",    # pandas-vet
+  # "N",     # pep8-naming
   "PERF", # Perflint (performance linting)
-  "RUF",  # ruff specific checks
+  "E",    # pycodestyle (part of default flake8)
+  "W",    # pycodestyle (part of default flake8)
+  # "DOC",   # pydoclint
+  # "D",     # pydocstyle
+  "F",   # Pyflakes (part of default flake8)
+  "PGH", # pygrep (simple grep checks)
+  "PL",  # pylint (general linting, flake8 alternative)
+  "UP",  # pyupgrade (upgrade code to modern python)
+  # "FURB",  # refurb
+  "RUF", # ruff specific checks
+  "TRY", # tryceratops (linting for try/except blocks)
 ]
 ignore = [
   "ISC001",  # conflicts with formatter at times
@@ -156,8 +181,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]
-"gwcs/tests/*" = ["S101"]
-"gwcs/converters/tests/*" = ["S101"]
+"gwcs/tests/*" = ["S101", "SLF001"]
+"gwcs/converters/tests/*" = ["S101", "SLF001"]
 "docs/conf.py" = ["INP001", "ERA001"]
 "convert_schemas.py" = ["PTH"]
 
