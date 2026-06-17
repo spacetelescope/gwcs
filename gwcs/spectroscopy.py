@@ -228,13 +228,9 @@ class WavelengthFromGratingEquation(Model):
         elif hasattr(refractive_correction_term, "value"):
             refractive_correction_term = refractive_correction_term.value
 
-        adjusted_groove_density = (
-            groove_density_term - refractive_correction_term
-        ) / spectral_order
+        adjusted_groove_density = groove_density_term - refractive_correction_term
 
-        return (adjusted_incident_angle_sine + alpha_out) / (
-            adjusted_groove_density * spectral_order
-        )
+        return (adjusted_incident_angle_sine + alpha_out) / (adjusted_groove_density)
 
     @property
     def return_units(self):
