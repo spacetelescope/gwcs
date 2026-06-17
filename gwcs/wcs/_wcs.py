@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.modeling import Model, fix_inputs, projections
 from astropy.modeling.bounding_box import ModelBoundingBox as Bbox
 from astropy.modeling.models import (
+    Identity,
     Mapping,
     RotateCelestial2Native,
     Shift,
@@ -23,10 +24,6 @@ from astropy.modeling.models import (
 )
 from astropy.modeling.parameters import _tofloat
 from astropy.wcs.utils import celestial_frame_to_wcs, proj_plane_pixel_scales
-from astropy.wcs.wcsapi.high_level_api import (
-    high_level_objects_to_values,
-    values_to_high_level_objects,
-)
 from numpy import typing as npt
 from scipy import optimize
 
@@ -40,7 +37,7 @@ from gwcs.coordinate_frames import (
     LowLevelInput,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _compute_lon_pole, is_high_level, to_index
+from gwcs.utils import _compute_lon_pole, to_index
 
 from ._exception import NoConvergence
 from ._pipeline import ForwardTransform, Pipeline
@@ -90,6 +87,155 @@ class _WorldAxisInfo:
         self.cunit = cunit
         self.ctype = ctype
         self.input_axes = input_axes
+
+
+class _UnitHandler:
+    """
+    Class to ensure that the input-output type consistency for the GWCS native API
+
+    Parameters
+    ----------
+    args :
+        The input arguments to be passed to the transform.
+    _is_high_level : bool
+        Whether or not the inputs to the WCS API are high level objects.
+    _add_units : bool
+        If true, we add (or convert) units of the outputs of the transform to
+        match the input type.
+        If false, we remove (and convert if necessary) units of the outputs of
+        the transform to match the input type.
+    """
+
+    args: tuple[LowLevelInput, ...]
+    _is_high_level: bool
+    _add_units: bool
+
+    def __init__(
+        self,
+        inputs: tuple[LowLevelInput, ...],
+        transform: Model,
+        frame: CoordinateFrameProtocol,
+    ):
+        # Handle the case where a HLO is passed into the Native API
+        self._is_high_level = frame.is_high_level(*inputs)
+        if self._is_high_level:
+            inputs = frame.from_high_level_coordinates(*inputs, correct_1d=False)
+
+        # Determine if the inputs are quantities
+        input_is_quantity = any(isinstance(a, u.Quantity) for a in inputs)
+
+        # Determine if the transform uses quantities
+        #   This complexity is due to the fact that Tabular models have a bug
+        #   in astropy
+        if isinstance(transform, (Tabular1D, Tabular2D)):
+            transform_uses_quantity = (
+                isinstance(transform.lookup_table, u.Quantity)
+                or transform.input_units_equivalencies is not None
+            )
+
+        elif isinstance(transform, Identity):
+            transform_uses_quantity = False
+
+        else:
+            transform_uses_quantity = not (
+                transform is None or not transform.uses_quantity
+            )
+
+        # Using input_is_quantity and transform_uses_quantity, we determine if we
+        #   need to add or remove units from the inputs to make them compatible
+        #   with the transform and we determine if we need to add or remove units
+        #   from the outputs to make them consistent with the input's type.
+
+        # Case 1: No units are involved
+        #   input -> no change
+        #            (we assume the user has passed numerical values
+        #             in the correct units)
+        #   output -> remove units
+        #            (we convert the output to the correct units if necessary and
+        #             then remove them giving numerical values as output)
+        if not input_is_quantity and not transform_uses_quantity:
+            self.args = inputs
+            self._add_units = False
+
+        # Case 2: Units are involved and the transform supports them
+        #    input -> add units
+        #             (we add -- meaning convert -- units to the input values)
+        #    output -> add units
+        #             (we convert the output to the correct units if necessary and
+        elif input_is_quantity and transform_uses_quantity:
+            self.args = frame.add_units(inputs)
+            self._add_units = True
+
+        # Case 3: no input units, but transform needs units
+        #    input -> add units
+        #             (we assume that the user has passed correct numerical values
+        #              and formally add units to them for the transform to work
+        #              correctly)
+        #   output -> remove units
+        #             (we convert the output to the correct units if necessary and
+        #              then remove them giving numerical values as output)
+        elif not input_is_quantity and transform_uses_quantity:
+            self.args = frame.add_units(inputs)
+            self._add_units = False
+
+        # Case 4: input has units, but transform does not use them
+        #    input -> remove units
+        #             (we convert the input to the correct units if necessary and
+        #              then remove them giving numerical values as input)
+        #   output -> add units
+        #             (we convert the output to the correct units if necessary and
+        #              then add them giving numerical values as output)
+        # This is the only other case:
+        #   input_is_quantity and not transform_uses_quantity
+        else:
+            self.args = frame.remove_units(inputs)
+            self._add_units = True
+
+    def _handle_output_type(
+        self, *outputs: LowLevelInput, frame: CoordinateFrameProtocol
+    ) -> tuple[LowLevelInput, ...]:
+        # Return a high level object if the input was a high level object
+        if self._is_high_level:
+            return frame.to_high_level_coordinates(*outputs, correct_1d=False)  # type: ignore[no-any-return]
+
+        # If the input had units return units
+        if self._add_units:
+            return frame.add_units(outputs)
+
+        # If the input had no units, return unitless values
+        return frame.remove_units(outputs)
+
+    def handle_output(
+        self,
+        outputs: tuple[LowLevelInput, ...] | LowLevelInput,
+        frame: CoordinateFrameProtocol,
+    ) -> tuple[LowLevelInput, ...] | LowLevelInput:
+        """
+        Handle the output of a transform by adding or removing units as needed
+        and converting to high level objects if the input was high level.
+
+        Parameters
+        ----------
+        outputs : tuple of low level inputs
+            The outputs of a transform to be handled.
+        frame : CoordinateFrameProtocol
+            The frame to use for adding/removing units and converting to high level
+            objects.
+
+        Returns
+        -------
+        tuple of low level inputs or high level objects
+            The handled outputs.
+        """
+        if frame.naxes == 1:
+            outputs = (outputs,)
+
+        outputs = self._handle_output_type(*outputs, frame=frame)
+
+        if frame.naxes == 1:
+            return outputs[0]
+
+        return outputs
 
 
 class WCS(Pipeline, WCSAPIMixin):
@@ -160,34 +306,16 @@ class WCS(Pipeline, WCSAPIMixin):
         #   after each call to it.
         transform = self.forward_transform
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
-            frame=self.input_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
+        unit_handler = _UnitHandler(args, transform, self.input_frame)
 
         result = transform(
-            *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
-        )
-        if self.output_frame.naxes == 1:
-            result = (result,)
-
-        result = self._make_output_units_consistent(
-            transform,
-            *result,
-            frame=self.output_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
+            *unit_handler.args,
+            with_bounding_box=with_bounding_box,
+            fill_value=fill_value,
+            **kwargs,
         )
 
-        if self.output_frame.naxes == 1:
-            return result[0]
-        return result
+        return unit_handler.handle_output(result, frame=self.output_frame)
 
     def __call__(
         self,
@@ -213,93 +341,6 @@ class WCS(Pipeline, WCSAPIMixin):
         return self.evaluate(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-
-    def _units_are_present(
-        self, args: tuple[LowLevelInput, ...], transform: Model
-    ) -> tuple[bool, bool]:
-        """
-        Determine if the inputs to a transform are quantities and the transform
-        supports units.
-
-        Parameters
-        ----------
-        args : a tuple of scalars or ndarray-like objects
-            Inputs to a transform.
-        transform : `~astropy.modeling.Model`
-            Transform to be evaluated.
-
-        Returns
-        -------
-        input_is_quantity, transform_uses_quantity : bool
-
-        """
-        # Validate that the input type matches what the transform expects
-        input_is_quantity = any(isinstance(a, u.Quantity) for a in args)
-        if isinstance(transform, (Tabular1D, Tabular2D)):
-            transform_uses_quantity = (
-                isinstance(transform.lookup_table, u.Quantity)
-                or transform.input_units_equivalencies is not None
-            )
-        elif transform is not None and len(transform.parameters) == 0:
-            transform_uses_quantity = False
-        else:
-            transform_uses_quantity = not (
-                transform is None or not transform.uses_quantity
-            )
-        return input_is_quantity, transform_uses_quantity
-
-    def _make_input_units_consistent(
-        self,
-        transform: Model,
-        *args: LowLevelInput,
-        frame: CoordinateFrameProtocol,
-        input_is_quantity: bool = False,
-        transform_uses_quantity: bool = False,
-        **kwargs,
-    ) -> tuple[LowLevelInput, ...]:
-        """
-        Adds or removes units from the arguments as needed so that the transform
-        can be successfully evaluated.
-        """
-        # Validate that the input type matches what the transform expects
-        if (not input_is_quantity and not transform_uses_quantity) or (
-            input_is_quantity and transform_uses_quantity
-        ):
-            return args
-        if not input_is_quantity and (
-            transform_uses_quantity or transform.parameters.size
-        ):
-            return frame.add_units(args)
-        if not transform_uses_quantity and input_is_quantity:
-            return frame.remove_units(args)
-        return args
-
-    def _make_output_units_consistent(
-        self,
-        transform: Model,
-        *args: LowLevelInput,
-        frame: CoordinateFrameProtocol,
-        input_is_quantity=False,
-        transform_uses_quantity=False,
-        **kwargs,
-    ) -> tuple[LowLevelInput, ...]:
-        """
-        Adds or removes units from the arguments as needed so that
-        the type of the output matches the input.
-        """
-        if not input_is_quantity and not transform_uses_quantity:
-            return args
-
-        if input_is_quantity and transform_uses_quantity:
-            # make sure the output is returned in the units of the output frame
-            return frame.add_units(args)
-        if not input_is_quantity and (
-            transform_uses_quantity or transform.parameters.size
-        ):
-            return frame.remove_units(args)
-        if not transform_uses_quantity and input_is_quantity:
-            return frame.add_units(args)
-        return args
 
     def in_image(
         self,
@@ -394,40 +435,23 @@ class WCS(Pipeline, WCSAPIMixin):
         except NotImplementedError:
             transform = None
 
-        if is_high_level(*args, low_level_wcs=self):
-            msg = (
-                "High Level objects are not supported with the native API. "
-                "Please use the `world_to_pixel` method."
-            )
-            raise TypeError(msg)
+        unit_handler = _UnitHandler(args, transform, self.output_frame)
 
+        inputs = unit_handler.args
         if with_bounding_box and self.bounding_box is not None:
-            args = self.outside_footprint(args)
+            inputs = self.outside_footprint(inputs)
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
-            frame=self.output_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
         if transform is not None:
             akwargs = {k: v for k, v in kwargs.items() if k not in _ITER_INV_KWARGS}
             result = transform(
-                *args,
+                *inputs,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **akwargs,
             )
         else:
-            # Always strip units for numerical inverse
-            args = self.output_frame.remove_units(args)
             result = self._numerical_inverse(
-                *args,
+                *inputs,
                 with_bounding_box=with_bounding_box,
                 fill_value=fill_value,
                 **kwargs,
@@ -436,18 +460,7 @@ class WCS(Pipeline, WCSAPIMixin):
         if with_bounding_box and self.bounding_box is not None:
             result = self.out_of_bounds(result, fill_value=fill_value)
 
-        if self.input_frame.naxes == 1:
-            result = (result,)
-        result = self._make_output_units_consistent(
-            transform,
-            *result,
-            frame=self.input_frame,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
-        if self.input_frame.naxes == 1:
-            return result[0]
-        return result
+        return unit_handler.handle_output(result, frame=self.input_frame)
 
     def outside_footprint(self, world_arrays):
         world_arrays = [copy(array) for array in world_arrays]
@@ -456,11 +469,12 @@ class WCS(Pipeline, WCSAPIMixin):
         axes_phys_types = self.world_axis_physical_types
         footprint = self.footprint()
         not_numerical = False
-        if is_high_level(world_arrays[0], low_level_wcs=self):
+        if self.output_frame.is_high_level(*world_arrays):
             not_numerical = True
-            world_arrays = high_level_objects_to_values(
-                *world_arrays, low_level_wcs=self
+            world_arrays = self.output_frame.from_high_level_coordinates(
+                *world_arrays, correct_1d=False
             )
+
         for axtyp in axes_types:
             ind = np.asarray(np.asarray(self.output_frame.axes_type) == axtyp)
 
@@ -504,8 +518,8 @@ class WCS(Pipeline, WCSAPIMixin):
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
         if not_numerical:
-            world_arrays = values_to_high_level_objects(
-                *world_arrays, low_level_wcs=self
+            world_arrays = self.output_frame.to_high_level_coordinates(
+                *world_arrays, correct_1d=False
             )
         return world_arrays
 
@@ -1193,47 +1207,23 @@ class WCS(Pipeline, WCSAPIMixin):
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
-        # Pull the steps and their indices from the pipeline
-        # -> this also turns the frame name strings into frame objects
-        from_step = self._get_step(from_frame)
-        to_step = self._get_step(to_frame)
-        transform = self.get_transform(from_step.step.frame, to_step.step.frame)
+        direction = self.pipeline_between(from_frame, to_frame)
 
-        if transform is None:
+        if direction is None:
             msg = f"No transformation found from {from_frame} to {to_frame}."
             raise ValueError(msg)
 
-        # Get the frame objects from the wcs pipeline
-        from_frame_obj = self.get_frame(from_frame)
-        to_frame_obj = self.get_frame(to_frame)
+        if direction.forward:
+            return direction.wcs.evaluate(
+                *args,
+                with_bounding_box=with_bounding_box,
+                fill_value=fill_value,
+                **kwargs,
+            )
 
-        input_is_quantity, transform_uses_quantity = self._units_are_present(
-            args, transform
-        )
-        args = self._make_input_units_consistent(
-            transform,
-            *args,
-            frame=from_frame_obj,
-            input_is_quantity=input_is_quantity,
-            transform_uses_quantity=transform_uses_quantity,
-        )
-
-        result = transform(
+        return direction.wcs.invert(
             *args, with_bounding_box=with_bounding_box, fill_value=fill_value, **kwargs
         )
-        if to_frame_obj is not None:
-            if to_frame_obj.naxes == 1:
-                result = (result,)
-            result = self._make_output_units_consistent(
-                transform,
-                *result,
-                frame=to_frame_obj,
-                input_is_quantity=input_is_quantity,
-                transform_uses_quantity=transform_uses_quantity,
-            )
-        if to_frame_obj is not None and to_frame_obj.naxes == 1:
-            return result[0]
-        return result
 
     @property
     def name(self) -> str:
