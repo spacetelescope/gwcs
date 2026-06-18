@@ -41,19 +41,91 @@ def test_angles_grating_equation():
 def test_wavelength_grating_equation_units() -> None:
     alpha_in = np.linspace(0.01, 0.05, 4)
 
+    # Bare numbers are coerced: groove_density → 1/m, spectral_order → dimensionless.
+    # Result therefore has units of meters.
     model = sp.WavelengthFromGratingEquation(20000, -1)
-    # Eq. from Nirspec model.
-    wave = -(alpha_in + alpha_in) / (20000 * -1)
+    wave = -(alpha_in + alpha_in) / (20000 / u.m * -1)
     result = model(-alpha_in, -alpha_in)
-    assert_allclose(result, wave)
+    assert u.allclose(result, wave)
 
-    # Now with units
+    # Explicit Quantity inputs.
     model = sp.WavelengthFromGratingEquation(20000 * 1 / u.m, -1)
-    # Eq. from Nirspec model.
     wave = -(u.Quantity(alpha_in) + u.Quantity(alpha_in)) / (20000 * 1 / u.m * -1)
-
     result = model(-u.Quantity(alpha_in), -u.Quantity(alpha_in))
-    assert_allclose(result, wave)
+    assert u.allclose(result, wave)
+
+
+def test_wavelength_grating_equation_incompatible_units_raises() -> None:
+    """Passing units that are incompatible with 1/length for groove_density should
+    raise UnitConversionError rather than silently producing a wrong result."""
+    model = sp.WavelengthFromGratingEquation(
+        groove_density=20000 / u.m,
+        spectral_order=-1,
+        refractive_index_derivative=1000 * u.m,  # wrong: should be 1/length
+    )
+    alpha_in = np.sin(65.0 * u.deg)
+    with pytest.raises(u.UnitConversionError):
+        model(alpha_in, alpha_in)
+
+
+def test_refracted_angle_sine_model_basic() -> None:
+    """Output should be the sine of the refracted angle at the reference pixel."""
+    model = sp.RefractedAngleSineModel(
+        reference_pixel=217,
+        reference_refracted_angle=30 * u.deg,
+        dispersion=0.001 * u.nm / u.pix,
+        grism_parameter_per_wavelength=1000 / u.nm,
+        camera_angle=0 * u.deg,
+    )
+    # At the reference pixel, wavelength_offset == 0, so
+    # output_angle == reference_refracted_angle.
+    result = model(217)
+    assert u.allclose(result, np.sin(30 * u.deg), atol=1e-12)
+
+
+def test_refracted_angle_sine_model_bare_number_coercion() -> None:
+    """Bare-number arguments should be coerced to the assumed units."""
+    model = sp.RefractedAngleSineModel(
+        reference_pixel=0,
+        reference_refracted_angle=0,  # assumed rad
+        dispersion=0,  # assumed nm/pix
+        grism_parameter_per_wavelength=0,  # assumed 1/nm
+        camera_angle=0,  # assumed deg
+    )
+    assert model.reference_refracted_angle.unit == u.rad
+    assert model.dispersion.unit == u.nm / u.pix
+    assert model.grism_parameter_per_wavelength.unit == u.nm**-1
+    assert model.camera_angle.unit == u.deg
+
+
+def test_refracted_angle_sine_model_matches_manual() -> None:
+    """Result should match a manually computed refracted-angle sine."""
+    reference_pixel = 217.0
+    reference_refracted_angle = 15.0 * u.deg
+    dispersion = 0.0023 * u.nm / u.pix
+    grism_parameter_per_wavelength = 800.0 / u.nm
+    camera_angle = 0.8 * u.deg
+
+    model = sp.RefractedAngleSineModel(
+        reference_pixel=reference_pixel,
+        reference_refracted_angle=reference_refracted_angle,
+        dispersion=dispersion,
+        grism_parameter_per_wavelength=grism_parameter_per_wavelength,
+        camera_angle=camera_angle,
+    )
+
+    pixels = np.array([0.0, 100.0, 217.0, 300.0, 511.0])
+    wavelength_offset = ((pixels - reference_pixel) * u.pix) * dispersion
+    expected_angle = (
+        np.arctan(
+            -np.tan(camera_angle) + wavelength_offset * grism_parameter_per_wavelength
+        )
+        + reference_refracted_angle
+        + camera_angle
+    )
+    expected = np.sin(expected_angle)
+    result = model(pixels)
+    assert u.allclose(result, expected, atol=1e-12)
 
 
 def test_wavelength_grating_equation_defaults():
