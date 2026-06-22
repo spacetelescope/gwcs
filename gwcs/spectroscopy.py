@@ -220,7 +220,7 @@ class WavelengthFromGratingEquation(Model):
     ... )
     >>> alpha_out = np.sin(output_angle)
     >>> lam = model(alpha_in, alpha_out)
-    >>> print(lam)
+    >>> print(lam.to(u.nm))
     [853.6750296  853.90496873 854.17385825 854.36451764 854.84886375] nm
 
     """  # noqa: E501
