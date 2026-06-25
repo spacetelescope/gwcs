@@ -410,6 +410,17 @@ class AnglesFromGratingEquation3D(Model):
         alpha_out = -groove_density * spectral_order * wavelength + alpha_in
         beta_out = -beta_in
         gamma_out = np.sqrt(1 - alpha_out**2 - beta_out**2)
+
+        # Direction cosines are always dimensionless. Strip any Quantity
+        # wrapper so downstream models (e.g. JWST's Logical/mask_slit) that
+        # compare against plain floats don't hit astropy 8+ UnitConversionError.
+        if isinstance(alpha_out, u.Quantity):
+            alpha_out = alpha_out.to_value(u.one)
+        if isinstance(beta_out, u.Quantity):
+            beta_out = beta_out.to_value(u.one)
+        if isinstance(gamma_out, u.Quantity):
+            gamma_out = gamma_out.to_value(u.one)
+
         return alpha_out, beta_out, gamma_out
 
     @property
