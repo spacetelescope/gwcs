@@ -110,6 +110,7 @@ nitpick_ignore = [
     ("py:obj", "astropy.modeling.projections.projcodes"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),
+    ("py:class", "numpy._typing._array_like.NDArray"),
 ]
 
 # -- Options for html theme -------------------------------------------------
