@@ -95,7 +95,12 @@ class GratingEquationConverter(TransformConverterBase):
         output = node["output"]
         if output == "wavelength":
             model = WavelengthFromGratingEquation(
-                groove_density=groove_density, spectral_order=order
+                groove_density=groove_density,
+                spectral_order=order,
+                reference_wavelength=node.get("reference_wavelength", 0),
+                refractive_index=node.get("refractive_index", 1),
+                refractive_index_derivative=node.get("refractive_index_derivative", 0),
+                out_of_plane_angle=node.get("out_of_plane_angle", 0),
             )
         elif output == "angle":
             model = AnglesFromGratingEquation3D(
@@ -123,6 +128,40 @@ class GratingEquationConverter(TransformConverterBase):
             node["output"] = "angle"
         elif isinstance(model, WavelengthFromGratingEquation):
             node["output"] = "wavelength"
+            if model.reference_wavelength.value != 0:
+                if model.reference_wavelength.unit is not None:
+                    node["reference_wavelength"] = u.Quantity(
+                        model.reference_wavelength.value,
+                        unit=model.reference_wavelength.unit,
+                    )
+                else:
+                    node["reference_wavelength"] = model.reference_wavelength.value
+            if model.refractive_index.value != 1:
+                if model.refractive_index.unit is not None:
+                    node["refractive_index"] = u.Quantity(
+                        model.refractive_index.value,
+                        unit=model.refractive_index.unit,
+                    )
+                else:
+                    node["refractive_index"] = model.refractive_index.value
+            if model.refractive_index_derivative.value != 0:
+                if model.refractive_index_derivative.unit is not None:
+                    node["refractive_index_derivative"] = u.Quantity(
+                        model.refractive_index_derivative.value,
+                        unit=model.refractive_index_derivative.unit,
+                    )
+                else:
+                    node["refractive_index_derivative"] = (
+                        model.refractive_index_derivative.value
+                    )
+            if model.out_of_plane_angle.value != 0:
+                if model.out_of_plane_angle.unit is not None:
+                    node["out_of_plane_angle"] = u.Quantity(
+                        model.out_of_plane_angle.value,
+                        unit=model.out_of_plane_angle.unit,
+                    )
+                else:
+                    node["out_of_plane_angle"] = model.out_of_plane_angle.value
         else:
             msg = f"Can't serialize an instance of {model.__class__.__name__}"
             raise TypeError(msg)

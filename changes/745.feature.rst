@@ -1,0 +1,1 @@
+Expanded `gwcs.spectroscopy.WavelengthFromGratingEquation` to support FITS ``-GRA``/``-GRI`` grating coordinates by applying the grism correction terms to the input incident and refracted angle sines while preserving its original two-input grating-equation behavior.

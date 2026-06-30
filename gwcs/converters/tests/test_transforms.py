@@ -48,6 +48,14 @@ transforms = [
     sp.WavelengthFromGratingEquation(50000, -1),
     sp.AnglesFromGratingEquation3D(20000, 1),
     sp.WavelengthFromGratingEquation(15000 * 1 / u.m, -1),
+    sp.WavelengthFromGratingEquation(
+        groove_density=23000 * 1 / u.m,
+        spectral_order=90,
+        reference_wavelength=854.1738582455826 * u.nm,
+        refractive_index=1.25 * u.one,
+        refractive_index_derivative=1000 * 1 / u.m,
+        out_of_plane_angle=1.5 * u.deg,
+    ),
     fwcs,
 ]
 
