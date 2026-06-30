@@ -70,49 +70,93 @@ def test_wavelength_grating_equation_incompatible_units_raises() -> None:
 
 def test_refracted_angle_sine_model_basic() -> None:
     """Output should be the sine of the refracted angle at the reference pixel."""
+    groove_density = 23000 / u.m
+    spectral_order = 90 * u.one
+    incident_angle = 65.696 * u.deg
+    refractive_index = 1.25 * u.one
+    refractive_index_derivative = 1000 / u.m
+    out_of_plane_angle = 1.5 * u.deg
     model = sp.RefractedAngleSineModel(
         reference_pixel=217,
-        reference_refracted_angle=30 * u.deg,
-        dispersion=0.001 * u.nm / u.pix,
-        grism_parameter_per_wavelength=1000 / u.nm,
+        reference_wavelength=854.1738582455826 * u.nm,
+        dispersion=0.0022975580183395555 * u.nm / u.pix,
+        groove_density=groove_density,
+        spectral_order=spectral_order,
+        incident_angle=incident_angle,
+        refractive_index=refractive_index,
+        refractive_index_derivative=refractive_index_derivative,
+        out_of_plane_angle=out_of_plane_angle,
         camera_angle=0 * u.deg,
     )
-    # At the reference pixel, wavelength_offset == 0, so
-    # output_angle == reference_refracted_angle.
+
+    grism_constant = (groove_density * spectral_order) / np.cos(out_of_plane_angle)
+    reference_refracted_angle = np.arcsin(
+        (grism_constant * (854.1738582455826 * u.nm))
+        - refractive_index * np.sin(incident_angle)
+    )
     result = model(217)
-    assert u.allclose(result, np.sin(30 * u.deg), atol=1e-12)
+    assert u.allclose(result, np.sin(reference_refracted_angle), atol=1e-12)
 
 
 def test_refracted_angle_sine_model_bare_number_coercion() -> None:
     """Bare-number arguments should be coerced to the assumed units."""
     model = sp.RefractedAngleSineModel(
         reference_pixel=0,
-        reference_refracted_angle=0,  # assumed rad
-        dispersion=0,  # assumed nm/pix
-        grism_parameter_per_wavelength=0,  # assumed 1/nm
+        reference_wavelength=0,  # assumed m
+        dispersion=0,  # assumed m/pix
+        groove_density=1,  # assumed 1/m
+        spectral_order=1,  # assumed dimensionless
+        incident_angle=0,  # assumed deg
+        refractive_index=1,  # assumed dimensionless
+        refractive_index_derivative=0,  # assumed 1/m
+        out_of_plane_angle=0,  # assumed deg
         camera_angle=0,  # assumed deg
     )
-    assert model.reference_refracted_angle.unit == u.rad
-    assert model.dispersion.unit == u.nm / u.pix
-    assert model.grism_parameter_per_wavelength.unit == u.nm**-1
+    assert model.reference_wavelength.unit == u.m
+    assert model.dispersion.unit == u.m / u.pix
+    assert model.groove_density.unit == 1 / u.m
+    assert model.spectral_order.unit == u.one
+    assert model.incident_angle.unit == u.deg
+    assert model.refractive_index.unit == u.one
+    assert model.refractive_index_derivative.unit == 1 / u.m
+    assert model.out_of_plane_angle.unit == u.deg
     assert model.camera_angle.unit == u.deg
 
 
 def test_refracted_angle_sine_model_matches_manual() -> None:
     """Result should match a manually computed refracted-angle sine."""
     reference_pixel = 217.0
-    reference_refracted_angle = 15.0 * u.deg
-    dispersion = 0.0023 * u.nm / u.pix
-    grism_parameter_per_wavelength = 800.0 / u.nm
+    reference_wavelength = 854.1738582455826 * u.nm
+    dispersion = 0.0022975580183395555 * u.nm / u.pix
+    groove_density = 23000.0 / u.m
+    spectral_order = 90 * u.one
+    incident_angle = 65.696 * u.deg
+    refractive_index = 1.25 * u.one
+    refractive_index_derivative = 1000.0 / u.m
+    out_of_plane_angle = 1.5 * u.deg
     camera_angle = 0.8 * u.deg
 
     model = sp.RefractedAngleSineModel(
         reference_pixel=reference_pixel,
-        reference_refracted_angle=reference_refracted_angle,
+        reference_wavelength=reference_wavelength,
         dispersion=dispersion,
-        grism_parameter_per_wavelength=grism_parameter_per_wavelength,
+        groove_density=groove_density,
+        spectral_order=spectral_order,
+        incident_angle=incident_angle,
+        refractive_index=refractive_index,
+        refractive_index_derivative=refractive_index_derivative,
+        out_of_plane_angle=out_of_plane_angle,
         camera_angle=camera_angle,
     )
+
+    grism_constant = (groove_density * spectral_order) / np.cos(out_of_plane_angle)
+    reference_refracted_angle = np.arcsin(
+        (grism_constant * reference_wavelength)
+        - refractive_index * np.sin(incident_angle)
+    )
+    grism_parameter_per_wavelength = (
+        grism_constant - refractive_index_derivative * np.sin(incident_angle)
+    ) / (np.cos(reference_refracted_angle) * np.cos(camera_angle) ** 2)
 
     pixels = np.array([0.0, 100.0, 217.0, 300.0, 511.0])
     wavelength_offset = ((pixels - reference_pixel) * u.pix) * dispersion
