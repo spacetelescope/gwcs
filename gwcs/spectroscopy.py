@@ -374,12 +374,10 @@ class WavelengthFromGratingEquation(Model):
             refractive_index - refractive_index_derivative * reference_wavelength
         ) * alpha_in
 
-        groove_density_term = (groove_density * spectral_order) / np.cos(
-            out_of_plane_angle
-        )
+        grism_constant = (groove_density * spectral_order) / np.cos(out_of_plane_angle)
         refractive_correction_term = refractive_index_derivative * alpha_in
 
-        adjusted_groove_density = groove_density_term - refractive_correction_term
+        adjusted_groove_density = grism_constant - refractive_correction_term
 
         return (adjusted_incident_angle_sine + alpha_out) / (adjusted_groove_density)
 
@@ -449,17 +447,6 @@ class AnglesFromGratingEquation3D(Model):
         alpha_out = -groove_density * spectral_order * wavelength + alpha_in
         beta_out = -beta_in
         gamma_out = np.sqrt(1 - alpha_out**2 - beta_out**2)
-
-        # Direction cosines are always dimensionless. Strip any Quantity
-        # wrapper so downstream models (e.g. JWST's Logical/mask_slit) that
-        # compare against plain floats don't hit astropy 8+ UnitConversionError.
-        if isinstance(alpha_out, u.Quantity):
-            alpha_out = alpha_out.to_value(u.one)
-        if isinstance(beta_out, u.Quantity):
-            beta_out = beta_out.to_value(u.one)
-        if isinstance(gamma_out, u.Quantity):
-            gamma_out = gamma_out.to_value(u.one)
-
         return alpha_out, beta_out, gamma_out
 
     @property
