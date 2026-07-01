@@ -37,7 +37,7 @@ jobs:
     uses: spacetelescope/crds/.github/workflows/contexts.yml@main
 
   jwst:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     needs: [environment, crds_contexts]
     with:
       setenv: |
@@ -51,7 +51,7 @@ jobs:
         - linux: py313-test-jwst
 
   romancal:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     needs: [environment, crds_contexts]
     with:
       setenv: |
@@ -72,7 +72,7 @@ jobs:
 
   romanisim:
     needs: [crds_contexts, romanisim_data]
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     with:
       libraries: |
         brew:
@@ -93,7 +93,7 @@ jobs:
       envs: |
         - linux: py313-test-romanisim-xdist
   stcal:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     needs: [environment, crds_contexts]
     with:
       setenv: |
@@ -107,7 +107,7 @@ jobs:
         - linux: stcal
 
   astropy:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     if: (github.repository == 'spacetelescope/gwcs' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Downstream CI')))
     with:
       submodules: false
@@ -117,7 +117,7 @@ jobs:
         - linux: specutils
 
   third-party:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@4193751d511425d4edc1d5657c24b2128d49b017 # v2.6.4
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     if: (github.repository == 'spacetelescope/gwcs' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'Downstream CI')))
     with:
       submodules: false
