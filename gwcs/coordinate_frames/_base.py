@@ -5,7 +5,15 @@ from abc import abstractmethod
 from collections.abc import Callable
 from itertools import zip_longest
 from numbers import Number
-from typing import Any, NamedTuple, Protocol, Self, TypeAlias, runtime_checkable
+from typing import (
+    Any,
+    NamedTuple,
+    Protocol,
+    Self,
+    TypeAlias,
+    TypeVar,
+    runtime_checkable,
+)
 
 import numpy as np
 from astropy import units as u
@@ -15,7 +23,6 @@ from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
 )
-from numpy import typing as npt
 
 from ._axis import AxesType
 
@@ -29,9 +36,10 @@ __all__ = [
     "WorldAxisObjectClassConverter",
     "WorldAxisObjectComponent",
 ]
+_DtypeGeneric = TypeVar("_DtypeGeneric", bound=np.generic)
 
 AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
-LowLevelArray: TypeAlias = npt.NDArray[np.generic]
+LowLevelArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[_DtypeGeneric]]
 LowLevelInput: TypeAlias = LowLevelArray | u.Quantity
 
 
