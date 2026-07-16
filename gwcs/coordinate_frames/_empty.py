@@ -144,10 +144,10 @@ class EmptyFrame(CoordinateFrameProtocol):
             for i, at in enumerate(self.axes_type)
         ]
 
-    def to_high_level_coordinates(self, *values):
+    def to_high_level_coordinates(self, *values, correct_1d: bool = True):
         self._raise_error()
 
-    def from_high_level_coordinates(self, *high_level_coords):
+    def from_high_level_coordinates(self, *high_level_coords, correct_1d: bool = True):
         self._raise_error()
 
     def add_units(

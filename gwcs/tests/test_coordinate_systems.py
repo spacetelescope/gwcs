@@ -16,6 +16,7 @@ from numpy.testing import assert_allclose
 
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
+from gwcs.coordinate_frames._base import _LegacyCoordinateFrameProtocol
 from gwcs.coordinate_frames._utils import (
     _ALLOWED_UCD_DUPLICATES,
     _ucd1_to_ctype_name_mapping,
@@ -649,14 +650,50 @@ def test_CoordinateFrameProtocol():
         def is_high_level(self, *inputs):
             return False
 
+        def to_high_level_coordinates(self, *inputs, correct_1d=True):
+            if correct_1d and len(inputs) == 1:
+                return inputs[0]
+            return inputs
+
+        def from_high_level_coordinates(self, *inputs, correct_1d=True):
+            if correct_1d and len(inputs) == 1:
+                return inputs[0]
+            return inputs
+
+    frame = MyFrame()
+    assert isinstance(frame, cf.CoordinateFrameProtocol)
+    assert frame.to_high_level_coordinates(1, correct_1d=False) == (1,)
+    assert frame.from_high_level_coordinates(1, correct_1d=False) == (1,)
+
+
+def test_LegacyCoordinateFrameProtocol():
+    class LegacyFrame:
+        naxes = 1
+        name = "legacy"
+        unit = (u.m,)
+        axes_names = ("x",)
+        axes_order = (0,)
+        reference_frame = None
+        axes_type = ("SPATIAL",)
+        axis_physical_types = ("custom:x",)
+        world_axis_object_classes = (u.Quantity,)
+        world_axis_object_components = ("custom:x",)
+
+        def add_units(self, arrays):
+            return arrays
+
+        def remove_units(self, arrays):
+            return arrays
+
         def to_high_level_coordinates(self, *inputs):
             return inputs
 
         def from_high_level_coordinates(self, *inputs):
             return inputs
 
-    frame = MyFrame()
-    assert isinstance(frame, cf.CoordinateFrameProtocol)
+    frame = LegacyFrame()
+    assert isinstance(frame, _LegacyCoordinateFrameProtocol)
+    assert not isinstance(frame, cf.CoordinateFrameProtocol)
 
 
 def test_BaseCoordinateFrame():

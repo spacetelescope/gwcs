@@ -495,10 +495,35 @@ def create_projection_transform(projcode):
     return projklass(**projparams)
 
 
-# ToDo: Should this be deprecated?
+def correct_1d_output(func, pass_correct_1d: bool = True):
+    """
+    Decorator to correct the output of a function to be 1D if the input is 1D.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, correct_1d: bool = True, **kwargs):
+        if pass_correct_1d:
+            value = func(*args, correct_1d=correct_1d, **kwargs)
+        else:
+            value = func(*args, **kwargs)
+
+        if correct_1d and isinstance(value, (tuple, list)) and len(value) == 1:
+            return value[0]
+
+        return value
+
+    return wrapper
+
+
 def is_high_level(*args, low_level_wcs):
     """
     Determine if args matches the high level classes as defined by
     ``low_level_wcs``.
     """
+    warnings.warn(
+        "The use of `is_high_level` is deprecated. Use the `is_high_level` method "
+        "of the low level WCS object's output_frame instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return low_level_wcs.output_frame.is_high_level(*args)

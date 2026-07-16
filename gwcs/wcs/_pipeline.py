@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Sequence
-from typing import Generic, NamedTuple, Self, TypeAlias, TypeVar, Union, overload
+from dataclasses import dataclass
+from typing import Generic, Self, TypeAlias, TypeVar, Union, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -14,30 +15,323 @@ from gwcs.utils import CoordinateFrameError, combine_transforms
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
 from ._step import IndexedStep, Mdl, Step, StepTuple
 
-__all__ = ["DirectionalPipeline", "ForwardTransform", "Pipeline"]
+# Adding _BasePipeline to __all__ in order for it to be
+#   picked up by Sphinx for the API documentation.
+__all__ = ["DirectionalWCS", "ForwardTransform", "Pipeline", "_BasePipeline"]
+
+
+class _BasePipeline:
+    """
+    Base class for the Pipeline functionality.
+
+    This class is intended to be an internal implementation detail for the
+    Pipeline class that is used to handle pipeline functionality without
+    the overhead of the checks and protections that are in place in the
+    pipeline class.
+
+    This class only has the minimum functionality to handle the building of the
+    transforms.
+    """
+
+    _pipeline: list[Step]
+
+    def __init__(self, pipeline: list[Step] | _BasePipeline | None = None) -> None:
+        if isinstance(pipeline, _BasePipeline):
+            self._pipeline = pipeline.pipeline
+        else:
+            self._pipeline = pipeline or []
+
+    @property
+    def pipeline(self) -> list[Step]:
+        """
+        Allow direct access to the raw pipeline steps.
+        """
+
+        # TODO: This can still allow direct modification of the pipeline list
+        #       without any of the checks and handling that have been put in
+        #       place in order to ensure the pipeline is functional.
+        #       -> Maybe we should return a copy?
+        return self._pipeline
+
+    @property
+    def available_frames(self) -> list[str]:
+        """
+        List of all the frame names in this WCS in their order in the pipeline
+        """
+        return [step.frame.name for step in self._pipeline]
+
+    @staticmethod
+    def _frame_name(frame: str | CoordinateFrameProtocol) -> str:
+        """
+        Return the name of the frame.
+
+        Parameters
+        ----------
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            Name of the frame or the frame object.
+
+        Returns
+        -------
+        Name of the frame.
+        """
+        return frame.name if isinstance(frame, CoordinateFrameProtocol) else frame
+
+    def _frame_index(self, frame: str | CoordinateFrameProtocol) -> int:
+        """
+        Return the index of the given frame in the pipeline.
+
+        Parameters
+        ----------
+        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            Name of the frame or the frame object.
+
+        Returns
+        -------
+        Index of the frame in the pipeline.
+        """
+        try:
+            return self.available_frames.index(self._frame_name(frame))
+        except ValueError as err:
+            msg = f"Frame {self._frame_name(frame)} is not in the available frames"
+            raise CoordinateFrameError(msg) from err
+
+    @property
+    def bounding_box(self) -> ModelBoundingBox | CompoundBoundingBox | None:
+        """
+        Return the bounding box of the pipeline.
+        """
+        # Pull the first transform of the pipeline which is what controls the
+        # bounding_box
+        transform = self._pipeline[0].transform
+
+        if transform is None:
+            return None
+
+        try:
+            return transform.bounding_box
+        except NotImplementedError:
+            return None
+
+    @property
+    def forward_transform(self) -> Model:
+        """
+        Return the forward transform of the pipeline.
+        """
+        transform = combine_transforms([step.transform for step in self._pipeline[:-1]])
+
+        if self.bounding_box is not None:
+            # Currently compound models do not attempt to combine individual model
+            # bounding boxes. Get the forward transform and assign the bounding_box
+            # to it before evaluating it. The order Model.bounding_box is reversed.
+            transform.bounding_box = self.bounding_box
+
+        return transform
+
+    @property
+    def backward_transform(self) -> Model:
+        """
+        Return the total backward transform if available - from output to input
+        coordinate system.
+
+        Raises
+        ------
+        NotImplementedError :
+            An analytical inverse does not exist.
+
+        """
+        try:
+            backward = self.forward_transform.inverse
+        except NotImplementedError:
+            # Try to get the backward transform by combining the inverses of the
+            # individual steps. This will work even if the forward transform does
+            # not have an analytical inverse, as long as each step does.
+            backward = combine_transforms(
+                [step.inverse for step in self._pipeline[:-1][::-1]]
+            )
+
+        try:
+            _ = backward.inverse
+        except NotImplementedError:  # means "hasattr" won't work
+            backward.inverse = self.forward_transform
+        return backward
+
+    def _pipeline_between(
+        self,
+        from_frame: str | CoordinateFrameProtocol,
+        to_frame: str | CoordinateFrameProtocol,
+    ) -> DirectionalWCS[_BasePipeline] | None:
+        """
+        Return a pipeline between the two given frames.
+
+        This is the internal fast path: it builds an unvalidated
+        `~gwcs.wcs._BasePipeline` (no frame validation or step copies). Callers
+        that only need the combined transform (e.g. ``get_transform``) use this
+        to avoid the overhead of constructing a full `~gwcs.wcs.Pipeline` /
+        `~gwcs.wcs.WCS`. The public `pipeline_between` wraps the result in an
+        instance of the calling type.
+
+        Validation is unnecessary here because the steps are sliced from an
+        already-valid pipeline (only a terminal ``Step(frame, None)`` is added).
+        The shared ``Step`` objects are safe because the returned pipeline is
+        ephemeral: callers use its built-in functionality (``forward_transform``
+        etc.) rather than mutating its raw list of steps.
+
+        Parameters
+        ----------
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            Initial coordinate frame name of object.
+        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            End coordinate frame name or object.
+
+        Returns
+        -------
+        pipeline : `~gwcs.wcs.DirectionalWCS` or None
+            A ``DirectionalWCS`` (wcs, forward) where ``wcs`` is a
+            `~gwcs.wcs._BasePipeline` for the steps between the two frames and
+            ``forward`` indicates the direction (True: from_frame -> to_frame,
+            False: to_frame -> from_frame). Note that if from_frame and to_frame
+            are the same, then None is returned.
+        """
+        from_index = self._frame_index(from_frame)
+        to_index = self._frame_index(to_frame)
+
+        # Moving backwards over the pipeline
+        if to_index < from_index:
+            pipeline = self._pipeline[to_index:from_index]
+            pipeline.append(Step(self._pipeline[from_index].frame, None))
+
+            return DirectionalWCS(wcs=_BasePipeline(pipeline), forward=False)
+
+        if from_index < to_index:
+            pipeline = self._pipeline[from_index:to_index]
+            pipeline.append(Step(self._pipeline[to_index].frame, None))
+
+            return DirectionalWCS(wcs=_BasePipeline(pipeline), forward=True)
+
+        return None  # from and to are the same frame, so no pipeline needed
+
+    def pipeline_between(
+        self,
+        from_frame: str | CoordinateFrameProtocol,
+        to_frame: str | CoordinateFrameProtocol,
+    ) -> DirectionalWCS[Self] | None:
+        """
+        Return a pipeline between the two given frames.
+
+        Parameters
+        ----------
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            Initial coordinate frame name of object.
+        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+            End coordinate frame name or object.
+
+        Returns
+        -------
+        pipeline :
+            A `~gwcs.wcs.DirectionalWCS` (wcs, forward) where wcs is of the type
+            of the calling object. The forward attribute indicates if the
+            wcs/pipeline between the two frames is forward (True, from_frame ->
+            to_frame) or backward (False, to_frame -> from_frame).
+            Note that if from_frame and to_frame are the same, then None is
+            returned.
+        """
+        direction = self._pipeline_between(from_frame, to_frame)
+
+        if direction is None:
+            return None
+
+        return DirectionalWCS(wcs=type(self)(direction.wcs), forward=direction.forward)
+
+    def get_transform(
+        self,
+        from_frame: str | CoordinateFrameProtocol,
+        to_frame: str | CoordinateFrameProtocol,
+    ) -> Mdl:
+        """
+        Return a transform between two coordinate frames.
+
+        Parameters
+        ----------
+        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            Initial coordinate frame name of object.
+        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+            End coordinate frame name or object.
+
+        Returns
+        -------
+        transform : `~astropy.modeling.Model`
+            Transform between two frames.
+        """
+        direction = self._pipeline_between(from_frame, to_frame)
+
+        # from and to are the same frame, so no transform needed
+        if direction is None:
+            return None
+
+        # If the pipeline is forward, return the forward transform
+        if direction.forward:
+            return direction.wcs.forward_transform
+
+        # Otherwise it is backward, so return the backward transform
+        return direction.wcs.backward_transform
+
 
 # Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple]]  # noqa: UP007
-
-_T = TypeVar("_T")
+ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple] | _BasePipeline]  # noqa: UP007
 
 
-class DirectionalPipeline(NamedTuple, Generic[_T]):
+_T = TypeVar("_T", bound=_BasePipeline)
+
+
+@dataclass(frozen=True, slots=True)
+class DirectionalWCS(Generic[_T]):
     """
-    A named tuple to hold a pipeline and the direction it is going in.
+    Dataclass to hold the WCS and the direction of the WCS's pipeline between
+    two frames.
+
+    Note that the public use of this class is intended only for use on the full
+    `~gwcs.wcs.WCS` class, which is a subclass of `~gwcs.wcs.Pipeline`.
+
+    Attributes
+    ----------
+    wcs : _T
+        The WCS object that represents the pipeline between two frames.
+
+    forward : bool
+        A boolean indicating if the pipeline is forward, True, (from_frame to to_frame)
+        or backward (to_frame to from_frame), False.
     """
 
     wcs: _T
     forward: bool
 
 
-class Pipeline:
+class Pipeline(_BasePipeline):
     """
     Class to handle a sequence of WCS transformations.
 
-    This is intended to act line a list of steps, but with built in protections
+    This is intended to act like a list of steps, but with built in protections
     for things like duplicate frames. In addition, this handles all the logic
     for handling steps and their frames/transforms.
+
+    This class is intended to be an organizational class for the WCS which handles
+    the sequence of steps and their transforms. It is not intended to be used
+    directly by outside users, but rather through the `~gwcs.wcs.WCS` class,
+    which subclasses this class and adds the additional evaluation functionality
+    and user interface for the WCS.
+
+    .. warning::
+
+        This class supports passing any `~gwcs.wcs._BasePipeline` subclass as the
+        ``forward_transform`` argument. In this case, no validation checks or
+        copies of the steps are made. This means that when the ``forward_transform``
+        is a type of `~gwcs.wcs._BasePipeline`, the user is responsible for ensuring
+        that the pipeline is valid. Moreover, since no copies of the steps are made,
+        any changes made to the steps contained within the resulting instance will
+        back-propagate to the original `~gwcs.wcs._BasePipeline` subclass instance.
+        This behavior is intended to allow for the efficient creation of pipelines
+        (or WCSs) from existing pipelines (or WCSs) without the expensive overhead
+        of validation and copies.
     """
 
     @overload
@@ -52,7 +346,7 @@ class Pipeline:
     @overload
     def __init__(
         self,
-        forward_transform: Sequence[Step | StepTuple],
+        forward_transform: Sequence[Step | StepTuple] | _BasePipeline,
         *,
         input_frame: None = None,
         output_frame: None = None,
@@ -65,8 +359,11 @@ class Pipeline:
         input_frame: str | CoordinateFrameProtocol | None = None,
         output_frame: str | CoordinateFrameProtocol | None = None,
     ) -> None:
-        self._pipeline: list[Step] = []
-        self._initialize_pipeline(forward_transform, input_frame, output_frame)
+        if isinstance(forward_transform, _BasePipeline):
+            super().__init__(forward_transform)
+        else:
+            super().__init__()
+            self._initialize_pipeline(forward_transform, input_frame, output_frame)
 
     def _initialize_pipeline(
         self,
@@ -175,25 +472,6 @@ class Pipeline:
         if isinstance(self._pipeline[-1].frame, EmptyFrame):
             self._pipeline[-1].frame.naxes = self.forward_transform.n_outputs
 
-    @property
-    def pipeline(self) -> list[Step]:
-        """
-        Allow direct access to the raw pipeline steps.
-        """
-
-        # TODO: This can still allow direct modification of the pipeline list
-        #       without any of the checks and handling that have been put in
-        #       place in order to ensure the pipeline is functional.
-        #       -> Maybe we should return a copy?
-        return self._pipeline
-
-    @property
-    def available_frames(self) -> list[str]:
-        """
-        List of all the frame names in this WCS in their order in the pipeline
-        """
-        return [step.frame.name for step in self._pipeline]
-
     def get_frame(
         self, frame: str | CoordinateFrameProtocol
     ) -> CoordinateFrameProtocol:
@@ -225,7 +503,7 @@ class Pipeline:
             The step to wrap in a Step object and check.
         replace_index : int or None
             The index of the step to replace in the pipeline, this ensures that
-            we can inplace replace a step using the same frame as the one being
+            we can in place replace a step using the same frame as the one being
             replaced. This frame will be removed from the frames to check against
             If None (default), do not remove any frames for checking.
         """
@@ -289,44 +567,9 @@ class Pipeline:
         return self._pipeline[-1].frame
 
     @property
-    def unit(self) -> Unit | None:
+    def unit(self) -> tuple[Unit | None, ...] | None:
         """The unit of the coordinates in the output coordinate system."""
         return self._pipeline[-1].frame.unit if self._pipeline else None
-
-    @staticmethod
-    def _frame_name(frame: str | CoordinateFrameProtocol) -> str:
-        """
-        Return the name of the frame.
-
-        Parameters
-        ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
-            Name of the frame or the frame object.
-
-        Returns
-        -------
-        Name of the frame.
-        """
-        return frame.name if isinstance(frame, CoordinateFrameProtocol) else frame
-
-    def _frame_index(self, frame: str | CoordinateFrameProtocol) -> int:
-        """
-        Return the index of the given frame in the pipeline.
-
-        Parameters
-        ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
-            Name of the frame or the frame object.
-
-        Returns
-        -------
-        Index of the frame in the pipeline.
-        """
-        try:
-            return self.available_frames.index(self._frame_name(frame))
-        except ValueError as err:
-            msg = f"Frame {self._frame_name(frame)} is not in the available frames"
-            raise CoordinateFrameError(msg) from err
 
     def _get_step(self, frame: str | CoordinateFrameProtocol) -> IndexedStep:
         """
@@ -335,123 +578,6 @@ class Pipeline:
         index = self._frame_index(frame)
 
         return IndexedStep(index, self._pipeline[index])
-
-    @property
-    def forward_transform(self) -> Model:
-        """
-        Return the forward transform of the pipeline.
-        """
-        transform = combine_transforms([step.transform for step in self._pipeline[:-1]])
-
-        if self.bounding_box is not None:
-            # Currently compound models do not attempt to combine individual model
-            # bounding boxes. Get the forward transform and assign the bounding_box
-            # to it before evaluating it. The order Model.bounding_box is reversed.
-            transform.bounding_box = self.bounding_box
-
-        return transform
-
-    @property
-    def backward_transform(self) -> Model:
-        """
-        Return the total backward transform if available - from output to input
-        coordinate system.
-
-        Raises
-        ------
-        NotImplementedError :
-            An analytical inverse does not exist.
-
-        """
-        try:
-            backward = self.forward_transform.inverse
-        except NotImplementedError:
-            # Try to get the backward transform by combining the inverses of the
-            # individual steps. This will work even if the forward transform does
-            # not have an analytical inverse, as long as each step does.
-            backward = combine_transforms(
-                [step.inverse for step in self._pipeline[:-1][::-1]]
-            )
-
-        try:
-            _ = backward.inverse
-        except NotImplementedError:  # means "hasattr" won't work
-            backward.inverse = self.forward_transform
-        return backward
-
-    def pipeline_between(
-        self,
-        from_frame: str | CoordinateFrameProtocol,
-        to_frame: str | CoordinateFrameProtocol,
-    ) -> DirectionalPipeline[Self] | None:
-        """
-        Return a pipeline between the two given frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            Initial coordinate frame name of object.
-        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
-            End coordinate frame name or object.
-
-        Returns
-        -------
-        pipeline : `~gwcs.wcs.Pipeline`
-            A NamedTuple (pipeline, forward) where pipeline is a Pipeline object
-            the pipeline between the two frames and forward is a boolean indicating
-            if the pipeline is forward (from_frame to to_frame) or
-            backward (to_frame to from_frame).
-        """
-        from_index = self._frame_index(from_frame)
-        to_index = self._frame_index(to_frame)
-
-        # Moving backwards over the pipeline
-        if to_index < from_index:
-            pipeline = self._pipeline[to_index:from_index]
-            pipeline.append(Step(self._pipeline[from_index].frame, None))
-
-            return DirectionalPipeline(wcs=type(self)(pipeline), forward=False)
-
-        if from_index < to_index:
-            pipeline = self._pipeline[from_index:to_index]
-            pipeline.append(Step(self._pipeline[to_index].frame, None))
-
-            return DirectionalPipeline(wcs=type(self)(pipeline), forward=True)
-
-        return None  # from and to are the same frame, so no pipeline needed
-
-    def get_transform(
-        self,
-        from_frame: str | CoordinateFrameProtocol,
-        to_frame: str | CoordinateFrameProtocol,
-    ) -> Mdl:
-        """
-        Return a transform between two coordinate frames.
-
-        Parameters
-        ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
-            Initial coordinate frame name of object.
-        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
-            End coordinate frame name or object.
-
-        Returns
-        -------
-        transform : `~astropy.modeling.Model`
-            Transform between two frames.
-        """
-        direction = self.pipeline_between(from_frame, to_frame)
-
-        # from and to are the same frame, so no transform needed
-        if direction is None:
-            return None
-
-        # If the pipeline is forward, return the forward transform
-        if direction.forward:
-            return direction.wcs.forward_transform
-
-        # Otherwise it is backward, so return the backward transform
-        return direction.wcs.backward_transform
 
     def set_transform(
         self,
@@ -603,9 +729,9 @@ class Pipeline:
         if transform is None:
             return None
 
-        try:
-            bounding_box = transform.bounding_box
-        except NotImplementedError:
+        bounding_box = super().bounding_box
+
+        if bounding_box is None:
             return None
 
         if (

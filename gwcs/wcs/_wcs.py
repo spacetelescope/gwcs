@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import itertools
 import sys
 import warnings
@@ -37,10 +38,10 @@ from gwcs.coordinate_frames import (
     LowLevelInput,
     get_ctype_from_ucd,
 )
-from gwcs.utils import _compute_lon_pole, to_index
+from gwcs.utils import _compute_lon_pole, correct_1d_output, to_index
 
 from ._exception import NoConvergence
-from ._pipeline import ForwardTransform, Pipeline
+from ._pipeline import ForwardTransform, Pipeline, _BasePipeline
 from ._step import Step, StepTuple
 from ._utils import (
     fit_2D_poly,
@@ -89,11 +90,74 @@ class _WorldAxisInfo:
         self.input_axes = input_axes
 
 
+@functools.cache
+def _func_accepts_correct_1d(func) -> bool:
+    """
+    Determine whether a frame's coordinate-conversion method accepts the
+    ``correct_1d`` keyword. Legacy frames predate this argument.
+    """
+    try:
+        sig = inspect.signature(func)
+    except (TypeError, ValueError):
+        return False
+
+    return "correct_1d" in sig.parameters or any(
+        p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+    )
+
+
+def _accepts_correct_1d(method) -> bool:
+    """
+    Helper to pass to the _func_accepts_correct_1d function so that the cache
+    is not grown every time this function is called.
+        -> This is because the method is a bound method.
+    """
+    return _func_accepts_correct_1d(getattr(method, "__func__", method))
+
+
+def _from_high_level_coordinates(frame, *args, correct_1d=True):
+    """
+    Helper to support legacy frames whose ``from_high_level_coordinates`` does
+    not implement the ``correct_1d`` argument.
+    """
+    method = frame.from_high_level_coordinates
+    if _accepts_correct_1d(method):
+        return method(*args, correct_1d=correct_1d)
+
+    return correct_1d_output(method, pass_correct_1d=False)(
+        *args, correct_1d=correct_1d
+    )
+
+
+def _to_high_level_coordinates(frame, *args, correct_1d=True):
+    """
+    Helper to support legacy frames whose ``to_high_level_coordinates`` does
+    not implement the ``correct_1d`` argument.
+    """
+    method = frame.to_high_level_coordinates
+    if _accepts_correct_1d(method):
+        return method(*args, correct_1d=correct_1d)
+
+    return correct_1d_output(method, pass_correct_1d=False)(
+        *args, correct_1d=correct_1d
+    )
+
+
 class _UnitHandler:
     """
     Class to ensure that the input-output type consistency for the GWCS native API
 
     Parameters
+    ----------
+    inputs : tuple of low level inputs
+        The inputs to be passed to the transform.
+    transform : Model
+        The transform to be applied to the inputs.
+    frame : CoordinateFrameProtocol
+        The frame to use for adding/removing units and converting to high level
+        objects.
+
+    Attributes
     ----------
     args :
         The input arguments to be passed to the transform.
@@ -112,14 +176,21 @@ class _UnitHandler:
 
     def __init__(
         self,
-        inputs: tuple[LowLevelInput, ...],
+        inputs: tuple[LowLevelInput, ...] | LowLevelInput,
         transform: Model,
         frame: CoordinateFrameProtocol,
     ):
         # Handle the case where a HLO is passed into the Native API
         self._is_high_level = frame.is_high_level(*inputs)
         if self._is_high_level:
-            inputs = frame.from_high_level_coordinates(*inputs, correct_1d=False)
+            inputs = _from_high_level_coordinates(frame, *inputs, correct_1d=False)
+
+            # Legacy frames will probably have stripped the 1d to a value rather than
+            #    keeping it as a tuple
+            if not isinstance(inputs, list | tuple):
+                inputs = (inputs,)
+
+            inputs = tuple(inputs)
 
         # Determine if the inputs are quantities
         input_is_quantity = any(isinstance(a, u.Quantity) for a in inputs)
@@ -133,20 +204,28 @@ class _UnitHandler:
                 or transform.input_units_equivalencies is not None
             )
 
-        elif isinstance(transform, Identity):
+        # Note that upstream changes in astropy are planned to make parameterless
+        #   models that have no parameters be able to set uses_quantity on their
+        #   own. It is an ongoing discussion in astropy about whether Identity
+        #   should be considered to use quantities or not (as there are other
+        #   models like Scale and Shift that can be setup to effectively be an
+        #   Identity and they make it clear when they use quantities or not).
+        #   For now, we will assume that Identity does not use quantities, as that
+        #   is the most common expected behavior of downstream users of GWCS.
+        elif isinstance(transform, Identity) or (
+            transform is not None and len(transform.parameters) == 0
+        ):
             transform_uses_quantity = False
 
         else:
-            transform_uses_quantity = not (
-                transform is None or not transform.uses_quantity
-            )
+            transform_uses_quantity = transform is not None and transform.uses_quantity
 
         # Using input_is_quantity and transform_uses_quantity, we determine if we
         #   need to add or remove units from the inputs to make them compatible
         #   with the transform and we determine if we need to add or remove units
         #   from the outputs to make them consistent with the input's type.
 
-        # Case 1: No units are involved
+        # Case 1: No units are involved in anything
         #   input -> no change
         #            (we assume the user has passed numerical values
         #             in the correct units)
@@ -157,16 +236,16 @@ class _UnitHandler:
             self.args = inputs
             self._add_units = False
 
-        # Case 2: Units are involved and the transform supports them
+        # Case 2: The inputs have units and the transform supports units
         #    input -> add units
         #             (we add -- meaning convert -- units to the input values)
         #    output -> add units
-        #             (we convert the output to the correct units if necessary and
+        #             (we add -- meaning convert -- units to the output values)
         elif input_is_quantity and transform_uses_quantity:
             self.args = frame.add_units(inputs)
             self._add_units = True
 
-        # Case 3: no input units, but transform needs units
+        # Case 3: The input does not have units, but the transform supports units
         #    input -> add units
         #             (we assume that the user has passed correct numerical values
         #              and formally add units to them for the transform to work
@@ -178,13 +257,13 @@ class _UnitHandler:
             self.args = frame.add_units(inputs)
             self._add_units = False
 
-        # Case 4: input has units, but transform does not use them
+        # Case 4: The input has units, but the transform does not support units
         #    input -> remove units
         #             (we convert the input to the correct units if necessary and
         #              then remove them giving numerical values as input)
         #   output -> add units
-        #             (we convert the output to the correct units if necessary and
-        #              then add them giving numerical values as output)
+        #             (we assume that the output of the transform is in the correct
+        #              units and then formally attach units to the output values)
         # This is the only other case:
         #   input_is_quantity and not transform_uses_quantity
         else:
@@ -196,7 +275,12 @@ class _UnitHandler:
     ) -> tuple[LowLevelInput, ...]:
         # Return a high level object if the input was a high level object
         if self._is_high_level:
-            return frame.to_high_level_coordinates(*outputs, correct_1d=False)  # type: ignore[no-any-return]
+            values = _to_high_level_coordinates(frame, *outputs, correct_1d=False)  # type: ignore[no-any-return]
+
+            if not isinstance(values, list | tuple):
+                values = (values,)
+
+            return tuple(values)
 
         # If the input had units return units
         if self._add_units:
@@ -271,7 +355,7 @@ class WCS(Pipeline, WCSAPIMixin):
     @overload
     def __init__(
         self,
-        forward_transform: list[Step | StepTuple],
+        forward_transform: list[Step | StepTuple] | _BasePipeline,
         input_frame: None = None,
         output_frame: None = None,
         name: str | None = None,
@@ -471,8 +555,8 @@ class WCS(Pipeline, WCSAPIMixin):
         not_numerical = False
         if self.output_frame.is_high_level(*world_arrays):
             not_numerical = True
-            world_arrays = self.output_frame.from_high_level_coordinates(
-                *world_arrays, correct_1d=False
+            world_arrays = _from_high_level_coordinates(
+                self.output_frame, *world_arrays, correct_1d=False
             )
 
         for axtyp in axes_types:
@@ -518,8 +602,8 @@ class WCS(Pipeline, WCSAPIMixin):
                         coord[outside] = np.nan
                     world_arrays[idim] = coord
         if not_numerical:
-            world_arrays = self.output_frame.to_high_level_coordinates(
-                *world_arrays, correct_1d=False
+            world_arrays = _to_high_level_coordinates(
+                self.output_frame, *world_arrays, correct_1d=False
             )
         return world_arrays
 

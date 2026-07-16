@@ -597,8 +597,12 @@ def test_coordinate_frame_api():
     pixel = wcs.world_to_pixel(world)
     assert isinstance(pixel, float)
 
-    pixel2 = wcs.invert(world)
-    assert u.allclose(pixel2, 0 * u.pix)
+    # invert (native API) must accept the high-level/quantity world value and
+    # round-trip back to the original pixel, not merely match a hardcoded zero.
+    input_pixel = 3.0
+    world_nonzero = wcs.pixel_to_world(input_pixel)
+    pixel2 = wcs.invert(world_nonzero)
+    assert u.allclose(pixel2, input_pixel * u.pix)
 
 
 def test_world_axis_object_components_units(gwcs_3d_identity_units):
