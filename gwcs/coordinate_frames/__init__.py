@@ -218,6 +218,7 @@ from ._base import (
     LowLevelInput,
     WorldAxisObjectClasses,
     WorldAxisObjectComponent,
+    _LegacyCoordinateFrameProtocol,
 )
 from ._celestial import CelestialFrame
 from ._composite import CompositeFrame
@@ -247,5 +248,7 @@ __all__ = [
     "TemporalFrame",
     "WorldAxisObjectClasses",
     "WorldAxisObjectComponent",
+    # See comment in _base.py about why this is included in __all__.
+    "_LegacyCoordinateFrameProtocol",
     "get_ctype_from_ucd",
 ]

@@ -64,7 +64,8 @@ def wcs_from_fiducial(  # noqa: PLR0917
         The bounding box over which the WCS is valid.
         It is a tuple of tuples of size 2 where each tuple
         represents a range of (low, high) values. The ``bounding_box`` is in the
-        order of the axes, `~gwcs.coordinate_frames.CoordinateFrameProtocol.axes_order`.
+        order of the axes,
+        `~gwcs.coordinate_frames._LegacyCoordinateFrameProtocol.axes_order`.
         For two inputs and axes_order(0, 1) the bounding box is
         ((xlow, xhigh), (ylow, yhigh)).
     input_frame : ~gwcs.coordinate_frames.CoordinateFrameProtocol`
