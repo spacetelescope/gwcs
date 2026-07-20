@@ -123,6 +123,16 @@ def test_refracted_angle_sine_model_bare_number_coercion() -> None:
     assert model.camera_angle.unit == u.deg
 
 
+def test_refracted_angle_sine_model_defaults_return_zero() -> None:
+    """The default model should produce a zero refracted-angle sine."""
+    model = sp.RefractedAngleSineModel()
+
+    pixels = np.array([0.0, 1.0, 10.0, 100.0])
+    result = model(pixels)
+
+    assert u.allclose(result, np.zeros_like(pixels))
+
+
 def test_refracted_angle_sine_model_matches_manual() -> None:
     """Result should match a manually computed refracted-angle sine."""
     reference_pixel = 217.0
@@ -229,6 +239,46 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
     ) / (adjusted_groove_density * params["spectral_order"])
 
     assert u.allclose(result, expected)
+
+
+def test_grating_models_recover_reference_wavelength_at_reference_pixel() -> None:
+    """The reference pixel should map back to the reference wavelength."""
+    reference_pixel = 217.0
+    reference_wavelength = 854.1738582455826 * u.nm
+    groove_density = 23000.0 / u.m
+    spectral_order = 90
+    incident_angle = 65.696 * u.deg
+    refractive_index = 1.25 * u.one
+    refractive_index_derivative = 1000.0 / u.m
+    out_of_plane_angle = 1.5 * u.deg
+    camera_angle = 0.8 * u.deg
+
+    alpha_out_model = sp.RefractedAngleSineModel(
+        reference_pixel=reference_pixel,
+        reference_wavelength=reference_wavelength,
+        dispersion=0.0022975580183395555 * u.nm / u.pix,
+        groove_density=groove_density,
+        spectral_order=spectral_order,
+        incident_angle=incident_angle,
+        refractive_index=refractive_index,
+        refractive_index_derivative=refractive_index_derivative,
+        out_of_plane_angle=out_of_plane_angle,
+        camera_angle=camera_angle,
+    )
+    wavelength_model = sp.WavelengthFromGratingEquation(
+        groove_density=groove_density,
+        spectral_order=spectral_order,
+        reference_wavelength=reference_wavelength,
+        refractive_index=refractive_index,
+        refractive_index_derivative=refractive_index_derivative,
+        out_of_plane_angle=out_of_plane_angle,
+    )
+
+    alpha_in = np.sin(incident_angle)
+    alpha_out = alpha_out_model(reference_pixel)
+    result = wavelength_model(alpha_in, alpha_out)
+
+    assert u.allclose(result, reference_wavelength)
 
 
 def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_array():
