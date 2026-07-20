@@ -82,26 +82,43 @@ class GratingEquationConverter(TransformConverterBase):
     types = (
         "gwcs.spectroscopy.AnglesFromGratingEquation3D",
         "gwcs.spectroscopy.WavelengthFromGratingEquation",
+        "gwcs.spectroscopy.WavelengthFromGrismEquation",
     )
 
     def from_yaml_tree_transform(self, node, tag, ctx):
         from gwcs.spectroscopy import (
             AnglesFromGratingEquation3D,
             WavelengthFromGratingEquation,
+            WavelengthFromGrismEquation,
         )
 
         groove_density = node["groove_density"]
         order = node["order"]
         output = node["output"]
         if output == "wavelength":
-            model = WavelengthFromGratingEquation(
-                groove_density=groove_density,
-                spectral_order=order,
-                reference_wavelength=node.get("reference_wavelength", 0),
-                refractive_index=node.get("refractive_index", 1),
-                refractive_index_derivative=node.get("refractive_index_derivative", 0),
-                out_of_plane_angle=node.get("out_of_plane_angle", 0),
-            )
+            if any(
+                name in node
+                for name in (
+                    "reference_wavelength",
+                    "refractive_index",
+                    "refractive_index_derivative",
+                    "out_of_plane_angle",
+                )
+            ):
+                model = WavelengthFromGrismEquation(
+                    groove_density=groove_density,
+                    spectral_order=order,
+                    reference_wavelength=node.get("reference_wavelength", 0),
+                    refractive_index=node.get("refractive_index", 1),
+                    refractive_index_derivative=node.get(
+                        "refractive_index_derivative", 0
+                    ),
+                    out_of_plane_angle=node.get("out_of_plane_angle", 0),
+                )
+            else:
+                model = WavelengthFromGratingEquation(
+                    groove_density=groove_density, spectral_order=order
+                )
         elif output == "angle":
             model = AnglesFromGratingEquation3D(
                 groove_density=groove_density, spectral_order=order
@@ -115,6 +132,7 @@ class GratingEquationConverter(TransformConverterBase):
         from gwcs.spectroscopy import (
             AnglesFromGratingEquation3D,
             WavelengthFromGratingEquation,
+            WavelengthFromGrismEquation,
         )
 
         if model.groove_density.unit is not None:
@@ -127,6 +145,8 @@ class GratingEquationConverter(TransformConverterBase):
         if isinstance(model, AnglesFromGratingEquation3D):
             node["output"] = "angle"
         elif isinstance(model, WavelengthFromGratingEquation):
+            node["output"] = "wavelength"
+        elif isinstance(model, WavelengthFromGrismEquation):
             node["output"] = "wavelength"
             for name, default in (
                 ("reference_wavelength", 0),

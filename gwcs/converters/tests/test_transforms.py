@@ -49,7 +49,7 @@ transforms = [
     sp.WavelengthFromGratingEquation(50000, -1),
     sp.AnglesFromGratingEquation3D(20000, 1),
     sp.WavelengthFromGratingEquation(15000 * 1 / u.m, -1),
-    sp.WavelengthFromGratingEquation(
+    sp.WavelengthFromGrismEquation(
         groove_density=23000 * 1 / u.m,
         spectral_order=90,
         reference_wavelength=854.1738582455826 * u.nm,
@@ -81,7 +81,7 @@ def test_wavelength_grating_equation_converter_omits_default_parameters():
 
 def test_wavelength_grating_equation_converter_serializes_non_default_parameters():
     converter = GratingEquationConverter()
-    model = sp.WavelengthFromGratingEquation(
+    model = sp.WavelengthFromGrismEquation(
         groove_density=23000 * 1 / u.m,
         spectral_order=90,
         reference_wavelength=854.1738582455826 * u.nm,
@@ -101,3 +101,20 @@ def test_wavelength_grating_equation_converter_serializes_non_default_parameters
         "refractive_index_derivative": 1000.0 / u.m,
         "out_of_plane_angle": 1.5 * u.deg,
     }
+
+
+def test_wavelength_grating_equation_converter_deserializes_grism_node():
+    converter = GratingEquationConverter()
+    node = {
+        "output": "wavelength",
+        "order": 90,
+        "groove_density": 23000.0 / u.m,
+        "reference_wavelength": 854.1738582455826 * u.nm,
+        "refractive_index": 1.25 * u.one,
+        "refractive_index_derivative": 1000.0 / u.m,
+        "out_of_plane_angle": 1.5 * u.deg,
+    }
+
+    model = converter.from_yaml_tree_transform(node, tag=None, ctx=None)
+
+    assert isinstance(model, sp.WavelengthFromGrismEquation)

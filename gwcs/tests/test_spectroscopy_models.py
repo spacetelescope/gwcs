@@ -58,9 +58,10 @@ def test_wavelength_grating_equation_units() -> None:
 def test_wavelength_grating_equation_incompatible_units_raises() -> None:
     """Passing units that are incompatible with 1/length for groove_density should
     raise UnitConversionError rather than silently producing a wrong result."""
-    model = sp.WavelengthFromGratingEquation(
+    model = sp.WavelengthFromGrismEquation(
         groove_density=20000 / u.m,
         spectral_order=-1,
+        reference_wavelength=854.1738582455826 * u.nm,
         refractive_index_derivative=1000 * u.m,  # wrong: should be 1/length
     )
     alpha_in = np.sin(65.0 * u.deg)
@@ -133,6 +134,20 @@ def test_refracted_angle_sine_model_defaults_return_zero() -> None:
     assert u.allclose(result, np.zeros_like(pixels))
 
 
+def test_refracted_angle_sine_model_invalid_arcsin_domain_raises() -> None:
+    """Invalid parameter combinations should raise rather than return nan."""
+    model = sp.RefractedAngleSineModel(
+        reference_wavelength=2000 * u.nm,
+        groove_density=60000 / u.m,
+        spectral_order=90 * u.one,
+        incident_angle=10 * u.deg,
+        refractive_index=1.0 * u.one,
+    )
+
+    with pytest.raises(ValueError, match="outside the valid arcsin domain"):
+        model(0)
+
+
 def test_refracted_angle_sine_model_matches_manual() -> None:
     """Result should match a manually computed refracted-angle sine."""
     reference_pixel = 217.0
@@ -184,13 +199,19 @@ def test_refracted_angle_sine_model_matches_manual() -> None:
 
 def test_wavelength_grating_equation_defaults():
     model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
+    assert model.groove_density.unit == 1 / u.m
+    assert model.spectral_order.unit == u.one
+
+
+def test_wavelength_grism_equation_defaults():
+    model = sp.WavelengthFromGrismEquation(groove_density=20000, spectral_order=-1)
     assert model.reference_wavelength.value == 0
     assert model.refractive_index.value == 1
     assert model.refractive_index_derivative.value == 0
     assert model.out_of_plane_angle.value == 0
 
 
-def test_wavelength_grating_equation_grating_mode_reference_pixel():
+def test_wavelength_grism_equation_reference_pixel():
     params = {
         "reference_pixel": 217.0,
         "reference_wavelength": 854.1738582455826 * u.nm,
@@ -203,7 +224,7 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
         "out_of_plane_angle": 1.5 * u.deg,
         "camera_angle": 0.8 * u.deg,
     }
-    model = sp.WavelengthFromGratingEquation(
+    model = sp.WavelengthFromGrismEquation(
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
         reference_wavelength=params["reference_wavelength"],
@@ -220,7 +241,7 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
         - params["refractive_index"] * np.sin(params["incident_angle"])
     )
     incident_angle_sine = np.sin(params["incident_angle"])
-    adjusted_groove_density = (
+    dispersion_denominator = (
         (params["grating_density"] * params["spectral_order"])
         / np.cos(params["out_of_plane_angle"])
         - params["refractive_index_derivative"] * incident_angle_sine
@@ -236,12 +257,12 @@ def test_wavelength_grating_equation_grating_mode_reference_pixel():
         )
         * incident_angle_sine
         + np.sin(reference_refracted_angle)
-    ) / (adjusted_groove_density * params["spectral_order"])
+    ) / (dispersion_denominator * params["spectral_order"])
 
     assert u.allclose(result, expected)
 
 
-def test_grating_models_recover_reference_wavelength_at_reference_pixel() -> None:
+def test_grism_models_recover_reference_wavelength_at_reference_pixel() -> None:
     """The reference pixel should map back to the reference wavelength."""
     reference_pixel = 217.0
     reference_wavelength = 854.1738582455826 * u.nm
@@ -265,7 +286,7 @@ def test_grating_models_recover_reference_wavelength_at_reference_pixel() -> Non
         out_of_plane_angle=out_of_plane_angle,
         camera_angle=camera_angle,
     )
-    wavelength_model = sp.WavelengthFromGratingEquation(
+    wavelength_model = sp.WavelengthFromGrismEquation(
         groove_density=groove_density,
         spectral_order=spectral_order,
         reference_wavelength=reference_wavelength,
@@ -281,7 +302,7 @@ def test_grating_models_recover_reference_wavelength_at_reference_pixel() -> Non
     assert u.allclose(result, reference_wavelength)
 
 
-def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_array():
+def test_wavelength_grism_equation_matches_closed_form_for_pixel_array():
     params = {
         "reference_pixel": 217.0,
         "reference_wavelength": 854.1738582455826 * u.nm,
@@ -294,7 +315,7 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         "out_of_plane_angle": 1.5 * u.deg,
         "camera_angle": 0.8 * u.deg,
     }
-    model = sp.WavelengthFromGratingEquation(
+    model = sp.WavelengthFromGrismEquation(
         groove_density=params["grating_density"],
         spectral_order=params["spectral_order"],
         reference_wavelength=params["reference_wavelength"],
@@ -327,7 +348,7 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         + params["camera_angle"]
     )
     incident_angle_sine = np.sin(params["incident_angle"])
-    adjusted_groove_density = (
+    dispersion_denominator = (
         (params["grating_density"] * params["spectral_order"])
         / np.cos(params["out_of_plane_angle"])
         - params["refractive_index_derivative"] * incident_angle_sine
@@ -339,7 +360,7 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
         )
         * incident_angle_sine
         + refracted_angle_sine
-    ) / (adjusted_groove_density * params["spectral_order"])
+    ) / (dispersion_denominator * params["spectral_order"])
 
     alpha_in = incident_angle_sine
     alpha_out = refracted_angle_sine
@@ -348,7 +369,21 @@ def test_wavelength_grating_equation_grating_mode_matches_closed_form_for_pixel_
     assert_allclose(result, expected, rtol=1e-12, atol=1e-12)
 
 
-def test_wavelength_grating_equation_grating_mode_matches_astropy():
+def test_wavelength_grism_equation_near_zero_dispersion_denominator_raises() -> None:
+    model = sp.WavelengthFromGrismEquation(
+        groove_density=1 / u.m,
+        spectral_order=1,
+        reference_wavelength=0 * u.m,
+        refractive_index=1 * u.one,
+        refractive_index_derivative=1 / u.m,
+        out_of_plane_angle=0 * u.deg,
+    )
+
+    with pytest.raises(ValueError, match="dispersion denominator is too close to zero"):
+        model(1 * u.one, 0 * u.one)
+
+
+def test_wavelength_grism_equation_matches_astropy():
     header = {
         "CTYPE1": "AWAV-GRA",
         "CUNIT1": "nm",
@@ -363,7 +398,7 @@ def test_wavelength_grating_equation_grating_mode_matches_astropy():
         "PV1_5": 1.5,
         "PV1_6": 0.8,
     }
-    model = sp.WavelengthFromGratingEquation(
+    model = sp.WavelengthFromGrismEquation(
         groove_density=header["PV1_0"] / u.m,
         spectral_order=header["PV1_1"],
         reference_wavelength=header["CRVAL1"] * u.nm,
