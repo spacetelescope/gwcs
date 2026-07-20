@@ -128,26 +128,15 @@ class GratingEquationConverter(TransformConverterBase):
             node["output"] = "angle"
         elif isinstance(model, WavelengthFromGratingEquation):
             node["output"] = "wavelength"
-            if model.reference_wavelength.value != 0:
-                node["reference_wavelength"] = u.Quantity(
-                    model.reference_wavelength.value,
-                    unit=model.reference_wavelength.unit,
-                )
-            if model.refractive_index.value != 1:
-                node["refractive_index"] = u.Quantity(
-                    model.refractive_index.value,
-                    unit=model.refractive_index.unit,
-                )
-            if model.refractive_index_derivative.value != 0:
-                node["refractive_index_derivative"] = u.Quantity(
-                    model.refractive_index_derivative.value,
-                    unit=model.refractive_index_derivative.unit,
-                )
-            if model.out_of_plane_angle.value != 0:
-                node["out_of_plane_angle"] = u.Quantity(
-                    model.out_of_plane_angle.value,
-                    unit=model.out_of_plane_angle.unit,
-                )
+            for name, default in (
+                ("reference_wavelength", 0),
+                ("refractive_index", 1),
+                ("refractive_index_derivative", 0),
+                ("out_of_plane_angle", 0),
+            ):
+                param = getattr(model, name)
+                if param.value != default:
+                    node[name] = u.Quantity(param.value, unit=param.unit)
         else:
             msg = f"Can't serialize an instance of {model.__class__.__name__}"
             raise TypeError(msg)
