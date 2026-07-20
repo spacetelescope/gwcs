@@ -307,7 +307,7 @@ class WCS(Pipeline, WCSAPIMixin):
         with_bounding_box: bool = True,
         fill_value: float | np.number = np.nan,
         **kwargs,
-    ) -> bool | npt.NDArray[np.bool_]:
+    ) -> bool | np.ndarray[tuple[int, ...], np.dtype[np.bool_]]:
         """
         This method tests if one or more of the input world coordinates are
         contained within forward transformation's image and that it maps to

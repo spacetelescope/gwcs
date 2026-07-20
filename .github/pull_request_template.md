@@ -18,4 +18,5 @@ This PR addresses ...
 - `changes/<PR#>.bugfix.rst`: fixes an issue
 - `changes/<PR#>.doc.rst`: documentation change
 - `changes/<PR#>.misc.rst`: infrastructure or miscellaneous change
+
 </details
