@@ -59,7 +59,7 @@ def write_header(o, content, level):
         o.write("\n\n")
 
 
-def format_range(
+def format_range(  # noqa: PLR0917
     var_middle, var_end, minimum, maximum, exclusiveMinimum, exclusiveMaximum
 ):
     """
@@ -243,7 +243,7 @@ def reindent(content, indent):
     return "\n".join(lines)
 
 
-def recurse(o, name, schema, path, level, required=False):
+def recurse(o, name, schema, path, level, required=False):  # noqa: PLR0917
     """
     Convert a schema fragment to reStructuredText.
 

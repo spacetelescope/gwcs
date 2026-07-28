@@ -35,7 +35,7 @@ class CelestialFrame(CoordinateFrame):
         The UCD 1+ physical types for the axes, in frame order (lon, lat).
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         axes_order: tuple[int, ...] | None = None,
         reference_frame: AstropyBuiltInFrame | None = None,

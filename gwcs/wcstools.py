@@ -26,7 +26,7 @@ from .utils import (
 __all__ = ["grid_from_bounding_box", "wcs_from_fiducial", "wcs_from_points"]
 
 
-def wcs_from_fiducial(
+def wcs_from_fiducial(  # noqa: PLR0917
     fiducial,
     coordinate_frame=None,
     projection=None,
@@ -276,7 +276,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     return grid
 
 
-def wcs_from_points(
+def wcs_from_points(  # noqa: PLR0917
     xy,
     world_coords,
     proj_point="center",
