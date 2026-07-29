@@ -314,7 +314,7 @@ class SellmeierZemax(Model):
     D_coef = Parameter(default=[0, 0, 0])
     E_coef = Parameter(default=[1, 1, 1])
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         temperature=temperature,
         ref_temperature=ref_temperature,
@@ -340,7 +340,7 @@ class SellmeierZemax(Model):
         self.inputs = ("wavelength",)
         self.outputs = ("n",)
 
-    def evaluate(
+    def evaluate(  # noqa: PLR0917
         self,
         wavelength,
         temp,

@@ -25,7 +25,7 @@ class Frame2D(CoordinateFrame):
         Name of this frame.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         axes_order: tuple[int, int] = (0, 1),
         unit: tuple[u.Unit, u.Unit] = (u.pix, u.pix),

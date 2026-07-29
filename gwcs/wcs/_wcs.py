@@ -59,7 +59,7 @@ _ITER_INV_KWARGS = ["tolerance", "maxiter", "adaptive", "detect_divergence", "qu
 
 
 class _WorldAxisInfo:
-    def __init__(self, axis, frame, world_axis_order, cunit, ctype, input_axes):
+    def __init__(self, axis, frame, world_axis_order, cunit, ctype, input_axes):  # noqa: PLR0917
         """
         A class for holding information about a world axis from an output frame.
 
@@ -874,7 +874,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return result
 
-    def _vectorized_fixed_point(
+    def _vectorized_fixed_point(  # noqa: PLR0917
         self,
         pix0,
         world,
@@ -1389,7 +1389,7 @@ class WCS(Pipeline, WCSAPIMixin):
             ]
         )
 
-    def to_fits_sip(
+    def to_fits_sip(  # noqa: PLR0917
         self,
         bounding_box=None,
         max_pix_error=0.25,
@@ -1517,7 +1517,7 @@ class WCS(Pipeline, WCSAPIMixin):
             verbose=verbose,
         )
 
-    def _to_fits_sip(
+    def _to_fits_sip(  # noqa: PLR0917
         self,
         celestial_group,
         keep_axis_position,
@@ -2230,7 +2230,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return hdr, bin_table_hdu
 
-    def to_fits(
+    def to_fits(  # noqa: PLR0917
         self,
         bounding_box=None,
         max_pix_error=0.25,
@@ -2477,7 +2477,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         return hdr, hdulist
 
-    def _to_fits_tab(
+    def _to_fits_tab(  # noqa: PLR0917
         self,
         hdr,
         world_axes_group,

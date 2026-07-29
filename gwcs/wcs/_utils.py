@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
+def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):  # noqa: PLR0917
     # This function fits 2D polynomials to data by writing the normal system
     # of equations and solving it using LU-decomposition. In theory this
     # should be less stable than the SVD method used by numpy's lstsq or
@@ -119,7 +119,7 @@ def _poly_fit_lu(xin, yin, xout, yout, degree, coord_pow=None):
     return poly_coeff_x, poly_coeff_y, max_resid, powers, cond
 
 
-def fit_2D_poly(
+def fit_2D_poly(  # noqa: PLR0917
     degree,
     max_error,
     plate_scale,

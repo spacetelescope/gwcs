@@ -31,7 +31,7 @@ class SpectralFrame(CoordinateFrame):
 
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         axes_order: tuple[int] = (0,),
         reference_frame: AstropyBuiltInFrame | None = None,
