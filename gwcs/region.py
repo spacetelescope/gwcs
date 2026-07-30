@@ -14,6 +14,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+# TODO: deprecate Region and Edge from __all__; only Polygon is used externally
 __all__ = ["Edge", "Polygon", "Region"]
 
 _INTERSECT_ATOL = 1e2 * np.finfo(float).eps
@@ -32,6 +33,7 @@ class Region:
     """
 
     def __init__(self, rid, coordinate_frame):
+        # TODO: deprecate _coordinate_system; stored but never read by any caller
         self._coordinate_system = coordinate_frame
         self._rid = rid
 
@@ -79,12 +81,12 @@ class Polygon(Region):
     Parameters
     ----------
     rid : str
-         polygon id
+        polygon id
     vertices : list of (x,y) tuples or lists
-         The list is ordered in such a way that when traversed in a
-         counterclockwise direction, the enclosed area is the polygon.
-         The last vertex must coincide with the first vertex, minimum
-         4 vertices are needed to define a triangle
+        The list is ordered in such a way that when traversed in a
+        counterclockwise direction, the enclosed area is the polygon.
+        The last vertex must coincide with the first vertex, minimum
+        4 vertices are needed to define a triangle
     coord_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         Coordinate frame in which the polygon is defined.
 
@@ -265,6 +267,7 @@ class Polygon(Region):
                 AET.remove(edge)
         return AET
 
+    # TODO: deprecate __contains__; never called by scan() or any external caller
     def __contains__(self, px):
         """even-odd algorithm or something else better should be used"""
         return (
@@ -294,6 +297,7 @@ class Edge:
         self._stop = stop
         if stop is not None:
             self._stop = np.asarray(stop)
+        # TODO: deprecate _next; next is never passed by any caller
         self._next = next
 
         if self._stop is not None and self._start is not None:
@@ -304,14 +308,16 @@ class Edge:
                 self._ymin = self._stop[1]
                 self._yminx = self._stop[0]
             self._ymax = max(self._start[1], self._stop[1])
+            # TODO: deprecate _xmin/_xmax; never read
+            # note: _xmax also has a bug: uses stop[1] instead of stop[0])
             self._xmin = min(self._start[0], self._stop[0])
             self._xmax = max(self._start[0], self._stop[1])
         else:
             self._ymin = None
             self._yminx = None
             self._ymax = None
-            self._xmin = None
-            self._xmax = None
+            self._xmin = None  # TODO: deprecate (see above)
+            self._xmax = None  # TODO: deprecate (see above)
         self.GET_entry = self.compute_GET_entry()
 
     @property
@@ -330,6 +336,7 @@ class Edge:
     def ymax(self):
         return self._ymax
 
+    # TODO: deprecate name property; only used by __repr__
     @property
     def name(self):
         return self._name
@@ -365,6 +372,7 @@ class Edge:
         x = self.intersection(edge)[0]
         return [self._ymax, x, self.GET_entry[2]]
 
+    # TODO: deprecate __repr__; never called in production code
     def __repr__(self):
         fmt = ""
         if self._name is not None:
@@ -377,6 +385,8 @@ class Edge:
 
         return fmt
 
+    # TODO: deprecate next property and setter; _next is always None,
+    #       -> setter is unreachable
     @property
     def next(self):
         return self._next
@@ -403,6 +413,7 @@ class Edge:
 
         return _det(v, w) / D * u + self._start
 
+    # TODO: deprecate is_parallel; never called anywhere
     def is_parallel(self, edge: Edge):
         u = self.stop - self.start
         v = edge.stop - edge.start
