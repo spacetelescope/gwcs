@@ -187,11 +187,12 @@ class Polygon(Region):
         - Set y to be the smallest y coordinate that has an entry in GET
         - Initialize the Active Edge Table (AET) to be empty
         - For each scan line:
-          1. Add edges from GET to AET for which ymin==y
-          2. Remove edges from AET for which ymax==y
-          3. Compute the intersection of the current scan line with all edges in the AET
-          4. Sort on X of intersection point
-          5. Set elements between pairs of X in the AET to the Edge's ID
+            1. Add edges from GET to AET for which ymin==y
+            2. Remove edges from AET for which ymax==y
+            3. Compute the intersection of the current scan line with all edges
+                in the AET
+            4. Sort on X of intersection point
+            5. Set elements between pairs of X in the AET to the Edge's ID
 
         """
         # TODO:
@@ -308,16 +309,10 @@ class Edge:
                 self._ymin = self._stop[1]
                 self._yminx = self._stop[0]
             self._ymax = max(self._start[1], self._stop[1])
-            # TODO: deprecate _xmin/_xmax; never read
-            # note: _xmax also has a bug: uses stop[1] instead of stop[0])
-            self._xmin = min(self._start[0], self._stop[0])
-            self._xmax = max(self._start[0], self._stop[1])
         else:
             self._ymin = None
             self._yminx = None
             self._ymax = None
-            self._xmin = None  # TODO: deprecate (see above)
-            self._xmax = None  # TODO: deprecate (see above)
         self.GET_entry = self.compute_GET_entry()
 
     @property
@@ -425,10 +420,10 @@ def _det(u, v):
     Find the determinant of the matrix formed by the vectors u and v
 
     Note: Originally this was computed using a numpy "2D" cross product,
-          however, this functionality has been deprecated and slated for
-          removal.
+            however, this functionality has been deprecated and slated for
+            removal.
     Note: This is marginally faster than using `np.linalg.det([u, v])` by ~10ms
-          during empirical testing
+            during empirical testing
     """
     return u[0] * v[1] - u[1] * v[0]
 
