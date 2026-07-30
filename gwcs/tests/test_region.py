@@ -8,6 +8,7 @@ import warnings
 import numpy as np
 import pytest
 from astropy.modeling import models
+from astropy.utils.exceptions import AstropyDeprecationWarning
 from numpy.testing import assert_allclose, assert_equal
 
 from gwcs import WCS, region, selector
@@ -313,3 +314,72 @@ def test_label_mapper_array_mapping():
     assert lm(3, 1, 1) == 2
     assert lm(1, 1, 1) == 1
     assert_equal(lm([1, 3, 0], [1, 1, 0], 1), [1, 2, 0])
+
+
+# Shared vertices used across deprecation tests
+_VERT = [(2, 1), (3, 5), (6, 6), (3, 8), (0, 4), (2, 1)]
+
+
+def test_deprecated_Region_class():
+    # Region is abstract; instantiate via a minimal concrete subclass
+    class _Concrete(region.Region):
+        def __contains__(self, px):
+            return True
+
+        def scan(self, mask):
+            return mask
+
+    with pytest.warns(DeprecationWarning, match=r".*future release.*") as record:
+        _Concrete(1, "Cartesian")
+    assert any(
+        "Region" in str(w.message) and "deprecated" in str(w.message)
+        for w in record.list
+    )
+
+
+def test_deprecated_coord_system_param():
+    with pytest.warns(DeprecationWarning, match="coord_system"):
+        region.Polygon("1", _VERT, coord_system="Cartesian")
+
+
+def test_deprecated_polygon_contains():
+    pol = region.Polygon("1", _VERT)
+    with pytest.warns(AstropyDeprecationWarning):
+        _ = (2, 1) in pol
+
+
+def test_deprecated_Edge_class():
+    with pytest.warns(DeprecationWarning, match="Edge.*deprecated"):
+        region.Edge(start=[0, 0], stop=[1, 1])
+
+
+def test_deprecated_edge_next_param():
+    other = region._Edge(start=[2, 2], stop=[3, 3])
+    with pytest.warns(DeprecationWarning, match="`next` parameter"):
+        region._Edge(start=[0, 0], stop=[1, 1], next=other)
+
+
+def test_deprecated_edge_name_property():
+    e = region._Edge(name="E0", start=[0, 0], stop=[1, 1])
+    with pytest.warns(AstropyDeprecationWarning):
+        _ = e.name
+
+
+def test_deprecated_edge_next_getter():
+    e = region._Edge(start=[0, 0], stop=[1, 1])
+    with pytest.warns(AstropyDeprecationWarning):
+        _ = e.next
+
+
+def test_deprecated_edge_next_setter():
+    e = region._Edge(start=[0, 0], stop=[1, 1])
+    other = region._Edge(start=[2, 2], stop=[3, 3])
+    with pytest.warns(DeprecationWarning, match="`next` property"):
+        e.next = other
+
+
+def test_deprecated_edge_is_parallel():
+    e1 = region._Edge(start=[0, 0], stop=[1, 0])
+    e2 = region._Edge(start=[0, 1], stop=[1, 1])
+    with pytest.warns(AstropyDeprecationWarning):
+        e1.is_parallel(e2)
