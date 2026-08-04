@@ -57,6 +57,70 @@ stokes = cf.StokesFrame(axes_order=(2,))
 pipe = [wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)]
 pipe_copy = pipe.copy()
 
+
+class LegacyFrameAdapter:
+    """
+    Duck-typed adapter that exposes the historical coordinate-frame API
+    (without ``is_high_level``) by delegating to a wrapped frame. Used to
+    exercise the legacy-frame compatibility paths.
+    """
+
+    def __init__(self, frame):
+        self._frame = frame
+
+    @property
+    def naxes(self):
+        return self._frame.naxes
+
+    @property
+    def name(self):
+        return self._frame.name
+
+    @property
+    def unit(self):
+        return self._frame.unit
+
+    @property
+    def axes_names(self):
+        return self._frame.axes_names
+
+    @property
+    def axes_order(self):
+        return self._frame.axes_order
+
+    @property
+    def reference_frame(self):
+        return self._frame.reference_frame
+
+    @property
+    def axes_type(self):
+        return self._frame.axes_type
+
+    @property
+    def axis_physical_types(self):
+        return self._frame.axis_physical_types
+
+    @property
+    def world_axis_object_classes(self):
+        return self._frame.world_axis_object_classes
+
+    @property
+    def world_axis_object_components(self):
+        return self._frame.world_axis_object_components
+
+    def add_units(self, arrays):
+        return self._frame.add_units(arrays)
+
+    def remove_units(self, arrays):
+        return self._frame.remove_units(arrays)
+
+    def to_high_level_coordinates(self, *values):
+        return self._frame.to_high_level_coordinates(*values)
+
+    def from_high_level_coordinates(self, *coords):
+        return self._frame.from_high_level_coordinates(*coords)
+
+
 # Create some data.
 nx, ny = (5, 2)
 x = np.linspace(0, 1, nx)
@@ -1788,10 +1852,10 @@ def test_quantities_in_pipeline_backward(gwcs_with_pipeline_celestial):
         20 * u.arcsec + 1 * u.deg,
         15 * u.deg + 2 * u.deg,
     ]
-    with pytest.raises(
-        TypeError, match=r"High Level objects are not supported with the native"
-    ):
-        iwcs.invert(*input_world)
+    pixel = iwcs.invert(*input_world)
+
+    assert all(isinstance(p, u.Quantity) for p in pixel)
+    assert u.allclose(pixel, [1, 1] * u.pix)
 
     intermediate_world = iwcs.transform(
         "output",
@@ -1939,12 +2003,298 @@ def test_parameterless_transform():
     assert gwcs(1, 1) == (1, 1)
     assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
 
+    # No units introduced by the inverse transform
     assert gwcs.invert(1, 1) == (1, 1)
-    # Strictly speaking it's correct that this fails Because
-    # for this setup the HLO are Quantities
-    with pytest.raises(TypeError) as e:
-        _ = gwcs.invert(1 * u.pix, 1 * u.pix)
-    assert "High Level objects are not supported with the native" in str(e)
+    assert gwcs.invert(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
+
+
+def test_parameterless_transform_mapping():
+    """
+    Test that a transform with no parameters other than ``Identity`` correctly
+    handles units.
+
+    ``Mapping`` also has zero parameters (like ``Identity``), but is not given
+    the same special-cased treatment as ``Identity`` when determining whether
+    the transform "uses quantity". ``Model.uses_quantity`` returns `True` for
+    *any* model with zero parameters (regardless of whether it actually cares
+    about units), so a ``Mapping``-only step must not be allowed to have units
+    silently added to its inputs.
+
+    Regression test for #558 (same root cause as ``test_parameterless_transform``,
+    but for a different zero-parameter model).
+    """
+
+    in_frame = cf.Frame2D(name="in_frame", unit=(u.pix, u.pix))
+    out_frame = cf.Frame2D(name="out_frame", unit=(u.pix, u.pix))
+
+    gwcs = wcs.WCS(
+        [
+            (in_frame, models.Mapping((1, 0))),
+            (out_frame, None),
+        ]
+    )
+
+    # No units introduced by the forward transform
+    assert gwcs(1, 1) == (1, 1)
+    assert gwcs(1 * u.pix, 1 * u.pix) == (1 * u.pix, 1 * u.pix)
+
+    # No units introduced by the inverse transform
+    assert gwcs.invert(1, 1) == (1, 1)
+
+    # Unitless evaluation must still work when a bounding_box is present:
+    # incorrectly wrapping unitless inputs in Quantity before calling the
+    # transform causes bounding-box comparisons to raise UnitConversionError.
+    gwcs.bounding_box = ((0, 10), (0, 10))
+    assert np.isnan(gwcs(20, 5)).all()
+    assert gwcs(5, 5) == (5, 5)
+
+
+def test_invert_with_legacy_frame_conversion_signatures(monkeypatch):
+    """
+    Regression test for legacy custom frames where conversion methods do not
+    accept the ``correct_1d`` keyword argument.
+    """
+
+    gwcs = wcs.WCS([(detector, m), (icrs, None)])
+    world = gwcs.pixel_to_world(1, 2)
+    expected_pixel = gwcs.world_to_pixel(world)
+
+    original_from = gwcs.output_frame.from_high_level_coordinates
+    original_to = gwcs.input_frame.to_high_level_coordinates
+
+    # Legacy signatures accepted only positional coordinates.
+    def legacy_from_high_level_coordinates(*coords):
+        return original_from(*coords)
+
+    def legacy_to_high_level_coordinates(*coords):
+        return original_to(*coords)
+
+    monkeypatch.setattr(
+        gwcs.output_frame,
+        "from_high_level_coordinates",
+        legacy_from_high_level_coordinates,
+    )
+    monkeypatch.setattr(
+        gwcs.input_frame,
+        "to_high_level_coordinates",
+        legacy_to_high_level_coordinates,
+    )
+
+    pixel = gwcs.invert(world)
+    pixel = gwcs.input_frame.remove_units(pixel)
+    if not isinstance(pixel, list | tuple):
+        pixel = (pixel,)
+
+    assert_allclose(pixel, expected_pixel)
+
+
+def test_invert_with_legacy_frame_1d_signatures(monkeypatch):
+    """
+    1D legacy frame whose conversion methods lack `correct_1d`: invert must
+    not double-unwrap the single output. Regression for correct_1d being
+    dropped in the legacy shim.
+    """
+    in_frame = cf.CoordinateFrame(
+        naxes=1,
+        axes_type="SPATIAL",
+        axes_order=(0,),
+        unit=(u.pix,),
+        axes_names=("x",),
+        name="in1d",
+    )
+    out_frame = cf.SpectralFrame(unit=u.Hz, axes_order=(0,), name="out1d")
+    gw = wcs.WCS([(in_frame, models.Scale(2.0)), (out_frame, None)])
+
+    world = gw.pixel_to_world(3)
+    expected_pixel = gw.world_to_pixel(world)
+
+    original_from = gw.output_frame.from_high_level_coordinates
+    original_to = gw.input_frame.to_high_level_coordinates
+
+    def func_from(*args):
+        return original_from(*args)
+
+    def func_to(*args):
+        return original_to(*args)
+
+    # Legacy signatures: positional only, no correct_1d.
+    monkeypatch.setattr(gw.output_frame, "from_high_level_coordinates", func_from)
+    monkeypatch.setattr(gw.input_frame, "to_high_level_coordinates", func_to)
+
+    pixel = gw.invert(world)
+    pixel = gw.input_frame.remove_units(pixel)
+    assert_allclose(pixel, expected_pixel)
+
+
+def test_transform_same_frame_raises_value_error():
+    """
+    ``transform`` between a frame and itself has no pipeline (``pipeline_between``
+    returns ``None``) and must raise a ``ValueError``.
+    """
+    gw = wcs.WCS([wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)])
+
+    with pytest.raises(ValueError, match=r"No transformation found from"):
+        gw.transform("focal", "focal", 1, 2)
+
+
+def test_construction_from_base_pipeline_skips_validation(monkeypatch):
+    """
+    Constructing a ``WCS``/``Pipeline`` from a `~gwcs.wcs._BasePipeline` must take
+    the no-copy fast path: it must NOT call ``_initialize_pipeline`` and must
+    share the underlying ``Step`` objects by identity with the source pipeline.
+
+    This locks in the performance contract of the ``pipeline_between`` rework so
+    a future change cannot silently reintroduce per-call validation/copying on
+    the hot evaluation path.
+    """
+    gw = wcs.WCS([wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)])
+
+    base = wcs._BasePipeline(gw.pipeline)
+
+    called = False
+    original_initialize = wcs.Pipeline._initialize_pipeline
+
+    def _tracking_initialize(self, *args, **kwargs):
+        nonlocal called
+        called = True
+        return original_initialize(self, *args, **kwargs)
+
+    monkeypatch.setattr(wcs.Pipeline, "_initialize_pipeline", _tracking_initialize)
+
+    fast = wcs.WCS(base)
+
+    # The fast path must not re-run pipeline initialization/validation.
+    assert called is False
+
+    # The steps must be shared by identity, not copied.
+    assert len(fast.pipeline) == len(gw.pipeline)
+    for fast_step, src_step in zip(fast.pipeline, gw.pipeline, strict=True):
+        assert fast_step is src_step
+
+    # Sanity check: the fast-path WCS still evaluates correctly.
+    assert_allclose(fast(1, 2), gw(1, 2))
+
+
+def test_transform_does_not_corrupt_parent_pipeline():
+    """
+    ``transform``/``get_transform`` build ephemeral sub-pipelines that share the
+    parent's ``Step`` objects (documented no-copy behavior). Because these
+    operations are read-only, repeated calls must leave the parent's own
+    evaluation results unchanged.
+    """
+    gw = wcs.WCS([wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)])
+
+    expected_forward = gw(1, 2)
+    expected_inverse = gw.invert(*expected_forward)
+
+    for _ in range(5):
+        gw.transform("detector", "icrs", 1, 2)
+        gw.transform("icrs", "detector", *expected_forward)
+        gw.get_transform("detector", "focal")
+
+    assert_allclose(gw(1, 2), expected_forward)
+    assert_allclose(gw.invert(*expected_forward), expected_inverse)
+
+
+def test_correct_1d_output_decorator():
+    """
+    Direct coverage of the ``correct_1d_output`` decorator: single-element
+    sequences collapse to a scalar only when ``correct_1d`` is True, longer
+    sequences pass through, and non-sequence returns are never indexed.
+    """
+    from gwcs.utils import correct_1d_output
+
+    def returns_one(*args):
+        return (args[0],)
+
+    def returns_two(*args):
+        return (args[0], args[1])
+
+    def returns_scalar(*args):
+        return args[0]
+
+    # pass_correct_1d=False path (legacy-style functions without the kwarg)
+    collapse = correct_1d_output(returns_one, pass_correct_1d=False)
+    assert collapse(42, correct_1d=True) == 42
+    assert collapse(42, correct_1d=False) == (42,)
+
+    passthrough = correct_1d_output(returns_two, pass_correct_1d=False)
+    assert passthrough(1, 2, correct_1d=True) == (1, 2)
+
+    # A non-sequence return must never be indexed, regardless of correct_1d.
+    scalar = correct_1d_output(returns_scalar, pass_correct_1d=False)
+    assert scalar(7, correct_1d=True) == 7
+
+    # pass_correct_1d=True path forwards correct_1d into the wrapped function.
+    def uses_correct_1d(*args, correct_1d=True):
+        return (args[0], correct_1d)
+
+    forwarded = correct_1d_output(uses_correct_1d, pass_correct_1d=True)
+    # Two-element result so it is not collapsed; confirms correct_1d was passed.
+    assert forwarded(9, correct_1d=False) == (9, False)
+
+
+def test_legacy_coordinate_frame_protocol_warns_and_functions():
+    """
+    Legacy frames that do not define ``is_high_level`` should still work,
+    while issuing a deprecation warning.
+    """
+
+    legacy_input = LegacyFrameAdapter(cf.Frame2D(name="legacy_detector"))
+    assert not hasattr(legacy_input, "is_high_level")
+
+    with pytest.warns(DeprecationWarning, match=r"is_high_level"):
+        gw = wcs.WCS([(legacy_input, m), (icrs, None)])
+
+    # Check that legacy_input has not been mutated to have is_high_level
+    assert not hasattr(legacy_input, "is_high_level")
+
+    # Frame should be patched for compatibility and remain callable.
+    assert hasattr(gw.input_frame, "is_high_level")
+    assert gw.input_frame.is_high_level(1, 2) is False
+    assert_allclose(gw(1, 2), m(1, 2))
+
+    legacy_output = LegacyFrameAdapter(icrs)
+    with pytest.warns(DeprecationWarning, match=r"is_high_level"):
+        gw_legacy_output = wcs.WCS([(detector, m), (legacy_output, None)])
+
+    world = gw_legacy_output.pixel_to_world(1, 2)
+    assert gw_legacy_output.output_frame.is_high_level(world) is True
+
+
+def test_standard_coordinate_frames_do_not_warn_as_legacy():
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always", DeprecationWarning)
+        _ = wcs.WCS([(detector, m), (icrs, None)])
+
+    assert not any("is_high_level" in str(w.message) for w in captured)
+
+
+def test_legacy_frame_validation_does_not_recheck_after_patch(monkeypatch):
+    """
+    Regression test for Python 3.11 legacy-frame flow where legacy detection
+    should not be recomputed after patching ``is_high_level`` onto the frame.
+    """
+
+    from gwcs.wcs import _step as step_mod
+
+    legacy_input = LegacyFrameAdapter(cf.Frame2D(name="legacy_detector_recheck"))
+
+    # Emulate the 3.11-style behavior where legacy status depends on the
+    # presence of is_high_level and nominal coordinate-frame checks fail.
+    monkeypatch.setattr(step_mod, "_is_coordinate_frame", lambda frame: False)
+
+    def _legacy_check(frame):
+        return hasattr(frame, "to_high_level_coordinates") and not hasattr(
+            frame, "is_high_level"
+        )
+
+    monkeypatch.setattr(step_mod, "_is_legacy_coordinate_frame", _legacy_check)
+
+    with pytest.warns(DeprecationWarning, match=r"is_high_level"):
+        step = wcs.Step(legacy_input, m)
+
+    assert hasattr(step.frame, "is_high_level")
 
 
 def test_fitswcs_imaging(fits_wcs_imaging_simple):
