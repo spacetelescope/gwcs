@@ -24,6 +24,8 @@ from astropy.wcs.wcsapi.high_level_api import (
     values_to_high_level_objects,
 )
 
+from gwcs.utils import correct_1d_output
+
 from ._axis import AxesType
 
 __all__ = [
@@ -35,6 +37,11 @@ __all__ = [
     "WorldAxisObjectClass",
     "WorldAxisObjectClassConverter",
     "WorldAxisObjectComponent",
+    # Adding _LegacyCoordinateFrameProtocol to __all__ in order for it to be
+    #   picked up by Sphinx for the API documentation.  This should be removed
+    #   when the deprecation period of coordinate frames missing is_high_level
+    #   is over.
+    "_LegacyCoordinateFrameProtocol",
 ]
 _DtypeGeneric = TypeVar("_DtypeGeneric", bound=np.generic)
 
@@ -142,9 +149,10 @@ class WorldAxisObjectComponent(NamedTuple):
 
 
 @runtime_checkable
-class CoordinateFrameProtocol(Protocol):
+class _LegacyCoordinateFrameProtocol(Protocol):
     """
-    API Definition for a Coordinate frame
+    Original API definition for a coordinate frame. This is used for deprecation
+    warnings and to identify when to patch the ``is_high_level`` method to the frame.
     """
 
     @property
@@ -282,7 +290,8 @@ class CoordinateFrameProtocol(Protocol):
             for array in self.add_units(arrays)
         )
 
-    def to_high_level_coordinates(self, *values):
+    @correct_1d_output
+    def to_high_level_coordinates(self, *values, correct_1d=True):
         """
         Convert "values" to high level coordinate objects described by this frame.
 
@@ -308,12 +317,10 @@ class CoordinateFrameProtocol(Protocol):
             msg = "All values should be a scalar number or a numpy array."
             raise TypeError(msg)
 
-        high_level = values_to_high_level_objects(*values, low_level_wcs=self)
-        if len(high_level) == 1:
-            high_level = high_level[0]
-        return high_level
+        return values_to_high_level_objects(*values, low_level_wcs=self)
 
-    def from_high_level_coordinates(self, *high_level_coords):
+    @correct_1d_output
+    def from_high_level_coordinates(self, *high_level_coords, correct_1d=True):
         """
         Convert high level coordinate objects to "values" as described by this frame.
 
@@ -331,10 +338,76 @@ class CoordinateFrameProtocol(Protocol):
         values : `numbers.Number` or `numpy.ndarray`
             ``naxis`` number of coordinates as scalars or arrays.
         """
-        values = high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
-        if len(values) == 1:
-            values = values[0]
-        return values
+        return high_level_objects_to_values(*high_level_coords, low_level_wcs=self)
+
+
+def _is_high_level(self: CoordinateFrameProtocol, *args) -> bool:
+    """
+    Return `True` if the input coordinates are already high level objects
+    described by this frame.
+
+    This is used by the low level WCS API in Astropy to determine whether
+    to call ``to_high_level_coordinates`` or not.
+    """
+
+    if (world_axis_object_classes := self.world_axis_object_classes) is None or len(
+        args
+    ) != len(world_axis_object_classes):
+        return False
+
+    type_match = []
+    for arg, world_axis_object_class in zip(
+        args, world_axis_object_classes.values(), strict=True
+    ):
+        if isinstance(class_object := world_axis_object_class.class_object, str):
+            type_match.append(
+                type(arg).__name__ == class_object
+                and class_object != u.Quantity.__name__
+            )
+        else:
+            type_match.append(
+                isinstance(arg, class_object) and class_object is not u.Quantity
+            )
+
+    if all(type_match):
+        return True
+
+    if any(type_match):
+        types = [
+            (
+                type(arg).__name__,
+                c.class_object
+                if isinstance(c.class_object, str)
+                else c.class_object.__name__,
+            )
+            for arg, c in zip(args, world_axis_object_classes.values(), strict=True)
+        ]
+        msg = (
+            "Invalid types were passed, got "
+            f"({', '.join(t[0] for t in types)}), but expected "
+            f"({', '.join(t[1] for t in types)})."
+        )
+        raise TypeError(msg)
+
+    return False
+
+
+@runtime_checkable
+class CoordinateFrameProtocol(_LegacyCoordinateFrameProtocol, Protocol):
+    """
+    API Definition for a Coordinate frame
+    """
+
+    def is_high_level(self, *args) -> bool:
+        """
+        Return `True` if the input coordinates are already high level objects
+        described by this frame.
+
+        This is used by the low level WCS API in Astropy to determine whether
+        to call ``to_high_level_coordinates`` or not.
+        """
+
+        return _is_high_level(self, *args)
 
 
 class BaseCoordinateFrame(CoordinateFrameProtocol):
