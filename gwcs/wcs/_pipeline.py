@@ -291,7 +291,7 @@ class DirectionalWCS[T: _BasePipeline]:
 
     Attribute
     ----------
-    wcs : T
+    wcs : BasePipeline
         The WCS object that represents the pipeline between two frames.
 
     forward : bool

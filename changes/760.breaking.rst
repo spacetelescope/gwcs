@@ -1,1 +1,2 @@
 Drop support for Python 3.11. The minimum supported Python version is now 3.12.
+Drop support for numpy < 2.0.
