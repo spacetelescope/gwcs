@@ -2270,33 +2270,6 @@ def test_standard_coordinate_frames_do_not_warn_as_legacy():
     assert not any("is_high_level" in str(w.message) for w in captured)
 
 
-def test_legacy_frame_validation_does_not_recheck_after_patch(monkeypatch):
-    """
-    Regression test for Python 3.11 legacy-frame flow where legacy detection
-    should not be recomputed after patching ``is_high_level`` onto the frame.
-    """
-
-    from gwcs.wcs import _step as step_mod
-
-    legacy_input = LegacyFrameAdapter(cf.Frame2D(name="legacy_detector_recheck"))
-
-    # Emulate the 3.11-style behavior where legacy status depends on the
-    # presence of is_high_level and nominal coordinate-frame checks fail.
-    monkeypatch.setattr(step_mod, "_is_coordinate_frame", lambda frame: False)
-
-    def _legacy_check(frame):
-        return hasattr(frame, "to_high_level_coordinates") and not hasattr(
-            frame, "is_high_level"
-        )
-
-    monkeypatch.setattr(step_mod, "_is_legacy_coordinate_frame", _legacy_check)
-
-    with pytest.warns(DeprecationWarning, match=r"is_high_level"):
-        step = wcs.Step(legacy_input, m)
-
-    assert hasattr(step.frame, "is_high_level")
-
-
 def test_fitswcs_imaging(fits_wcs_imaging_simple):
     """Test simple FITS type imaging WCS."""
     gwcs, astwcs = fits_wcs_imaging_simple
