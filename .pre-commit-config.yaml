@@ -9,6 +9,7 @@ repos:
       - id: check-added-large-files
         args: ["--enforce-all", "--maxkb=300"]
       - id: check-ast
+        language_version: python3.12
       - id: check-case-conflict
       - id: check-json
       - id: check-yaml
@@ -18,6 +19,7 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: debug-statements
+        language_version: python3.12
       - id: detect-private-key
       - id: end-of-file-fixer
         exclude: ".*(data.*)$"
@@ -44,6 +46,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: mypy
+        language_version: python3.12
   # spell-checking
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.3

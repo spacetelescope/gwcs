@@ -2,7 +2,7 @@ import sys
 import warnings
 from copy import copy
 from inspect import getattr_static
-from typing import NamedTuple, Self, TypeAlias, Union
+from typing import NamedTuple, Self, Union
 
 from astropy.modeling.core import Model
 
@@ -22,15 +22,15 @@ __all__ = [
 ]
 
 
-Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
-StepTuple: TypeAlias = tuple[CoordinateFrameProtocol, Union[Model, None]]  # noqa: UP007
+type Mdl = Union[Model, None]  # noqa: UP007
+type StepTuple = tuple[CoordinateFrameProtocol, Union[Model, None]]  # noqa: UP007
 
 
 # Runtime checkable isinstance check evaluates the actual properties of the object
 #    in Python 3.11, so EmptyFrame causes an error to be raised if we attempt to
 #    check if it is a CoordinateFrameProtocol. In Python 3.12+, the check does not
 #    evaluate the properties of the object, so it does not cause an error.
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 12):  # noqa: UP036
 
     def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
         return isinstance(frame, CoordinateFrameProtocol)

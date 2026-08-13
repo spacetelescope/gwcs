@@ -29,7 +29,7 @@ import tomllib
 from datetime import datetime
 from pathlib import Path
 
-if sys.version_info >= (3, 12):
+if sys.version_info >= (3, 12):  # noqa: UP036
     from importlib.metadata import distribution
 else:
     from importlib_metadata import distribution
