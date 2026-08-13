@@ -1,7 +1,7 @@
 [project]
 name = "gwcs"
 description = "Generalized World Coordinate System"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [{ name = "gwcs developers" }]
 dependencies = [
   "asdf >= 3.3.0",
@@ -190,7 +190,7 @@ ignore = [
 warn_return_any = true
 warn_unused_configs = true
 disable_error_code = "import-untyped" # do not check imports
-python_version = "3.11"
+python_version = "3.12"
 
 # Always ignore tests and docs
 [[tool.mypy.overrides]]
