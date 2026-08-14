@@ -4,5 +4,5 @@
 
 .. autoclass:: {{ objname }}
    :members:
-   :inherited-members:
+   :inherited-members: str, Model
    :show-inheritance:

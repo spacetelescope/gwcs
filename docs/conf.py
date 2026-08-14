@@ -5,10 +5,13 @@
 # The documentation is built from the installed package, so no source-tree path
 # needs to be added here.
 
+import re
 import tomllib
 from datetime import datetime
 from importlib.metadata import distribution
 from pathlib import Path
+
+from sphinx.ext.intersphinx import missing_reference as intersphinx_missing_reference
 
 # -- Extensions and general options -------------------------------------------
 
@@ -88,6 +91,8 @@ nitpick_ignore = [
     ("py:obj", "astropy.modeling.projections.projcodes"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),
+    # Unqualified names left by `from __future__ import annotations`
+    ("py:class", "WorldAxisObjectClasses"),
 ]
 
 # -- HTML theme -----------------------------------------------------------------
@@ -105,3 +110,60 @@ html_theme_options = {
 pygments_style = "monokai"
 # Furo uses this style for dark-mode code blocks.
 pygments_dark_style = "monokai"
+# Render inheritance diagrams in SVG
+graphviz_output_format = "svg"
+
+graphviz_dot_args = [
+    "-Nfontsize=10",
+    "-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
+    "-Efontsize=10",
+    "-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif",
+    "-Gbgcolor=white",
+    "-Gfontsize=10",
+    "-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
+]
+
+# `from __future__ import annotations` leaves these names unqualified in the
+# rendered type hints, so rewrite them to their fully qualified names, which
+# intersphinx can resolve.
+unqualified_type_names = {
+    "Model": "astropy.modeling.Model",
+    "ModelBoundingBox": "astropy.modeling.bounding_box.ModelBoundingBox",
+    "CompoundBoundingBox": "astropy.modeling.bounding_box.CompoundBoundingBox",
+}
+
+# Type hints report the defining private submodule, e.g.
+# ``gwcs.coordinate_frames._base.WorldAxisObjectClass``.
+private_module = re.compile(r"\._\w+(?=\.)")
+
+
+def resolve_missing_reference(app, env, node, contnode):
+    target = node.get("reftarget", "")
+
+    if external := unqualified_type_names.get(target):
+        node["reftarget"] = external
+        return intersphinx_missing_reference(app, env, node, contnode)
+
+    public = private_module.sub("", target)
+    if target.startswith("gwcs.") and public != target:
+        node["reftarget"] = public
+        return env.get_domain("py").resolve_xref(
+            env,
+            node.get("refdoc"),
+            app.builder,
+            node["reftype"],
+            public,
+            node,
+            contnode,
+        )
+
+    return None
+
+
+def setup(app):
+    app.connect("missing-reference", resolve_missing_reference)
+
+
+autosummary_generate = True
+# Document members re-exported via a module's __all__ (e.g. gwcs.wcs)
+autosummary_ignore_module_all = False

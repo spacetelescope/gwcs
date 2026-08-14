@@ -216,6 +216,8 @@ from ._base import (
     CoordinateFrameProtocol,
     LowLevelArray,
     LowLevelInput,
+    WorldAxisObjectClass,
+    WorldAxisObjectClassConverter,
     WorldAxisObjectClasses,
     WorldAxisObjectComponent,
     _LegacyCoordinateFrameProtocol,
@@ -225,6 +227,7 @@ from ._composite import CompositeFrame
 from ._core import CoordinateFrame
 from ._empty import EmptyFrame, EmptyFrameDeprecationWarning, EmptyFrameUnitsWarning
 from ._frame import Frame2D
+from ._properties import FrameProperties
 from ._spectral import SpectralFrame
 from ._stokes import StokesFrame
 from ._temporal import TemporalFrame
@@ -241,11 +244,14 @@ __all__ = [
     "EmptyFrameDeprecationWarning",
     "EmptyFrameUnitsWarning",
     "Frame2D",
+    "FrameProperties",
     "LowLevelArray",
     "LowLevelInput",
     "SpectralFrame",
     "StokesFrame",
     "TemporalFrame",
+    "WorldAxisObjectClass",
+    "WorldAxisObjectClassConverter",
     "WorldAxisObjectClasses",
     "WorldAxisObjectComponent",
     # See comment in _base.py about why this is included in __all__.
