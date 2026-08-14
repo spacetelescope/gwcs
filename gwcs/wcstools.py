@@ -1,3 +1,7 @@
+"""
+This module contains utility functions for working with GWCS's WCS objects.
+"""
+
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
 import warnings

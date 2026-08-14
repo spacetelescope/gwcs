@@ -14,6 +14,7 @@ from pathlib import Path
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx_copybutton",
@@ -32,6 +33,7 @@ intersphinx_mapping = {
 }
 
 exclude_patterns = ["_build", "_templates"]
+templates_path = ["_templates"]
 
 # -- Project information ------------------------------------------------------
 
@@ -74,6 +76,11 @@ numpydoc_xref_ignore = {
     "of",
     "class",
 }
+
+autosummary_generate = True
+# Document members re-exported via a module's __all__ (e.g. gwcs.wcs)
+autosummary_ignore_module_all = False
+
 
 # -- Cross-reference options ---------------------------------------------------
 nitpicky = True

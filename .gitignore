@@ -23,6 +23,7 @@ MANIFEST
 docs/api
 docs/_build
 docs/generated
+docs/gwcs/generated
 
 # Eclipse editor project files
 .project
