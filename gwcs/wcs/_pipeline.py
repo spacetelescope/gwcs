@@ -15,9 +15,7 @@ from gwcs.utils import CoordinateFrameError, combine_transforms
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
 from ._step import IndexedStep, Mdl, Step, StepTuple
 
-# Adding _BasePipeline to __all__ in order for it to be
-#   picked up by Sphinx for the API documentation.
-__all__ = ["DirectionalWCS", "ForwardTransform", "Pipeline", "_BasePipeline"]
+__all__ = ["DirectionalWCS", "ForwardTransform", "Pipeline"]
 
 
 class _BasePipeline:

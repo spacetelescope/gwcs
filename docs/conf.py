@@ -5,6 +5,8 @@
 # The documentation is built from the installed package, so no source-tree path
 # needs to be added here.
 
+import importlib
+import inspect
 import re
 import tomllib
 from datetime import datetime
@@ -89,11 +91,14 @@ autosummary_ignore_module_all = False
 nitpicky = True
 nitpick_ignore = [
     ("py:obj", "astropy.modeling.projections.projcodes"),
+    ("py:obj", "n_inputs"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),
     # Unqualified names left by `from __future__ import annotations`
     ("py:class", "WorldAxisObjectClasses"),
 ]
+
+suppress_warnings = ["config.cache"]
 
 # -- HTML theme -----------------------------------------------------------------
 html_theme = "furo"
@@ -160,10 +165,42 @@ def resolve_missing_reference(app, env, node, contnode):
     return None
 
 
+def skip_excluded_inherited_members(*event_args):
+    obj = event_args[3]
+    owner = getattr(obj, "__objclass__", None)
+    wrapped = getattr(obj, "__func__", obj)
+    if (
+        getattr(wrapped, "__qualname__", "").startswith("str.")
+        or owner is str
+        or (
+            owner is not None
+            and owner.__name__ == "Model"
+            and owner.__module__ == "astropy.modeling.core"
+        )
+    ):
+        return True
+
+    return None
+
+
 def setup(app):
+    app.connect("autodoc-skip-member", skip_excluded_inherited_members)
     app.connect("missing-reference", resolve_missing_reference)
+
+
+def is_property(modname, qualname, attr):
+    """Used by the autosummary class template to pick autoproperty vs autoattribute."""
+    obj = importlib.import_module(modname)
+    for part in qualname.split("."):
+        obj = getattr(obj, part)
+    try:
+        member = inspect.getattr_static(obj, attr)
+    except AttributeError:
+        return False
+    return isinstance(member, property)
 
 
 autosummary_generate = True
 # Document members re-exported via a module's __all__ (e.g. gwcs.wcs)
 autosummary_ignore_module_all = False
+autosummary_context = {"is_property": is_property}
