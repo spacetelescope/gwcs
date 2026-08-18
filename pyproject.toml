@@ -30,7 +30,7 @@ gwcs = "gwcs.extension:get_extensions"
 [project.optional-dependencies]
 docs = [
   "sphinx",
-  "sphinx-automodapi",
+  "sphinx-autodoc-typehints",
   "sphinx-copybutton",
   "furo",
   "sphinx-inline-tabs",

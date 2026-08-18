@@ -9,24 +9,33 @@ import importlib
 import inspect
 import re
 import tomllib
+import warnings
 from datetime import datetime
 from importlib.metadata import distribution
 from pathlib import Path
 
+from astropy.utils.exceptions import AstropyDeprecationWarning
 from sphinx.ext.intersphinx import missing_reference as intersphinx_missing_reference
+
+# Import the deprecated astropy.samp here so that when sphinx_autodoc_type_hints
+# imports all of astropy to resolve type hints, it doesn't raise a deprecation
+# warning.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", AstropyDeprecationWarning)
+    import astropy.samp  # noqa: F401
 
 # -- Extensions and general options -------------------------------------------
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
+    "sphinx_autodoc_typehints",
     "sphinx_copybutton",
     "numpydoc",
     "pytest_doctestplus.sphinx.doctestplus",
-    "sphinx_automodapi.automodapi",
-    "sphinx_automodapi.smart_resolver",
     "sphinx_inline_tabs",
 ]
 
@@ -57,9 +66,8 @@ version = ".".join(release.split(".")[:2])
 # -- HTML output ---------------------------------------------------------------
 html_title = f"{project} v{release}"
 
-# -- Autodoc and automodapi options -------------------------------------------
+# -- Autodoc options -----------------------------------------------------------
 autoclass_content = "both"
-automodapi_toctreedirnm = "api"
 autosummary_generate = True
 default_role = "obj"
 numpydoc_show_class_members = False
@@ -145,6 +153,9 @@ private_module = re.compile(r"\._\w+(?=\.)")
 def resolve_missing_reference(app, env, node, contnode):
     target = node.get("reftarget", "")
 
+    if target.rsplit(".", 1)[-1].startswith("_"):
+        return contnode.deepcopy()
+
     if external := unqualified_type_names.get(target):
         node["reftarget"] = external
         return intersphinx_missing_reference(app, env, node, contnode)
@@ -200,7 +211,24 @@ def is_property(modname, qualname, attr):
     return isinstance(member, property)
 
 
+def is_inherited_model_name(modname, qualname, attr):
+    if attr != "name":
+        return False
+
+    obj = importlib.import_module(modname)
+    for part in qualname.split("."):
+        obj = getattr(obj, part)
+
+    return "name" not in obj.__dict__ and any(
+        "name" in base.__dict__ and base.__module__.startswith("astropy.modeling")
+        for base in obj.__mro__[1:]
+    )
+
+
 autosummary_generate = True
 # Document members re-exported via a module's __all__ (e.g. gwcs.wcs)
 autosummary_ignore_module_all = False
-autosummary_context = {"is_property": is_property}
+autosummary_context = {
+    "is_inherited_model_name": is_inherited_model_name,
+    "is_property": is_property,
+}
