@@ -97,6 +97,7 @@ nitpicky = True
 nitpick_ignore = [
     ("py:obj", "astropy.modeling.projections.projcodes"),
     ("py:obj", "n_inputs"),
+    ("py:data", "typing.Union"),
     ("py:attr", "gwcs.WCS.bounding_box"),
     ("py:meth", "gwcs.WCS.footprint"),
     # Unqualified names left by `from __future__ import annotations`
