@@ -33,7 +33,6 @@ docs = [
   "sphinx-automodapi",
   "sphinx-astropy",
   "sphinx-copybutton",
-  "sphinx-asdf",
   "furo",
   "sphinx-inline-tabs",
   "matplotlib",

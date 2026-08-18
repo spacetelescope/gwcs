@@ -53,17 +53,6 @@ exclude_patterns.append("_templates")  # noqa: F405
 rst_epilog += """
 """  # noqa: F405
 
-# Top-level directory containing ASDF schemas (relative to current directory)
-asdf_schema_path = "../gwcs/schemas"
-# This is the prefix common to all schema IDs in this repository
-asdf_schema_standard_prefix = "stsci.edu/gwcs"
-asdf_schema_reference_mappings = [
-    (
-        "tag:stsci.edu:asdf",
-        "http://asdf-standard.readthedocs.io/en/latest/generated/stsci.edu/asdf/",
-    ),
-]
-
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
@@ -99,8 +88,7 @@ latex_logo = "_static/images/logo-light-mode.png"
 man_pages = [("index", project.lower(), project + " Documentation", [author], 1)]
 
 # -- Add in additional sphinx extensions ----------------------------------------
-extensions += ["sphinx_asdf"]  # noqa: F405
-extensions += ["sphinx_inline_tabs"]
+extensions += ["sphinx_inline_tabs"]  # noqa: F405
 
 # Enable nitpicky mode - which ensures that all references in the docs resolve.
 nitpicky = True
