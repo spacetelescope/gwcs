@@ -39,3 +39,8 @@
    {%- endfor %}
    {% endif %}
    {% endblock %}
+
+{% if all_classes %}
+.. inheritance-diagram:: {% for item in all_classes %}{{ fullname }}.{{ item }} {% endfor %}
+   :parts: 1
+{% endif %}
