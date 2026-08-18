@@ -57,9 +57,9 @@ class EmptyFrame(CoordinateFrameProtocol):
 
         Parameters
         ----------
-        name : str or None
+        name
             Name of the frame. If None, defaults to "detector".
-        transform : astropy.modeling.Model or None
+        transform
             A transform from this step's frame to next step's frame. The transform of
             the last step should be None.
 

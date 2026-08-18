@@ -21,9 +21,9 @@ class CompositeFrame(CoordinateFrame):
 
     Parameters
     ----------
-    frames : list
+    frames
         List of constituient frames.
-    name : str
+    name
         Name for this frame.
     """
 

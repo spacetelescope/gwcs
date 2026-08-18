@@ -32,9 +32,9 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
     "sphinx_copybutton",
-    "numpydoc",
     "pytest_doctestplus.sphinx.doctestplus",
     "sphinx_inline_tabs",
 ]
@@ -70,29 +70,25 @@ html_title = f"{project} v{release}"
 autoclass_content = "both"
 autosummary_generate = True
 default_role = "obj"
-numpydoc_show_class_members = False
-numpydoc_xref_aliases = {
-    "function": ":term:`python:function`",
-    "iterator": ":term:`python:iterator`",
-    "mapping": ":term:`python:mapping`",
-}
-numpydoc_xref_ignore = {
-    "optional",
-    "or",
-    "keyword-only",
-    "instance",
-    "default",
-    "type",
-    "thereof",
-    "subclass",
-    "method",
-    "of",
-    "class",
-}
 
-autosummary_generate = True
 # Document members re-exported via a module's __all__ (e.g. gwcs.wcs)
 autosummary_ignore_module_all = False
+
+# -- Napoleon options ----------------------------------------------------------
+# Parse NumPy style docstrings into ``:param:``/``:type:`` fields so that
+# sphinx_autodoc_typehints can fill in the types from the annotations.
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_use_param = True
+napoleon_use_rtype = True
+# Emit ``:ivar:`` fields rather than ``.. attribute::`` directives, which would
+# otherwise duplicate the members autodoc already documents.
+napoleon_use_ivar = True
+
+# -- Type hint options ---------------------------------------------------------
+# Fill in types from the annotations even when the docstring omits them.
+always_document_param_types = True
+typehints_defaults = "comma"
 
 
 # -- Cross-reference options ---------------------------------------------------
@@ -104,6 +100,21 @@ nitpick_ignore = [
     ("py:meth", "gwcs.WCS.footprint"),
     # Unqualified names left by `from __future__ import annotations`
     ("py:class", "WorldAxisObjectClasses"),
+]
+
+# Prose words that appear in hand-written docstring types (here and in astropy)
+# which Sphinx tries, and fails, to resolve as cross-references.
+nitpick_ignore += [
+    ("py:class", name)
+    for name in (
+        "array-like",
+        "default",
+        "iterable",
+        "ndarray",
+        "np.nan",
+        "optional",
+        "scalar",
+    )
 ]
 
 suppress_warnings = ["config.cache"]

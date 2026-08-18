@@ -14,9 +14,9 @@ class StokesFrame(CoordinateFrame):
 
     Parameters
     ----------
-    name : str
+    name
         Name of this frame.
-    axes_order : tuple
+    axes_order
         A dimension in the data that corresponds to this axis.
     """
 

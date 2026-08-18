@@ -24,20 +24,20 @@ class CoordinateFrame(CoordinateFrameProtocol):
 
     Parameters
     ----------
-    naxes : int
+    naxes
         Number of axes.
-    axes_type : AxesType
+    axes_type
         One of ["SPATIAL", "SPECTRAL", "TIME"]
-    axes_order : tuple of int
+    axes_order
         A dimension in the input data that corresponds to this axis.
-    reference_frame : astropy.coordinates.builtin_frames
+    reference_frame
         Reference frame (usually used with output_frame to convert to world
         coordinate objects).
-    unit : list of astropy.units.Unit
+    unit
         Unit for each axis.
-    axes_names : list
+    axes_names
         Names of the axes in this frame.
-    name : str
+    name
         Name of this frame.
     """
 
@@ -142,7 +142,7 @@ class CoordinateFrame(CoordinateFrameProtocol):
 
     @property
     def axes_type(self) -> tuple[AxisType | str, ...]:
-        """Type of this frame : 'SPATIAL', 'SPECTRAL', 'TIME'."""
+        """Type of this frame, one of 'SPATIAL', 'SPECTRAL', 'TIME'."""
         return self._sort_property(self._prop.axes_type)
 
     @property

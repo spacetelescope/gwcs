@@ -65,7 +65,7 @@ class _BasePipeline:
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        frame
             Name of the frame or the frame object.
 
         Returns
@@ -80,7 +80,7 @@ class _BasePipeline:
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        frame
             Name of the frame or the frame object.
 
         Returns
@@ -133,7 +133,7 @@ class _BasePipeline:
 
         Raises
         ------
-        NotImplementedError :
+        NotImplementedError
             An analytical inverse does not exist.
 
         """
@@ -176,14 +176,14 @@ class _BasePipeline:
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        from_frame
             Initial coordinate frame name of object.
-        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        to_frame
             End coordinate frame name or object.
 
         Returns
         -------
-        pipeline : `~gwcs.wcs.DirectionalWCS` or None
+        pipeline
             A ``DirectionalWCS`` (wcs, forward) where ``wcs`` is a
             `~gwcs.wcs._BasePipeline` for the steps between the two frames and
             ``forward`` indicates the direction (True: from_frame -> to_frame,
@@ -218,9 +218,9 @@ class _BasePipeline:
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+        from_frame
             Initial coordinate frame name of object.
-        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+        to_frame
             End coordinate frame name or object.
 
         Returns
@@ -250,14 +250,14 @@ class _BasePipeline:
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        from_frame
             Initial coordinate frame name of object.
-        to_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        to_frame
             End coordinate frame name or object.
 
         Returns
         -------
-        transform : `~astropy.modeling.Model`
+        transform
             Transform between two frames.
         """
         direction = self._pipeline_between(from_frame, to_frame)
@@ -292,10 +292,10 @@ class DirectionalWCS(Generic[_T]):
 
     Attributes
     ----------
-    wcs : _T
+    wcs
         The WCS object that represents the pipeline between two frames.
 
-    forward : bool
+    forward
         A boolean indicating if the pipeline is forward, True, (from_frame to to_frame)
         or backward (to_frame to from_frame), False.
     """
@@ -374,15 +374,15 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        forward_transform " `~astropy.modeling.Model`, list of `~gwcs.wcs.Step`, or None
+        forward_transform
             The forward transform to initialize the pipeline with.
             - Can be a single model which acts as the entire transform.
             - List of steps for the pipeline
             - List of tuples[CoordinateFrameProtocol, Model] for the pipeline
             - None for an empty pipeline
-        input_frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol` or None
+        input_frame
             The input frame of the pipeline.
-        output_frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol` or None
+        output_frame
             The output frame of the pipeline. This must be specified if
             forward_transform is not a list of steps.
 
@@ -478,12 +478,12 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        frame
             Name of the frame or the frame object.
 
         Returns
         -------
-        frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        frame
             The frame object corresponding to the given name.
         """
         return self._pipeline[self._frame_index(frame)].frame
@@ -497,9 +497,9 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        step : `~gwcs.wcs.Step` or tuple
+        step
             The step to wrap in a Step object and check.
-        replace_index : int or None
+        replace_index
             The index of the step to replace in the pipeline, this ensures that
             we can in place replace a step using the same frame as the one being
             replaced. This frame will be removed from the frames to check against
@@ -588,11 +588,11 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        from_frame
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        to_frame
             End coordinate frame.
-        transform : `~astropy.modeling.Model`
+        transform
             Transform between ``from_frame`` and ``to_frame``.
         """
         from_index = self._frame_index(from_frame)
@@ -621,11 +621,11 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        frame
             Coordinate frame which sets the point of insertion.
-        transform : `~astropy.modeling.Model`
+        transform
             New transform to be inserted in the pipeline
-        after : bool
+        after
             If True, the new transform is inserted in the pipeline
             immediately after ``frame``.
         """
@@ -667,11 +667,11 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        input_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        input_frame
             Coordinate frame at start of new transform
-        transform : `~astropy.modeling.Model`
+        transform
             New transform to be inserted in the pipeline
-        output_frame: str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
+        output_frame
             Coordinate frame at end of new transform
         """
 
@@ -769,7 +769,7 @@ class Pipeline(_BasePipeline):
 
         Parameters
         ----------
-        value : tuple or None
+        value
             Tuple of tuples with ("low", high") values for the range.
         """
         transform = self._pipeline[0].transform

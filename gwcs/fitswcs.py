@@ -27,14 +27,14 @@ class FITSImagingWCSTransform(Model):
     ----------
     projection : `~astropy.modeling.projections.Projection`
       Celestial projection.
-    crpix : tuple or iterable of size 2
+    crpix : tuple or iterable
       Pixel coordinate of the reference point. Default is [0, 0]
-    crval : tuple or iterable of size 2
+    crval : tuple or iterable
       Celestial longitude and latitude of the fiducial point in deg. Default is [0, 0]
-    cdelt : tuple or iterable of size 2
+    cdelt : tuple or iterable
       Coordinate scale factors. Default is [1, 1]
-    pc : ndarray of shape (2,2)
-      Linear transformation matrix. Default is [[1,0][0, 1]]
+    pc : ndarray
+      Linear transformation matrix of shape ``(2, 2)``. Default is [[1,0][0, 1]]
 
 
     Returns

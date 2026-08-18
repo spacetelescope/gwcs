@@ -86,7 +86,7 @@ class SphericalToCartesian(Model):
         """
         Parameters
         ----------
-        wrap_lon_at : {360, 180}, optional
+        wrap_lon_at : int, optional
             An **integer number** that specifies the range of the longitude
             (azimuthal) angle. When ``wrap_lon_at`` is 180, the longitude angle
             will have a range of ``[-180, 180)`` and when ``wrap_lon_at``
@@ -165,7 +165,7 @@ class CartesianToSpherical(Model):
         """
         Parameters
         ----------
-        wrap_lon_at : {360, 180}, optional
+        wrap_lon_at : int, optional
             An **integer number** that specifies the range of the longitude
             (azimuthal) angle. When ``wrap_lon_at`` is 180, the longitude angle
             will have a range of ``[-180, 180)`` and when ``wrap_lon_at``
