@@ -31,10 +31,10 @@ gwcs = "gwcs.extension:get_extensions"
 docs = [
   "sphinx",
   "sphinx-automodapi",
-  "sphinx-astropy",
   "sphinx-copybutton",
   "furo",
   "sphinx-inline-tabs",
+  "numpydoc",
   "matplotlib",
 ]
 test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
