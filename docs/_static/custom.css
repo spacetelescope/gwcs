@@ -1,0 +1,10 @@
+/* Graphviz inheritance images use a fixed black-on-white palette. */
+body[data-theme="dark"] .graphviz img.inheritance {
+  filter: invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) .graphviz img.inheritance {
+    filter: invert(1);
+  }
+}

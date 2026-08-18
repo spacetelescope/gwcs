@@ -14,10 +14,8 @@ from pathlib import Path
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.inheritance_diagram",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "numpydoc",
     "pytest_doctestplus.sphinx.doctestplus",
@@ -30,14 +28,10 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/stable/", None),
     "astropy": ("https://docs.astropy.org/en/stable/", None),
-    "astropy.org": ("https://www.astropy.org/", None),
-    "h5py": ("https://docs.h5py.org/en/stable/", None),
 }
 
 exclude_patterns = ["_build", "_templates"]
-rst_epilog = "\n.. _Astropy: https://www.astropy.org\n"
 
 # -- Project information ------------------------------------------------------
 
@@ -55,17 +49,6 @@ version = ".".join(release.split(".")[:2])
 
 # -- HTML output ---------------------------------------------------------------
 html_title = f"{project} v{release}"
-
-htmlhelp_basename = f"{project}doc"
-
-# -- LaTeX output --------------------------------------------------------------
-latex_documents = [
-    ("index", project + ".tex", project + " Documentation", author, "manual")
-]
-latex_logo = "_static/images/logo-light-mode.png"
-
-# -- Manual page output --------------------------------------------------------
-man_pages = [("index", project.lower(), project + " Documentation", [author], 1)]
 
 # -- Autodoc and automodapi options -------------------------------------------
 autoclass_content = "both"
@@ -103,9 +86,9 @@ nitpick_ignore = [
 # -- HTML theme -----------------------------------------------------------------
 html_theme = "furo"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 # Do not add the theme's default sidebar alongside the custom layout.
 html_sidebars = {}
-html_logo = ""
 
 html_theme_options = {
     "light_logo": "images/stsci_logo.png",
@@ -115,16 +98,3 @@ html_theme_options = {
 pygments_style = "monokai"
 # Furo uses this style for dark-mode code blocks.
 pygments_dark_style = "monokai"
-
-# Render inheritance diagrams as SVG files.
-graphviz_output_format = "svg"
-
-graphviz_dot_args = [
-    "-Nfontsize=10",
-    "-Nfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
-    "-Efontsize=10",
-    "-Efontname=Helvetica Neue, Helvetica, Arial, sans-serif",
-    "-Gbgcolor=white",
-    "-Gfontsize=10",
-    "-Gfontname=Helvetica Neue, Helvetica, Arial, sans-serif",
-]
