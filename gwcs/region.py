@@ -10,16 +10,26 @@ Polygon filling algorithm.
 from __future__ import annotations
 
 import abc
+import warnings
 from collections import OrderedDict
 
 import numpy as np
+from astropy.utils import deprecated
 
-__all__ = ["Edge", "Polygon", "Region"]
+__all__ = (
+    "Edge",
+    "Polygon",
+    "Region",
+    # _Edge and _Region are included for documentation purposes; not needed
+    # once Edge and Region have been removed
+    "_Edge",
+    "_Region",
+)
 
 _INTERSECT_ATOL = 1e2 * np.finfo(float).eps
 
 
-class Region:
+class _Region:
     """
     Base class for regions.
 
@@ -31,8 +41,14 @@ class Region:
         Coordinate frame in which the region is defined.
     """
 
-    def __init__(self, rid, coordinate_frame):
-        self._coordinate_system = coordinate_frame
+    def __init__(self, rid, coordinate_frame=None):
+        if coordinate_frame is not None:
+            warnings.warn(
+                "The `coordinate_frame/coord_system` parameter is deprecated and "
+                "will be removed in a future release. ",
+                DeprecationWarning,
+            )
+        self._coordinate_system = coordinate_frame or "Cartesian"
         self._rid = rid
 
     @abc.abstractmethod
@@ -72,25 +88,39 @@ class Region:
         """
 
 
-class Polygon(Region):
+class Region(_Region):
+    """
+    Legacy public object for the Region class. This class has been deprecated.
+    """
+
+    def __init__(self, rid, coordinate_frame):
+        warnings.warn(
+            "The `Region` class is deprecated and will be removed in a future release. "
+            "Please use the `Polygon` class instead.",
+            DeprecationWarning,
+        )
+        super().__init__(rid, coordinate_frame)
+
+
+class Polygon(_Region):
     """
     Represents a 2D polygon region with multiple vertices.
 
     Parameters
     ----------
     rid : str
-         polygon id
+        polygon id
     vertices : list of (x,y) tuples or lists
-         The list is ordered in such a way that when traversed in a
-         counterclockwise direction, the enclosed area is the polygon.
-         The last vertex must coincide with the first vertex, minimum
-         4 vertices are needed to define a triangle
+        The list is ordered in such a way that when traversed in a
+        counterclockwise direction, the enclosed area is the polygon.
+        The last vertex must coincide with the first vertex, minimum
+        4 vertices are needed to define a triangle
     coord_frame : str or `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         Coordinate frame in which the polygon is defined.
 
     """
 
-    def __init__(self, rid, vertices, coord_system="Cartesian"):
+    def __init__(self, rid, vertices, coord_system=None):
         if len(vertices) < 4:
             msg = "Expected vertices to be a list of minimum 4 tuples (x,y)"
             raise ValueError(msg)
@@ -165,7 +195,7 @@ class Polygon(Region):
         Create a list of Edge objects from vertices
         """
         return [
-            Edge(name=f"E{i - 1}", start=self._vertices[i - 1], stop=self._vertices[i])
+            _Edge(name=f"E{i - 1}", start=self._vertices[i - 1], stop=self._vertices[i])
             for i in range(1, len(self._vertices))
         ]
 
@@ -185,11 +215,12 @@ class Polygon(Region):
         - Set y to be the smallest y coordinate that has an entry in GET
         - Initialize the Active Edge Table (AET) to be empty
         - For each scan line:
-          1. Add edges from GET to AET for which ymin==y
-          2. Remove edges from AET for which ymax==y
-          3. Compute the intersection of the current scan line with all edges in the AET
-          4. Sort on X of intersection point
-          5. Set elements between pairs of X in the AET to the Edge's ID
+            1. Add edges from GET to AET for which ymin==y
+            2. Remove edges from AET for which ymax==y
+            3. Compute the intersection of the current scan line with all edges
+                in the AET
+            4. Sort on X of intersection point
+            5. Set elements between pairs of X in the AET to the Edge's ID
 
         """
         # TODO:
@@ -219,7 +250,7 @@ class Polygon(Region):
                 y += 1
                 continue
 
-            scan_line = Edge(
+            scan_line = _Edge(
                 "scan_line",
                 start=[self._bbox[0], y],
                 stop=[self._bbox[0] + self._bbox[2], y],
@@ -265,6 +296,7 @@ class Polygon(Region):
                 AET.remove(edge)
         return AET
 
+    @deprecated("1.0.3", alternative="scan")
     def __contains__(self, px):
         """even-odd algorithm or something else better should be used"""
         return (
@@ -275,7 +307,7 @@ class Polygon(Region):
         )
 
 
-class Edge:
+class _Edge:
     """
     Edge representation.
 
@@ -294,6 +326,13 @@ class Edge:
         self._stop = stop
         if stop is not None:
             self._stop = np.asarray(stop)
+
+        if next is not None:
+            warnings.warn(
+                "The `next` parameter of the `_Edge` class is deprecated and will be "
+                "removed in a future release.",
+                DeprecationWarning,
+            )
         self._next = next
 
         if self._stop is not None and self._start is not None:
@@ -304,14 +343,10 @@ class Edge:
                 self._ymin = self._stop[1]
                 self._yminx = self._stop[0]
             self._ymax = max(self._start[1], self._stop[1])
-            self._xmin = min(self._start[0], self._stop[0])
-            self._xmax = max(self._start[0], self._stop[1])
         else:
             self._ymin = None
             self._yminx = None
             self._ymax = None
-            self._xmin = None
-            self._xmax = None
         self.GET_entry = self.compute_GET_entry()
 
     @property
@@ -331,6 +366,7 @@ class Edge:
         return self._ymax
 
     @property
+    @deprecated("1.0.3")
     def name(self):
         return self._name
 
@@ -369,7 +405,7 @@ class Edge:
         fmt = ""
         if self._name is not None:
             fmt += self._name
-            next_edge = self.next
+            next_edge = self._next
             while next_edge is not None:
                 fmt += "-->"
                 fmt += next_edge.name
@@ -378,20 +414,26 @@ class Edge:
         return fmt
 
     @property
+    @deprecated("1.0.3")
     def next(self):
         return self._next
 
     @next.setter  # noqa: A003
-    def next(self, edge: Edge):
+    def next(self, edge: _Edge):
+        warnings.warn(
+            "The `next` property of the `_Edge` class is deprecated and will be "
+            "removed in a future release.",
+            DeprecationWarning,
+        )
         if self._name is None:
             self._name = edge._name
             self._stop = edge._stop
             self._start = edge._start
-            self._next = edge.next
+            self._next = edge._next
         else:
             self._next = edge
 
-    def intersection(self, edge: Edge):
+    def intersection(self, edge: _Edge):
         u = self.stop - self.start
         v = edge.stop - edge.start
         w = self.start - edge.start
@@ -403,10 +445,25 @@ class Edge:
 
         return _det(v, w) / D * u + self._start
 
-    def is_parallel(self, edge: Edge):
+    @deprecated("1.0.3")
+    def is_parallel(self, edge: _Edge):
         u = self.stop - self.start
         v = edge.stop - edge.start
         return np.allclose(_det(u, v), 0, rtol=0, atol=_INTERSECT_ATOL)
+
+
+class Edge(_Edge):
+    """
+    Legacy public object for the Edge class. This class has been deprecated.
+    """
+
+    def __init__(self, name=None, start=None, stop=None, next=None):  # noqa: A002
+        warnings.warn(
+            "The `Edge` class is deprecated and will be removed in a future release. "
+            "Please use the `_Edge` class instead.",
+            DeprecationWarning,
+        )
+        super().__init__(name=name, start=start, stop=stop, next=next)
 
 
 def _det(u, v):
@@ -414,10 +471,10 @@ def _det(u, v):
     Find the determinant of the matrix formed by the vectors u and v
 
     Note: Originally this was computed using a numpy "2D" cross product,
-          however, this functionality has been deprecated and slated for
-          removal.
+            however, this functionality has been deprecated and slated for
+            removal.
     Note: This is marginally faster than using `np.linalg.det([u, v])` by ~10ms
-          during empirical testing
+            during empirical testing
     """
     return u[0] * v[1] - u[1] * v[0]
 

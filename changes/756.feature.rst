@@ -1,0 +1,2 @@
+Add deprecations for parts of the ``gwcs.region`` module that are being removed
+in a future release.

@@ -136,3 +136,11 @@ def test_get_values():
 
     res = gwutils.get_values(None, args)
     assert res == [2]
+
+
+def test_is_high_level_deprecated(gwcs_simple_2d):
+    """Test that the deprecated `is_high_level` function works and issues a warning."""
+    with pytest.warns(
+        DeprecationWarning, match=r"The use of `is_high_level` is deprecated"
+    ):
+        assert gwutils.is_high_level(1, 2, low_level_wcs=gwcs_simple_2d) is False

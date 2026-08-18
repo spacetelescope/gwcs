@@ -32,7 +32,7 @@ class TemporalFrame(CoordinateFrame):
         Name for this frame.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         reference_frame: time.Time,
         unit: u.Unit = u.s,
@@ -43,8 +43,10 @@ class TemporalFrame(CoordinateFrame):
     ):
         axes_names = (
             (
-                f"{reference_frame.format}({reference_frame.scale}; "
-                f"{reference_frame.location}",
+                (
+                    f"{reference_frame.format}({reference_frame.scale}; "
+                    f"{reference_frame.location}"
+                ),
             )
             if axes_names is None
             else axes_names

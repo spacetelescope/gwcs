@@ -90,7 +90,7 @@ class FITSImagingWCSTransform(Model):
             | RotateNative2Celestial(self.crval[0], self.crval[1], self.lon_pole)
         )
 
-    def evaluate(self, x, y, crpix, crval, cdelt, pc):
+    def evaluate(self, x, y, crpix, crval, cdelt, pc):  # noqa: PLR0917
         return self.forward(x, y)
 
     def inverse(self):

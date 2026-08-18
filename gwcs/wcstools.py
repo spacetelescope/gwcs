@@ -26,7 +26,7 @@ from .utils import (
 __all__ = ["grid_from_bounding_box", "wcs_from_fiducial", "wcs_from_points"]
 
 
-def wcs_from_fiducial(
+def wcs_from_fiducial(  # noqa: PLR0917
     fiducial,
     coordinate_frame=None,
     projection=None,
@@ -64,7 +64,8 @@ def wcs_from_fiducial(
         The bounding box over which the WCS is valid.
         It is a tuple of tuples of size 2 where each tuple
         represents a range of (low, high) values. The ``bounding_box`` is in the
-        order of the axes, `~gwcs.coordinate_frames.CoordinateFrameProtocol.axes_order`.
+        order of the axes,
+        `~gwcs.coordinate_frames._LegacyCoordinateFrameProtocol.axes_order`.
         For two inputs and axes_order(0, 1) the bounding box is
         ((xlow, xhigh), (ylow, yhigh)).
     input_frame : ~gwcs.coordinate_frames.CoordinateFrameProtocol`
@@ -276,7 +277,7 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     return grid
 
 
-def wcs_from_points(
+def wcs_from_points(  # noqa: PLR0917
     xy,
     world_coords,
     proj_point="center",

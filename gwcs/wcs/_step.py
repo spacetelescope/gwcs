@@ -1,5 +1,7 @@
 import sys
 import warnings
+from copy import copy
+from inspect import getattr_static
 from typing import NamedTuple, Self, TypeAlias, Union
 
 from astropy.modeling.core import Model
@@ -10,6 +12,7 @@ from gwcs.coordinate_frames import (
     CoordinateFrameProtocol,
     EmptyFrame,
 )
+from gwcs.coordinate_frames._base import _is_high_level, _LegacyCoordinateFrameProtocol
 
 __all__ = [
     "IndexedStep",
@@ -31,10 +34,54 @@ if sys.version_info >= (3, 12):
 
     def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
         return isinstance(frame, CoordinateFrameProtocol)
+
+    def _is_legacy_coordinate_frame(
+        frame: str | CoordinateFrameProtocol | _LegacyCoordinateFrameProtocol,
+    ) -> bool:
+        return isinstance(frame, _LegacyCoordinateFrameProtocol) and not isinstance(
+            frame, CoordinateFrameProtocol
+        )
 else:
 
     def _is_coordinate_frame(frame: str | CoordinateFrameProtocol) -> bool:
         return isinstance(frame, BaseCoordinateFrame | CoordinateFrame | EmptyFrame)
+
+    def _has_legacy_coordinate_frame_interface(frame: object) -> bool:
+        """
+        Return `True` if ``frame`` looks like a legacy coordinate frame object.
+
+        This supports duck-typed frames implementing the historical coordinate
+        frame API without ``is_high_level``.
+        """
+
+        required_members = (
+            "naxes",
+            "name",
+            "unit",
+            "axes_names",
+            "axes_order",
+            "reference_frame",
+            "axes_type",
+            "axis_physical_types",
+            "world_axis_object_classes",
+            "world_axis_object_components",
+            "add_units",
+            "remove_units",
+            "to_high_level_coordinates",
+            "from_high_level_coordinates",
+        )
+
+        return all(
+            getattr_static(frame, member, None) is not None
+            for member in required_members
+        )
+
+    def _is_legacy_coordinate_frame(
+        frame: str | CoordinateFrameProtocol,
+    ) -> bool:
+        return _has_legacy_coordinate_frame_interface(frame) and not hasattr(
+            frame, "is_high_level"
+        )
 
 
 class Step:
@@ -58,7 +105,7 @@ class Step:
         # This is correct type-wise, but the Python 3.11 bugfix causes a MyPy error
         self.frame = (
             frame
-            if _is_coordinate_frame(frame)
+            if _is_coordinate_frame(frame) or _is_legacy_coordinate_frame(frame)
             else EmptyFrame.from_transform(frame, transform)  # type: ignore[assignment, arg-type]
         )
         self.transform = transform
@@ -69,7 +116,18 @@ class Step:
 
     @frame.setter
     def frame(self, val: CoordinateFrameProtocol) -> None:
-        if not _is_coordinate_frame(val):
+        if is_legacy := _is_legacy_coordinate_frame(val):
+            msg = (
+                "Coordinate frames that do not implement `is_high_level` are "
+                "deprecated. Please update your coordinate frame to add "
+                "`is_high_level`."
+            )
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            # Copy the value to avoid mutating the original object.
+            val = copy(val)
+            val.is_high_level = lambda *args: _is_high_level(val, *args)  # type: ignore[method-assign]
+
+        if not (_is_coordinate_frame(val) or is_legacy):
             msg = '"frame" should be an instance of CoordinateFrameProtocol.'
             raise TypeError(msg)
 

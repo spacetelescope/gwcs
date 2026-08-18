@@ -41,7 +41,7 @@ class CoordinateFrame(CoordinateFrameProtocol):
         Name of this frame.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         naxes: int,
         axes_type: AxesType,
