@@ -84,6 +84,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 omit = [
+  "docs/conf.py",
   "gwcs/tests/test_*",
   "gwcs/tags/tests/test_*",
   "*/gwcs/tests/test_*",
