@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Self, TypeAlias, Union
+from typing import Self, Union
 
 from astropy import units as u
 from astropy.modeling import Model
@@ -17,7 +17,7 @@ from ._base import (
 
 __all__ = ["EmptyFrame", "EmptyFrameDeprecationWarning", "EmptyFrameUnitsWarning"]
 
-_Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
+type _Mdl = Union[Model, None]  # noqa: UP007
 
 
 class EmptyFrameDeprecationWarning(DeprecationWarning):

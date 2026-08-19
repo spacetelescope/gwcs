@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Generic, Self, TypeAlias, TypeVar, Union, overload
+from typing import Self, Union, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -277,14 +277,11 @@ class _BasePipeline:
 
 
 # Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple] | _BasePipeline]  # noqa: UP007
-
-
-_T = TypeVar("_T", bound=_BasePipeline)
+type ForwardTransform = Union[Model, Sequence[Step | StepTuple] | _BasePipeline]  # noqa: UP007
 
 
 @dataclass(frozen=True, slots=True)
-class DirectionalWCS(Generic[_T]):
+class DirectionalWCS[T: _BasePipeline]:
     """
     Dataclass to hold the WCS and the direction of the WCS's pipeline between
     two frames.
@@ -292,9 +289,9 @@ class DirectionalWCS(Generic[_T]):
     Note that the public use of this class is intended only for use on the full
     `~gwcs.wcs.WCS` class, which is a subclass of `~gwcs.wcs.Pipeline`.
 
-    Attributes
+    Attribute
     ----------
-    wcs : _T
+    wcs : BasePipeline
         The WCS object that represents the pipeline between two frames.
 
     forward : bool
@@ -302,7 +299,7 @@ class DirectionalWCS(Generic[_T]):
         or backward (to_frame to from_frame), False.
     """
 
-    wcs: _T
+    wcs: T
     forward: bool
 
 

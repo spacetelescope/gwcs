@@ -10,8 +10,6 @@ from typing import (
     NamedTuple,
     Protocol,
     Self,
-    TypeAlias,
-    TypeVar,
     runtime_checkable,
 )
 
@@ -43,11 +41,12 @@ __all__ = [
     #   is over.
     "_LegacyCoordinateFrameProtocol",
 ]
-_DtypeGeneric = TypeVar("_DtypeGeneric", bound=np.generic)
 
-AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
-LowLevelArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[_DtypeGeneric]]
-LowLevelInput: TypeAlias = LowLevelArray | u.Quantity
+type AstropyBuiltInFrame = Time | _AstropyBaseCoordinateFrame
+type LowLevelArray[_DtypeGeneric: np.generic] = np.ndarray[
+    tuple[int, ...], np.dtype[_DtypeGeneric]
+]
+type LowLevelInput = LowLevelArray | u.Quantity
 
 
 class WorldAxisObjectClass(NamedTuple):
@@ -101,7 +100,7 @@ class WorldAxisObjectClassConverter(NamedTuple):
     converter: Callable[..., Any]
 
 
-WorldAxisObjectClasses: TypeAlias = (
+type WorldAxisObjectClasses = (
     dict[str, WorldAxisObjectClass]
     | dict[str, WorldAxisObjectClassConverter]
     | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]

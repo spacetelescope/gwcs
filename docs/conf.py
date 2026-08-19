@@ -27,12 +27,8 @@
 import sys
 import tomllib
 from datetime import datetime
+from importlib.metadata import distribution
 from pathlib import Path
-
-if sys.version_info >= (3, 12):
-    from importlib.metadata import distribution
-else:
-    from importlib_metadata import distribution
 
 try:
     from sphinx_astropy.conf.v2 import *  # noqa: F403
