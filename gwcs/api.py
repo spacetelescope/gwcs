@@ -16,7 +16,6 @@ from astropy.modeling import separable
 from astropy.wcs.wcsapi import BaseLowLevelWCS, HighLevelWCSMixin
 
 from gwcs import utils
-from gwcs.coordinate_frames import LowLevelArray, LowLevelInput
 
 if TYPE_CHECKING:
     from astropy.modeling import Model
@@ -24,9 +23,9 @@ if TYPE_CHECKING:
 
     from gwcs.coordinate_frames import (
         CoordinateFrameProtocol,
-        WorldAxisObjectClasses,
         WorldAxisObjectComponent,
     )
+    from gwcs.typing import LowLevelArray, LowLevelInput, WorldAxisObjectClasses
 
 __all__ = ["NativeAPIMixin", "WCSAPIMixin"]
 
@@ -128,7 +127,7 @@ class NativeAPIMixin(abc.ABC):
 
         Returns
         -------
-        result
+        result : tuple
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
             The return type will be `~astropy.units.Quantity` objects if the

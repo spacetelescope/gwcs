@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 from astropy import units as u
 from astropy.wcs.wcsapi.low_level_api import VALID_UCDS, validate_physical_types
 
-from ._axis import AxesType, AxisType
+from ._axis import AxisType
+
+if TYPE_CHECKING:
+    from gwcs.typing import AxesType
 
 __all__ = ["FrameProperties"]
 

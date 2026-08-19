@@ -1,23 +1,21 @@
 from __future__ import annotations
 
 import warnings
-from typing import Self, TypeAlias, Union
+from typing import TYPE_CHECKING, Self
 
 from astropy import units as u
-from astropy.modeling import Model
 
-from ._axis import AxesType, AxisType
+from ._axis import AxisType
 from ._base import (
     CoordinateFrameProtocol,
-    LowLevelInput,
     WorldAxisObjectClass,
-    WorldAxisObjectClasses,
     WorldAxisObjectComponent,
 )
 
-__all__ = ["EmptyFrame", "EmptyFrameDeprecationWarning", "EmptyFrameUnitsWarning"]
+if TYPE_CHECKING:
+    from gwcs.typing import AxesType, LowLevelInput, Mdl, WorldAxisObjectClasses
 
-_Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
+__all__ = ["EmptyFrame", "EmptyFrameDeprecationWarning", "EmptyFrameUnitsWarning"]
 
 
 class EmptyFrameDeprecationWarning(DeprecationWarning):
@@ -44,7 +42,7 @@ class EmptyFrame(CoordinateFrameProtocol):
         warnings.warn(msg, EmptyFrameDeprecationWarning, stacklevel=2)
 
     @classmethod
-    def from_transform(cls, name: str | None = None, transform: _Mdl = None) -> Self:
+    def from_transform(cls, name: str | None = None, transform: Mdl = None) -> Self:
         """
         Class method constructor to allow for an EmptyFrame to be created using data
         from a transform.

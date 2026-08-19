@@ -1,17 +1,20 @@
-from typing import TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 from astropy import units as u
 
-from ._axis import AxesType, AxisType
+from ._axis import AxisType
 from ._base import (
-    AstropyBuiltInFrame,
     CoordinateFrameProtocol,
     WorldAxisObjectClass,
-    WorldAxisObjectClasses,
     WorldAxisObjectComponent,
 )
 from ._properties import FrameProperties
+
+if TYPE_CHECKING:
+    from gwcs.typing import AstropyBuiltInFrame, AxesType, WorldAxisObjectClasses
 
 __all__ = ["CoordinateFrame"]
 

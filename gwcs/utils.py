@@ -4,10 +4,12 @@ Utility function for WCS
 
 """
 
+from __future__ import annotations
+
 import functools
 import re
 import warnings
-from typing import Union
+from typing import TYPE_CHECKING
 
 import astropy.units as u
 import numpy as np
@@ -16,6 +18,9 @@ from astropy.io import fits
 from astropy.modeling import core, projections
 from astropy.modeling import models as astmodels
 from astropy.wcs import Celprm
+
+if TYPE_CHECKING:
+    from gwcs.typing import Mdl
 
 # these ctype values do not include yzLN and yzLT pairs
 sky_pairs = {
@@ -80,7 +85,7 @@ def _toindex(value):
     return to_index(value)
 
 
-def combine_transforms(transforms: list[Union[core.Model, None]]) -> core.Model:  # noqa: UP007
+def combine_transforms(transforms: list[Mdl]) -> core.Model:
     """
     Combine a list of transforms into a single transform.
     """

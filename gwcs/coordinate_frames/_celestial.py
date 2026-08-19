@@ -1,9 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from astropy import coordinates as coord
 from astropy import units as u
 
 from ._axis import AxisType
-from ._base import AstropyBuiltInFrame, WorldAxisObjectClass, WorldAxisObjectComponent
+from ._base import WorldAxisObjectClass, WorldAxisObjectComponent
 from ._core import CoordinateFrame
+
+if TYPE_CHECKING:
+    from gwcs.typing import AstropyBuiltInFrame
 
 __all__ = ["CelestialFrame"]
 

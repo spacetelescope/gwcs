@@ -15,3 +15,4 @@ API
    gwcs.spectroscopy
    gwcs.geometry
    gwcs.fitswcs
+   gwcs.typing

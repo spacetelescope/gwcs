@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TypeAlias
 
-__all__ = ["AxesType", "AxisType"]
+__all__ = ["AxisType"]
 
 
 class AxisType(StrEnum):
@@ -33,6 +32,3 @@ class AxisType(StrEnum):
             return cls[upper]
 
         return axis_type
-
-
-AxesType: TypeAlias = tuple[AxisType | str, ...] | AxisType | str

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import numpy as np
 from astropy import units as u
@@ -7,10 +10,12 @@ from ._axis import AxisType
 from ._base import (
     WorldAxisObjectClass,
     WorldAxisObjectClassConverter,
-    WorldAxisObjectClasses,
     WorldAxisObjectComponent,
 )
 from ._core import CoordinateFrame
+
+if TYPE_CHECKING:
+    from gwcs.typing import WorldAxisObjectClasses
 
 __all__ = ["CompositeFrame"]
 

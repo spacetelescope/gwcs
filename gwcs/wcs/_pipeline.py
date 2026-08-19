@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Generic, Self, TypeAlias, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Generic, Self, TypeVar, overload
 
 from astropy.modeling import Model
 from astropy.modeling.bounding_box import CompoundBoundingBox, ModelBoundingBox
@@ -13,9 +13,12 @@ from gwcs.coordinate_frames import CoordinateFrameProtocol, EmptyFrame
 from gwcs.utils import CoordinateFrameError, combine_transforms
 
 from ._exception import GwcsBoundingBoxWarning, GwcsFrameExistsError
-from ._step import IndexedStep, Mdl, Step, StepTuple
+from ._step import IndexedStep, Step
 
-__all__ = ["DirectionalWCS", "ForwardTransform", "Pipeline"]
+if TYPE_CHECKING:
+    from gwcs.typing import ForwardTransform, Mdl, StepTuple
+
+__all__ = ["DirectionalWCS", "Pipeline"]
 
 
 class _BasePipeline:
@@ -272,10 +275,6 @@ class _BasePipeline:
 
         # Otherwise it is backward, so return the backward transform
         return direction.wcs.backward_transform
-
-
-# Type aliases due to the use of the `|` for type hints not working with Model
-ForwardTransform: TypeAlias = Union[Model, Sequence[Step | StepTuple] | _BasePipeline]  # noqa: UP007
 
 
 _T = TypeVar("_T", bound=_BasePipeline)

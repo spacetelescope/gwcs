@@ -214,11 +214,8 @@ from ._axis import AxisType
 from ._base import (
     BaseCoordinateFrame,
     CoordinateFrameProtocol,
-    LowLevelArray,
-    LowLevelInput,
     WorldAxisObjectClass,
     WorldAxisObjectClassConverter,
-    WorldAxisObjectClasses,
     WorldAxisObjectComponent,
     _LegacyCoordinateFrameProtocol,
 )
@@ -245,14 +242,11 @@ __all__ = [
     "EmptyFrameUnitsWarning",
     "Frame2D",
     "FrameProperties",
-    "LowLevelArray",
-    "LowLevelInput",
     "SpectralFrame",
     "StokesFrame",
     "TemporalFrame",
     "WorldAxisObjectClass",
     "WorldAxisObjectClassConverter",
-    "WorldAxisObjectClasses",
     "WorldAxisObjectComponent",
     # See comment in _base.py about why this is included in __all__.
     "_LegacyCoordinateFrameProtocol",
