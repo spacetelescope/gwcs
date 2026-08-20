@@ -39,6 +39,8 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf api
+	-rm -rf generated
+	-rm -rf gwcs/generated
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

@@ -90,9 +90,9 @@ class Step:
 
     Parameters
     ----------
-    frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol` or str
+    frame
         A gwcs coordinate frame object.
-    transform : `~astropy.modeling.Model` or None
+    transform
         A transform from this step's frame to next step's frame.
         The transform of the last step should be `None`.
     """

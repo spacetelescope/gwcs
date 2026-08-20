@@ -67,15 +67,15 @@ class WorldAxisObjectClass(NamedTuple):
 
     Attributes
     ----------
-    class_object : type | str
+    class_object
         The High-Level Object class for the axis or a string that is the fully
         qualified name of the class.
-    arguments : tuple
+    arguments
         The positional arguments to be passed to the class when instantiating an
         object of this class. Note if ``world_axis_object_components`` specifies that
         the world coordinates should be passed as a positional argument, then this
         tuple will include `None` as a place holder for each of the world coordinates.
-    keyword_arguments : dict
+    keyword_arguments
         The keyword arguments to be passed to the class when instantiating an object of
         this class.
     """
@@ -91,7 +91,7 @@ class WorldAxisObjectClassConverter(NamedTuple):
 
     Attributes
     ----------
-    converter : Callable[..., Any]
+    converter
         A callable that will convert the input values into the desired output
     """
 
@@ -124,16 +124,16 @@ class WorldAxisObjectComponent(NamedTuple):
 
     Attributes
     ----------
-    name : str
+    name
         Name for the world object this world array corresponds to, which *must*
         match the string names used in ``world_axis_object_classes``.  Note that
         names might appear twice because two world arrays might correspond to a
         single world object (e.g. a celestial coordinate might have both “ra”
         and “dec” arrays, which correspond to a single sky coordinate object.
-    position : str | int
+    position
         This is either a string keyword argument name or a positional index for
         the corresponding class from ``world_axis_object_classes``.
-    property: str | Callable[[Any], str]
+    property
         This is a string giving the name of the property to access on the
         corresponding class from ``world_axis_object_classes`` in order to get
         numerical values.
@@ -306,7 +306,7 @@ class _LegacyCoordinateFrameProtocol(Protocol):
 
         Returns
         -------
-        high_level_coordinates
+        high_level_coordinates : object
             One (or more) high level object describing the coordinate.
         """
         # We allow Quantity-like objects here which values_to_high_level_objects

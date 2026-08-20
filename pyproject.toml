@@ -30,13 +30,12 @@ gwcs = "gwcs.extension:get_extensions"
 [project.optional-dependencies]
 docs = [
   "sphinx",
-  "sphinx-automodapi",
-  "sphinx-astropy",
+  "sphinx-autodoc-typehints",
   "sphinx-copybutton",
-  "sphinx-asdf",
   "furo",
   "sphinx-inline-tabs",
   "matplotlib",
+  "pytest-doctestplus",
 ]
 test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
 
@@ -85,6 +84,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 omit = [
+  "docs/conf.py",
   "gwcs/tests/test_*",
   "gwcs/tags/tests/test_*",
   "*/gwcs/tests/test_*",

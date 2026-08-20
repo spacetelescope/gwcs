@@ -233,6 +233,10 @@ class LabelMapperArray(_LabelMapper):
     """
     Maps array locations to labels.
 
+    Use case:
+    For an IFU observation, the array represents the detector and its
+    values correspond to the IFU slice label.
+
     Parameters
     ----------
     mapper : ndarray
@@ -246,10 +250,6 @@ class LabelMapperArray(_LabelMapper):
         so that the output of it is (x, y) values to index the array.
     name : str
         The name of this transform.
-
-    Use case:
-    For an IFU observation, the array represents the detector and its
-    values correspond to the IFU slice label.
 
     """
 

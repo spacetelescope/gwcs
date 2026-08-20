@@ -3,26 +3,15 @@
 API
 ===
 
-.. automodapi:: gwcs.api
-  :inherited-members:
+.. autosummary::
+   :toctree: generated
+   :template: autosummary/module.rst
 
-.. automodapi:: gwcs.wcs
-  :inherited-members:
-
-.. automodapi:: gwcs.coordinate_frames
-  :inherited-members:
-  :no-inherited-members: AxisType
-
-.. automodapi:: gwcs.wcstools
-
-.. automodapi:: gwcs.selector
-  :inherited-members:
-
-.. automodapi:: gwcs.spectroscopy
-  :inherited-members:
-
-.. automodapi:: gwcs.geometry
-  :inherited-members:
-
-.. automodapi:: gwcs.fitswcs
-  :inherited-members:
+   gwcs.api
+   gwcs.wcs
+   gwcs.coordinate_frames
+   gwcs.wcstools
+   gwcs.selector
+   gwcs.spectroscopy
+   gwcs.geometry
+   gwcs.fitswcs

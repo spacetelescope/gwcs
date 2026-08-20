@@ -1,3 +1,7 @@
+"""
+This module contains utility functions for working with GWCS's WCS objects.
+"""
+
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
 import warnings
@@ -47,7 +51,7 @@ def wcs_from_fiducial(  # noqa: PLR0917
             A location on the sky in some standard coordinate system.
             A Quantity with spectral units.
             A list of the above.
-    coordinate_frame : ~gwcs.coordinate_frames.CoordinateFrameProtocol`
+    coordinate_frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         The output coordinate frame.
         If fiducial is not an instance of `~astropy.coordinates.SkyCoord`,
         ``coordinate_frame`` is required.
@@ -68,7 +72,7 @@ def wcs_from_fiducial(  # noqa: PLR0917
         `~gwcs.coordinate_frames._LegacyCoordinateFrameProtocol.axes_order`.
         For two inputs and axes_order(0, 1) the bounding box is
         ((xlow, xhigh), (ylow, yhigh)).
-    input_frame : ~gwcs.coordinate_frames.CoordinateFrameProtocol`
+    input_frame : `~gwcs.coordinate_frames.CoordinateFrameProtocol`
         The input coordinate frame.
     """
     from .wcs import WCS
@@ -188,6 +192,9 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
           ``bbox`` describes the edges of an image the indexing includes
           only pixels within the image.
 
+    The bounding_box is in order of X, Y [, Z] and the output will be in the
+    same order.
+
     Parameters
     ----------
     bounding_box : tuple | ~astropy.modeling.bounding_box.ModelBoundingBox | ~astropy.modeling.bounding_box.CompoundBoundingBox
@@ -195,12 +202,10 @@ def grid_from_bounding_box(bounding_box, step=1, center=True, selector=None):
     step : scalar or tuple
         Step size for grid in each dimension.  Scalar applies to all dimensions.
     center : bool
+        If `True` use the center of the pixel, otherwise use the corner.
     selector : tuple | None
         If selector is set then it must be a selector tuple and bounding_box must
         be a CompoundBoundingBox.
-
-    The bounding_box is in order of X, Y [, Z] and the output will be in the
-    same order.
 
     Examples
     --------
@@ -301,7 +306,7 @@ def wcs_from_points(  # noqa: PLR0917
 
     Parameters
     ----------
-    xy : tuple of 2 ndarrays
+    xy : tuple
         Points in the input coordinate frame - x, y inputs.
     world_coords : `~astropy.coordinates.SkyCoord`
         Points in the output coordinate frame.

@@ -21,17 +21,17 @@ class CelestialFrame(CoordinateFrame):
 
     Parameters
     ----------
-    axes_order : tuple of int
+    axes_order
         A dimension in the input data that corresponds to this axis.
-    reference_frame : astropy.coordinates.builtin_frames
+    reference_frame
         A reference frame.
-    unit : str or units.Unit instance or iterable of those
+    unit
         Units on axes.
-    axes_names : list
+    axes_names
         Names of the axes in this frame.
-    name : str
+    name
         Name of this frame.
-    axis_physical_types : list
+    axis_physical_types
         The UCD 1+ physical types for the axes, in frame order (lon, lat).
     """
 

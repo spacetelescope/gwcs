@@ -17,16 +17,16 @@ class SpectralFrame(CoordinateFrame):
 
     Parameters
     ----------
-    axes_order : tuple or int
+    axes_order
         A dimension in the input data that corresponds to this axis.
-    reference_frame : astropy.coordinates.builtin_frames
+    reference_frame
         Reference frame (usually used with output_frame to convert to world
         coordinate objects).
-    unit : str or units.Unit instance
+    unit
         Spectral unit.
-    axes_names : str
+    axes_names
         Spectral axis name.
-    name : str
+    name
         Name for this frame.
 
     """

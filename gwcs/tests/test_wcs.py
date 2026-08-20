@@ -2139,17 +2139,20 @@ def test_transform_same_frame_raises_value_error():
 
 def test_construction_from_base_pipeline_skips_validation(monkeypatch):
     """
-    Constructing a ``WCS``/``Pipeline`` from a `~gwcs.wcs._BasePipeline` must take
-    the no-copy fast path: it must NOT call ``_initialize_pipeline`` and must
-    share the underlying ``Step`` objects by identity with the source pipeline.
+    Constructing a ``WCS``/``Pipeline`` from a `~gwcs.wcs._pipeline._BasePipeline`
+    must take the no-copy fast path: it must NOT call ``_initialize_pipeline``
+    and must share the underlying ``Step`` objects by identity with the source
+    pipeline.
 
     This locks in the performance contract of the ``pipeline_between`` rework so
     a future change cannot silently reintroduce per-call validation/copying on
     the hot evaluation path.
     """
+    from gwcs.wcs._pipeline import _BasePipeline
+
     gw = wcs.WCS([wcs.Step(detector, m1), wcs.Step(focal, m2), wcs.Step(icrs, None)])
 
-    base = wcs._BasePipeline(gw.pipeline)
+    base = _BasePipeline(gw.pipeline)
 
     called = False
     original_initialize = wcs.Pipeline._initialize_pipeline

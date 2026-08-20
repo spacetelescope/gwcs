@@ -214,7 +214,7 @@ class SellmeierGlass(Model):
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Sellmeier_equation
+    - https://en.wikipedia.org/wiki/Sellmeier_equation
 
     Notes
     -----

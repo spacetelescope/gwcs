@@ -70,14 +70,16 @@ class NativeAPIMixin(abc.ABC):
         """
         Executes the forward transform.
 
-        args : float or array-like
+        Parameters
+        ----------
+        args
             Inputs in the input coordinate system, separate inputs
             for each dimension.
-        with_bounding_box : bool, optional
+        with_bounding_box
             If True(default) values in the result which correspond to
             any of the inputs being outside the bounding_box are set
             to ``fill_value``.
-        fill_value : float, optional
+        fill_value
             Output value for inputs outside the bounding_box
             (default is np.nan).
 
@@ -106,16 +108,16 @@ class NativeAPIMixin(abc.ABC):
 
         Parameters
         ----------
-        args : float, array like
+        args
             Coordinates to be inverted. The number of arguments must be equal
             to the number of world coordinates given by ``world_n_dim``.
 
-        with_bounding_box : bool, optional
+        with_bounding_box
             If `True` (default) values in the result which correspond to any
             of the inputs being outside the bounding_box are set to
             ``fill_value``.
 
-        fill_value : float, optional
+        fill_value
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
         Other Parameters
@@ -126,7 +128,7 @@ class NativeAPIMixin(abc.ABC):
 
         Returns
         -------
-        result : tuple or value
+        result
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
             The return type will be `~astropy.units.Quantity` objects if the

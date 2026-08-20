@@ -149,21 +149,21 @@ class _UnitHandler:
 
     Parameters
     ----------
-    inputs : tuple of low level inputs
+    inputs
         The inputs to be passed to the transform.
-    transform : Model
+    transform
         The transform to be applied to the inputs.
-    frame : CoordinateFrameProtocol
+    frame
         The frame to use for adding/removing units and converting to high level
         objects.
 
     Attributes
     ----------
-    args :
+    args
         The input arguments to be passed to the transform.
-    _is_high_level : bool
+    _is_high_level
         Whether or not the inputs to the WCS API are high level objects.
-    _add_units : bool
+    _add_units
         If true, we add (or convert) units of the outputs of the transform to
         match the input type.
         If false, we remove (and convert if necessary) units of the outputs of
@@ -300,9 +300,9 @@ class _UnitHandler:
 
         Parameters
         ----------
-        outputs : tuple of low level inputs
+        outputs
             The outputs of a transform to be handled.
-        frame : CoordinateFrameProtocol
+        frame
             The frame to use for adding/removing units and converting to high level
             objects.
 
@@ -328,17 +328,17 @@ class WCS(Pipeline, WCSAPIMixin):
 
     Parameters
     ----------
-    forward_transform : `~astropy.modeling.Model` or a list
+    forward_transform
         The transform between ``input_frame`` and ``output_frame``.
         A list of (frame, transform) tuples where ``frame`` is the starting frame and
         ``transform`` is the transform from this frame to the next one or
         ``output_frame``.  The last tuple is (transform, None), where None indicates
         the end of the pipeline.
-    input_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
+    input_frame
         A coordinates object or a string name.
-    output_frame : str, `~gwcs.coordinate_frames.CoordinateFrame`
+    output_frame
         A coordinates object or a string name.
-    name : str
+    name
         a name for this WCS
 
     """
@@ -411,14 +411,16 @@ class WCS(Pipeline, WCSAPIMixin):
         """
         Executes the forward transform.
 
-        args : float or array-like
+        Parameters
+        ----------
+        args
             Inputs in the input coordinate system, separate inputs
             for each dimension.
-        with_bounding_box : bool, optional
+        with_bounding_box
             If True(default) values in the result which correspond to
             any of the inputs being outside the bounding_box are set
             to ``fill_value``.
-        fill_value : float, optional
+        fill_value
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
@@ -444,8 +446,8 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Parameters
         ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or
-            `~astropy.units.Unit` coordinates to be inverted
+        args
+            Coordinates to be inverted.
 
         kwargs : dict
             keyword arguments to be passed either to ``backward_transform``
@@ -453,7 +455,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        result : bool, numpy.ndarray
+        result
             A single boolean value or an array of boolean values with `True`
             indicating that the WCS footprint contains the coordinate
             and `False` if input is outside the footprint.
@@ -487,16 +489,16 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Parameters
         ----------
-        args : float, array like, `~astropy.coordinates.SkyCoord` or `~astropy.units.Unit`
+        args
             Coordinates to be inverted. The number of arguments must be equal
             to the number of world coordinates given by ``world_n_dim``.
 
-        with_bounding_box : bool, optional
+        with_bounding_box
             If `True` (default) values in the result which correspond to any
             of the inputs being outside the bounding_box are set to
             ``fill_value``.
 
-        fill_value : float, optional
+        fill_value
             Output value for inputs outside the bounding_box (default is ``np.nan``).
 
         Other Parameters
@@ -507,13 +509,13 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        result : tuple or value
+        result
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
             The return type will be `~astropy.units.Quantity` objects if the
             transform returns ``Quantity`` objects, else values.
 
-        """  # noqa: E501
+        """
         try:
             transform = self.backward_transform
         except NotImplementedError:
@@ -1278,16 +1280,16 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Parameters
         ----------
-        from_frame : str or `~gwcs.coordinate_frames.CoordinateFrame`
+        from_frame
             Initial coordinate frame.
-        to_frame : str, or instance of `~gwcs.coordinate_frames.CoordinateFrame`
+        to_frame
             Coordinate frame into which to transform.
-        args : float or array-like
+        args
             Inputs in ``from_frame``, separate inputs for each dimension.
-        with_bounding_box : bool, optional
+        with_bounding_box
             If True(default) values in the result which correspond to any of
             the inputs being outside the bounding_box are set to ``fill_value``.
-        fill_value : float, optional
+        fill_value
             Output value for inputs outside the bounding_box
             (default is np.nan).
         """
@@ -1350,11 +1352,11 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Parameters
         ----------
-        bounding_box : tuple of floats: (start, stop)
-            ``prop: bounding_box``
+        bounding_box : tuple
+            ``prop: bounding_box``, given as ``(start, stop)`` per axis.
         center : bool
             If `True` use the center of the pixel, otherwise use the corner.
-        axis_type : AxisType
+        axis_type
             A supported ``output_frame.axes_type`` or ``"all"`` (default).
             One of [``'spatial'``, ``'spectral'``, ``'temporal'``] or a custom type.
 
@@ -1440,12 +1442,12 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Parameters
         ----------
-        fixed : dict
+        fixed
             Keyword arguments with fixed values corresponding to ``self.selector``.
 
         Returns
         -------
-        new_wcs : `WCS`
+        new_wcs
             A new unique WCS corresponding to the values in ``fixed``.
 
         Examples
@@ -1554,7 +1556,8 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        FITS header with all SIP WCS keywords
+        hdr : `~astropy.io.fits.Header`
+            FITS header with all SIP WCS keywords
 
         Raises
         ------
@@ -1669,7 +1672,8 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        FITS header with all SIP WCS keywords
+        hdr : `~astropy.io.fits.Header`
+            FITS header with all SIP WCS keywords
 
         Raises
         ------
