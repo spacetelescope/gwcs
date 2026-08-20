@@ -7,7 +7,7 @@ import itertools
 import sys
 import warnings
 from copy import copy
-from typing import Self, overload
+from typing import TYPE_CHECKING, Self, overload
 
 import astropy.units as u
 import numpy as np
@@ -34,15 +34,13 @@ from gwcs.coordinate_frames import (
     CelestialFrame,
     CompositeFrame,
     CoordinateFrameProtocol,
-    LowLevelArray,
-    LowLevelInput,
     get_ctype_from_ucd,
 )
 from gwcs.utils import _compute_lon_pole, correct_1d_output, to_index
 
 from ._exception import NoConvergence
-from ._pipeline import ForwardTransform, Pipeline, _BasePipeline
-from ._step import Step, StepTuple
+from ._pipeline import Pipeline, _BasePipeline
+from ._step import Step
 from ._utils import (
     fit_2D_poly,
     fix_transform_inputs,
@@ -50,6 +48,9 @@ from ._utils import (
     reform_poly_coefficients,
     store_2D_coefficients,
 )
+
+if TYPE_CHECKING:
+    from gwcs.typing import ForwardTransform, LowLevelArray, LowLevelInput, StepTuple
 
 __all__ = ["WCS"]
 
@@ -455,7 +456,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        result
+        result : bool
             A single boolean value or an array of boolean values with `True`
             indicating that the WCS footprint contains the coordinate
             and `False` if input is outside the footprint.
@@ -509,7 +510,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        result
+        result : tuple
             Returns a tuple of scalar or array values for each axis. Unless
             ``input_frame.naxes == 1`` when it shall return the value.
             The return type will be `~astropy.units.Quantity` objects if the
@@ -1447,7 +1448,7 @@ class WCS(Pipeline, WCSAPIMixin):
 
         Returns
         -------
-        new_wcs
+        new_wcs : WCS
             A new unique WCS corresponding to the values in ``fixed``.
 
         Examples

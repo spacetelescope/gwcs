@@ -6,19 +6,17 @@ from collections.abc import Callable
 from itertools import zip_longest
 from numbers import Number
 from typing import (
+    TYPE_CHECKING,
     Any,
     NamedTuple,
     Protocol,
     Self,
-    TypeAlias,
-    TypeVar,
     runtime_checkable,
 )
 
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import BaseCoordinateFrame as _AstropyBaseCoordinateFrame
-from astropy.time import Time, TimeDelta
+from astropy.time import TimeDelta
 from astropy.wcs.wcsapi.high_level_api import (
     high_level_objects_to_values,
     values_to_high_level_objects,
@@ -26,14 +24,18 @@ from astropy.wcs.wcsapi.high_level_api import (
 
 from gwcs.utils import correct_1d_output
 
-from ._axis import AxesType
+if TYPE_CHECKING:
+    from gwcs.typing import (
+        AstropyBuiltInFrame,
+        AxesType,
+        LowLevelArray,
+        LowLevelInput,
+        WorldAxisObjectClasses,
+    )
 
 __all__ = [
-    "AstropyBuiltInFrame",
     "BaseCoordinateFrame",
     "CoordinateFrameProtocol",
-    "LowLevelArray",
-    "LowLevelInput",
     "WorldAxisObjectClass",
     "WorldAxisObjectClassConverter",
     "WorldAxisObjectComponent",
@@ -43,11 +45,6 @@ __all__ = [
     #   is over.
     "_LegacyCoordinateFrameProtocol",
 ]
-_DtypeGeneric = TypeVar("_DtypeGeneric", bound=np.generic)
-
-AstropyBuiltInFrame: TypeAlias = Time | _AstropyBaseCoordinateFrame
-LowLevelArray: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[_DtypeGeneric]]
-LowLevelInput: TypeAlias = LowLevelArray | u.Quantity
 
 
 class WorldAxisObjectClass(NamedTuple):
@@ -99,13 +96,6 @@ class WorldAxisObjectClassConverter(NamedTuple):
     arguments: tuple[Any, ...]
     keyword_arguments: dict[str, Any]
     converter: Callable[..., Any]
-
-
-WorldAxisObjectClasses: TypeAlias = (
-    dict[str, WorldAxisObjectClass]
-    | dict[str, WorldAxisObjectClassConverter]
-    | dict[str, WorldAxisObjectClass | WorldAxisObjectClassConverter]
-)
 
 
 class WorldAxisObjectComponent(NamedTuple):

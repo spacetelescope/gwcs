@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import sys
 import warnings
 from copy import copy
 from inspect import getattr_static
-from typing import NamedTuple, Self, TypeAlias, Union
+from typing import TYPE_CHECKING, NamedTuple, Self
 
 from astropy.modeling.core import Model
 
@@ -14,16 +16,10 @@ from gwcs.coordinate_frames import (
 )
 from gwcs.coordinate_frames._base import _is_high_level, _LegacyCoordinateFrameProtocol
 
-__all__ = [
-    "IndexedStep",
-    "Mdl",
-    "Step",
-    "StepTuple",
-]
+if TYPE_CHECKING:
+    from gwcs.typing import Mdl
 
-
-Mdl: TypeAlias = Union[Model, None]  # noqa: UP007
-StepTuple: TypeAlias = tuple[CoordinateFrameProtocol, Union[Model, None]]  # noqa: UP007
+__all__ = ["IndexedStep", "Step"]
 
 
 # Runtime checkable isinstance check evaluates the actual properties of the object
