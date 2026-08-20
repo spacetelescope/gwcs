@@ -2,6 +2,8 @@
 #
 # Sphinx documentation build configuration file.
 #
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
 # The documentation is built from the installed package, so no source-tree path
 # needs to be added here.
 
@@ -25,6 +27,7 @@ with warnings.catch_warnings():
     import astropy.samp  # noqa: F401
 
 # -- Extensions and general options -------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -40,6 +43,9 @@ extensions = [
     "sphinx_inline_tabs",
 ]
 
+# -- sphinx.ext.intersphinx configuration ------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
@@ -51,6 +57,7 @@ exclude_patterns = ["_build", "_templates"]
 templates_path = ["_templates"]
 
 # -- Project information ------------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 # Read the package metadata so the documentation title and version stay in sync.
 with (Path(__file__).parent.parent / "pyproject.toml").open("rb") as metadata_file:
@@ -65,6 +72,7 @@ release = distribution(project).version
 version = ".".join(release.split(".")[:2])
 
 # -- HTML output ---------------------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_title = f"{project} v{release}"
 
 # -- Autodoc options -----------------------------------------------------------
