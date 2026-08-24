@@ -12,6 +12,7 @@ except ImportError:
 
 from gwcs import fitswcs, geometry
 from gwcs import spectroscopy as sp
+from gwcs.converters.spectroscopy import GratingEquationConverter
 
 sell_glass = sp.SellmeierGlass(
     B_coef=[0.58339748, 0.46085267, 3.8915394],
@@ -48,6 +49,14 @@ transforms = [
     sp.WavelengthFromGratingEquation(50000, -1),
     sp.AnglesFromGratingEquation3D(20000, 1),
     sp.WavelengthFromGratingEquation(15000 * 1 / u.m, -1),
+    sp.WavelengthFromGrismEquation(
+        groove_density=23000 * 1 / u.m,
+        spectral_order=90,
+        reference_wavelength=854.1738582455826 * u.nm,
+        refractive_index=1.25 * u.one,
+        refractive_index_derivative=1000 * 1 / u.m,
+        out_of_plane_angle=1.5 * u.deg,
+    ),
     fwcs,
 ]
 
@@ -55,3 +64,57 @@ transforms = [
 @pytest.mark.parametrize(("model"), transforms)
 def test_transforms(tmp_path, model):
     assert_model_roundtrip(model, tmp_path, version="1.6.0")
+
+
+def test_wavelength_grating_equation_converter_omits_default_parameters():
+    converter = GratingEquationConverter()
+    model = sp.WavelengthFromGratingEquation(50000 * 1 / u.m, -1)
+
+    node = converter.to_yaml_tree_transform(model, tag=None, ctx=None)
+
+    assert node == {
+        "output": "wavelength",
+        "order": -1.0,
+        "groove_density": 50000.0 / u.m,
+    }
+
+
+def test_wavelength_grating_equation_converter_serializes_non_default_parameters():
+    converter = GratingEquationConverter()
+    model = sp.WavelengthFromGrismEquation(
+        groove_density=23000 * 1 / u.m,
+        spectral_order=90,
+        reference_wavelength=854.1738582455826 * u.nm,
+        refractive_index=1.25 * u.one,
+        refractive_index_derivative=1000 * 1 / u.m,
+        out_of_plane_angle=1.5 * u.deg,
+    )
+
+    node = converter.to_yaml_tree_transform(model, tag=None, ctx=None)
+
+    assert node == {
+        "output": "wavelength",
+        "order": 90.0,
+        "groove_density": 23000.0 / u.m,
+        "reference_wavelength": 854.1738582455826 * u.nm,
+        "refractive_index": 1.25 * u.one,
+        "refractive_index_derivative": 1000.0 / u.m,
+        "out_of_plane_angle": 1.5 * u.deg,
+    }
+
+
+def test_wavelength_grating_equation_converter_deserializes_grism_node():
+    converter = GratingEquationConverter()
+    node = {
+        "output": "wavelength",
+        "order": 90,
+        "groove_density": 23000.0 / u.m,
+        "reference_wavelength": 854.1738582455826 * u.nm,
+        "refractive_index": 1.25 * u.one,
+        "refractive_index_derivative": 1000.0 / u.m,
+        "out_of_plane_angle": 1.5 * u.deg,
+    }
+
+    model = converter.from_yaml_tree_transform(node, tag=None, ctx=None)
+
+    assert isinstance(model, sp.WavelengthFromGrismEquation)
