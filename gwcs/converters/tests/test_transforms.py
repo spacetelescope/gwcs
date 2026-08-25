@@ -46,7 +46,7 @@ transforms = [
     sell_zemax,
     sell_zemax & todircos | snell & Identity(1) | fromdircos,
     sell_glass & todircos | snell & Identity(1) | fromdircos,
-    sp.WavelengthFromGratingEquation(50000, -1),
+    sp.WavelengthFromGratingEquation(50000 / u.m, -1),
     sp.AnglesFromGratingEquation3D(20000, 1),
     sp.WavelengthFromGratingEquation(15000 * 1 / u.m, -1),
     sp.WavelengthFromGrismEquation(

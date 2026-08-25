@@ -2,6 +2,7 @@ import astropy.units as u
 import numpy as np
 import pytest
 from astropy.modeling.models import Identity
+from astropy.modeling.parameters import InputParameterError
 from astropy.wcs import WCS
 from numpy.testing import assert_allclose
 
@@ -41,12 +42,10 @@ def test_angles_grating_equation():
 def test_wavelength_grating_equation_units() -> None:
     alpha_in = np.linspace(0.01, 0.05, 4)
 
-    # Bare numbers are coerced: groove_density → 1/m, spectral_order → dimensionless.
-    # Result therefore has units of meters.
-    model = sp.WavelengthFromGratingEquation(20000, -1)
-    wave = -(alpha_in + alpha_in) / (20000 / u.m * -1)
-    result = model(-alpha_in, -alpha_in)
-    assert u.allclose(result, wave)
+    # groove_density has units baked into its Parameter default, so a bare
+    # number is no longer silently coerced -- it must raise instead.
+    with pytest.raises(InputParameterError):
+        sp.WavelengthFromGratingEquation(20000, -1)
 
     # Explicit Quantity inputs.
     model = sp.WavelengthFromGratingEquation(20000 * 1 / u.m, -1)
@@ -99,29 +98,21 @@ def test_refracted_angle_sine_model_basic() -> None:
     assert u.allclose(result, np.sin(reference_refracted_angle), atol=1e-12)
 
 
-def test_refracted_angle_sine_model_bare_number_coercion() -> None:
-    """Bare-number arguments should be coerced to the assumed units."""
-    model = sp.RefractedAngleSineModel(
-        reference_pixel=0,
-        reference_wavelength=0,  # assumed m
-        dispersion=0,  # assumed m/pix
-        groove_density=1,  # assumed 1/m
-        spectral_order=1,  # assumed dimensionless
-        incident_angle=0,  # assumed deg
-        refractive_index=1,  # assumed dimensionless
-        refractive_index_derivative=0,  # assumed 1/m
-        out_of_plane_angle=0,  # assumed deg
-        camera_angle=0,  # assumed deg
-    )
-    assert model.reference_wavelength.unit == u.m
-    assert model.dispersion.unit == u.m / u.pix
-    assert model.groove_density.unit == 1 / u.m
-    assert model.spectral_order.unit == u.one
-    assert model.incident_angle.unit == u.deg
-    assert model.refractive_index.unit == u.one
-    assert model.refractive_index_derivative.unit == 1 / u.m
-    assert model.out_of_plane_angle.unit == u.deg
-    assert model.camera_angle.unit == u.deg
+def test_refracted_angle_sine_model_bare_number_raises() -> None:
+    """Bare-number arguments are no longer coerced -- they should raise."""
+    with pytest.raises(InputParameterError):
+        sp.RefractedAngleSineModel(
+            reference_pixel=0,
+            reference_wavelength=0,  # requires a Quantity in m
+            dispersion=0,  # requires a Quantity in m/pix
+            groove_density=1,  # requires a Quantity in 1/m
+            spectral_order=1,
+            incident_angle=0,  # requires a Quantity in deg
+            refractive_index=1,
+            refractive_index_derivative=0,  # requires a Quantity in 1/m
+            out_of_plane_angle=0,  # requires a Quantity in deg
+            camera_angle=0,  # requires a Quantity in deg
+        )
 
 
 def test_refracted_angle_sine_model_defaults_return_zero() -> None:
@@ -198,13 +189,20 @@ def test_refracted_angle_sine_model_matches_manual() -> None:
 
 
 def test_wavelength_grating_equation_defaults():
-    model = sp.WavelengthFromGratingEquation(groove_density=20000, spectral_order=-1)
+    model = sp.WavelengthFromGratingEquation(
+        groove_density=20000 / u.m, spectral_order=-1
+    )
     assert model.groove_density.unit == 1 / u.m
-    assert model.spectral_order.unit == u.one
+    # spectral_order carries no unit of its own -- a bare number passed for it
+    # is no longer coerced to u.one, it stays a plain unitless value.
+    assert model.spectral_order.unit is None
+    assert model.spectral_order.value == -1
 
 
 def test_wavelength_grism_equation_defaults():
-    model = sp.WavelengthFromGrismEquation(groove_density=20000, spectral_order=-1)
+    model = sp.WavelengthFromGrismEquation(
+        groove_density=20000 / u.m, spectral_order=-1
+    )
     assert model.reference_wavelength.value == 0
     assert model.refractive_index.value == 1
     assert model.refractive_index_derivative.value == 0

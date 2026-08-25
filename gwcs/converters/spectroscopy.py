@@ -108,12 +108,12 @@ class GratingEquationConverter(TransformConverterBase):
                 model = WavelengthFromGrismEquation(
                     groove_density=groove_density,
                     spectral_order=order,
-                    reference_wavelength=node.get("reference_wavelength", 0),
+                    reference_wavelength=node.get("reference_wavelength", 0 * u.m),
                     refractive_index=node.get("refractive_index", 1),
                     refractive_index_derivative=node.get(
-                        "refractive_index_derivative", 0
+                        "refractive_index_derivative", 0 / u.m
                     ),
-                    out_of_plane_angle=node.get("out_of_plane_angle", 0),
+                    out_of_plane_angle=node.get("out_of_plane_angle", 0 * u.deg),
                 )
             else:
                 model = WavelengthFromGratingEquation(
