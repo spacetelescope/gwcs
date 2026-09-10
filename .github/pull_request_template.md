@@ -1,8 +1,16 @@
-<!-- describe the changes comprising this PR here -->
+<!-- If this PR addresses a JIRA ticket: -->
+<!-- Resolves [AL-nnnn](https://jira.stsci.edu/browse/AL-nnnn) -->
 
-This PR addresses ...
+<!-- If this PR will close an existing GitHub issue (that is not already attached to a JIRA ticket): -->
+<!-- Closes # -->
 
-<!-- if you can't perform these tasks due to permissions, please ask a maintainer to do them -->
+<!-- Describe your changes here: -->
+
+## Description
+
+This change ...
+
+<!-- If you can't perform these tasks due to permissions, reach out to a maintainer. -->
 
 ## Tasks
 
@@ -19,4 +27,9 @@ This PR addresses ...
 - `changes/<PR#>.doc.rst`: documentation change
 - `changes/<PR#>.misc.rst`: infrastructure or miscellaneous change
 
-</details
+</details>
+
+## Generative AI Usage Disclosure
+
+<!-- If generative AI or LLMs were used in the process of making this change, describe their use here. -->
+<!-- Otherwise, indicate "No genAI tools used". -->
