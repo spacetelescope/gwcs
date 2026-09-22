@@ -38,6 +38,7 @@ docs = [
   "pytest-doctestplus",
 ]
 test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
+nox = ["nox", "requests"]
 
 [build-system]
 requires = ["setuptools>=61.2", "setuptools_scm[toml]>=3.4"]
