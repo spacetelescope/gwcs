@@ -1,0 +1,1 @@
+Added `gwcs.spectroscopy.RefractedAngleSineModel` and `gwcs.spectroscopy.WavelengthFromGrismEquation` for FITS ``-GRA``/``-GRI`` grism coordinates, while keeping `gwcs.spectroscopy.WavelengthFromGratingEquation` focused on the classic two-input grating equation.
