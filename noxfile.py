@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -210,6 +211,45 @@ def downstream(session: nox.Session) -> None:
         # Run the tests as if it were the downstream package running them
         with session.chdir(downstream_dir):
             session.run("pytest", *arguments, env=downstream_package.env)
+
+
+@nox.session(python=PythonVersions().versions)
+def build(session: nox.Session) -> None:
+    """Build the sdist and wheel into dist/."""
+    parser = argparse.ArgumentParser(
+        prog="nox -s build --",
+        allow_abbrev=False,
+        description="Build the sdist and wheel, optionally testing the wheel.",
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Run the test session installing gwcs from the built wheel",
+    )
+    args, test_posargs = parser.parse_known_args(session.posargs)
+
+    dist = Path("dist")
+    shutil.rmtree(dist, ignore_errors=True)
+
+    session.install("build", "twine")
+    session.run("python", "-m", "build")
+    session.run("twine", "check", "--strict", *(str(p) for p in dist.glob("*")))
+
+    if args.test:
+        wheels = sorted(dist.glob("*.whl"))
+        if not wheels:
+            session.error("No wheel found in dist/ to test")
+        session.notify("test", posargs=["--wheel", str(wheels[-1]), *test_posargs])
+
+
+@nox.session(name="check-style")
+def check_style(session: nox.Session) -> None:
+    """Run all style and file checks with prek."""
+    default_args = ("--color", "always", "--all-files", "--show-diff-on-failure")
+
+    session.install("prek")
+    session.run("prek", "prepare-hooks")
+    session.run("prek", "run", *(session.posargs or default_args))
 
 
 @nox.session(venv_backend="none")
