@@ -1,325 +1,27 @@
 from __future__ import annotations
 
 import argparse
-import json
-import os
-import re
+import sys
 import tempfile
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar
 
 import nox
-import requests
+
+# nox loads this file via importlib.util.spec_from_file_location, which does not
+# add its directory to sys.path, so the sibling nox_helpers package needs a hand.
+# TODO: If/when nox_helpers is moved into its own package this can be a direct import
+sys.path.insert(0, str(Path(__file__).parent))
+
+from nox_helpers import (
+    DOWNSTREAM,
+    MatrixEntry,
+    PythonVersions,
+    list_dependencies,
+    write_github_output,
+)
 
 # Make nox default to uv if its available, if not fallback on virtualenv
 nox.options.default_venv_backend = "uv|virtualenv"
-
-
-@dataclass(frozen=True, slots=True)
-class MatrixEntry:
-    """Represents an entry in a github workflow job matrix."""
-
-    DEFAULT_RUNS_ON: ClassVar[str] = "ubuntu-latest"
-    MACOS_RUNS_ON: ClassVar[str] = "macos-latest"
-
-    session: str
-    """The session name for this matrix entry."""
-    python: str
-    """The Python version for this matrix entry."""
-    args: tuple[str, ...] = field(default_factory=tuple)
-    """The positional arguments for this matrix entry."""
-    options: tuple[str, ...] = field(default_factory=tuple)
-    """The options for this matrix entry."""
-    runs_on: str = field(default=DEFAULT_RUNS_ON)
-    """The runner environment for this matrix entry."""
-
-    @property
-    def nox_id(self) -> str:
-        """Return the factor string for this matrix entry."""
-        nox_id = f"py{self.python}"
-
-        if self.args:
-            nox_id = f"{'-'.join(self.args)}--{nox_id}"
-
-        if self.options:
-            nox_id = f"{nox_id}-{'-'.join(self.options)}"
-
-        return nox_id
-
-    @property
-    def nox_param(self) -> nox.param:
-        """Return the nox parameter for this matrix entry."""
-        return nox.param(self, id=self.nox_id)
-
-    @property
-    def session_name(self) -> str:
-        """Return the session name for this matrix entry."""
-        return f"{self.session}({self.nox_id})"
-
-    @property
-    def job_name(self) -> str:
-        """Return the job name for this matrix entry for github"""
-        if self.runs_on == self.DEFAULT_RUNS_ON:
-            return f"{self.nox_id}"
-
-        return f"{self.nox_id} ({self.runs_on})"
-
-    @property
-    def session_flags(self) -> tuple[str, ...]:
-        """Return posargs (flags) for this"""
-        return self.args + tuple(f"--{option}" for option in self.options if option)
-
-    @property
-    def github_matrix_entry(self) -> dict[str, str]:
-        """Return the github matrix entry for this matrix entry."""
-        return {
-            "name": self.job_name,
-            "session": self.session_name,
-            "python": self.python,
-            "runs-on": self.runs_on,
-        }
-
-    def run_session(self, session: nox.Session) -> None:
-        """Run the session with the appropriate Python version and flags."""
-        session.log(
-            f"Running session {self.session} with on {self.python} with flags "
-            f"{self.session_flags}"
-        )
-        session.notify(f"{self.session}-{self.python}", posargs=self.session_flags)
-
-
-@dataclass(frozen=True, slots=True)
-class Downstream:
-    """Description of a downstream package to test gwcs against."""
-
-    JWST_CRDS: ClassVar[dict[str, str]] = {
-        "CRDS_SERVER_URL": "https://jwst-crds.stsci.edu"
-    }
-    ROMAN_CRDS: ClassVar[dict[str, str]] = {
-        "CRDS_SERVER_URL": "https://roman-crds.stsci.edu"
-    }
-
-    name: str
-    repo: str
-    branch: str
-    extra: str | None
-    env: dict[str, str] = field(default_factory=dict)
-    # Extra arguments passed to pytest when running this package's own tests.
-    extra_pytest_args: tuple[str, ...] = ()
-    # Packages that are only tested when CI explicitly opts in, e.g. when a pull
-    # request carries the "Downstream CI" label.
-    label_only: bool = True
-    options: tuple[str, ...] = ()
-
-    @property
-    def matrix_entry(self) -> MatrixEntry:
-        """Return the matrix entry for this downstream package."""
-        return MatrixEntry(
-            session="downstream",
-            python=PythonVersions().default,
-            args=(self.name,),
-            options=self.options,
-        )
-
-
-DOWNSTREAM = {
-    "jwst": Downstream(
-        "jwst",
-        "https://github.com/spacetelescope/jwst.git",
-        "main",
-        "test",
-        Downstream.JWST_CRDS,
-        label_only=False,
-        options=("xdist",),
-    ),
-    "romancal": Downstream(
-        "romancal",
-        "https://github.com/spacetelescope/romancal.git",
-        "main",
-        "test",
-        Downstream.ROMAN_CRDS,
-        label_only=False,
-        options=("xdist",),
-    ),
-    "romanisim": Downstream(
-        "romanisim",
-        "https://github.com/spacetelescope/romanisim.git",
-        "main",
-        "test",
-        Downstream.ROMAN_CRDS,
-        label_only=False,
-        options=("xdist",),
-    ),
-    "specutils": Downstream(
-        "specutils", "https://github.com/astropy/specutils.git", "main", "test"
-    ),
-    "dkist": Downstream(
-        "dkist",
-        "https://github.com/DKISTDC/dkist.git",
-        "main",
-        "tests",
-        extra_pytest_args=("--benchmark-skip",),
-        options=("xdist",),
-    ),
-    "ndcube": Downstream(
-        "ndcube",
-        "https://github.com/sunpy/ndcube.git",
-        "main",
-        "dev",
-        options=("xdist",),
-    ),
-    "stcal": Downstream(
-        "stcal",
-        "https://github.com/spacetelescope/stcal.git",
-        "main",
-        "test",
-        Downstream.JWST_CRDS,
-        label_only=False,
-        options=("xdist",),
-    ),
-}
-
-
-@dataclass(frozen=True, slots=True)
-class PythonVersions:
-    """
-    Class to manage and retrieve the Python versions for this project.
-
-    This class is a singleton; every call to ``PythonVersions()`` returns the
-    same instance, so the underlying network request and version resolution
-    only happen once per process.
-    """
-
-    PYTHON_RELEASES_URL: ClassVar[str] = (
-        "https://www.python.org/api/v2/downloads/release/"
-    )
-    PYTHON_RELEASE_PATTERN: ClassVar[re.Pattern] = re.compile(
-        r"^Python (?P<version>\d+\.\d+\.\d+)$"
-    )
-    _instance: ClassVar[PythonVersions | None] = None
-
-    versions: tuple[str, ...] = field(init=False)
-    """The versions supported by this project"""
-    oldest: str = field(init=False)
-    """The oldest supported Python version for this project"""
-    newest: str = field(init=False)
-    """The newest supported Python version for this project"""
-    default: str = field(init=False)
-    """The default Python version for this project"""
-    github_test_factors: tuple[MatrixEntry, ...] = field(init=False)
-    """The nox session parameter matrix entries for the github test workflow"""
-
-    def __new__(cls) -> PythonVersions:
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __post_init__(self) -> None:
-        if hasattr(self, "versions"):
-            return
-        object.__setattr__(self, "versions", self._get_versions())
-        object.__setattr__(self, "oldest", self.versions[0])
-        object.__setattr__(self, "newest", self.versions[-1])
-        object.__setattr__(self, "default", self.versions[-2])
-        object.__setattr__(
-            self, "github_test_factors", tuple(self._get_github_test_factors())
-        )
-
-    def _latest_stable_version(self) -> str:
-        """Return the latest stable Python version published on python.org."""
-        response = requests.get(
-            self.PYTHON_RELEASES_URL,
-            params={"is_published": "true"},
-            timeout=30,
-        )
-        response.raise_for_status()
-
-        stable_versions: list[tuple[tuple[int, ...], str]] = []
-        for release in response.json():
-            match = self.PYTHON_RELEASE_PATTERN.fullmatch(release["name"])
-            if match is not None and not release["pre_release"]:
-                version = match.group("version")
-                stable_versions.append((tuple(map(int, version.split("."))), version))
-
-        if not stable_versions:
-            message = "python.org returned no stable Python releases"
-            raise RuntimeError(message)
-
-        return max(stable_versions)[1]
-
-    def _get_versions(self) -> tuple[str, ...]:
-        """
-        Return the Python versions to test, read from this project's pyproject.toml.
-        """
-        pyproject = nox.project.load_toml("pyproject.toml")
-        # mypy is not looking into nox for the types
-        return tuple(
-            nox.project.python_versions(  # type: ignore[no-any-return]
-                pyproject,
-                max_version=self._latest_stable_version(),
-            )
-        )
-
-    def _get_github_test_factors(self) -> list[MatrixEntry]:
-        """
-        Return the fixed set of CI factors run by ``github_test``.
-
-        This covers: the oldest supported Python with ``--oldest``, the newest
-        supported Python with ``--dev``/``--editable``/``--coverage``, and every
-        other supported Python with no extra flags.
-        """
-        return [
-            MatrixEntry(session="test", python=self.oldest, options=("oldest",)),
-            MatrixEntry(session="test", python=self.newest, options=("dev",)),
-            MatrixEntry(session="test", python=self.default, options=("editable",)),
-            MatrixEntry(session="test", python=self.default, options=("coverage",)),
-            *[
-                MatrixEntry(session="test", python=version)
-                for version in self.versions
-                if version != self.default
-            ],
-        ]
-
-    @property
-    def github_test_matrix(self) -> tuple[MatrixEntry, ...]:
-        return (
-            MatrixEntry(
-                session="test", python=self.default, runs_on=MatrixEntry.MACOS_RUNS_ON
-            ),
-            *self.github_test_factors,
-        )
-
-
-def list_dependencies(session: nox.Session) -> None:
-    """List the packages installed in a session's environment."""
-    if session.venv_backend == "uv":
-        session.run(
-            "uv",
-            "pip",
-            "list",
-            "--python",
-            session.virtualenv.location,
-            external=True,
-        )
-    else:
-        session.run("python", "-m", "pip", "list")
-
-
-def write_github_output(session: nox.Session, matrix: tuple[MatrixEntry, ...]) -> None:
-    """Write the GitHub Actions matrix to the environment."""
-
-    outputs = [json.dumps(entry.github_matrix_entry) for entry in matrix]
-    if (github_output := os.getenv("GITHUB_OUTPUT")) is None:
-        session.log("GITHUB_OUTPUT environment variable is not set, listing matrix:")
-        for output in outputs:
-            session.log(f"    {output}")
-
-        session.error("GITHUB_OUTPUT environment variable is not set")
-        return  # For mypy type checking the error should stop nox
-
-    with Path(github_output).open("a", encoding="utf-8") as out:
-        out.write(f"matrix={outputs}\n")
 
 
 def _add_standard_arguments(parser: argparse.ArgumentParser) -> None:
@@ -468,6 +170,8 @@ def downstream(session: nox.Session) -> None:
 
     # Clone into a temporary directory so stale state cannot leak between runs
     # and the repo working tree is never touched.
+    # This uses the tempfile module instead of the session.create_tmp() method
+    # so that the clone is performed freshly each time the session is run.
     with tempfile.TemporaryDirectory(prefix="gwcs-downstream-") as tmp_dir:
         downstream_dir = Path(tmp_dir) / args.package
         session.run(
