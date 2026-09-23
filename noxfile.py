@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import os
+import re
 import shutil
 import sys
 import tempfile
@@ -250,6 +252,117 @@ def check_style(session: nox.Session) -> None:
     session.install("prek")
     session.run("prek", "prepare-hooks")
     session.run("prek", "run", *(session.posargs or default_args))
+
+
+@nox.session(name="rtd-python", venv_backend="none")
+def rtd_python(session: nox.Session) -> None:
+    """Keep the Read the Docs Python version synchronized with Nox."""
+    # Read the rtd configuration
+    configuration = Path(".readthedocs.yaml")
+    contents = configuration.read_text()
+
+    # Find the python version specified in the RTD configuration
+    version_pattern = re.compile(
+        r'(?m)^([ ]{4}python:\s*)(["\']?)([0-9]+\.[0-9]+)(\2[ \t]*)$'
+    )
+    matches = list(version_pattern.finditer(contents))
+    if len(matches) != 1:
+        session.error(
+            f"Expected exactly one Python version in {configuration}, "
+            f"found {len(matches)}"
+        )
+
+    # Check the actual Python version against the expected version
+    match = matches[0]
+    expected = PythonVersions().default
+    actual = match.group(3)
+    if actual == expected:
+        return
+
+    # If we are on GitHub Actions, fail to enforce the expected Python version
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        session.error(
+            f"{configuration} specifies Python {actual}, but "
+            f"we expect Python {expected}. GitHub Actions must "
+            "fail on this drift so the tracked configuration is updated "
+            "locally rather than modified during CI."
+        )
+
+    # If local development, update the RTD configuration to match the expected version
+    configuration.write_text(
+        contents[: match.start(3)] + expected + contents[match.end(3) :]
+    )
+
+
+@nox.session(python=PythonVersions().default, venv_backend="uv")
+def docs(session: nox.Session) -> None:
+    """Build the documentation in the Read the Docs environment."""
+    parser = argparse.ArgumentParser(
+        prog="nox -s docs --",
+        allow_abbrev=False,
+        description="Build the documentation with pinned or latest dependencies.",
+    )
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="Install the latest dependencies allowed by the docs extra",
+    )
+    options, sphinx_args = parser.parse_known_args(session.posargs)
+
+    # RTD installs Graphviz as a system package rather than a Python dependency.
+    if shutil.which("dot") is None:
+        session.error("Graphviz is required to match the Read the Docs environment")
+
+    if options.latest:
+        session.install(".[docs]")
+    else:
+        session.install("-r", "requirements-docs.txt")
+    list_dependencies(session)
+
+    # Match `make clean` so stale generated files cannot affect the build.
+    for path in (
+        Path("docs/_build"),
+        Path("docs/api"),
+        Path("docs/generated"),
+        Path("docs/gwcs/generated"),
+    ):
+        shutil.rmtree(path, ignore_errors=True)
+
+    # RTD includes unreleased Towncrier fragments when building a non-tagged commit.
+    # Render them temporarily so a local build does not modify the working tree.
+    changelog = Path("CHANGES.rst")
+    original_changelog = changelog.read_bytes()
+    try:
+        exact_tag = session.run(
+            "git",
+            "describe",
+            "--exact-match",
+            external=True,
+            silent=True,
+            stderr=None,
+            success_codes=(0, 128),
+        )
+        if not exact_tag:
+            draft = session.run(
+                "towncrier", "build", "--draft", silent=True, stderr=None
+            )
+            changelog.write_bytes(draft.encode() + original_changelog)
+        # RTD treats warnings as errors and keeps going to report all warnings.
+        session.run(
+            "sphinx-build",
+            "-W",
+            "--keep-going",
+            "-b",
+            "html",
+            "-d",
+            "docs/_build/doctrees",
+            "docs",
+            "docs/_build/html",
+            *sphinx_args,
+        )
+    finally:
+        # Always restore the tracked changelog, including after a failed build.
+        changelog.write_bytes(original_changelog)
 
 
 @nox.session(venv_backend="none")

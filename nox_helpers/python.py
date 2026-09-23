@@ -43,7 +43,7 @@ class PythonVersions:
 
     def __new__(cls) -> PythonVersions:
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            cls._instance = object.__new__(cls)
         return cls._instance
 
     def __post_init__(self) -> None:

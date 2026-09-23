@@ -36,6 +36,7 @@ docs = [
   "sphinx-inline-tabs",
   "matplotlib",
   "pytest-doctestplus",
+  "towncrier",
 ]
 test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
 nox = ["nox", "requests"]

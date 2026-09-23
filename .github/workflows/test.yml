@@ -24,3 +24,13 @@ jobs:
       kind: test
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  rtd-python:
+    name: check Read the Docs Python version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - run: uv tool run --with requests nox -s rtd-python
