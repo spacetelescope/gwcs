@@ -72,10 +72,15 @@ class MatrixEntry:
             "runs-on": self.runs_on,
         }
 
-    def run_session(self, session: nox.Session) -> None:
+    def run_session(
+        self, session: nox.Session, posargs: list[str] | None = None
+    ) -> None:
         """Run the session with the appropriate Python version and flags."""
+        posargs = posargs or []
         session.log(
             f"Running session {self.session} with on {self.python} with flags "
             f"{self.session_flags}"
         )
-        session.notify(f"{self.session}-{self.python}", posargs=self.session_flags)
+        session.notify(
+            f"{self.session}-{self.python}", posargs=list(self.session_flags) + posargs
+        )

@@ -378,7 +378,7 @@ def github_test(session: nox.Session, factor: MatrixEntry) -> None:
     of the ``test`` session's many possible configurations. For example,
     ``nox -e github_test(py3.13-dev)`` runs ``nox -e test-3.13 -- --dev``.
     """
-    factor.run_session(session)
+    factor.run_session(session, posargs=session.posargs)
 
 
 @nox.session(venv_backend="none")
@@ -403,7 +403,7 @@ def github_downstream(session: nox.Session, factor: MatrixEntry) -> None:
     ``nox -e github_downstream(jwst--py3.13-xdist)`` runs
     ``nox -e downstream-3.13 -- jwst --xdist``.
     """
-    factor.run_session(session)
+    factor.run_session(session, posargs=session.posargs)
 
 
 @nox.session(venv_backend="none")
@@ -414,3 +414,61 @@ def github_downstream_matrix(session: nox.Session) -> None:
     write_github_output(
         session, tuple(package.matrix_entry for package in DOWNSTREAM.values())
     )
+
+
+@nox.session(venv_backend="none")
+def run_from_tox(session: nox.Session) -> None:
+    """
+    Session for translating the legacy tox commands into running the correct session.
+    """
+    session.warn(
+        "Running from a tox environment, this is deprecated switch to using nox!"
+    )
+    parser = argparse.ArgumentParser(
+        prog="nox -s run_from_tox --",
+        allow_abbrev=False,
+        description="Run a session using a tox environment.",
+    )
+    parser.add_argument(
+        "tox_command",
+        type=str,
+        help="The tox command to run within the specified environment.",
+    )
+    args, pytest_args = parser.parse_known_args(session.posargs)
+
+    components: list[str] = args.tox_command.split("-")
+
+    # Determine the Python version from the first component if it starts with "py".
+    if components[0].startswith("py"):
+        python = f"3.{components.pop(0)[-2:]}"
+    else:
+        # Fallback on the default python version
+        python = PythonVersions().default
+
+    # Ignore the "test" component if present
+    if components and components[0] == "test":
+        components.pop(0)
+
+    # Determine downstream or not:
+    if components and components[0] in DOWNSTREAM:
+        session_name = "downstream"
+        downstream: tuple[str, ...] = (components.pop(0),)
+    else:
+        session_name = "test"
+        downstream = ()
+
+    options: list[str] = []
+    for component in components:
+        if component == "cov":
+            options.append("coverage")
+        elif component == "oldestdeps":
+            options.append("oldestdeps")
+        else:
+            options.append(component)
+
+    MatrixEntry(
+        python=python,
+        session=session_name,
+        options=tuple(options),
+        args=downstream,
+    ).run_session(session, posargs=pytest_args)
