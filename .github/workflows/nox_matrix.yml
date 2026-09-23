@@ -1,0 +1,95 @@
+name: nox matrix
+
+on:
+  workflow_call:
+    inputs:
+      kind:
+        description: Which nox matrix to run, either "test" or "downstream"
+        type: string
+        required: true
+      setup-args:
+        description: Extra arguments passed to the github_<kind>_setup nox session
+        type: string
+        required: false
+        default: ""
+      setenv:
+        description: Newline separated KEY=value pairs exported to each session job
+        type: string
+        required: false
+        default: ""
+      cache-path:
+        description: Path to cache between runs of each session job
+        type: string
+        required: false
+        default: ""
+      cache-key:
+        description: Cache key used together with cache-path
+        type: string
+        required: false
+        default: ""
+      restore-cache-path:
+        description: Path of a read-only cache to restore into each session job
+        type: string
+        required: false
+        default: ""
+      restore-cache-key:
+        description: Cache key used together with restore-cache-path
+        type: string
+        required: false
+        default: ""
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+jobs:
+  # The matrix entries are defined by the noxfile, so they have to be
+  # discovered from nox rather than hard-coded here.
+  discover:
+    name: discover nox sessions
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v7
+      - id: discover
+        run: uv tool run --with requests nox -s "github_${{ inputs.kind }}_matrix" -- ${{ inputs.setup-args }}
+
+  session:
+    name: ${{ matrix.name }}
+    needs: discover
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.sessions.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - if: inputs.setenv != ''
+        run: |
+          cat <<'EOF' >> "$GITHUB_ENV"
+          ${{ inputs.setenv }}
+          EOF
+      - if: inputs.cache-path != ''
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.cache-path }}
+          key: ${{ inputs.cache-key }}
+      - if: inputs.restore-cache-key != ''
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ inputs.restore-cache-path }}
+          key: ${{ inputs.restore-cache-key }}
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv tool run --with requests nox -s "${{ matrix.session }}"
+      - if: contains(matrix.session, 'coverage')
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
