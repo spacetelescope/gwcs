@@ -32,10 +32,15 @@ jobs:
   crds_contexts:
     uses: spacetelescope/crds/.github/workflows/contexts.yml@main
 
-  # The STPSF/GalSim data romanisim needs is downloaded by romanisim_data.yml,
-  # this only looks up the key of the most recent cache of it.
+  # retrieve_cache.yml only looks up the key of the most recent cache of the
+  # STPSF/GalSim data romanisim needs, and since a reusable workflow's
+  # `github.repository` resolves to the *caller's* repo (gwcs), it can only
+  # ever see caches that already exist in gwcs's own cache store -- it never
+  # sees the cache romanisim's own scheduled data.yml writes to romanisim's
+  # repo. Call data.yml directly instead so the data is actually downloaded
+  # and cached (write, not just read) under gwcs's own cache store.
   romanisim_data:
-    uses: spacetelescope/romanisim/.github/workflows/retrieve_cache.yml@main
+    uses: spacetelescope/romanisim/.github/workflows/data.yml@main
     with:
       cache_path: /tmp/data
 
