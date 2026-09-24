@@ -29,7 +29,7 @@ def list_dependencies(session: nox.Session) -> None:
 def write_github_output(session: nox.Session, matrix: tuple[MatrixEntry, ...]) -> None:
     """Write the GitHub Actions matrix to the environment."""
 
-    outputs = [json.dumps(entry.github_matrix_entry) for entry in matrix]
+    outputs = [entry.github_matrix_entry for entry in matrix]
     if (github_output := os.getenv("GITHUB_OUTPUT")) is None:
         session.log("GITHUB_OUTPUT environment variable is not set, listing matrix:")
         for output in outputs:
@@ -39,4 +39,4 @@ def write_github_output(session: nox.Session, matrix: tuple[MatrixEntry, ...]) -
         return  # For mypy type checking the error should stop nox
 
     with Path(github_output).open("a", encoding="utf-8") as out:
-        out.write(f"matrix={outputs}\n")
+        out.write(f"matrix={json.dumps(outputs)}\n")

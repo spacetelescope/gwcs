@@ -47,7 +47,7 @@ class MatrixEntry:
     @property
     def session_name(self) -> str:
         """Return the session name for this matrix entry."""
-        return f"{self.session}({self.nox_id})"
+        return f"github_{self.session}({self.nox_id})"
 
     @property
     def job_name(self) -> str:

@@ -116,7 +116,7 @@ class PythonVersions:
     def github_test_matrix(self) -> tuple[MatrixEntry, ...]:
         return (
             MatrixEntry(
-                session="test", python=self.default, runs_on=MatrixEntry.MACOS_RUNS_ON
+                session="test", python=self.newest, runs_on=MatrixEntry.MACOS_RUNS_ON
             ),
             *self.github_test_factors,
         )
