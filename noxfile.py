@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import os
 import re
 import shutil
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import nox
 
@@ -365,12 +368,37 @@ def docs(session: nox.Session) -> None:
         changelog.write_bytes(original_changelog)
 
 
+def _dry_run_option(func: Callable[..., None]) -> Callable[..., None]:
+    """Parse a ``--dry-run`` flag off session.posargs before delegating to func."""
+
+    @functools.wraps(func)
+    def wrapper(session: nox.Session, *args: Any, **kwargs: Any) -> None:
+        parser = argparse.ArgumentParser(
+            prog=f"nox -e {func.__name__} --",
+            allow_abbrev=False,
+            description="Run a session for a specific GitHub Actions matrix factor.",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Run the session in dry-run mode.",
+        )
+        parsed, posargs = parser.parse_known_args(session.posargs)
+        if parsed.dry_run:
+            session.skip("Dry run: nothing executed")
+
+        func(session, *args, posargs=posargs, **kwargs)
+
+    return wrapper
+
+
 @nox.session(venv_backend="none")
 @nox.parametrize(
     "factor",
     [factor.nox_param for factor in PythonVersions().github_test_factors],
 )
-def github_test(session: nox.Session, factor: MatrixEntry) -> None:
+@_dry_run_option
+def github_test(session: nox.Session, factor: MatrixEntry, posargs: list[str]) -> None:
     """
     Dispatch a short CI factor (e.g. ``py3.13-dev``) to the ``test`` session.
 
@@ -378,7 +406,7 @@ def github_test(session: nox.Session, factor: MatrixEntry) -> None:
     of the ``test`` session's many possible configurations. For example,
     ``nox -e github_test(py3.13-dev)`` runs ``nox -e test-3.13 -- --dev``.
     """
-    factor.run_session(session, posargs=session.posargs)
+    factor.run_session(session, posargs=posargs)
 
 
 @nox.session(venv_backend="none")
@@ -394,7 +422,10 @@ def github_test_matrix(session: nox.Session) -> None:
     "factor",
     [package.matrix_entry.nox_param for package in DOWNSTREAM.values()],
 )
-def github_downstream(session: nox.Session, factor: MatrixEntry) -> None:
+@_dry_run_option
+def github_downstream(
+    session: nox.Session, factor: MatrixEntry, posargs: list[str]
+) -> None:
     """
     Dispatch a short CI factor (e.g. ``jwst--py3.13-xdist``) to ``downstream`` session.
 
@@ -403,7 +434,7 @@ def github_downstream(session: nox.Session, factor: MatrixEntry) -> None:
     ``nox -e github_downstream(jwst--py3.13-xdist)`` runs
     ``nox -e downstream-3.13 -- jwst --xdist``.
     """
-    factor.run_session(session, posargs=session.posargs)
+    factor.run_session(session, posargs=posargs)
 
 
 @nox.session(venv_backend="none")

@@ -62,9 +62,14 @@ class MatrixEntry:
         """Return posargs (flags) for this"""
         return self.args + tuple(f"--{option}" for option in self.options if option)
 
-    @property
-    def github_matrix_entry(self) -> dict[str, str]:
+    def github_matrix_entry(self, session: nox.Session) -> dict[str, str]:
         """Return the github matrix entry for this matrix entry."""
+
+        # This will trigger a dry-run of the session for this matrix entry.
+        #   The --dry-run flag will cause the nox session to skip the actual execution,
+        #   but more importantly, if the session_name does not exist it will cause
+        #   nox to crash, alerting the developer that the session is not defined.
+        session.notify(f"{self.session_name}", posargs=["--dry-run"])
         return {
             "name": self.job_name,
             "session": self.session_name,
@@ -79,7 +84,7 @@ class MatrixEntry:
         posargs = posargs or []
         session.log(
             f"Running session {self.session} with on {self.python} with flags "
-            f"{self.session_flags}"
+            f"{self.session_flags} and posargs {posargs}"
         )
         session.notify(
             f"{self.session}-{self.python}", posargs=list(self.session_flags) + posargs
