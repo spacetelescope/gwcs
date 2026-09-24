@@ -87,8 +87,12 @@ filterwarnings = [
 [tool.coverage.run]
 omit = [
   "docs/conf.py",
+  "noxfile.py",
+  "nox_helpers/*",
   "gwcs/tests/test_*",
   "gwcs/tags/tests/test_*",
+  "*/noxfile.py",
+  "*/nox_helpers/*",
   "*/gwcs/tests/test_*",
   "*/gwcs/tags/tests/test_*",
 ]
