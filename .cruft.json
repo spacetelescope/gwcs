@@ -1,0 +1,24 @@
+{
+  "template": "https://github.com/spacetelescope/stsci-package-template",
+  "commit": "e9df785e23884c9ba118e8f7a792e3dbbad3bfcb",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "gwcs",
+      "package_name": "gwcs",
+      "repository_url": "https://github.com/spacetelescope/gwcs",
+      "git_username": "spacetelescope/gwcs-maintainers",
+      "project_description": "Generalized World Coordinate System",
+      "manage_changelog_with_towncrier": true,
+      "publish_docs_to": "readthedocs.io",
+      "task_runner": "tox",
+      "python_version": ">=3.12",
+      "python_c_extensions": false,
+      "python_build_backend": "setuptools",
+      "crds_observatory": "none",
+      "_template": "https://github.com/spacetelescope/stsci-package-template",
+      "_commit": "e9df785e23884c9ba118e8f7a792e3dbbad3bfcb"
+    }
+  },
+  "directory": "python-package"
+}
