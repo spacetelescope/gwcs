@@ -1,0 +1,28 @@
+[tool.towncrier]
+filename = "CHANGES.rst"
+directory = "changes"
+package = "gwcs"
+title_format = "{version} ({project_date})"
+ignore = ["README.md"]
+wrap = true
+issue_format = "`#{issue} <https://github.com/spacetelescope/gwcs/issues/{issue}>`_"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "New Features"
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Documentation"
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Other Changes"
