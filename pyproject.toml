@@ -36,8 +36,10 @@ docs = [
   "sphinx-inline-tabs",
   "matplotlib",
   "pytest-doctestplus",
+  "towncrier",
 ]
 test = ["ci-watson>=0.3.0", "pytest>=9.0", "pytest-astropy>=0.11.0"]
+nox = ["nox", "requests"]
 
 [build-system]
 requires = ["setuptools>=61.2", "setuptools_scm[toml]>=3.4"]
@@ -85,8 +87,12 @@ filterwarnings = [
 [tool.coverage.run]
 omit = [
   "docs/conf.py",
+  "noxfile.py",
+  "nox_helpers/*",
   "gwcs/tests/test_*",
   "gwcs/tags/tests/test_*",
+  "*/noxfile.py",
+  "*/nox_helpers/*",
   "*/gwcs/tests/test_*",
   "*/gwcs/tags/tests/test_*",
 ]

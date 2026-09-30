@@ -16,3 +16,6 @@ jobs:
     uses: spacetelescope/romanisim/.github/workflows/data.yml@main
     with:
       stpsf_dataset_type: ${{ inputs.stpsf_dataset_type }}
+      # actions/cache restores to the path the cache was saved from, so pin it
+      # instead of letting it vary with the triggering event.
+      cache_path: /tmp/data
