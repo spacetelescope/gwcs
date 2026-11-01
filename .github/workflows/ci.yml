@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   test:
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@22ddf09dfabb443adddfb9f861b7d41a787d6b1a # v3.0.3
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@1285b95e32c783cfa40eb2ffbd6ca4cd023fb884 # v3.2.2
     with:
       envs: |
         - linux: py312-oldestdeps
