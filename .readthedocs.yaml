@@ -10,26 +10,24 @@ sphinx:
 build:
   os: ubuntu-24.04
   tools:
-    python: mambaforge-latest
+    python: "3.13"
+  apt_packages:
+    - graphviz
   jobs:
     post_checkout:
       - git fetch --unshallow || true
       - git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' || true
       - git fetch --all --tags || true
     pre_install:
-      - git update-index --assume-unchanged docs/rtd_environment.yaml docs/conf.py
+      - git update-index --assume-unchanged docs/conf.py
     post_install:
       - git describe --exact-match || towncrier build --keep
 
-conda:
-  environment: docs/rtd_environment.yaml
-
 python:
   install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
+    - method: uv
+      command: pip
+      requirements: requirements-docs.txt
 
 # Don't build any extra formats
 formats: []
