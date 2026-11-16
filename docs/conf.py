@@ -135,11 +135,13 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 # Do not add the theme's default sidebar alongside the custom layout.
 html_sidebars = {}
+html_logo = "https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_sec_combo_mark_horizonal_dark_bkgd.svg?raw=true"
 
-html_theme_options = {
-    "light_logo": "images/stsci_logo.png",
-    "dark_logo": "images/stsci_logo.png",
-}
+# furo theme light / dark logo options don't work with URLs?
+# html_theme_options = {
+#     "light_logo": "https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_sec_combo_mark_horizonal_light_bkgd.svg?raw=true",
+#     "dark_logo": "https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_sec_combo_mark_horizonal_dark_bkgd.svg?raw=true",
+# }
 
 pygments_style = "monokai"
 # Furo uses this style for dark-mode code blocks.
